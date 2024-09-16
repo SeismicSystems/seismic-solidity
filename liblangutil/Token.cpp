@@ -75,7 +75,7 @@ void ElementaryTypeNameToken::assertDetails(Token _baseType, unsigned const& _fi
 		solAssert(_second == 0, "There should not be a second size argument to type bytesM.");
 		solAssert(_first <= 32, "No elementary type bytes" + std::to_string(_first) + ".");
 	}
-	else if (_baseType == Token::UIntM || _baseType == Token::IntM || _baseType == Token::SUIntM || _baseType == Token::SIntM))
+	else if (_baseType == Token::UIntM || _baseType == Token::IntM || _baseType == Token::SUIntM || _baseType == Token::SIntM)
 	{
 		solAssert(_second == 0, "There should not be a second size argument to type " + std::string(TokenTraits::toString(_baseType)) + ".");
 		solAssert(

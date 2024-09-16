@@ -176,6 +176,7 @@ public:
 	{
 		Address,
 		Integer,
+		ShieldedInteger,
 		RationalNumber,
 		StringLiteral,
 		Bool,
@@ -488,6 +489,54 @@ public:
 	explicit IntegerType(unsigned _bits, Modifier _modifier = Modifier::Unsigned);
 
 	Category category() const override { return Category::Integer; }
+
+	std::string richIdentifier() const override;
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	TypeResult unaryOperatorResult(Token _operator) const override;
+	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
+
+	bool operator==(Type const& _other) const override;
+
+	unsigned calldataEncodedSize(bool _padded = true) const override { return _padded ? 32 : m_bits / 8; }
+	unsigned storageBytes() const override { return m_bits / 8; }
+	bool leftAligned() const override { return false; }
+	bool isValueType() const override { return true; }
+	bool nameable() const override { return true; }
+
+	std::string toString(bool _withoutDataLocation) const override;
+
+	Type const* encodingType() const override { return this; }
+	TypeResult interfaceType(bool) const override { return this; }
+
+	unsigned numBits() const { return m_bits; }
+	bool isSigned() const { return m_modifier == Modifier::Signed; }
+
+	u256 min() const;
+	u256 max() const;
+
+	bigint minValue() const;
+	bigint maxValue() const;
+
+private:
+	unsigned const m_bits;
+	Modifier const m_modifier;
+};
+
+/**
+ * Any kind of shielded integer type (signed, unsigned).
+ */
+class ShieldedIntegerType: public Type
+{
+public:
+	enum class Modifier
+	{
+		Unsigned, Signed
+	};
+
+	explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier = Modifier::Unsigned);
+
+	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;

@@ -99,6 +99,18 @@ public:
 	static IntegerType const* uint256() { return uint(256); }
 	static IntegerType const* int256() { return integer(256, IntegerType::Modifier::Signed); }
 
+	static ShieldedIntegerType const* shieldedInteger(unsigned _bits, ShieldedIntegerType::Modifier _modifier) { 
+
+		solAssert((_bits % 8) == 0, "");
+		if (_modifier == ShieldedIntegerType::Modifier::Unsigned)
+			return m_suintM.at(_bits / 8 - 1).get();
+		else
+			return m_sintM.at(_bits / 8 - 1).get();
+		}
+	static ShieldedIntegerType const* shieldedUint(unsigned _bits) { return shieldedInteger(_bits, ShieldedIntegerType::Modifier::Unsigned); }
+	static ShieldedIntegerType const* shieldedUint256() { return shieldedUint(256); }
+	static ShieldedIntegerType const* shieldedInt256() { return shieldedInteger(256, ShieldedIntegerType::Modifier::Signed); }
+
 	static FixedPointType const* fixedPoint(unsigned m, unsigned n, FixedPointType::Modifier _modifier);
 
 	static StringLiteralType const* stringLiteral(std::string const& literal);
@@ -225,6 +237,8 @@ private:
 	static AddressType const m_address;
 	static std::array<std::unique_ptr<IntegerType>, 32> const m_intM;
 	static std::array<std::unique_ptr<IntegerType>, 32> const m_uintM;
+	static std::array<std::unique_ptr<ShieldedIntegerType>, 32> const m_suintM;
+	static std::array<std::unique_ptr<ShieldedIntegerType>, 32> const m_sintM;
 	static std::array<std::unique_ptr<FixedBytesType>, 32> const m_bytesM;
 	static std::array<std::unique_ptr<MagicType>, 5> const m_magics;        ///< MagicType's except MetaType
 

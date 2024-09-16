@@ -145,6 +145,77 @@ std::array<std::unique_ptr<FixedBytesType>, 32> const TypeProvider::m_bytesM{{
 	{std::make_unique<FixedBytesType>(32)}
 }};
 
+
+std::array<std::unique_ptr<ShieldedIntegerType>, 32> const TypeProvider::m_sintM{{
+	{std::make_unique<ShieldedIntegerType>(8 * 1, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 2, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 3, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 4, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 5, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 6, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 7, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 8, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 9, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 10, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 11, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 12, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 13, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 14, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 15, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 16, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 17, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 18, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 19, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 20, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 21, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 22, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 23, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 24, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 25, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 26, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 27, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 28, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 29, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 30, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 31, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 32, ShieldedIntegerType::Modifier::Signed)}
+}};
+
+std::array<std::unique_ptr<ShieldedIntegerType>, 32> const TypeProvider::m_suintM{{
+	{std::make_unique<ShieldedIntegerType>(8 * 1, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 2, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 3, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 4, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 5, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 6, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 7, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 8, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 9, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 10, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 11, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 12, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 13, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 14, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 15, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 16, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 17, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 18, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 19, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 20, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 21, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 22, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 23, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 24, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 25, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 26, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 27, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 28, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 29, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 30, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 31, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 32, ShieldedIntegerType::Modifier::Unsigned)}
+}};
+
 std::array<std::unique_ptr<MagicType>, 5> const TypeProvider::m_magics{{
 	{std::make_unique<MagicType>(MagicType::Kind::Block)},
 	{std::make_unique<MagicType>(MagicType::Kind::Message)},
@@ -220,6 +291,10 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		return integer(m, IntegerType::Modifier::Signed);
 	case Token::UIntM:
 		return integer(m, IntegerType::Modifier::Unsigned);
+	case Token::SUIntM:
+		return shieldedInteger(m, ShieldedIntegerType::Modifier::Unsigned);
+	case Token::SIntM:
+		return shieldedInteger(m, ShieldedIntegerType::Modifier::Signed);
 	case Token::Byte:
 		return byte();
 	case Token::BytesM:

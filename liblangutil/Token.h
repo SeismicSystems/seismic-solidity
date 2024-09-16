@@ -208,6 +208,8 @@ namespace solidity::langutil
 	/* type keywords*/                                                 \
 	K(Int, "int", 0)                                                   \
 	K(UInt, "uint", 0)                                                 \
+	K(SUInt, "suint", 0)											   \
+	K(SInt, "sint", 0)                                                 \
 	K(Bytes, "bytes", 0)                                               \
 	K(String, "string", 0)                                             \
 	K(Address, "address", 0)                                           \

@@ -618,6 +618,17 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 		FixedPointType const& convertTo = dynamic_cast<FixedPointType const&>(_convertTo);
 		return maxValue() <= convertTo.maxIntegerValue() && minValue() >= convertTo.minIntegerValue();
 	}
+	else if (_convertTo.category() == Category::ShieldedInteger)
+	{
+		ShieldedIntegerType const& convertTo = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		// disallowing unsigned to signed conversion of different bits
+		if (isSigned() != convertTo.isSigned())
+			return false;
+		else if (convertTo.numBits() < m_bits)
+			return false;
+		else
+			return true;
+	}
 	else
 		return false;
 }
@@ -722,6 +733,180 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 	else if (Token::Exp == _operator)
 	{
 		if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
+		{
+			if (otherIntType->isSigned())
+				return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
+		}
+		else if (dynamic_cast<FixedPointType const*>(_other))
+			return nullptr;
+		else if (auto rationalNumberType = dynamic_cast<RationalNumberType const*>(_other))
+		{
+			if (rationalNumberType->isFractional())
+				return TypeResult::err("Exponent is fractional.");
+			if (!rationalNumberType->integerType())
+				return TypeResult::err("Exponent too large.");
+			if (rationalNumberType->isNegative())
+				return TypeResult::err("Exponentiation power is not allowed to be a negative integer literal.");
+		}
+		return this;
+	}
+
+	auto commonType = Type::commonType(this, _other); //might be an integer or fixed point
+	if (!commonType)
+		return nullptr;
+
+	// All integer types can be compared
+	if (TokenTraits::isCompareOp(_operator))
+		return commonType;
+	if (TokenTraits::isBooleanOp(_operator))
+		return nullptr;
+	return commonType;
+}
+
+ ShieldedIntegerType::ShieldedIntegerType(unsigned _bits, ShieldedIntegerType::Modifier _modifier):
+	m_bits(_bits), m_modifier(_modifier)
+{
+	solAssert(
+		m_bits > 0 && m_bits <= 256 && m_bits % 8 == 0,
+		"Invalid bit number for shielded integer type: " + util::toString(m_bits)
+	);
+}
+
+std::string ShieldedIntegerType::richIdentifier() const
+{
+	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());
+}
+
+BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (_convertTo.category() == category() )
+	{
+		ShieldedIntegerType const& convertTo = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		// disallowing unsigned to signed conversion of different bits
+		if (isSigned() != convertTo.isSigned())
+			return false;
+		else if (convertTo.m_bits < m_bits)
+			return false;
+		else
+			return true;
+  
+	}
+	else if ( _convertTo.category() == Category::Integer)	
+	{
+		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
+		return (numBits() == convertTo.numBits()) || (isSigned() == convertTo.isSigned());	
+	}
+	else if (_convertTo.category() == Category::FixedPoint)
+	{
+		FixedPointType const& convertTo = dynamic_cast<FixedPointType const&>(_convertTo);
+		return maxValue() <= convertTo.maxIntegerValue() && minValue() >= convertTo.minIntegerValue();
+	}
+	else
+		return false;
+}
+
+BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
+		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
+	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			!isSigned() &&
+			(numBits() == 160);
+	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
+		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
+	else if (dynamic_cast<EnumType const*>(&_convertTo))
+		return true;
+	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
+		return (isSigned() == fixedPointType->isSigned()) && (numBits() == fixedPointType->numBits());
+
+	return false;
+}
+
+TypeResult ShieldedIntegerType::unaryOperatorResult(Token _operator) const
+{
+	// "delete" is ok for all integer types
+	if (_operator == Token::Delete)
+		return TypeResult{TypeProvider::emptyTuple()};
+	// unary negation only on signed types
+	else if (_operator == Token::Sub)
+		return isSigned() ? TypeResult{this} : TypeResult::err("Unary negation is only allowed for signed integers.");
+	else if (_operator == Token::Inc || _operator == Token::Dec || _operator == Token::BitNot)
+		return TypeResult{this};
+	else
+		return TypeResult::err("");
+}
+
+bool ShieldedIntegerType::operator==(Type const& _other) const
+{
+	if (_other.category() != category())
+		return false;
+	ShieldedIntegerType const& other = dynamic_cast<ShieldedIntegerType const&>(_other);
+	return other.m_bits == m_bits && other.m_modifier == m_modifier;
+}
+
+std::string ShieldedIntegerType::toString(bool) const
+{
+	std::string prefix = isSigned() ? "sint" : "suint";
+	return prefix + util::toString(m_bits);
+}
+
+u256 ShieldedIntegerType::min() const
+{
+	if (isSigned())
+		return s2u(s256(minValue()));
+	else
+		return u256(minValue());
+}
+
+u256 ShieldedIntegerType::max() const
+{
+	if (isSigned())
+		return s2u(s256(maxValue()));
+	else
+		return u256(maxValue());
+}
+
+bigint ShieldedIntegerType::minValue() const
+{
+	if (isSigned())
+		return -(bigint(1) << (m_bits - 1));
+	else
+		return bigint(0);
+}
+
+bigint ShieldedIntegerType::maxValue() const
+{
+	if (isSigned())
+		return (bigint(1) << (m_bits - 1)) - 1;
+	else
+		return (bigint(1) << m_bits) - 1;
+}
+
+TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const* _other) const
+{
+	if (
+		_other->category() != category() &&
+		 _other->category() != Category::RationalNumber && 
+		 _other->category() != Category::FixedPoint &&
+		 _other->category() != Category::Integer
+
+	)
+		return nullptr;
+	if (TokenTraits::isShiftOp(_operator))
+	{
+		// Shifts are not symmetric with respect to the type
+		if (isValidShiftAndAmountType(_operator, *_other))
+			return this;
+		else
+			return nullptr;
+	}
+	else if (Token::Exp == _operator)
+	{
+		if (auto otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
 		{
 			if (otherIntType->isSigned())
 				return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
