@@ -74,6 +74,26 @@ Return: 'return';
 Returns: 'returns';
 Revert: 'revert'; // not a real keyword
 /**
+ * Sized shieled unsigned integer types.
+ * suint is an alias of suint256.
+ */
+ShieldedUnsignedIntegerType:
+	'suint' | 'suint8' | 'suint16' | 'suint24' | 'suint32' | 'suint40' | 'suint48' | 'suint56' | 'suint64' |
+	'suint72' | 'suint80' | 'suint88' | 'suint96' | 'suint104' | 'suint112' | 'suint120' | 'suint128' |
+	'suint136' | 'suint144' | 'suint152' | 'suint160' | 'suint168' | 'suint176' | 'suint184' | 'suint192' |
+	'suint200' | 'suint208' | 'suint216' | 'suint224' | 'suint232' | 'suint240' | 'suint248' | 'suint256';
+/**
+/**
+ * Sized shieled signed integer types.
+ * sint is an alias of sint256.
+ */
+ShieldedSignedIntegerType:
+	'sint' | 'sint8' | 'sint16' | 'sint24' | 'sint32' | 'sint40' | 'sint48' | 'sint56' | 'sint64' |
+	'sint72' | 'sint80' | 'sint88' | 'sint96' | 'sint104' | 'sint112' | 'sint120' | 'sint128' |
+	'sint136' | 'sint144' | 'sint152' | 'sint160' | 'sint168' | 'sint176' | 'sint184' | 'sint192' |
+	'sint200' | 'sint208' | 'sint216' | 'sint224' | 'sint232' | 'sint240' | 'sint248' | 'sint256';
+/**
+/**
  * Sized signed integer types.
  * int is an alias of int256.
  */

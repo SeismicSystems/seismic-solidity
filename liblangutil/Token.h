@@ -216,6 +216,8 @@ namespace solidity::langutil
 	K(UFixed, "ufixed", 0)                                             \
 	T(IntM, "intM", 0)                                                 \
 	T(UIntM, "uintM", 0)                                               \
+	T(SIntM, "sintM", 0)                                               \
+	T(SUIntM, "suintM", 0)                                             \
 	T(BytesM, "bytesM", 0)                                             \
 	T(FixedMxN, "fixedMxN", 0)                                         \
 	T(UFixedMxN, "ufixedMxN", 0)                                       \
