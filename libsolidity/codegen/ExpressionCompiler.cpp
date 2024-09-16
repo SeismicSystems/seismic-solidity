@@ -2670,6 +2670,17 @@ void ExpressionCompiler::appendShiftOperatorCode(Token _operator, Type const& _v
 
 void ExpressionCompiler::appendExpOperatorCode(Type const& _valueType, Type const& _exponentType)
 {
+	if (_valueType.category() == Type::Category::ShieldedInteger && !dynamic_cast<ShieldedIntegerType const&>(_exponentType).isSigned()) {
+		if (m_context.arithmetic() == Arithmetic::Checked)
+		m_context.callYulFunction(m_context.utilFunctions().overflowCheckedShieldedExpFunction(
+			dynamic_cast<ShieldedIntegerType const&>(_valueType),
+			dynamic_cast<ShieldedIntegerType const&>(_exponentType)
+		), 2, 1);
+	else
+		//not handling overflow for now
+		m_context << Instruction::EXP;
+	}
+	else {
 	solAssert(_valueType.category() == Type::Category::Integer, "");
 	solAssert(!dynamic_cast<IntegerType const&>(_exponentType).isSigned(), "");
 
@@ -2681,6 +2692,7 @@ void ExpressionCompiler::appendExpOperatorCode(Type const& _valueType, Type cons
 		), 2, 1);
 	else
 		m_context << Instruction::EXP;
+	}
 }
 
 void ExpressionCompiler::appendExternalFunctionCall(
