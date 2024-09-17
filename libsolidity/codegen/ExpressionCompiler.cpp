@@ -2672,7 +2672,7 @@ void ExpressionCompiler::appendExpOperatorCode(Type const& _valueType, Type cons
 {
 	if (_valueType.category() == Type::Category::ShieldedInteger && !dynamic_cast<ShieldedIntegerType const&>(_exponentType).isSigned()) {
 		if (m_context.arithmetic() == Arithmetic::Checked)
-		m_context.callYulFunction(m_context.utilFunctions().overflowCheckedShieldedExpFunction(
+		m_context.callYulFunction(m_context.utilFunctions().overflowCheckedShieldedIntExpFunction(
 			dynamic_cast<ShieldedIntegerType const&>(_valueType),
 			dynamic_cast<ShieldedIntegerType const&>(_exponentType)
 		), 2, 1);

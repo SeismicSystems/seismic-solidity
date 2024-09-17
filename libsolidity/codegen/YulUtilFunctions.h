@@ -130,6 +130,12 @@ public:
 	std::string typedShiftLeftFunction(Type const& _type, Type const& _amountType);
 	std::string typedShiftRightFunction(Type const& _type, Type const& _amountType);
 
+	/// @returns the name of a function that performs a left shift and subsequent cleanup
+	/// and, if needed, prior cleanup.
+	/// signature: (value, amountToShift) -> result
+	std::string typedShieldedShiftLeftFunction(Type const& _type, Type const& _amountType);
+	std::string typedShieldedShiftRightFunction(Type const& _type, Type const& _amountType);
+
 	/// @returns the name of a function which replaces the
 	/// _numBytes bytes starting at byte position _shiftBytes (counted from the least significant
 	/// byte) by the _numBytes least significant bytes of `toInsert`.
@@ -226,6 +232,54 @@ public:
 	/// @returns the name of the exponentiation function.
 	/// signature: (base, exponent) -> power
 	std::string wrappingIntExpFunction(IntegerType const& _type, IntegerType const& _exponentType);
+
+		/// signature: (x, y) -> sum
+	std::string overflowCheckedShieldedIntAddFunction(ShieldedIntegerType const& _type);
+	/// signature: (x, y) -> sum
+	std::string wrappingShieldedIntAddFunction(ShieldedIntegerType const& _type);
+
+	/// signature: (x, y) -> product
+	std::string overflowCheckedShieldedIntMulFunction(ShieldedIntegerType const& _type);
+	/// signature: (x, y) -> product
+	std::string wrappingShieldedIntMulFunction(ShieldedIntegerType const& _type);
+
+	/// @returns name of function to perform division on shielded integers.
+	/// Checks for division by zero and the special case of
+	/// signed division of the smallest number by -1.
+	std::string overflowCheckedShieldedIntDivFunction(ShieldedIntegerType const& _type);
+	/// @returns name of function to perform division on shielded integers.
+	/// Checks for division by zero.
+	std::string wrappingShieldedIntDivFunction(ShieldedIntegerType const& _type);
+
+	/// @returns name of function to perform modulo on shielded integers.
+	/// Reverts for modulo by zero.
+	std::string shieldedIntModFunction(ShieldedIntegerType const& _type);
+
+	/// @returns computes the difference between two values.
+	/// Assumes the input to be in range for the type.
+	/// signature: (x, y) -> diff
+	std::string overflowCheckedShieldedIntSubFunction(ShieldedIntegerType const& _type);
+
+	/// @returns computes the difference between two values.
+	/// signature: (x, y) -> diff
+	std::string wrappingShieldedIntSubFunction(ShieldedIntegerType const& _type);
+
+	/// @returns the name of the exponentiation function.
+	/// signature: (base, exponent) -> power
+	std::string overflowCheckedShieldedIntExpFunction(ShieldedIntegerType const& _type, ShieldedIntegerType const& _exponentType);
+
+	/// @returns the name of the exponentiation function, specialized for literal base.
+	/// signature: exponent -> power
+	std::string overflowCheckedShieldedIntLiteralExpFunction(
+		RationalNumberType const& _baseType,
+		ShieldedIntegerType const& _exponentType,
+		ShieldedIntegerType const& _commonType
+	);
+
+	/// @returns the name of the exponentiation function.
+	/// signature: (base, exponent) -> power
+	std::string wrappingShieldedIntExpFunction(ShieldedIntegerType const& _type, ShieldedIntegerType const& _exponentType);
+
 
 	/// @returns the name of a function that fetches the length of the given
 	/// array

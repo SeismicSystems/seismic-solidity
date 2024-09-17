@@ -862,7 +862,7 @@ ASTPointer<VariableDeclaration> Parser::parseVariableDeclaration(
 					{
 						if (dynamic_cast<ShieldedIntegerType*>(type.get())) 
 						{
-							parserError(1003_error, "Shielded integers cannot be set to constant.")
+							parserError(1003_error, "Shielded integers cannot be set to constant.");
 						}
 						mutability = VariableDeclaration::Mutability::Constant;
 			}
