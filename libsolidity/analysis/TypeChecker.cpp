@@ -1810,14 +1810,20 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 			// These rules are enforced by the binary operator, but assert them here too.
 			if (auto type = dynamic_cast<IntegerType const*>(commonType))
 				solAssert(type->numBits() == 256, "");
+			if (auto type = dynamic_cast<ShieldedIntegerType const*>(commonType))
+				solAssert(type->numBits() == 256, "");
 			if (auto type = dynamic_cast<FixedPointType const*>(commonType))
 				solAssert(type->numBits() == 256, "");
 		}
 		if (
-			commonType->category() == Type::Category::Integer &&
+			(commonType->category() == Type::Category::Integer &&
 			rightType->category() == Type::Category::Integer &&
 			dynamic_cast<IntegerType const&>(*commonType).numBits() <
-			dynamic_cast<IntegerType const&>(*rightType).numBits()
+			dynamic_cast<IntegerType const&>(*rightType).numBits()) ||
+			(commonType->category() == Type::Category::ShieldedInteger &&
+			rightType->category() == Type::Category::ShieldedInteger &&
+			dynamic_cast<ShieldedIntegerType const&>(*commonType).numBits() <
+			dynamic_cast<ShieldedIntegerType const&>(*rightType).numBits())
 		)
 			m_errorReporter.warning(
 				3149_error,

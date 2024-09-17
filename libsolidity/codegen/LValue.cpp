@@ -275,6 +275,14 @@ void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation con
 			m_context << u256(type->storageBytes() - 1) << Instruction::SIGNEXTEND;
 			cleaned = true;
 		}
+		else if (
+			type->category() == Type::Category::ShieldedInteger &&
+			dynamic_cast<ShieldedIntegerType const&>(*type).isSigned()
+		)
+		{
+			m_context << u256(type->storageBytes() - 1) << Instruction::SIGNEXTEND;
+			cleaned = true;
+		}
 
 		if (!cleaned)
 		{

@@ -868,6 +868,7 @@ void CompilerUtils::convertType(
 	case Type::Category::Integer:
 	case Type::Category::Contract:
 	case Type::Category::RationalNumber:
+	case Type::Category::ShieldedInteger:
 		if (targetTypeCategory == Type::Category::FixedBytes)
 		{
 			solAssert(
@@ -920,7 +921,7 @@ void CompilerUtils::convertType(
 			solAssert(
 				targetTypeCategory == Type::Category::Integer ||
 				targetTypeCategory == Type::Category::Contract ||
-				targetTypeCategory == Type::Category::Address,
+				targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedInteger,
 				""
 			);
 			IntegerType addressType(160);
