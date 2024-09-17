@@ -534,14 +534,21 @@ public:
 	/// as reason string.
 	std::string forwardingRevertFunction();
 
+	
 	std::string incrementCheckedFunction(Type const& _type);
+	std::string incrementCheckedShieldedFunction(Type const& _type);
 	std::string incrementWrappingFunction(Type const& _type);
+	std::string incrementWrappingShieldedFunction(Type const& _type);
 	std::string decrementCheckedFunction(Type const& _type);
+	std::string decrementCheckedShieldedFunction(Type const& _type);
 	std::string decrementWrappingFunction(Type const& _type);
+	std::string decrementWrappingShieldedFunction(Type const& _type);
 
 	std::string negateNumberCheckedFunction(Type const& _type);
 	std::string negateNumberWrappingFunction(Type const& _type);
-
+	std::string negateNumberCheckedShieldedFunction(Type const& _type);
+	std::string negateNumberWrappingShieldedFunction(Type const& _type);
+	
 	/// @returns the name of a function that returns the zero value for the
 	/// provided type.
 	/// @param _splitFunctionTypes if false, returns two zeroes

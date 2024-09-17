@@ -3958,6 +3958,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 			break;
 		case Type::Category::Integer:
 		case Type::Category::RationalNumber:
+		case Type::Category::ShieldedInteger:
 		{
 			solAssert(_from.mobileType(), "");
 			if (RationalNumberType const* rational = dynamic_cast<RationalNumberType const*>(&_from))
@@ -3982,6 +3983,11 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 				else if (dynamic_cast<FixedPointType const*>(&_to))
 					solUnimplemented("");
 				else if (dynamic_cast<IntegerType const*>(&_to))
+				{
+					solUnimplementedAssert(fromCategory != Type::Category::FixedPoint);
+					convert = identityFunction();
+				}
+				else if (dynamic_cast<ShieldedIntegerType const*>(&_to))
 				{
 					solUnimplementedAssert(fromCategory != Type::Category::FixedPoint);
 					convert = identityFunction();
@@ -4406,6 +4412,17 @@ std::string YulUtilFunctions::cleanupFunction(Type const& _type)
 				templ("body", "cleaned := and(value, " + toCompactHexWithPrefix((u256(1) << type.numBits()) - 1) + ")");
 			break;
 		}
+		case Type::Category::ShieldedInteger:
+		{
+			ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+			if (type.numBits() == 256)
+				templ("body", "cleaned := value");
+			else if (type.isSigned())
+				templ("body", "cleaned := signextend(" + std::to_string(type.numBits() / 8 - 1) + ", value)");
+			else
+				templ("body", "cleaned := and(value, " + toCompactHexWithPrefix((u256(1) << type.numBits()) - 1) + ")");
+			break;
+		}
 		case Type::Category::RationalNumber:
 			templ("body", "cleaned := value");
 			break;
@@ -4703,6 +4720,132 @@ std::string YulUtilFunctions::negateNumberWrappingFunction(Type const& _type)
 	solAssert(type.isSigned(), "Expected signed type!");
 
 	std::string const functionName = "negate_wrapping_" + _type.identifier();
+	return m_functionCollector.createFunction(functionName, [&]() {
+		return Whiskers(R"(
+			function <functionName>(value) -> ret {
+				ret := <cleanupFunction>(sub(0, value))
+			}
+		)")
+		("functionName", functionName)
+		("cleanupFunction", cleanupFunction(type))
+		.render();
+	});
+}
+
+std::string YulUtilFunctions::decrementCheckedShieldedFunction(Type const& _type)
+{
+	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
+	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+
+	std::string const functionName = "decrement_shielded_" + _type.identifier();
+
+	return m_functionCollector.createFunction(functionName, [&]() {
+		return Whiskers(R"(
+			function <functionName>(value) -> ret {
+				value := <cleanupFunction>(value)
+				if eq(value, <minval>) { <panic>() }
+				ret := sub(value, 1)
+			}
+		)")
+		("functionName", functionName)
+		("panic", panicFunction(PanicCode::UnderOverflow))
+		("minval", toCompactHexWithPrefix(type.min()))
+		("cleanupFunction", cleanupFunction(_type))
+		.render();
+	});
+}
+
+std::string YulUtilFunctions::decrementWrappingShieldedFunction(Type const& _type)
+{
+	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
+	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+
+	std::string const functionName = "decrement_wrapping_shielded_" + _type.identifier();
+
+	return m_functionCollector.createFunction(functionName, [&]() {
+		return Whiskers(R"(
+			function <functionName>(value) -> ret {
+				ret := <cleanupFunction>(sub(value, 1))
+			}
+		)")
+		("functionName", functionName)
+		("cleanupFunction", cleanupFunction(type))
+		.render();
+	});
+}
+
+std::string YulUtilFunctions::incrementCheckedShieldedFunction(Type const& _type)
+{
+	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
+	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+
+	std::string const functionName = "increment_shielded_" + _type.identifier();
+
+	return m_functionCollector.createFunction(functionName, [&]() {
+		return Whiskers(R"(
+			function <functionName>(value) -> ret {
+				value := <cleanupFunction>(value)
+				if eq(value, <maxval>) { <panic>() }
+				ret := add(value, 1)
+			}
+		)")
+		("functionName", functionName)
+		("maxval", toCompactHexWithPrefix(type.max()))
+		("panic", panicFunction(PanicCode::UnderOverflow))
+		("cleanupFunction", cleanupFunction(_type))
+		.render();
+	});
+}
+
+std::string YulUtilFunctions::incrementWrappingShieldedFunction(Type const& _type)
+{
+	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
+	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+
+	std::string const functionName = "increment_wrapping_shielded_" + _type.identifier();
+
+	return m_functionCollector.createFunction(functionName, [&]() {
+		return Whiskers(R"(
+			function <functionName>(value) -> ret {
+				ret := <cleanupFunction>(add(value, 1))
+			}
+		)")
+		("functionName", functionName)
+		("cleanupFunction", cleanupFunction(type))
+		.render();
+	});
+}
+
+std::string YulUtilFunctions::negateNumberCheckedShieldedFunction(Type const& _type)
+{
+	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
+	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+	solAssert(type.isSigned(), "Expected signed type!");
+
+	std::string const functionName = "negate_shielded_" + _type.identifier();
+	return m_functionCollector.createFunction(functionName, [&]() {
+		return Whiskers(R"(
+			function <functionName>(value) -> ret {
+				value := <cleanupFunction>(value)
+				if eq(value, <minval>) { <panic>() }
+				ret := sub(0, value)
+			}
+		)")
+		("functionName", functionName)
+		("minval", toCompactHexWithPrefix(type.min()))
+		("cleanupFunction", cleanupFunction(_type))
+		("panic", panicFunction(PanicCode::UnderOverflow))
+		.render();
+	});
+}
+
+std::string YulUtilFunctions::negateNumberWrappingShieldedFunction(Type const& _type)
+{
+	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
+	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+	solAssert(type.isSigned(), "Expected signed type!");
+
+	std::string const functionName = "negate_wrapping_shielded_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 			function <functionName>(value) -> ret {
