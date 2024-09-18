@@ -307,6 +307,10 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		return integer(256, IntegerType::Modifier::Signed);
 	case Token::UInt:
 		return integer(256, IntegerType::Modifier::Unsigned);
+	case Token::SInt:
+		return shieldedInteger(256, ShieldedIntegerType::Modifier::Signed);
+	case Token::SUInt:
+		return shieldedInteger(256, ShieldedIntegerType::Modifier::Unsigned);
 	case Token::Fixed:
 		return fixedPoint(128, 18, FixedPointType::Modifier::Signed);
 	case Token::UFixed:
