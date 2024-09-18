@@ -491,8 +491,13 @@ bool ExpressionCompiler::visit(UnaryOperation const& _unaryOperation)
 		}
 		if (_unaryOperation.getOperator() == Token::Inc)
 		{
-			if (m_context.arithmetic() == Arithmetic::Checked)
-				m_context.callYulFunction(m_context.utilFunctions().incrementCheckedFunction(type), 1, 1);
+			if (m_context.arithmetic() == Arithmetic::Checked) {
+				if (type.category() == Type::Category::ShieldedInteger)
+					m_context.callYulFunction(m_context.utilFunctions().incrementCheckedShieldedFunction(type), 1, 1);
+				
+				else
+					m_context.callYulFunction(m_context.utilFunctions().incrementCheckedFunction(type), 1, 1);
+			}
 			else
 			{
 				m_context << u256(1);
@@ -501,14 +506,17 @@ bool ExpressionCompiler::visit(UnaryOperation const& _unaryOperation)
 		}
 		else
 		{
-			if (m_context.arithmetic() == Arithmetic::Checked)
-				m_context.callYulFunction(m_context.utilFunctions().decrementCheckedFunction(type), 1, 1);
-			else
-			{
+			if (m_context.arithmetic() == Arithmetic::Checked) {
+				if (type.category() == Type::Category::ShieldedInteger)
+					m_context.callYulFunction(m_context.utilFunctions().decrementCheckedShieldedFunction(type), 1, 1);
+				
+				else
+					m_context.callYulFunction(m_context.utilFunctions().decrementCheckedFunction(type), 1, 1);
+			}
 				m_context << u256(1);
 				m_context << Instruction::SWAP1 << Instruction::SUB;
 			}
-		}
+		
 		// Stack for prefix: [ref...] (*ref)+-1
 		// Stack for postfix: *ref [ref...] (*ref)+-1
 		for (unsigned i = m_currentLValue->sizeOnStack(); i > 0; --i)

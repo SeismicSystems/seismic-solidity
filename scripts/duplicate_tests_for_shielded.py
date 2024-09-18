@@ -4,7 +4,7 @@ import shutil
 def duplicate_and_replace(file_paths):
     for file_path in file_paths:
         # Get the directory and filename
-        file_path = "test/libsolidity/syntaxTests/types/" + file_path
+        file_path = "test/libsolidity/syntaxTests/parsing/" + file_path
         directory, filename = os.path.split(file_path)
         
         # Create the new filename
@@ -34,20 +34,14 @@ def duplicate_and_replace(file_paths):
 
 # Example usage
 solidity_files = [
-    "rational_negative_numerator_negative_exp.sol",
-    "rational_number_array_index_limit.sol",
-    "rational_number_bitshift_limit.sol",
-    "rational_number_div_limit.sol",
-    "rational_number_exp_limit_fail.sol",
-    "rational_number_exp_limit_fine.sol",
-    "rational_number_huge.sol",
-    "rational_number_huge_fail.sol",
-    "rational_number_literal_limit_1.sol",
-    "rational_number_literal_limit_2.sol",
-    "rational_number_literal_limit_3.sol",
-    "rational_number_literal_to_fixed_implicit.sol",
-    "rational_number_mul_limit.sol",
-    "rational_number_signed_to_unsigned.sol",
-    "rational_number_too_large.sol"
+    "event_arguments.sol",
+    "event_arguments_indexed.sol",
+    "exp_expression.sol",
+    "for_loop_simple_initexpr.sol",
+    "for_loop_single_stmt_body.sol",
+    "for_loop_vardef_initexpr.sol",
+    "if_statement.sol",
+    "unary_plus_expression.sol",
+    "while_loop.sol"
 ]
 duplicate_and_replace(solidity_files)
