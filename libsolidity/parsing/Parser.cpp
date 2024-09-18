@@ -860,8 +860,6 @@ ASTPointer<VariableDeclaration> Parser::parseVariableDeclaration(
 					);
 				else if (token == Token::Constant)
 					{
-						
-
 						if (dynamic_cast<ElementaryTypeName*>(type.get())->typeName().toString().find("suint") ||
 						dynamic_cast<ElementaryTypeName*>(type.get())->typeName().toString().find("sint"))
 						{
