@@ -80,6 +80,18 @@ BoolResult fitsIntegerType(bigint const& _value, IntegerType const& _type)
 	return true;
 }
 
+/// Checks whether _value fits into ShieldedIntegerType _type.
+BoolResult fitsShieldedIntegerType(bigint const& _value, ShieldedIntegerType const& _type)
+{
+	if (_value < 0 && !_type.isSigned())
+		return BoolResult::err("Cannot implicitly convert negative literal to unsigned type.");
+
+	if (_type.minValue() > _value || _value > _type.maxValue())
+		return BoolResult::err("Literal is too large to fit in " + _type.toString(false) + ".");
+
+	return true;
+}
+
 /// Checks whether _value fits into _bits bits when having 1 bit as the sign bit
 /// if _signed is true.
 bool fitsIntoBits(bigint const& _value, unsigned _bits, bool _signed)
@@ -1213,6 +1225,15 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	}
 	case Category::FixedBytes:
 		return (m_value == rational(0)) || (m_compatibleBytesType && *m_compatibleBytesType == _convertTo);
+	case Category::ShieldedInteger: 
+	{
+		ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		if (isNegative() && !targetType.isSigned())
+			return false;
+		if (isFractional())
+			return false;
+		return fitsShieldedIntegerType(m_value.numerator(), targetType);
+	}
 	default:
 		return false;
 	}
