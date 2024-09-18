@@ -2753,6 +2753,8 @@ void ExpressionCompiler::appendShiftOperatorCode(Token _operator, Type const& _v
 
 void ExpressionCompiler::appendExpOperatorCode(Type const& _valueType, Type const& _exponentType)
 {
+	std::cout<<"test 1"<<std::endl;
+	std::cout<<_exponentType.humanReadableName()<<std::endl;
 	if (_valueType.category() == Type::Category::ShieldedInteger && !dynamic_cast<ShieldedIntegerType const&>(_exponentType).isSigned()) {
 		if (m_context.arithmetic() == Arithmetic::Checked)
 		m_context.callYulFunction(m_context.utilFunctions().overflowCheckedShieldedIntExpFunction(
@@ -2764,6 +2766,7 @@ void ExpressionCompiler::appendExpOperatorCode(Type const& _valueType, Type cons
 		m_context << Instruction::EXP;
 	}
 	else {
+		
 	solAssert(_valueType.category() == Type::Category::Integer, "");
 	solAssert(!dynamic_cast<IntegerType const&>(_exponentType).isSigned(), "");
 

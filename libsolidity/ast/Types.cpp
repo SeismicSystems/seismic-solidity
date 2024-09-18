@@ -633,6 +633,7 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 	else if (_convertTo.category() == Category::ShieldedInteger)
 	{
 		ShieldedIntegerType const& convertTo = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		std::cout<<"xx"<<std::endl;
 		// disallowing unsigned to signed conversion of different bits
 		if (isSigned() != convertTo.isSigned())
 			return false;
@@ -731,7 +732,8 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 	if (
 		_other->category() != Category::RationalNumber &&
 		_other->category() != Category::FixedPoint &&
-		_other->category() != category()
+		_other->category() != Category::ShieldedInteger &&
+		_other->category() != category() 
 	)
 		return nullptr;
 	if (TokenTraits::isShiftOp(_operator))
@@ -918,6 +920,7 @@ TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const
 	}
 	else if (Token::Exp == _operator)
 	{
+		std::cout<<"hello";
 		if (auto otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
 		{
 			if (otherIntType->isSigned())
@@ -927,6 +930,7 @@ TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const
 			return nullptr;
 		else if (auto rationalNumberType = dynamic_cast<RationalNumberType const*>(_other))
 		{
+			std::cout<<"hi";
 			if (rationalNumberType->isFractional())
 				return TypeResult::err("Exponent is fractional.");
 			if (!rationalNumberType->integerType())
