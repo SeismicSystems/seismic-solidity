@@ -84,7 +84,7 @@ BoolResult fitsIntegerType(bigint const& _value, IntegerType const& _type)
 BoolResult fitsShieldedIntegerType(bigint const& _value, ShieldedIntegerType const& _type)
 {
 	if (_value < 0 && !_type.isSigned())
-		return BoolResult::err("Cannot implicitly convert negative literal to unsigned type.");
+		return BoolResult::err("Cannot implicitly convert signed literal to unsigned type.");
 
 	if (_type.minValue() > _value || _value > _type.maxValue())
 		return BoolResult::err("Literal is too large to fit in " + _type.toString(false) + ".");

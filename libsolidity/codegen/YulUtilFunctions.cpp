@@ -4510,6 +4510,7 @@ std::string YulUtilFunctions::validatorFunction(Type const& _type, bool _revertO
 		{
 		case Type::Category::Address:
 		case Type::Category::Integer:
+		case Type::Category::ShieldedInteger:
 		case Type::Category::RationalNumber:
 		case Type::Category::Bool:
 		case Type::Category::FixedPoint:

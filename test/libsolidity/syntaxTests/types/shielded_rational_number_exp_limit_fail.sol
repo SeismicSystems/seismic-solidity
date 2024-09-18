@@ -19,29 +19,29 @@ contract c {
     }
 }
 // ----
-// TypeError 2271: (71-112): Built-in binary operator ** cannot be applied to types sint_const 1797...(301 digits omitted)...7216 and sint_const 4.
-// TypeError 7407: (71-112): Type sint_const 1797...(301 digits omitted)...7216 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (135-151): Built-in binary operator ** cannot be applied to types sint_const 4 and sint_const 1157...(70 digits omitted)...9936.
-// TypeError 7407: (126-169): Type sint_const 1340...(147 digits omitted)...4096 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (201-217): Built-in binary operator ** cannot be applied to types sint_const 4 and sint_const 1340...(147 digits omitted)...4096.
-// TypeError 2271: (183-219): Built-in binary operator ** cannot be applied to types sint_const 4 and sint_const -115...(71 digits omitted)...9936.
-// TypeError 2271: (233-244): Built-in binary operator ** cannot be applied to types sint_const 2 and sint_const 1000...(1226 digits omitted)...0000.
-// TypeError 2271: (258-270): Built-in binary operator ** cannot be applied to types sint_const -2 and sint_const 1000...(1226 digits omitted)...0000.
-// TypeError 2271: (284-296): Built-in binary operator ** cannot be applied to types sint_const 2 and sint_const -100...(1227 digits omitted)...0000.
-// TypeError 2271: (310-323): Built-in binary operator ** cannot be applied to types sint_const -2 and sint_const -100...(1227 digits omitted)...0000.
-// TypeError 2271: (337-348): Built-in binary operator ** cannot be applied to types sint_const 1000...(1226 digits omitted)...0000 and sint_const 2.
-// TypeError 7407: (337-348): Type sint_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (362-374): Built-in binary operator ** cannot be applied to types sint_const -100...(1227 digits omitted)...0000 and sint_const 2.
-// TypeError 7407: (362-374): Type sint_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (388-400): Built-in binary operator ** cannot be applied to types sint_const 1000...(1226 digits omitted)...0000 and sint_const -2.
-// TypeError 7407: (388-400): Type sint_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (414-427): Built-in binary operator ** cannot be applied to types sint_const -100...(1227 digits omitted)...0000 and sint_const -2.
-// TypeError 7407: (414-427): Type sint_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (441-457): Built-in binary operator ** cannot be applied to types sint_const 1000...(1226 digits omitted)...0000 and sint_const 1000...(1226 digits omitted)...0000.
-// TypeError 7407: (441-457): Type sint_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (471-488): Built-in binary operator ** cannot be applied to types sint_const 1000...(1226 digits omitted)...0000 and sint_const -100...(1227 digits omitted)...0000.
-// TypeError 7407: (471-488): Type sint_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (502-519): Built-in binary operator ** cannot be applied to types sint_const -100...(1227 digits omitted)...0000 and sint_const 1000...(1226 digits omitted)...0000.
-// TypeError 7407: (502-519): Type sint_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
-// TypeError 2271: (533-551): Built-in binary operator ** cannot be applied to types sint_const -100...(1227 digits omitted)...0000 and sint_const -100...(1227 digits omitted)...0000.
-// TypeError 7407: (533-551): Type sint_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (72-113): Built-in binary operator ** cannot be applied to types int_const 1797...(301 digits omitted)...7216 and int_const 4.
+//TypeError 7407: (72-113): Type int_const 1797...(301 digits omitted)...7216 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (136-152): Built-in binary operator ** cannot be applied to types int_const 4 and int_const 1157...(70 digits omitted)...9936.
+//TypeError 7407: (127-170): Type int_const 1340...(147 digits omitted)...4096 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (202-218): Built-in binary operator ** cannot be applied to types int_const 4 and int_const 1340...(147 digits omitted)...4096.
+//TypeError 2271: (184-220): Built-in binary operator ** cannot be applied to types int_const 4 and int_const -115...(71 digits omitted)...9936.
+//TypeError 2271: (234-245): Built-in binary operator ** cannot be applied to types int_const 2 and int_const 1000...(1226 digits omitted)...0000.
+//TypeError 2271: (259-271): Built-in binary operator ** cannot be applied to types int_const -2 and int_const 1000...(1226 digits omitted)...0000.
+//TypeError 2271: (285-297): Built-in binary operator ** cannot be applied to types int_const 2 and int_const -100...(1227 digits omitted)...0000.
+//TypeError 2271: (311-324): Built-in binary operator ** cannot be applied to types int_const -2 and int_const -100...(1227 digits omitted)...0000.
+//TypeError 2271: (338-349): Built-in binary operator ** cannot be applied to types int_const 1000...(1226 digits omitted)...0000 and int_const 2.
+//TypeError 7407: (338-349): Type int_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (363-375): Built-in binary operator ** cannot be applied to types int_const -100...(1227 digits omitted)...0000 and int_const 2.
+//TypeError 7407: (363-375): Type int_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (389-401): Built-in binary operator ** cannot be applied to types int_const 1000...(1226 digits omitted)...0000 and int_const -2.
+//TypeError 7407: (389-401): Type int_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (415-428): Built-in binary operator ** cannot be applied to types int_const -100...(1227 digits omitted)...0000 and int_const -2.
+//TypeError 7407: (415-428): Type int_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (442-458): Built-in binary operator ** cannot be applied to types int_const 1000...(1226 digits omitted)...0000 and int_const 1000...(1226 digits omitted)...0000.
+//TypeError 7407: (442-458): Type int_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (472-489): Built-in binary operator ** cannot be applied to types int_const 1000...(1226 digits omitted)...0000 and int_const -100...(1227 digits omitted)...0000.
+//TypeError 7407: (472-489): Type int_const 1000...(1226 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (503-520): Built-in binary operator ** cannot be applied to types int_const -100...(1227 digits omitted)...0000 and int_const 1000...(1226 digits omitted)...0000.
+//TypeError 7407: (503-520): Type int_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
+//TypeError 2271: (534-552): Built-in binary operator ** cannot be applied to types int_const -100...(1227 digits omitted)...0000 and int_const -100...(1227 digits omitted)...0000.
+//TypeError 7407: (534-552): Type int_const -100...(1227 digits omitted)...0000 is not implicitly convertible to expected type sint256. Literal is too large to fit in sint256.
