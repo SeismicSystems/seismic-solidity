@@ -1,0 +1,5 @@
+contract C {
+    sint constant b = 3;
+}
+// ----
+// DeclarationError 7491: (17-36): Shielded integers cannot be set to constant.

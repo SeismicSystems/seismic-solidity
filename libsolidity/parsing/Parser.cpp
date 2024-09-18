@@ -860,11 +860,6 @@ ASTPointer<VariableDeclaration> Parser::parseVariableDeclaration(
 					);
 				else if (token == Token::Constant)
 					{
-						if (dynamic_cast<ElementaryTypeName*>(type.get())->typeName().toString().find("suint") ||
-						dynamic_cast<ElementaryTypeName*>(type.get())->typeName().toString().find("sint"))
-						{
-							parserError(1003_error, "Shielded integers cannot be set to constant.");
-						}
 						mutability = VariableDeclaration::Mutability::Constant;
 			}
 				else if (token == Token::Immutable)

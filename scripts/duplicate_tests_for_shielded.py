@@ -23,7 +23,7 @@ def duplicate_and_replace(file_paths):
         # Replace all instances of "int" with "sint"
         modified_content = content.replace("int", "sint")
 
-        # Replace all instances of "int" with "sint"
+        # Replace all instances of "uint" with "suint". Note all "uint" instances will be "usint" after the line above
         modified_content = modified_content.replace("usint", "suint")
        
         # Write the modified content back to the new file
