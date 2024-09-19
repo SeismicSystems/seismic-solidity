@@ -4,7 +4,7 @@ import shutil
 def duplicate_and_replace(file_paths):
     for file_path in file_paths:
         # Get the directory and filename
-        file_path = "test/libsolidity/syntaxTests/literals/" + file_path
+        file_path = "test/libsolidity/ASTJSON/" + file_path
         directory, filename = os.path.split(file_path)
         
         # Create the new filename
@@ -34,10 +34,25 @@ def duplicate_and_replace(file_paths):
 
 # Example usage
 solidity_files = [
-   "invalid_hex_number.sol",
-   "invalid_octal_denomination_no_whitespace.sol",
-   "invalid_octal_digits.sol",
-   "invalid_octal_number.sol",
-   "ternary_operator_return_type_with_literal_arguments.sol",
+    "array_type_name.json",
+    "base_constructor_call.json",
+    "documentation_local_variable.json",
+    "documentation_on_statements.json",
+    "documentation_triple.json",
+    "function_type.json",
+    "global_struct.json",
+    "long_type_name_binary_operation.json",
+    "long_type_name_identifier.json",
+    "mappings.json",
+    "modifier_definition.json",
+    "modifier_invocation.json",
+    "mutability.json",
+    "short_type_name.json",
+    "short_type_name_ref.json",
+    "source_location.json",
+    "struct_natspec.json",
+    "userDefinedValueType.json",
+    "user_defined_operator.json",
+    "using_for_directive.json"
 ]
 duplicate_and_replace(solidity_files)

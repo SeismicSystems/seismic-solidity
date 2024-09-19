@@ -1,0 +1,162 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "c": [
+      15
+    ]
+  },
+  "id": 16,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "c",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 15,
+      "linearizedBaseContracts": [
+        15
+      ],
+      "name": "c",
+      "nameLocation": "9:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "constant": false,
+          "id": 3,
+          "mutability": "mutable",
+          "name": "a",
+          "nameLocation": "21:1:1",
+          "nodeType": "VariableDeclaration",
+          "scope": 15,
+          "src": "13:9:1",
+          "stateVariable": true,
+          "storageLocation": "default",
+          "typeDescriptions": {
+            "typeIdentifier": "t_array$_t_suint256_$dyn_storage",
+            "typeString": "suint256[]"
+          },
+          "typeName": {
+            "baseType": {
+              "id": 1,
+              "name": "suint",
+              "nodeType": "ElementaryTypeName",
+              "src": "13:5:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_suint256",
+                "typeString": "suint256"
+              }
+            },
+            "id": 2,
+            "nodeType": "ArrayTypeName",
+            "src": "13:7:1",
+            "typeDescriptions": {
+              "typeIdentifier": "t_array$_t_suint256_$dyn_storage_ptr",
+              "typeString": "suint256[]"
+            }
+          },
+          "visibility": "internal"
+        },
+        {
+          "body": {
+            "id": 13,
+            "nodeType": "Block",
+            "src": "44:26:1",
+            "statements": [
+              {
+                "assignments": [
+                  10
+                ],
+                "declarations": [
+                  {
+                    "constant": false,
+                    "id": 10,
+                    "mutability": "mutable",
+                    "name": "b",
+                    "nameLocation": "62:1:1",
+                    "nodeType": "VariableDeclaration",
+                    "scope": 13,
+                    "src": "46:17:1",
+                    "stateVariable": false,
+                    "storageLocation": "storage",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_suint256_$dyn_storage_ptr",
+                      "typeString": "suint256[]"
+                    },
+                    "typeName": {
+                      "baseType": {
+                        "id": 8,
+                        "name": "suint",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "46:5:1",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_suint256",
+                          "typeString": "suint256"
+                        }
+                      },
+                      "id": 9,
+                      "nodeType": "ArrayTypeName",
+                      "src": "46:7:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_array$_t_suint256_$dyn_storage_ptr",
+                        "typeString": "suint256[]"
+                      }
+                    },
+                    "visibility": "internal"
+                  }
+                ],
+                "id": 12,
+                "initialValue": {
+                  "id": 11,
+                  "name": "a",
+                  "nodeType": "Identifier",
+                  "overloadedDeclarations": [],
+                  "referencedDeclaration": 3,
+                  "src": "66:1:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_suint256_$dyn_storage",
+                    "typeString": "suint256[] storage ref"
+                  }
+                },
+                "nodeType": "VariableDeclarationStatement",
+                "src": "46:21:1"
+              }
+            ]
+          },
+          "functionSelector": "26121ff0",
+          "id": 14,
+          "implemented": true,
+          "kind": "function",
+          "modifiers": [],
+          "name": "f",
+          "nameLocation": "33:1:1",
+          "nodeType": "FunctionDefinition",
+          "parameters": {
+            "id": 4,
+            "nodeType": "ParameterList",
+            "parameters": [],
+            "src": "34:2:1"
+          },
+          "returnParameters": {
+            "id": 5,
+            "nodeType": "ParameterList",
+            "parameters": [],
+            "src": "44:0:1"
+          },
+          "scope": 15,
+          "src": "24:46:1",
+          "stateMutability": "nonpayable",
+          "virtual": false,
+          "visibility": "public"
+        }
+      ],
+      "scope": 16,
+      "src": "0:72:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:73:1"
+}

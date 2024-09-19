@@ -1,0 +1,153 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "C": [
+      12
+    ]
+  },
+  "id": 13,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "C",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 12,
+      "linearizedBaseContracts": [
+        12
+      ],
+      "name": "C",
+      "nameLocation": "9:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "body": {
+            "id": 10,
+            "nodeType": "Block",
+            "src": "33:21:1",
+            "statements": [
+              {
+                "assignments": [
+                  4
+                ],
+                "declarations": [
+                  {
+                    "constant": false,
+                    "id": 4,
+                    "mutability": "mutable",
+                    "name": "x",
+                    "nameLocation": "41:1:1",
+                    "nodeType": "VariableDeclaration",
+                    "scope": 10,
+                    "src": "35:7:1",
+                    "stateVariable": false,
+                    "storageLocation": "default",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_suint256",
+                      "typeString": "suint256"
+                    },
+                    "typeName": {
+                      "id": 3,
+                      "name": "suint",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "35:5:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_suint256",
+                        "typeString": "suint256"
+                      }
+                    },
+                    "visibility": "internal"
+                  }
+                ],
+                "id": 6,
+                "initialValue": {
+                  "hexValue": "32",
+                  "id": 5,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "kind": "number",
+                  "lValueRequested": false,
+                  "nodeType": "Literal",
+                  "src": "45:1:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_rational_2_by_1",
+                    "typeString": "int_const 2"
+                  },
+                  "value": "2"
+                },
+                "nodeType": "VariableDeclarationStatement",
+                "src": "35:11:1"
+              },
+              {
+                "expression": {
+                  "id": 8,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": false,
+                  "lValueRequested": false,
+                  "nodeType": "UnaryOperation",
+                  "operator": "++",
+                  "prefix": false,
+                  "src": "48:3:1",
+                  "subExpression": {
+                    "id": 7,
+                    "name": "x",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 4,
+                    "src": "48:1:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_suint256",
+                      "typeString": "suint256"
+                    }
+                  },
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_suint256",
+                    "typeString": "suint256"
+                  }
+                },
+                "id": 9,
+                "nodeType": "ExpressionStatement",
+                "src": "48:3:1"
+              }
+            ]
+          },
+          "functionSelector": "26121ff0",
+          "id": 11,
+          "implemented": true,
+          "kind": "function",
+          "modifiers": [],
+          "name": "f",
+          "nameLocation": "22:1:1",
+          "nodeType": "FunctionDefinition",
+          "parameters": {
+            "id": 1,
+            "nodeType": "ParameterList",
+            "parameters": [],
+            "src": "23:2:1"
+          },
+          "returnParameters": {
+            "id": 2,
+            "nodeType": "ParameterList",
+            "parameters": [],
+            "src": "33:0:1"
+          },
+          "scope": 12,
+          "src": "13:41:1",
+          "stateMutability": "nonpayable",
+          "virtual": false,
+          "visibility": "public"
+        }
+      ],
+      "scope": 13,
+      "src": "0:56:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:57:1"
+}
