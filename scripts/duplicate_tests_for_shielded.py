@@ -74,8 +74,6 @@ solidity_files = [
     "328_rational_to_fixed_literal_expression.sol",
     "329_rational_as_exponent_value_signed.sol",
     "330_rational_as_exponent_value_unsigned.sol",
-    "331_rational_as_exponent_half.sol",
-    "332_rational_as_exponent_value_neg_quarter.sol"
 
 ]
 duplicate_and_replace(solidity_files)

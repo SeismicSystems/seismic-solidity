@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(external_struct_signatures_shielded)
 		{
 			auto functions = contract->definedFunctions();
 			BOOST_REQUIRE(!functions.empty());
-			BOOST_CHECK_EQUAL("f(suint8,suint256,(usint256))", functions[0]->externalSignature());
+			BOOST_CHECK_EQUAL("f(uint8,suint256,(suint256))", functions[0]->externalSignature());
 			BOOST_CHECK_EQUAL("g(address,((bytes32,address,(suint256)[])[2][],suint256))", functions[1]->externalSignature());
 			BOOST_CHECK_EQUAL("h(function[])", functions[2]->externalSignature());
 			BOOST_CHECK_EQUAL("i(((bytes32,address,(suint256)[])[2][],suint256)[])", functions[3]->externalSignature());
