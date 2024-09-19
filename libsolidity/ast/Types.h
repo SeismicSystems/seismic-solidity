@@ -543,7 +543,7 @@ public:
 	//BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
 	//BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
-	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
+	//TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
 	bool operator==(Type const& _other) const override;
 

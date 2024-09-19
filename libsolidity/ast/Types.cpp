@@ -866,56 +866,56 @@ std::string ShieldedIntegerType::toString(bool) const
 }
 
 
-TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const* _other) const
-{
-	if (
-		_other->category() != category() &&
-		 _other->category() != Category::RationalNumber && 
-		 _other->category() != Category::FixedPoint &&
-		 _other->category() != Category::Integer
+// TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const* _other) const
+// {
+// 	if (
+// 		_other->category() != category() &&
+// 		 _other->category() != Category::RationalNumber && 
+// 		 _other->category() != Category::FixedPoint &&
+// 		 _other->category() != Category::Integer
 
-	)
-		return nullptr;
-	if (TokenTraits::isShiftOp(_operator))
-	{
-		// Shifts are not symmetric with respect to the type
-		if (isValidShiftAndAmountType(_operator, *_other))
-			return this;
-		else
-			return nullptr;
-	}
-	else if (Token::Exp == _operator)
-	{
-		if (auto otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
-		{
-			if (otherIntType->isSigned())
-				return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
-		}
-		else if (dynamic_cast<FixedPointType const*>(_other))
-			return nullptr;
-		else if (auto rationalNumberType = dynamic_cast<RationalNumberType const*>(_other))
-		{
-			if (rationalNumberType->isFractional())
-				return TypeResult::err("Exponent is fractional.");
-			if (!rationalNumberType->integerType())
-				return TypeResult::err("Exponent too large.");
-			if (rationalNumberType->isNegative())
-				return TypeResult::err("Exponentiation power is not allowed to be a negative integer literal.");
-		}
-		return this;
-	}
+// 	)
+// 		return nullptr;
+// 	if (TokenTraits::isShiftOp(_operator))
+// 	{
+// 		// Shifts are not symmetric with respect to the type
+// 		if (isValidShiftAndAmountType(_operator, *_other))
+// 			return this;
+// 		else
+// 			return nullptr;
+// 	}
+// 	else if (Token::Exp == _operator)
+// 	{
+// 		if (auto otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
+// 		{
+// 			if (otherIntType->isSigned())
+// 				return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
+// 		}
+// 		else if (dynamic_cast<FixedPointType const*>(_other))
+// 			return nullptr;
+// 		else if (auto rationalNumberType = dynamic_cast<RationalNumberType const*>(_other))
+// 		{
+// 			if (rationalNumberType->isFractional())
+// 				return TypeResult::err("Exponent is fractional.");
+// 			if (!rationalNumberType->integerType())
+// 				return TypeResult::err("Exponent too large.");
+// 			if (rationalNumberType->isNegative())
+// 				return TypeResult::err("Exponentiation power is not allowed to be a negative integer literal.");
+// 		}
+// 		return this;
+// 	}
 
-	auto commonType = Type::commonType(this, _other); //might be an integer or fixed point
-	if (!commonType)
-		return nullptr;
+// 	auto commonType = Type::commonType(this, _other); //might be an integer or fixed point
+// 	if (!commonType)
+// 		return nullptr;
 
-	// All integer types can be compared
-	if (TokenTraits::isCompareOp(_operator))
-		return commonType;
-	if (TokenTraits::isBooleanOp(_operator))
-		return nullptr;
-	return commonType;
-}
+// 	// All integer types can be compared
+// 	if (TokenTraits::isCompareOp(_operator))
+// 		return commonType;
+// 	if (TokenTraits::isBooleanOp(_operator))
+// 		return nullptr;
+// 	return commonType;
+// }
 
 FixedPointType::FixedPointType(unsigned _totalBits, unsigned _fractionalDigits, FixedPointType::Modifier _modifier):
 	m_totalBits(_totalBits), m_fractionalDigits(_fractionalDigits), m_modifier(_modifier)
