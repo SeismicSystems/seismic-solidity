@@ -39,8 +39,6 @@ solidity_files = [
     "019_comparison_bitop_precedence.sol",
     "105_constant_input_parameter.sol",
     "164_assigning_value_to_const_variable.sol",
-    # "165_assigning_value_to_const_variable.sol",
-    # "167_constant_string_literal_dis"
     "113_exp_warn_literal_base_1.sol",
     "114_exp_warn_literal_base_2.sol",
     "115_exp_warn_literal_base_3.sol",
@@ -70,10 +68,7 @@ solidity_files = [
     "200_integer_signed_exp_unsigned.sol",
     "201_integer_signed_exp_signed.sol",
     "288_conditional_with_all_types.sol",
-    "327_rational_index_access.sol",
-    "328_rational_to_fixed_literal_expression.sol",
-    "329_rational_as_exponent_value_signed.sol",
-    "330_rational_as_exponent_value_unsigned.sol",
+    "327_rational_index_access.sol"
 
 ]
 duplicate_and_replace(solidity_files)

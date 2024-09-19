@@ -1,0 +1,8 @@
+contract test {
+    function f() public {
+        suint[] memory a;
+        a[.5];
+    }
+}
+// ----
+// TypeError 2326: (77-79): Type rational_const 1 / 2 is not implicitly convertible to expected type suint256. Try converting to type ufixed8x1 or use an explicit conversion.
