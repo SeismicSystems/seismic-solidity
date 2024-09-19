@@ -778,7 +778,6 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 }
 
 
-
 std::string ShieldedIntegerType::richIdentifier() const
 {
 	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());
@@ -861,37 +860,6 @@ std::string ShieldedIntegerType::toString(bool) const
 	return prefix + util::toString(m_bits);
 }
 
-// u256 ShieldedIntegerType::min() const
-// {
-// 	if (isSigned())
-// 		return s2u(s256(minValue()));
-// 	else
-// 		return u256(minValue());
-// }
-
-// u256 ShieldedIntegerType::max() const
-// {
-// 	if (isSigned())
-// 		return s2u(s256(maxValue()));
-// 	else
-// 		return u256(maxValue());
-// }
-
-// bigint ShieldedIntegerType::minValue() const
-// {
-// 	if (isSigned())
-// 		return -(bigint(1) << (m_bits - 1));
-// 	else
-// 		return bigint(0);
-// }
-
-// bigint ShieldedIntegerType::maxValue() const
-// {
-// 	if (isSigned())
-// 		return (bigint(1) << (m_bits - 1)) - 1;
-// 	else
-// 		return (bigint(1) << m_bits) - 1;
-// }
 
 TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const* _other) const
 {
