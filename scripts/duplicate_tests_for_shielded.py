@@ -4,7 +4,7 @@ import shutil
 def duplicate_and_replace(file_paths):
     for file_path in file_paths:
         # Get the directory and filename
-        file_path = "test/libsolidity/syntaxTests/literalOperations/" + file_path
+        file_path = "test/libsolidity/syntaxTests/literals/" + file_path
         directory, filename = os.path.split(file_path)
         
         # Create the new filename
@@ -34,17 +34,10 @@ def duplicate_and_replace(file_paths):
 
 # Example usage
 solidity_files = [
-    "division_by_zero.sol",
-    "division_by_zero_complex.sol",
-    "division_by_zero_complex_compound.sol",
-    "division_by_zero_compound.sol",
-    "division_by_zero_nonliteral.sol",
-    "exponent.sol",
-    "exponent_fine.sol",
-    "mod_zero.sol",
-    "mod_zero_complex.sol",
-    "mod_zero_compound.sol",
-    "mod_zero_complex_compound.sol",
-    "mod_zero_nonliteral.sol"
+   "invalid_hex_number.sol",
+   "invalid_octal_denomination_no_whitespace.sol",
+   "invalid_octal_digits.sol",
+   "invalid_octal_number.sol",
+   "ternary_operator_return_type_with_literal_arguments.sol",
 ]
 duplicate_and_replace(solidity_files)
