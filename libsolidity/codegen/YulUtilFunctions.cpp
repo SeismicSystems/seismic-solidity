@@ -1338,7 +1338,6 @@ std::string YulUtilFunctions::overflowCheckedShieldedIntExpFunction(
 )
 {
 	solAssert(!_exponentType.isSigned(), "");
-	std::cout<<"test 3"<<std::endl;
 
 	std::string functionName = "checked_exp_shielded_" + _type.identifier() + "_" + _exponentType.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {

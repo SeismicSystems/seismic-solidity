@@ -5,5 +5,5 @@ contract c {
     }
 }
 // ----
-// TypeError 9574: (52-64): Type int_const -1 is not implicitly convertible to expected type suint256.
+// TypeError 9574: (52-64): Type int_const -1 is not implicitly convertible to expected type suint256. Cannot implicitly convert signed literal to unsigned type.
 // TypeError 9640: (84-93): Explicit type conversion not allowed from "int_const -1" to "suint256".

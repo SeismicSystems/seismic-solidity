@@ -2773,9 +2773,10 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 	// Determine return types
 	switch (*funcCallAnno.kind)
 	{
-	case FunctionCallKind::TypeConversion:
+	case FunctionCallKind::TypeConversion: {
 		funcCallAnno.type = typeCheckTypeConversionAndRetrieveReturnType(_functionCall);
 		break;
+	}
 
 	case FunctionCallKind::StructConstructorCall: // fall-through
 	case FunctionCallKind::FunctionCall:

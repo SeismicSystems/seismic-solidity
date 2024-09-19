@@ -71,26 +71,28 @@ bool fitsPrecisionBase10(bigint const& _mantissa, uint32_t _expBase10)
 /// Checks whether _value fits into IntegerType _type.
 BoolResult fitsIntegerType(bigint const& _value, IntegerType const& _type)
 {
+
 	if (_value < 0 && !_type.isSigned())
 		return BoolResult::err("Cannot implicitly convert signed literal to unsigned type.");
 
 	if (_type.minValue() > _value || _value > _type.maxValue())
 		return BoolResult::err("Literal is too large to fit in " + _type.toString(false) + ".");
+	
 
 	return true;
 }
 
-/// Checks whether _value fits into ShieldedIntegerType _type.
-BoolResult fitsShieldedIntegerType(bigint const& _value, ShieldedIntegerType const& _type)
-{
-	if (_value < 0 && !_type.isSigned())
-		return BoolResult::err("Cannot implicitly convert signed literal to unsigned type.");
+// /// Checks whether _value fits into ShieldedIntegerType _type.
+// BoolResult fitsShieldedIntegerType(bigint const& _value, ShieldedIntegerType const& _type)
+// {
+// 	if (_value < 0 && !_type.isSigned())
+// 		return BoolResult::err("Cannot implicitly convert signed literal to unsigned type.");
 
-	if (_type.minValue() > _value || _value > _type.maxValue())
-		return BoolResult::err("Literal is too large to fit in " + _type.toString(false) + ".");
+// 	if (_type.minValue() > _value || _value > _type.maxValue())
+// 		return BoolResult::err("Literal is too large to fit in " + _type.toString(false) + ".");
 
-	return true;
-}
+// 	return true;
+// }
 
 /// Checks whether _value fits into _bits bits when having 1 bit as the sign bit
 /// if _signed is true.
@@ -618,10 +620,12 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 	{
 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
 		// disallowing unsigned to signed conversion of different bits
-		if (isSigned() != convertTo.isSigned())
+		if (isSigned() != convertTo.isSigned()) {
 			return false;
-		else if (convertTo.m_bits < m_bits)
+		}
+		else if (convertTo.m_bits < m_bits) {
 			return false;
+		}
 		else
 			return true;
 	}
@@ -633,12 +637,12 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 	else if (_convertTo.category() == Category::ShieldedInteger)
 	{
 		ShieldedIntegerType const& convertTo = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
-		std::cout<<"xx"<<std::endl;
 		// disallowing unsigned to signed conversion of different bits
 		if (isSigned() != convertTo.isSigned())
 			return false;
-		else if (convertTo.numBits() < m_bits)
+		else if (convertTo.numBits() < m_bits) {
 			return false;
+		}
 		else
 			return true;
 	}
@@ -650,8 +654,9 @@ BoolResult IntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
 		return true;
-	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
+	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo)) {
 		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
+	}
 	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
 		return
 			(addressType->stateMutability() != StateMutability::Payable) &&
@@ -783,54 +788,54 @@ std::string ShieldedIntegerType::richIdentifier() const
 	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());
 }
 
-BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
-{
-	if (_convertTo.category() == category() )
-	{
-		ShieldedIntegerType const& convertTo = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
-		// disallowing unsigned to signed conversion of different bits
-		if (isSigned() != convertTo.isSigned())
-			return false;
-		else if (convertTo.m_bits < m_bits)
-			return false;
-		else
-			return true;
+// BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+// {
+// 	if (_convertTo.category() == category() )
+// 	{
+// 		ShieldedIntegerType const& convertTo = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+// 		// disallowing unsigned to signed conversion of different bits
+// 		if (isSigned() != convertTo.isSigned())
+// 			return false;
+// 		else if (convertTo.m_bits < m_bits)
+// 			return false;
+// 		else
+// 			return true;
   
-	}
-	else if ( _convertTo.category() == Category::Integer)	
-	{
-		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
-		return (numBits() == convertTo.numBits()) || (isSigned() == convertTo.isSigned());	
-	}
-	else if (_convertTo.category() == Category::FixedPoint)
-	{
-		FixedPointType const& convertTo = dynamic_cast<FixedPointType const&>(_convertTo);
-		return maxValue() <= convertTo.maxIntegerValue() && minValue() >= convertTo.minIntegerValue();
-	}
-	else
-		return false;
-}
+// 	}
+// 	else if ( _convertTo.category() == Category::Integer)	
+// 	{
+// 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
+// 		return (numBits() == convertTo.numBits()) || (isSigned() == convertTo.isSigned());	
+// 	}
+// 	else if (_convertTo.category() == Category::FixedPoint)
+// 	{
+// 		FixedPointType const& convertTo = dynamic_cast<FixedPointType const&>(_convertTo);
+// 		return maxValue() <= convertTo.maxIntegerValue() && minValue() >= convertTo.minIntegerValue();
+// 	}
+// 	else
+// 		return false;
+// }
 
-BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
-{
-	if (isImplicitlyConvertibleTo(_convertTo))
-		return true;
-	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
-		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
-	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
-		return
-			(addressType->stateMutability() != StateMutability::Payable) &&
-			!isSigned() &&
-			(numBits() == 160);
-	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
-		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
-	else if (dynamic_cast<EnumType const*>(&_convertTo))
-		return true;
-	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
-		return (isSigned() == fixedPointType->isSigned()) && (numBits() == fixedPointType->numBits());
+// BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+// {
+// 	if (isImplicitlyConvertibleTo(_convertTo))
+// 		return true;
+// 	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
+// 		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
+// 	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
+// 		return
+// 			(addressType->stateMutability() != StateMutability::Payable) &&
+// 			!isSigned() &&
+// 			(numBits() == 160);
+// 	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
+// 		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
+// 	else if (dynamic_cast<EnumType const*>(&_convertTo))
+// 		return true;
+// 	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
+// 		return (isSigned() == fixedPointType->isSigned()) && (numBits() == fixedPointType->numBits());
 
-	return false;
-}
+// 	return false;
+// }
 
 TypeResult ShieldedIntegerType::unaryOperatorResult(Token _operator) const
 {
@@ -881,7 +886,6 @@ TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const
 	}
 	else if (Token::Exp == _operator)
 	{
-		std::cout<<"hello";
 		if (auto otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
 		{
 			if (otherIntType->isSigned())
@@ -891,7 +895,6 @@ TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const
 			return nullptr;
 		else if (auto rationalNumberType = dynamic_cast<RationalNumberType const*>(_other))
 		{
-			std::cout<<"hi";
 			if (rationalNumberType->isFractional())
 				return TypeResult::err("Exponent is fractional.");
 			if (!rationalNumberType->integerType())
@@ -1168,6 +1171,7 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	switch (_convertTo.category())
 	{
 	case Category::Integer:
+	case Category::ShieldedInteger:
 	{
 		if (isFractional())
 			return false;
@@ -1190,15 +1194,15 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	}
 	case Category::FixedBytes:
 		return (m_value == rational(0)) || (m_compatibleBytesType && *m_compatibleBytesType == _convertTo);
-	case Category::ShieldedInteger: 
-	{
-		ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
-		if (isNegative() && !targetType.isSigned())
-			return false;
-		if (isFractional())
-			return false;
-		return fitsShieldedIntegerType(m_value.numerator(), targetType);
-	}
+	// case Category::ShieldedInteger: 
+	// {
+	// 	ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+	// 	if (isNegative() && !targetType.isSigned())
+	// 		return false;
+	// 	if (isFractional())
+	// 		return false;
+	// 	return fitsShieldedIntegerType(m_value.numerator(), targetType);
+	// }
 	default:
 		return false;
 	}
@@ -1208,7 +1212,6 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
 		return true;
-
 	auto category = _convertTo.category();
 	if (category == Category::FixedBytes)
 		return false;
@@ -1219,7 +1222,7 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 			!isFractional() &&
 			integerType() &&
 			(integerType()->numBits() <= 160));
-	else if (category == Category::Integer)
+	else if (category == Category::Integer || category == Category::ShieldedInteger)
 		return false;
 	else if (auto enumType = dynamic_cast<EnumType const*>(&_convertTo))
 		if (isNegative() || isFractional() || m_value >= enumType->numberOfMembers())
