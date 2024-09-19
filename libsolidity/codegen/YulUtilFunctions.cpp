@@ -383,17 +383,9 @@ std::string YulUtilFunctions::leftAlignFunction(Type const& _type)
 			templ("body", "aligned := " + leftAlignFunction(IntegerType(160)) + "(value)");
 			break;
 		case Type::Category::Integer:
-		{
-			IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
-			if (type.numBits() == 256)
-				templ("body", "aligned := value");
-			else
-				templ("body", "aligned := " + shiftLeftFunction(256 - type.numBits()) + "(value)");
-			break;
-		}
 		case Type::Category::ShieldedInteger:
 		{
-			ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+			IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 			if (type.numBits() == 256)
 				templ("body", "aligned := value");
 			else
@@ -561,8 +553,8 @@ std::string YulUtilFunctions::shiftRightSignedFunctionDynamic()
 std::string YulUtilFunctions::typedShiftLeftFunction(Type const& _type, Type const& _amountType)
 {
 	solUnimplementedAssert(_type.category() != Type::Category::FixedPoint, "Not yet implemented - FixedPointType.");
-	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::Integer, "");
-	solAssert(_amountType.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::Integer|| _type.category() == Type::Category::ShieldedInteger, "");
+	solAssert(_amountType.category() == Type::Category::Integer|| _amountType.category() == Type::Category::ShieldedInteger , "");
 	solAssert(!dynamic_cast<IntegerType const&>(_amountType).isSigned(), "");
 	std::string const functionName = "shift_left_" + _type.identifier() + "_" + _amountType.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
@@ -584,8 +576,8 @@ std::string YulUtilFunctions::typedShiftLeftFunction(Type const& _type, Type con
 std::string YulUtilFunctions::typedShiftRightFunction(Type const& _type, Type const& _amountType)
 {
 	solUnimplementedAssert(_type.category() != Type::Category::FixedPoint, "Not yet implemented - FixedPointType.");
-	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::Integer, "");
-	solAssert(_amountType.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
+	solAssert(_amountType.category() == Type::Category::Integer|| _amountType.category() == Type::Category::ShieldedInteger, "");
 	solAssert(!dynamic_cast<IntegerType const&>(_amountType).isSigned(), "");
 	IntegerType const* integerType = dynamic_cast<IntegerType const*>(&_type);
 	bool valueSigned = integerType && integerType->isSigned();
@@ -607,54 +599,6 @@ std::string YulUtilFunctions::typedShiftRightFunction(Type const& _type, Type co
 	});
 }
 
-std::string YulUtilFunctions::typedShieldedShiftLeftFunction(Type const& _type, Type const& _amountType)
-{
-	solUnimplementedAssert(_type.category() != Type::Category::FixedPoint, "Not yet implemented - FixedPointType.");
-	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::ShieldedInteger, "");
-	solAssert(_amountType.category() == Type::Category::ShieldedInteger, "");
-	solAssert(!dynamic_cast<ShieldedIntegerType const&>(_amountType).isSigned(), "");
-	std::string const functionName = "shift_left_shielded_" + _type.identifier() + "_" + _amountType.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(value, bits) -> result {
-				bits := <cleanAmount>(bits)
-				result := <cleanup>(<shift>(bits, <cleanup>(value)))
-			}
-			)")
-			("functionName", functionName)
-			("cleanAmount", cleanupFunction(_amountType))
-			("shift", shiftLeftFunctionDynamic())
-			("cleanup", cleanupFunction(_type))
-			.render();
-	});
-}
-
-std::string YulUtilFunctions::typedShieldedShiftRightFunction(Type const& _type, Type const& _amountType)
-{
-	solUnimplementedAssert(_type.category() != Type::Category::FixedPoint, "Not yet implemented - FixedPointType.");
-	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::ShieldedInteger, "");
-	solAssert(_amountType.category() == Type::Category::ShieldedInteger, "");
-	solAssert(!dynamic_cast<ShieldedIntegerType const&>(_amountType).isSigned(), "");
-	ShieldedIntegerType const* shieldedIntegerType = dynamic_cast<ShieldedIntegerType const*>(&_type);
-	bool valueSigned = shieldedIntegerType && shieldedIntegerType->isSigned();
-
-	std::string const functionName = "shift_right_shielded_" + _type.identifier() + "_" + _amountType.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(value, bits) -> result {
-				bits := <cleanAmount>(bits)
-				result := <cleanup>(<shift>(bits, <cleanup>(value)))
-			}
-			)")
-			("functionName", functionName)
-			("cleanAmount", cleanupFunction(_amountType))
-			("shift", valueSigned ? shiftRightSignedFunctionDynamic() : shiftRightFunctionDynamic())
-			("cleanup", cleanupFunction(_type))
-			.render();
-	});
-}
 
 std::string YulUtilFunctions::updateByteSliceFunction(size_t _numBytes, size_t _shiftBytes)
 {
@@ -819,50 +763,6 @@ std::string YulUtilFunctions::overflowCheckedIntAddFunction(IntegerType const& _
 	});
 }
 
-std::string YulUtilFunctions::overflowCheckedShieldedIntAddFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "checked_add_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> sum {
-				x := <cleanupFunction>(x)
-				y := <cleanupFunction>(y)
-				sum := add(x, y)
-				<?signed>
-					<?256bit>
-						// overflow, if x >= 0 and sum < y
-						// underflow, if x < 0 and sum >= y
-						if or(
-							and(iszero(slt(x, 0)), slt(sum, y)),
-							and(slt(x, 0), iszero(slt(sum, y)))
-						) { <panic>() }
-					<!256bit>
-						if or(
-							sgt(sum, <maxValue>),
-							slt(sum, <minValue>)
-						) { <panic>() }
-					</256bit>
-				<!signed>
-					<?256bit>
-						if gt(x, sum) { <panic>() }
-					<!256bit>
-						if gt(sum, <maxValue>) { <panic>() }
-					</256bit>
-				</signed>
-			}
-			)")
-			("functionName", functionName)
-			("signed", _type.isSigned())
-			("maxValue", toCompactHexWithPrefix(u256(_type.maxValue())))
-			("minValue", toCompactHexWithPrefix(u256(_type.minValue())))
-			("cleanupFunction", cleanupFunction(_type))
-			("panic", panicFunction(PanicCode::UnderOverflow))
-			("256bit", _type.numBits() == 256)
-			.render();
-	});
-}
-
 std::string YulUtilFunctions::wrappingIntAddFunction(IntegerType const& _type)
 {
 	std::string functionName = "wrapping_add_" + _type.identifier();
@@ -879,79 +779,10 @@ std::string YulUtilFunctions::wrappingIntAddFunction(IntegerType const& _type)
 	});
 }
 
-std::string YulUtilFunctions::wrappingShieldedIntAddFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "wrapping_add_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> sum {
-				sum := <cleanupFunction>(add(x, y))
-			}
-			)")
-			("functionName", functionName)
-			("cleanupFunction", cleanupFunction(_type))
-			.render();
-	});
-}
 
 std::string YulUtilFunctions::overflowCheckedIntMulFunction(IntegerType const& _type)
 {
 	std::string functionName = "checked_mul_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			// Multiplication by zero could be treated separately and directly return zero.
-			Whiskers(R"(
-			function <functionName>(x, y) -> product {
-				x := <cleanupFunction>(x)
-				y := <cleanupFunction>(y)
-				let product_raw := mul(x, y)
-				product := <cleanupFunction>(product_raw)
-				<?signed>
-					<?gt128bit>
-						<?256bit>
-							// special case
-							if and(slt(x, 0), eq(y, <minValue>)) { <panic>() }
-						</256bit>
-						// overflow, if x != 0 and y != product/x
-						if iszero(
-							or(
-								iszero(x),
-								eq(y, sdiv(product, x))
-							)
-						) { <panic>() }
-					<!gt128bit>
-						if iszero(eq(product, product_raw)) { <panic>() }
-					</gt128bit>
-				<!signed>
-					<?gt128bit>
-						// overflow, if x != 0 and y != product/x
-						if iszero(
-							or(
-								iszero(x),
-								eq(y, div(product, x))
-							)
-						) { <panic>() }
-					<!gt128bit>
-						if iszero(eq(product, product_raw)) { <panic>() }
-					</gt128bit>
-				</signed>
-			}
-			)")
-			("functionName", functionName)
-			("signed", _type.isSigned())
-			("cleanupFunction", cleanupFunction(_type))
-			("panic", panicFunction(PanicCode::UnderOverflow))
-			("minValue", toCompactHexWithPrefix(u256(_type.minValue())))
-			("256bit", _type.numBits() == 256)
-			("gt128bit", _type.numBits() > 128)
-			.render();
-	});
-}
-
-std::string YulUtilFunctions::overflowCheckedShieldedIntMulFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "checked_mul_shielded_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return
 			// Multiplication by zero could be treated separately and directly return zero.
@@ -1019,22 +850,6 @@ std::string YulUtilFunctions::wrappingIntMulFunction(IntegerType const& _type)
 	});
 }
 
-std::string YulUtilFunctions::wrappingShieldedIntMulFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "wrapping_mul_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> product {
-				product := <cleanupFunction>(mul(x, y))
-			}
-			)")
-			("functionName", functionName)
-			("cleanupFunction", cleanupFunction(_type))
-			.render();
-	});
-}
-
 std::string YulUtilFunctions::overflowCheckedIntDivFunction(IntegerType const& _type)
 {
 	std::string functionName = "checked_div_" + _type.identifier();
@@ -1065,35 +880,7 @@ std::string YulUtilFunctions::overflowCheckedIntDivFunction(IntegerType const& _
 	});
 }
 
-std::string YulUtilFunctions::overflowCheckedShieldedIntDivFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "checked_div_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> r {
-				x := <cleanupFunction>(x)
-				y := <cleanupFunction>(y)
-				if iszero(y) { <panicDivZero>() }
-				<?signed>
-				// overflow for minVal / -1
-				if and(
-					eq(x, <minVal>),
-					eq(y, sub(0, 1))
-				) { <panicOverflow>() }
-				</signed>
-				r := <?signed>s</signed>div(x, y)
-			}
-			)")
-			("functionName", functionName)
-			("signed", _type.isSigned())
-			("minVal", toCompactHexWithPrefix(u256(_type.minValue())))
-			("cleanupFunction", cleanupFunction(_type))
-			("panicDivZero", panicFunction(PanicCode::DivisionByZero))
-			("panicOverflow", panicFunction(PanicCode::UnderOverflow))
-			.render();
-	});
-}
+
 
 std::string YulUtilFunctions::wrappingIntDivFunction(IntegerType const& _type)
 {
@@ -1116,51 +903,9 @@ std::string YulUtilFunctions::wrappingIntDivFunction(IntegerType const& _type)
 	});
 }
 
-std::string YulUtilFunctions::wrappingShieldedIntDivFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "wrapping_div_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> r {
-				x := <cleanupFunction>(x)
-				y := <cleanupFunction>(y)
-				if iszero(y) { <error>() }
-				r := <?signed>s</signed>div(x, y)
-			}
-			)")
-			("functionName", functionName)
-			("cleanupFunction", cleanupFunction(_type))
-			("signed", _type.isSigned())
-			("error", panicFunction(PanicCode::DivisionByZero))
-			.render();
-	});
-}
-
 std::string YulUtilFunctions::intModFunction(IntegerType const& _type)
 {
 	std::string functionName = "mod_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> r {
-				x := <cleanupFunction>(x)
-				y := <cleanupFunction>(y)
-				if iszero(y) { <panic>() }
-				r := <?signed>s</signed>mod(x, y)
-			}
-			)")
-			("functionName", functionName)
-			("signed", _type.isSigned())
-			("cleanupFunction", cleanupFunction(_type))
-			("panic", panicFunction(PanicCode::DivisionByZero))
-			.render();
-	});
-}
-
-std::string YulUtilFunctions::shieldedIntModFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "mod_shielded_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return
 			Whiskers(R"(
@@ -1223,49 +968,6 @@ std::string YulUtilFunctions::overflowCheckedIntSubFunction(IntegerType const& _
 	});
 }
 
-std::string YulUtilFunctions::overflowCheckedShieldedIntSubFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "checked_sub_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&] {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> diff {
-				x := <cleanupFunction>(x)
-				y := <cleanupFunction>(y)
-				diff := sub(x, y)
-				<?signed>
-					<?256bit>
-						// underflow, if y >= 0 and diff > x
-						// overflow, if y < 0 and diff < x
-						if or(
-							and(iszero(slt(y, 0)), sgt(diff, x)),
-							and(slt(y, 0), slt(diff, x))
-						) { <panic>() }
-					<!256bit>
-						if or(
-							slt(diff, <minValue>),
-							sgt(diff, <maxValue>)
-						) { <panic>() }
-					</256bit>
-				<!signed>
-					<?256bit>
-						if gt(diff, x) { <panic>() }
-					<!256bit>
-						if gt(diff, <maxValue>) { <panic>() }
-					</256bit>
-				</signed>
-			}
-			)")
-			("functionName", functionName)
-			("signed", _type.isSigned())
-			("maxValue", toCompactHexWithPrefix(u256(_type.maxValue())))
-			("minValue", toCompactHexWithPrefix(u256(_type.minValue())))
-			("cleanupFunction", cleanupFunction(_type))
-			("panic", panicFunction(PanicCode::UnderOverflow))
-			("256bit", _type.numBits() == 256)
-			.render();
-	});
-}
 
 std::string YulUtilFunctions::wrappingIntSubFunction(IntegerType const& _type)
 {
@@ -1283,21 +985,6 @@ std::string YulUtilFunctions::wrappingIntSubFunction(IntegerType const& _type)
 	});
 }
 
-std::string YulUtilFunctions::wrappingShieldedIntSubFunction(ShieldedIntegerType const& _type)
-{
-	std::string functionName = "wrapping_sub_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&] {
-		return
-			Whiskers(R"(
-			function <functionName>(x, y) -> diff {
-				diff := <cleanupFunction>(sub(x, y))
-			}
-			)")
-			("functionName", functionName)
-			("cleanupFunction", cleanupFunction(_type))
-			.render();
-	});
-}
 
 std::string YulUtilFunctions::overflowCheckedIntExpFunction(
 	IntegerType const& _type,
@@ -1307,39 +994,6 @@ std::string YulUtilFunctions::overflowCheckedIntExpFunction(
 	solAssert(!_exponentType.isSigned(), "");
 
 	std::string functionName = "checked_exp_" + _type.identifier() + "_" + _exponentType.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(base, exponent) -> power {
-				base := <baseCleanupFunction>(base)
-				exponent := <exponentCleanupFunction>(exponent)
-				<?signed>
-					power := <exp>(base, exponent, <minValue>, <maxValue>)
-				<!signed>
-					power := <exp>(base, exponent, <maxValue>)
-				</signed>
-
-			}
-			)")
-			("functionName", functionName)
-			("signed", _type.isSigned())
-			("exp", _type.isSigned() ? overflowCheckedSignedExpFunction() : overflowCheckedUnsignedExpFunction())
-			("maxValue", toCompactHexWithPrefix(_type.max()))
-			("minValue", toCompactHexWithPrefix(_type.min()))
-			("baseCleanupFunction", cleanupFunction(_type))
-			("exponentCleanupFunction", cleanupFunction(_exponentType))
-			.render();
-	});
-}
-
-std::string YulUtilFunctions::overflowCheckedShieldedIntExpFunction(
-	ShieldedIntegerType const& _type,
-	ShieldedIntegerType const& _exponentType
-)
-{
-	solAssert(!_exponentType.isSigned(), "");
-
-	std::string functionName = "checked_exp_shielded_" + _type.identifier() + "_" + _exponentType.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return
 			Whiskers(R"(
@@ -1478,118 +1132,6 @@ std::string YulUtilFunctions::overflowCheckedIntLiteralExpFunction(
 	});
 }
 
-std::string YulUtilFunctions::overflowCheckedShieldedIntLiteralExpFunction(
-	RationalNumberType const& _baseType,
-	ShieldedIntegerType const& _exponentType,
-	ShieldedIntegerType const& _commonType
-)
-{
-	solAssert(!_exponentType.isSigned(), "");
-	solAssert(_baseType.isNegative() == _commonType.isSigned(), "");
-	solAssert(_commonType.numBits() == 256, "");
-
-	std::string functionName = "checked_exp_shielded_" + _baseType.richIdentifier() + "_" + _exponentType.identifier();
-
-	return m_functionCollector.createFunction(functionName, [&]()
-	{
-		// Converts a bigint number into u256 (negative numbers represented in two's complement form.)
-		// We assume that `_v` fits in 256 bits.
-		auto bigint2u = [&](bigint const& _v) -> u256
-		{
-			if (_v < 0)
-				return s2u(s256(_v));
-			return u256(_v);
-		};
-
-		// Calculates the upperbound for exponentiation, that is, calculate `b`, such that
-		// _base**b <= _maxValue and _base**(b + 1) > _maxValue
-		auto findExponentUpperbound = [](bigint const _base, bigint const _maxValue) -> unsigned
-		{
-			// There is no overflow for these cases
-			if (_base == 0 || _base == -1 || _base == 1)
-				return 0;
-
-			unsigned first = 0;
-			unsigned last = 255;
-			unsigned middle;
-
-			while (first < last)
-			{
-				middle = (first + last) / 2;
-
-				if (
-					// The condition on msb is a shortcut that avoids computing large powers in
-					// arbitrary precision.
-					boost::multiprecision::msb(_base) * middle <= boost::multiprecision::msb(_maxValue) &&
-					boost::multiprecision::pow(_base, middle) <= _maxValue
-				)
-				{
-					if (boost::multiprecision::pow(_base, middle + 1) > _maxValue)
-						return middle;
-					else
-						first = middle + 1;
-				}
-				else
-					last = middle;
-			}
-
-			return last;
-		};
-
-		bigint baseValue = _baseType.isNegative() ?
-			u2s(_baseType.literalValue(nullptr)) :
-			_baseType.literalValue(nullptr);
-		bool needsOverflowCheck = !((baseValue == 0) || (baseValue == -1) || (baseValue == 1));
-		unsigned exponentUpperbound;
-
-		if (_baseType.isNegative())
-		{
-			// Only checks for underflow. The only case where this can be a problem is when, for a
-			// negative base, say `b`, and an even exponent, say `e`, `b**e = 2**255` (which is an
-			// overflow.) But this never happens because, `255 = 3*5*17`, and therefore there is no even
-			// number `e` such that `b**e = 2**255`.
-			exponentUpperbound = findExponentUpperbound(abs(baseValue), abs(_commonType.minValue()));
-
-			bigint power = boost::multiprecision::pow(baseValue, exponentUpperbound);
-			bigint overflowedPower = boost::multiprecision::pow(baseValue, exponentUpperbound + 1);
-
-			if (needsOverflowCheck)
-				solAssert(
-					(power <= _commonType.maxValue()) && (power >= _commonType.minValue()) &&
-					!((overflowedPower <= _commonType.maxValue()) && (overflowedPower >= _commonType.minValue())),
-					"Incorrect exponent upper bound calculated."
-				);
-		}
-		else
-		{
-			exponentUpperbound = findExponentUpperbound(baseValue, _commonType.maxValue());
-
-			if (needsOverflowCheck)
-				solAssert(
-					boost::multiprecision::pow(baseValue, exponentUpperbound) <= _commonType.maxValue() &&
-					boost::multiprecision::pow(baseValue, exponentUpperbound + 1) > _commonType.maxValue(),
-					"Incorrect exponent upper bound calculated."
-				);
-		}
-
-		return Whiskers(R"(
-			function <functionName>(exponent) -> power {
-				exponent := <exponentCleanupFunction>(exponent)
-				<?needsOverflowCheck>
-				if gt(exponent, <exponentUpperbound>) { <panic>() }
-				</needsOverflowCheck>
-				power := exp(<base>, exponent)
-			}
-			)")
-			("functionName", functionName)
-			("exponentCleanupFunction", cleanupFunction(_exponentType))
-			("needsOverflowCheck", needsOverflowCheck)
-			("exponentUpperbound", std::to_string(exponentUpperbound))
-			("panic", panicFunction(PanicCode::UnderOverflow))
-			("base", bigint2u(baseValue).str())
-			.render();
-	});
-}
 
 std::string YulUtilFunctions::overflowCheckedUnsignedExpFunction()
 {
@@ -1763,29 +1305,6 @@ std::string YulUtilFunctions::wrappingIntExpFunction(
 	});
 }
 
-std::string YulUtilFunctions::wrappingShieldedIntExpFunction(
-	ShieldedIntegerType const& _type,
-	ShieldedIntegerType const& _exponentType
-)
-{
-	solAssert(!_exponentType.isSigned(), "");
-
-	std::string functionName = "wrapping_exp_shielded_" + _type.identifier() + "_" + _exponentType.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return
-			Whiskers(R"(
-			function <functionName>(base, exponent) -> power {
-				base := <baseCleanupFunction>(base)
-				exponent := <exponentCleanupFunction>(exponent)
-				power := <baseCleanupFunction>(exp(base, exponent))
-			}
-			)")
-			("functionName", functionName)
-			("baseCleanupFunction", cleanupFunction(_type))
-			("exponentCleanupFunction", cleanupFunction(_exponentType))
-			.render();
-	});
-}
 
 std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 {
@@ -3987,11 +3506,6 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 					solUnimplementedAssert(fromCategory != Type::Category::FixedPoint);
 					convert = identityFunction();
 				}
-				else if (dynamic_cast<ShieldedIntegerType const*>(&_to))
-				{
-					solUnimplementedAssert(fromCategory != Type::Category::FixedPoint);
-					convert = identityFunction();
-				}
 				else if (toCategory == Type::Category::Enum)
 				{
 					solAssert(fromCategory != Type::Category::FixedPoint, "");
@@ -4059,7 +3573,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 		case Type::Category::FixedBytes:
 		{
 			FixedBytesType const& from = dynamic_cast<FixedBytesType const&>(_from);
-			if (toCategory == Type::Category::Integer)
+			if (toCategory == Type::Category::Integer || toCategory == Type::Category::ShieldedInteger)
 				body =
 					Whiskers("converted := <convert>(<shift>(value))")
 					("shift", shiftRightFunction(256 - from.numBytes() * 8))
@@ -4088,7 +3602,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 		}
 		case Type::Category::Enum:
 		{
-			solAssert(toCategory == Type::Category::Integer || _from == _to, "");
+			solAssert(toCategory == Type::Category::Integer || toCategory == Type::Category::ShieldedInteger || _from == _to, "");
 			EnumType const& enumType = dynamic_cast<decltype(enumType)>(_from);
 			body =
 				Whiskers("converted := <clean>(value)")
@@ -4402,19 +3916,9 @@ std::string YulUtilFunctions::cleanupFunction(Type const& _type)
 			templ("body", "cleaned := " + cleanupFunction(IntegerType(160)) + "(value)");
 			break;
 		case Type::Category::Integer:
-		{
-			IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
-			if (type.numBits() == 256)
-				templ("body", "cleaned := value");
-			else if (type.isSigned())
-				templ("body", "cleaned := signextend(" + std::to_string(type.numBits() / 8 - 1) + ", value)");
-			else
-				templ("body", "cleaned := and(value, " + toCompactHexWithPrefix((u256(1) << type.numBits()) - 1) + ")");
-			break;
-		}
 		case Type::Category::ShieldedInteger:
 		{
-			ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
+			IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 			if (type.numBits() == 256)
 				templ("body", "cleaned := value");
 			else if (type.isSigned())
@@ -4609,7 +4113,7 @@ std::string YulUtilFunctions::forwardingRevertFunction()
 
 std::string YulUtilFunctions::decrementCheckedFunction(Type const& _type)
 {
-	solAssert(_type.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 
 	std::string const functionName = "decrement_" + _type.identifier();
@@ -4632,7 +4136,7 @@ std::string YulUtilFunctions::decrementCheckedFunction(Type const& _type)
 
 std::string YulUtilFunctions::decrementWrappingFunction(Type const& _type)
 {
-	solAssert(_type.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 
 	std::string const functionName = "decrement_wrapping_" + _type.identifier();
@@ -4651,7 +4155,7 @@ std::string YulUtilFunctions::decrementWrappingFunction(Type const& _type)
 
 std::string YulUtilFunctions::incrementCheckedFunction(Type const& _type)
 {
-	solAssert(_type.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 
 	std::string const functionName = "increment_" + _type.identifier();
@@ -4674,7 +4178,7 @@ std::string YulUtilFunctions::incrementCheckedFunction(Type const& _type)
 
 std::string YulUtilFunctions::incrementWrappingFunction(Type const& _type)
 {
-	solAssert(_type.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 
 	std::string const functionName = "increment_wrapping_" + _type.identifier();
@@ -4693,7 +4197,7 @@ std::string YulUtilFunctions::incrementWrappingFunction(Type const& _type)
 
 std::string YulUtilFunctions::negateNumberCheckedFunction(Type const& _type)
 {
-	solAssert(_type.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 	solAssert(type.isSigned(), "Expected signed type!");
 
@@ -4716,137 +4220,11 @@ std::string YulUtilFunctions::negateNumberCheckedFunction(Type const& _type)
 
 std::string YulUtilFunctions::negateNumberWrappingFunction(Type const& _type)
 {
-	solAssert(_type.category() == Type::Category::Integer, "");
+	solAssert(_type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 	solAssert(type.isSigned(), "Expected signed type!");
 
 	std::string const functionName = "negate_wrapping_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return Whiskers(R"(
-			function <functionName>(value) -> ret {
-				ret := <cleanupFunction>(sub(0, value))
-			}
-		)")
-		("functionName", functionName)
-		("cleanupFunction", cleanupFunction(type))
-		.render();
-	});
-}
-
-std::string YulUtilFunctions::decrementCheckedShieldedFunction(Type const& _type)
-{
-	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
-	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
-
-	std::string const functionName = "decrement_shielded_" + _type.identifier();
-
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return Whiskers(R"(
-			function <functionName>(value) -> ret {
-				value := <cleanupFunction>(value)
-				if eq(value, <minval>) { <panic>() }
-				ret := sub(value, 1)
-			}
-		)")
-		("functionName", functionName)
-		("panic", panicFunction(PanicCode::UnderOverflow))
-		("minval", toCompactHexWithPrefix(type.min()))
-		("cleanupFunction", cleanupFunction(_type))
-		.render();
-	});
-}
-
-std::string YulUtilFunctions::decrementWrappingShieldedFunction(Type const& _type)
-{
-	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
-	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
-
-	std::string const functionName = "decrement_wrapping_shielded_" + _type.identifier();
-
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return Whiskers(R"(
-			function <functionName>(value) -> ret {
-				ret := <cleanupFunction>(sub(value, 1))
-			}
-		)")
-		("functionName", functionName)
-		("cleanupFunction", cleanupFunction(type))
-		.render();
-	});
-}
-
-std::string YulUtilFunctions::incrementCheckedShieldedFunction(Type const& _type)
-{
-	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
-	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
-
-	std::string const functionName = "increment_shielded_" + _type.identifier();
-
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return Whiskers(R"(
-			function <functionName>(value) -> ret {
-				value := <cleanupFunction>(value)
-				if eq(value, <maxval>) { <panic>() }
-				ret := add(value, 1)
-			}
-		)")
-		("functionName", functionName)
-		("maxval", toCompactHexWithPrefix(type.max()))
-		("panic", panicFunction(PanicCode::UnderOverflow))
-		("cleanupFunction", cleanupFunction(_type))
-		.render();
-	});
-}
-
-std::string YulUtilFunctions::incrementWrappingShieldedFunction(Type const& _type)
-{
-	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
-	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
-
-	std::string const functionName = "increment_wrapping_shielded_" + _type.identifier();
-
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return Whiskers(R"(
-			function <functionName>(value) -> ret {
-				ret := <cleanupFunction>(add(value, 1))
-			}
-		)")
-		("functionName", functionName)
-		("cleanupFunction", cleanupFunction(type))
-		.render();
-	});
-}
-
-std::string YulUtilFunctions::negateNumberCheckedShieldedFunction(Type const& _type)
-{
-	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
-	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
-	solAssert(type.isSigned(), "Expected signed type!");
-
-	std::string const functionName = "negate_shielded_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
-		return Whiskers(R"(
-			function <functionName>(value) -> ret {
-				value := <cleanupFunction>(value)
-				if eq(value, <minval>) { <panic>() }
-				ret := sub(0, value)
-			}
-		)")
-		("functionName", functionName)
-		("minval", toCompactHexWithPrefix(type.min()))
-		("cleanupFunction", cleanupFunction(_type))
-		("panic", panicFunction(PanicCode::UnderOverflow))
-		.render();
-	});
-}
-
-std::string YulUtilFunctions::negateNumberWrappingShieldedFunction(Type const& _type)
-{
-	solAssert(_type.category() == Type::Category::ShieldedInteger, "");
-	ShieldedIntegerType const& type = dynamic_cast<ShieldedIntegerType const&>(_type);
-	solAssert(type.isSigned(), "Expected signed type!");
-
-	std::string const functionName = "negate_wrapping_shielded_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 			function <functionName>(value) -> ret {

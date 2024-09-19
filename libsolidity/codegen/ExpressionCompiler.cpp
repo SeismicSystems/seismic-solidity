@@ -491,13 +491,8 @@ bool ExpressionCompiler::visit(UnaryOperation const& _unaryOperation)
 		}
 		if (_unaryOperation.getOperator() == Token::Inc)
 		{
-			if (m_context.arithmetic() == Arithmetic::Checked) {
-				if (type.category() == Type::Category::ShieldedInteger)
-					m_context.callYulFunction(m_context.utilFunctions().incrementCheckedShieldedFunction(type), 1, 1);
-				
-				else
-					m_context.callYulFunction(m_context.utilFunctions().incrementCheckedFunction(type), 1, 1);
-			}
+			if (m_context.arithmetic() == Arithmetic::Checked)
+				m_context.callYulFunction(m_context.utilFunctions().incrementCheckedFunction(type), 1, 1);
 			else
 			{
 				m_context << u256(1);
@@ -506,17 +501,13 @@ bool ExpressionCompiler::visit(UnaryOperation const& _unaryOperation)
 		}
 		else
 		{
-			if (m_context.arithmetic() == Arithmetic::Checked) {
-				if (type.category() == Type::Category::ShieldedInteger)
-					m_context.callYulFunction(m_context.utilFunctions().decrementCheckedShieldedFunction(type), 1, 1);
-				
-				else
-					m_context.callYulFunction(m_context.utilFunctions().decrementCheckedFunction(type), 1, 1);
-			}
+			if (m_context.arithmetic() == Arithmetic::Checked)
+				m_context.callYulFunction(m_context.utilFunctions().decrementCheckedFunction(type), 1, 1);
+			else {
 				m_context << u256(1);
 				m_context << Instruction::SWAP1 << Instruction::SUB;
 			}
-		
+		}
 		// Stack for prefix: [ref...] (*ref)+-1
 		// Stack for postfix: *ref [ref...] (*ref)+-1
 		for (unsigned i = m_currentLValue->sizeOnStack(); i > 0; --i)
@@ -2007,8 +1998,6 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 			MagicType const* arg = dynamic_cast<MagicType const*>(_memberAccess.expression().annotation().type);
 			if (IntegerType const* integerType = dynamic_cast<IntegerType const*>(arg->typeArgument()))
 				m_context << (member == "min" ? integerType->min() : integerType->max());
-			else if (ShieldedIntegerType const* shieldedIntegerType = dynamic_cast<ShieldedIntegerType const*>(arg->typeArgument()))
-				m_context << (member == "min" ? shieldedIntegerType->min() : shieldedIntegerType->max());
 			else if (EnumType const* enumType = dynamic_cast<EnumType const*>(arg->typeArgument()))
 				m_context << (member == "min" ? enumType->minValue() : enumType->maxValue());
 			else
@@ -2486,8 +2475,6 @@ void ExpressionCompiler::appendCompareOperatorCode(Token _operator, Type const& 
 		bool isSigned = false;
 		if (auto type = dynamic_cast<IntegerType const*>(&_type))
 			isSigned = type->isSigned();
-		else if (auto type = dynamic_cast<ShieldedIntegerType const*>(&_type))
-			isSigned = type->isSigned();
 
 		switch (_operator)
 		{
@@ -2528,9 +2515,8 @@ void ExpressionCompiler::appendArithmeticOperatorCode(Token _operator, Type cons
 	if (_type.category() == Type::Category::FixedPoint)
 		solUnimplemented("Not yet implemented - FixedPointType.");
 
-	if (auto* intType = dynamic_cast<IntegerType const*>(&_type))
-	{
-		IntegerType const& type = *intType;
+
+		IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
 		if (m_context.arithmetic() == Arithmetic::Checked)
 		{
 			std::string functionName;
@@ -2592,71 +2578,8 @@ void ExpressionCompiler::appendArithmeticOperatorCode(Token _operator, Type cons
 			}
 		}
 	}
-	else if (auto* shieldedIntType = dynamic_cast<ShieldedIntegerType const*>(&_type))
-	{
-		ShieldedIntegerType const& type = *shieldedIntType;
-		if (m_context.arithmetic() == Arithmetic::Checked)
-		{
-			std::string functionName;
-			switch (_operator)
-			{
-			case Token::Add:
-				functionName = m_context.utilFunctions().overflowCheckedShieldedIntAddFunction(type);
-				break;
-			case Token::Sub:
-				functionName = m_context.utilFunctions().overflowCheckedShieldedIntSubFunction(type);
-				break;
-			case Token::Mul:
-				functionName = m_context.utilFunctions().overflowCheckedShieldedIntMulFunction(type);
-				break;
-			case Token::Div:
-				functionName = m_context.utilFunctions().overflowCheckedShieldedIntDivFunction(type);
-				break;
-			case Token::Mod:
-				functionName = m_context.utilFunctions().shieldedIntModFunction(type);
-				break;
-			case Token::Exp:
-				// EXP is handled in a different function.
-			default:
-				solAssert(false, "Unknown arithmetic operator.");
-			}
-			// TODO Maybe we want to force-inline this?
-			m_context.callYulFunction(functionName, 2, 1);
-		}
-		else
-		{
-			bool const c_isSigned = type.isSigned();
+	
 
-			switch (_operator)
-			{
-			case Token::Add:
-				m_context << Instruction::ADD;
-				break;
-			case Token::Sub:
-				m_context << Instruction::SUB;
-				break;
-			case Token::Mul:
-				m_context << Instruction::MUL;
-				break;
-			case Token::Div:
-			case Token::Mod:
-			{
-				// Test for division by zero
-				m_context << Instruction::DUP2 << Instruction::ISZERO;
-				m_context.appendConditionalPanic(util::PanicCode::DivisionByZero);
-
-				if (_operator == Token::Div)
-					m_context << (c_isSigned ? Instruction::SDIV : Instruction::DIV);
-				else
-					m_context << (c_isSigned ? Instruction::SMOD : Instruction::MOD);
-				break;
-			}
-			default:
-				solAssert(false, "Unknown arithmetic operator.");
-			}
-		}
-	}
-}
 
 void ExpressionCompiler::appendBitOperatorCode(Token _operator)
 {
@@ -2696,8 +2619,6 @@ void ExpressionCompiler::appendShiftOperatorCode(Token _operator, Type const& _v
 		solAssert(!amountType->integerType()->isSigned(), "");
 	}
 	else if (auto amountType = dynamic_cast<IntegerType const*>(&_shiftAmountType))
-		solAssert(!amountType->isSigned(), "");
-	else if (auto amountType = dynamic_cast<ShieldedIntegerType const*>(&_shiftAmountType))
 		solAssert(!amountType->isSigned(), "");
 	else
 		solAssert(false, "Invalid shift amount type.");

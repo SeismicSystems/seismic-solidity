@@ -745,7 +745,7 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 			m_currentLValue->kind
 		);
 	}
-	else if (resultType.category() == Type::Category::Integer)
+	else if (resultType.category() == Type::Category::Integer || resultType.category() == Type::Category::ShieldedInteger)
 	{
 		solAssert(resultType == type(_unaryOperation.subExpression()), "Result type doesn't match!");
 
@@ -786,47 +786,7 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		else
 			solUnimplemented("Unary operator not yet implemented");
 	}
-	else if (resultType.category() == Type::Category::ShieldedInteger)
-	{
-		solAssert(resultType == type(_unaryOperation.subExpression()), "Result type doesn't match!");
-
-		if (op == Token::Inc || op == Token::Dec)
-		{
-			solAssert(!!m_currentLValue, "LValue not retrieved.");
-			IRVariable modifiedValue(m_context.newYulVariable(), resultType);
-			IRVariable originalValue = readFromLValue(*m_currentLValue);
-
-			bool checked = m_context.arithmetic() == Arithmetic::Checked;
-			define(modifiedValue) <<
-				(op == Token::Inc ?
-					(checked ? m_utils.incrementCheckedShieldedFunction(resultType) : m_utils.incrementWrappingShieldedFunction(resultType)) :
-					(checked ? m_utils.decrementCheckedShieldedFunction(resultType) : m_utils.decrementWrappingShieldedFunction(resultType))
-				) <<
-				"(" <<
-				originalValue.name() <<
-				")\n";
-			writeToLValue(*m_currentLValue, modifiedValue);
-			m_currentLValue.reset();
-
-			define(_unaryOperation, _unaryOperation.isPrefixOperation() ? modifiedValue : originalValue);
-		}
-		else if (op == Token::BitNot)
-			appendSimpleUnaryOperation(_unaryOperation, _unaryOperation.subExpression());
-		else if (op == Token::Add)
-			// According to SyntaxChecker...
-			solAssert(false, "Use of unary + is disallowed.");
-		else if (op == Token::Sub)
-		{
-			IntegerType const& intType = *dynamic_cast<IntegerType const*>(&resultType);
-			define(_unaryOperation) << (
-				m_context.arithmetic() == Arithmetic::Checked ?
-				m_utils.negateNumberCheckedShieldedFunction(intType) :
-				m_utils.negateNumberWrappingShieldedFunction(intType)
-			) << "(" << IRVariable(_unaryOperation.subExpression()).name() << ")\n";
-		}
-		else
-			solUnimplemented("Unary operator not yet implemented");
-	}
+	
 	else if (resultType.category() == Type::Category::FixedBytes)
 	{
 		solAssert(op == Token::BitNot, "Only bitwise negation is allowed for FixedBytes");
