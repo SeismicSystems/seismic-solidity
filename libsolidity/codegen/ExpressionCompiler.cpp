@@ -2755,7 +2755,11 @@ void ExpressionCompiler::appendExpOperatorCode(Type const& _valueType, Type cons
 {
 	std::cout<<"test 1"<<std::endl;
 	std::cout<<_exponentType.humanReadableName()<<std::endl;
-	if (_valueType.category() == Type::Category::ShieldedInteger && !dynamic_cast<ShieldedIntegerType const&>(_exponentType).isSigned()) {
+	//
+	if (_valueType.category() == Type::Category::ShieldedInteger) {
+		std::cout<<" 4 "<<std::endl;
+		solAssert(!dynamic_cast<ShieldedIntegerType const&>(_exponentType).isSigned(), "rip");
+		std::cout<<" 5 "<<std::endl;
 		if (m_context.arithmetic() == Arithmetic::Checked)
 		m_context.callYulFunction(m_context.utilFunctions().overflowCheckedShieldedIntExpFunction(
 			dynamic_cast<ShieldedIntegerType const&>(_valueType),

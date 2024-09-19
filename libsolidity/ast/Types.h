@@ -488,13 +488,13 @@ public:
 
 	explicit IntegerType(unsigned _bits, Modifier _modifier = Modifier::Unsigned);
 
-	Category category() const override { return Category::Integer; }
+	virtual Category category() const override { return Category::Integer; }
 
-	std::string richIdentifier() const override;
-	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
-	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
-	TypeResult unaryOperatorResult(Token _operator) const override;
-	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
+	virtual std::string richIdentifier() const override;
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual TypeResult unaryOperatorResult(Token _operator) const override;
+	virtual TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
 	bool operator==(Type const& _other) const override;
 
@@ -504,10 +504,10 @@ public:
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
 
-	std::string toString(bool _withoutDataLocation) const override;
+	virtual std::string toString(bool _withoutDataLocation) const override;
 
-	Type const* encodingType() const override { return this; }
-	TypeResult interfaceType(bool) const override { return this; }
+	virtual Type const* encodingType() const override { return this; }
+	virtual TypeResult interfaceType(bool) const override { return this; }
 
 	unsigned numBits() const { return m_bits; }
 	bool isSigned() const { return m_modifier == Modifier::Signed; }
@@ -526,15 +526,16 @@ private:
 /**
  * Any kind of shielded integer type (signed, unsigned).
  */
-class ShieldedIntegerType: public Type
+class ShieldedIntegerType: public IntegerType
 {
 public:
-	enum class Modifier
+	explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier=Modifier::Unsigned): IntegerType(_bits, _modifier), m_bits(_bits), m_modifier(_modifier)
 	{
-		Unsigned, Signed
-	};
-
-	explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier = Modifier::Unsigned);
+		solAssert(
+			m_bits > 0 && m_bits <= 256 && m_bits % 8 == 0,
+			"Invalid bit number for shielded integer type: " + util::toString(m_bits)
+			);
+	}
 
 	Category category() const override { return Category::ShieldedInteger; }
 
@@ -546,29 +547,15 @@ public:
 
 	bool operator==(Type const& _other) const override;
 
-	unsigned calldataEncodedSize(bool _padded = true) const override { return _padded ? 32 : m_bits / 8; }
-	unsigned storageBytes() const override { return m_bits / 8; }
-	bool leftAligned() const override { return false; }
-	bool isValueType() const override { return true; }
-	bool nameable() const override { return true; }
-
 	std::string toString(bool _withoutDataLocation) const override;
 
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
 
-	unsigned numBits() const { return m_bits; }
-	bool isSigned() const { return m_modifier == Modifier::Signed; }
-
-	u256 min() const;
-	u256 max() const;
-
-	bigint minValue() const;
-	bigint maxValue() const;
-
 private:
 	unsigned const m_bits;
 	Modifier const m_modifier;
+
 };
 
 /**

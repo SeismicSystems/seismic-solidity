@@ -777,14 +777,7 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 	return commonType;
 }
 
- ShieldedIntegerType::ShieldedIntegerType(unsigned _bits, ShieldedIntegerType::Modifier _modifier):
-	m_bits(_bits), m_modifier(_modifier)
-{
-	solAssert(
-		m_bits > 0 && m_bits <= 256 && m_bits % 8 == 0,
-		"Invalid bit number for shielded integer type: " + util::toString(m_bits)
-	);
-}
+
 
 std::string ShieldedIntegerType::richIdentifier() const
 {
@@ -868,37 +861,37 @@ std::string ShieldedIntegerType::toString(bool) const
 	return prefix + util::toString(m_bits);
 }
 
-u256 ShieldedIntegerType::min() const
-{
-	if (isSigned())
-		return s2u(s256(minValue()));
-	else
-		return u256(minValue());
-}
+// u256 ShieldedIntegerType::min() const
+// {
+// 	if (isSigned())
+// 		return s2u(s256(minValue()));
+// 	else
+// 		return u256(minValue());
+// }
 
-u256 ShieldedIntegerType::max() const
-{
-	if (isSigned())
-		return s2u(s256(maxValue()));
-	else
-		return u256(maxValue());
-}
+// u256 ShieldedIntegerType::max() const
+// {
+// 	if (isSigned())
+// 		return s2u(s256(maxValue()));
+// 	else
+// 		return u256(maxValue());
+// }
 
-bigint ShieldedIntegerType::minValue() const
-{
-	if (isSigned())
-		return -(bigint(1) << (m_bits - 1));
-	else
-		return bigint(0);
-}
+// bigint ShieldedIntegerType::minValue() const
+// {
+// 	if (isSigned())
+// 		return -(bigint(1) << (m_bits - 1));
+// 	else
+// 		return bigint(0);
+// }
 
-bigint ShieldedIntegerType::maxValue() const
-{
-	if (isSigned())
-		return (bigint(1) << (m_bits - 1)) - 1;
-	else
-		return (bigint(1) << m_bits) - 1;
-}
+// bigint ShieldedIntegerType::maxValue() const
+// {
+// 	if (isSigned())
+// 		return (bigint(1) << (m_bits - 1)) - 1;
+// 	else
+// 		return (bigint(1) << m_bits) - 1;
+// }
 
 TypeResult ShieldedIntegerType::binaryOperatorResult(Token _operator, Type const* _other) const
 {
