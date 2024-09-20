@@ -509,7 +509,7 @@ public:
 	virtual Type const* encodingType() const override { return this; }
 	virtual TypeResult interfaceType(bool) const override { return this; }
 
-	unsigned numBits() const { return m_bits; }
+	virtual unsigned numBits() const { return m_bits; }
 	bool isSigned() const { return m_modifier == Modifier::Signed; }
 
 	u256 min() const;
@@ -543,11 +543,12 @@ public:
 	//BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
 	//BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
-	//TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
+	//richTypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
 	bool operator==(Type const& _other) const override;
 
 	std::string toString(bool _withoutDataLocation) const override;
+	unsigned numBits() const override { return m_bits; }
 
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }

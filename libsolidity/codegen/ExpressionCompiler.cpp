@@ -722,7 +722,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				utils().rightShiftNumberOnStack(32);
 			else
 				// Extract the runtime part.
-				m_context << ((u256(1) << 32) - 1) << Instruction::AND;
+				m_context << ((u256(1) << 32) - 1) << Instruction::AND; 
 
 			m_context.appendJump(evmasm::AssemblyItem::JumpType::IntoFunction);
 			m_context << returnLabel;
@@ -2439,6 +2439,7 @@ void ExpressionCompiler::appendCompareOperatorCode(Token _operator, Type const& 
 		FunctionType const* functionType = dynamic_cast<decltype(functionType)>(&_type);
 		if (functionType && functionType->kind() == FunctionType::Kind::External)
 		{
+			
 			solUnimplementedAssert(functionType->sizeOnStack() == 2, "");
 			m_context << Instruction::SWAP3;
 

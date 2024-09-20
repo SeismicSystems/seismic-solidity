@@ -724,8 +724,9 @@ void CompilerUtils::splitExternalFunctionType(bool _leftAligned)
 		m_context << Instruction::DUP1;
 		rightShiftNumberOnStack(32);
 		m_context << ((u256(1) << 160) - 1) << Instruction::AND << Instruction::SWAP1;
-	}
+	} 
 	m_context << u256(0xffffffffUL) << Instruction::AND;
+	
 }
 
 void CompilerUtils::combineExternalFunctionType(bool _leftAligned)
@@ -733,7 +734,7 @@ void CompilerUtils::combineExternalFunctionType(bool _leftAligned)
 	// <address> <function_id>
 	m_context << u256(0xffffffffUL) << Instruction::AND << Instruction::SWAP1;
 	if (!_leftAligned)
-		m_context << ((u256(1) << 160) - 1) << Instruction::AND;
+		m_context << ((u256(1) << 160) - 1) << Instruction::AND;	
 	leftShiftNumberOnStack(32);
 	m_context << Instruction::OR;
 	if (_leftAligned)
@@ -818,7 +819,7 @@ void CompilerUtils::convertType(
 	case Type::Category::FixedBytes:
 	{
 		FixedBytesType const& typeOnStack = dynamic_cast<FixedBytesType const&>(_typeOnStack);
-		if (targetTypeCategory == Type::Category::Integer)
+		if (targetTypeCategory == Type::Category::Integer || targetTypeCategory==Type::Category::ShieldedInteger)
 		{
 			// conversion from bytes to integer. no need to clean the high bit
 			// only to shift right because of opposite alignment
@@ -925,7 +926,7 @@ void CompilerUtils::convertType(
 				""
 			);
 			IntegerType addressType(160);
-			IntegerType const& targetType = targetTypeCategory == Type::Category::Integer
+			IntegerType const& targetType = (targetTypeCategory == Type::Category::Integer || targetTypeCategory == Type::Category::ShieldedInteger)
 				? dynamic_cast<IntegerType const&>(_targetType) : addressType;
 			if (stackTypeCategory == Type::Category::RationalNumber)
 			{
@@ -938,7 +939,7 @@ void CompilerUtils::convertType(
 			}
 			else
 			{
-				IntegerType const& typeOnStack = stackTypeCategory == Type::Category::Integer
+				IntegerType const& typeOnStack = (stackTypeCategory == Type::Category::Integer || stackTypeCategory == Type::Category::ShieldedInteger)
 					? dynamic_cast<IntegerType const&>(_typeOnStack) : addressType;
 				// Widening: clean up according to source type width
 				// Non-widening and force: clean up according to target type bits
@@ -1320,10 +1321,11 @@ void CompilerUtils::convertType(
 			// All other types should not be convertible to non-equal types.
 			solAssert(_typeOnStack == _targetType, "Invalid type conversion requested.");
 
-		if (_cleanupNeeded && _targetType.canBeStored() && _targetType.storageBytes() < 32)
-			m_context
-				<< ((u256(1) << (8 * _targetType.storageBytes())) - 1)
-				<< Instruction::AND;
+			if (_cleanupNeeded && _targetType.canBeStored() && _targetType.storageBytes() < 32) 
+				m_context
+					<< ((u256(1) << (8 * _targetType.storageBytes())) - 1)
+						<< Instruction::AND;
+		
 		break;
 	}
 
@@ -1605,12 +1607,15 @@ unsigned CompilerUtils::loadFromMemoryHelper(Type const& _type, bool _fromCallda
 
 void CompilerUtils::cleanHigherOrderBits(IntegerType const& _typeOnStack)
 {
+	 
 	if (_typeOnStack.numBits() == 256)
-		return;
+			return;
+	
 	else if (_typeOnStack.isSigned())
 		m_context << u256(_typeOnStack.numBits() / 8 - 1) << Instruction::SIGNEXTEND;
 	else
 		m_context << ((u256(1) << _typeOnStack.numBits()) - 1) << Instruction::AND;
+	
 }
 
 void CompilerUtils::leftShiftNumberOnStack(unsigned _bits)
