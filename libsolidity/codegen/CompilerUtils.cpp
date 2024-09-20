@@ -849,7 +849,7 @@ void CompilerUtils::convertType(
 		break;
 	}
 	case Type::Category::Enum:
-		solAssert(_targetType == _typeOnStack || targetTypeCategory == Type::Category::Integer);
+		solAssert(_targetType == _typeOnStack || targetTypeCategory == Type::Category::Integer || targetTypeCategory == Type::Category::ShieldedInteger);
 		if (enumOverflowCheckPending)
 		{
 			EnumType const& enumType = dynamic_cast<decltype(enumType)>(_typeOnStack);

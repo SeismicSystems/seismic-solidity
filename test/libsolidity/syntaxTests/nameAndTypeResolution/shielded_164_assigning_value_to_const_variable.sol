@@ -3,4 +3,4 @@ contract Foo {
     suint constant x = 56;
 }
 // ----
-// TypeError 6520: (48-49): Cannot assign to a constant variable.
+// DeclarationError 7491: (61-82): Shielded integers cannot be set to constant.

@@ -4,4 +4,4 @@ contract c {
     function f() public { b = a; }
 }
 // ----
-// TypeError 7407: (74-75): Type suint32[] storage ref is not implicitly convertible to expected type suint8[] storage ref.
+// TypeError 7407: (76-77): Type suint32[] storage ref is not implicitly convertible to expected type suint8[] storage ref.

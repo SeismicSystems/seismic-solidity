@@ -1243,12 +1243,7 @@ TypeResult RationalNumberType::unaryOperatorResult(Token _operator) const
 
 TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const* _other) const
 {
-	if (_other->category() == Category::ShieldedInteger) {
-		auto commonType = Type::commonType(_other, this);
-		return commonType;
-	}
-
-	if (_other->category() == Category::Integer || _other->category() == Category::FixedPoint)
+	if (_other->category() == Category::Integer || _other->category() == Category::ShieldedInteger || _other->category() == Category::FixedPoint)
 	{
 		if (isFractional())
 			return TypeResult::err("Fractional literals not supported.");
