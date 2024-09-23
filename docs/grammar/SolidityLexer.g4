@@ -319,7 +319,7 @@ YulEVMBuiltin:
 	'stop' | 'add' | 'sub' | 'mul' | 'div' | 'sdiv' | 'mod' | 'smod' | 'exp' | 'not'
 	| 'lt' | 'gt' | 'slt' | 'sgt' | 'eq' | 'iszero' | 'and' | 'or' | 'xor' | 'byte'
 	| 'shl' | 'shr' | 'sar' | 'addmod' | 'mulmod' | 'signextend' | 'keccak256'
-	| 'pop' | 'mload' | 'mstore' | 'mstore8' | 'sload' | 'sstore' | 'tload' | 'tstore'| 'msize' | 'gas'
+	| 'pop' | 'mload' | 'mstore' | 'mstore8' | 'sload' | 'sstore' |'kload'| 'kstore' | 'tload' | 'tstore'| 'msize' | 'gas'
 	| 'address' | 'balance' | 'selfbalance' | 'caller' | 'callvalue' | 'calldataload'
 	| 'calldatasize' | 'calldatacopy' | 'extcodesize' | 'extcodecopy' | 'returndatasize'
 	| 'returndatacopy' | 'mcopy' | 'extcodehash' | 'create' | 'create2' | 'call' | 'callcode'
