@@ -57,10 +57,14 @@ public:
 	/// also removes the reference from the stack.
 	/// @a _location source location of the current expression, used for error reporting.
 	virtual void retrieveValue(langutil::SourceLocation const& _location, bool _remove = false) const = 0;
+
+
+
 	/// Moves a value from the stack to the lvalue. Removes the value if @a _move is true.
 	/// @a _location is the source location of the expression that caused this operation.
 	/// Stack pre: value [lvalue_ref]
 	/// Stack post: if !_move: value_of(lvalue_ref)
+	
 	virtual void storeValue(Type const& _sourceType,
 		langutil::SourceLocation const& _location = {}, bool _move = false) const = 0;
 	/// Stores zero in the lvalue. Removes the reference from the stack if @a _removeReference is true.
@@ -164,6 +168,7 @@ public:
 	GenericStorageItem(CompilerContext& _compilerContext, Type const& _type);
 	unsigned sizeOnStack() const override { return 2; }
 	void retrieveValue(langutil::SourceLocation const& _location, bool _remove = false) const override;
+	
 	void storeValue(
 		Type const& _sourceType,
 		langutil::SourceLocation const& _location = {},

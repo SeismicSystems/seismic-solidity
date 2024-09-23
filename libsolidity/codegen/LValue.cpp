@@ -234,7 +234,9 @@ void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation con
 	}
 	if (!_remove)
 		CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
-	if (m_dataType->storageBytes() == 32)
+	if (m_dataType->category() == Type::Category::ShieldedInteger && m_dataType->storageBytes() == 32) //assumes all shieldedintegers have 32 bytes for KLOAD instruction to work
+		m_context << Instruction::POP << Instruction::KLOAD;
+	else if (m_dataType->storageBytes() == 32)
 		m_context << Instruction::POP << s_loadInstruction;
 	else
 	{
@@ -495,7 +497,14 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 		solAssert(m_dataType->isValueType(), "Clearing of unsupported type requested: " + m_dataType->toString());
 		if (!_removeReference)
 			CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
-		if (m_dataType->storageBytes() == 32)
+		if (m_dataType->category() == Type::Category::ShieldedInteger && m_dataType->storageBytes() == 32)
+		{
+			// offset should be zero. remember, shielded integers have to be 32 bytes!!
+			m_context
+				<< Instruction::POP << u256(0)
+				<< Instruction::SWAP1 << Instruction::KSTORE;
+		}
+		else if (m_dataType->storageBytes() == 32)
 		{
 			// offset should be zero
 			m_context
@@ -537,7 +546,7 @@ void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove)
 	m_context << (u256(1) << (256 - 8)) << Instruction::MUL;
 }
 
-void StorageByteArrayElement::storeValue(Type const& _type, SourceLocation const&, bool _move) const
+void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, bool _move) const
 {
 	// stack: value ref byte_number
 	m_context << u256(31) << Instruction::SUB << u256(0x100) << Instruction::EXP;
@@ -552,10 +561,7 @@ void StorageByteArrayElement::storeValue(Type const& _type, SourceLocation const
 	m_context << (u256(1) << (256 - 8)) << Instruction::DUP5 << Instruction::DIV
 		<< Instruction::MUL << Instruction::OR;
 	// stack: value ref new_full_value
-	if (_type.category()==Type::Category::ShieldedInteger) 
-		m_context << Instruction::SWAP1 << Instruction::KSTORE;
-	else
-		m_context << Instruction::SWAP1 << Instruction::SSTORE;
+	m_context << Instruction::SWAP1 << Instruction::SSTORE;
 	if (_move)
 		m_context << Instruction::POP;
 }
