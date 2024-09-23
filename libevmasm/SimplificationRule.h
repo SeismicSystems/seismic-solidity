@@ -138,6 +138,8 @@ struct EVMBuiltins
 	static auto constexpr SSTORE = PatternGenerator<Instruction::SSTORE>{};
 	static auto constexpr TLOAD = PatternGenerator<Instruction::TLOAD>{};
 	static auto constexpr TSTORE = PatternGenerator<Instruction::TSTORE>{};
+	static auto constexpr KLOAD = PatternGenerator<Instruction::KLOAD>{};
+	static auto constexpr KSTORE = PatternGenerator<Instruction::KSTORE>{};
 	static auto constexpr PC = PatternGenerator<Instruction::PC>{};
 	static auto constexpr MSIZE = PatternGenerator<Instruction::MSIZE>{};
 	static auto constexpr GAS = PatternGenerator<Instruction::GAS>{};

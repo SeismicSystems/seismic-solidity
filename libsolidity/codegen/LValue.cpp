@@ -537,7 +537,7 @@ void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove)
 	m_context << (u256(1) << (256 - 8)) << Instruction::MUL;
 }
 
-void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, bool _move) const
+void StorageByteArrayElement::storeValue(Type const& _type, SourceLocation const&, bool _move) const
 {
 	// stack: value ref byte_number
 	m_context << u256(31) << Instruction::SUB << u256(0x100) << Instruction::EXP;
@@ -552,7 +552,10 @@ void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, boo
 	m_context << (u256(1) << (256 - 8)) << Instruction::DUP5 << Instruction::DIV
 		<< Instruction::MUL << Instruction::OR;
 	// stack: value ref new_full_value
-	m_context << Instruction::SWAP1 << Instruction::SSTORE;
+	if (_type.category()==Type::Category::ShieldedInteger) 
+		m_context << Instruction::SWAP1 << Instruction::KSTORE;
+	else
+		m_context << Instruction::SWAP1 << Instruction::SSTORE;
 	if (_move)
 		m_context << Instruction::POP;
 }
