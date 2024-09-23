@@ -305,7 +305,21 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 	{
 		solAssert(m_dataType->storageBytes() <= 32, "Invalid storage bytes size.");
 		solAssert(m_dataType->storageBytes() > 0, "Invalid storage bytes size.");
-		if (m_dataType->storageBytes() == 32)
+		if (m_dataType->category() == Type::Category::ShieldedInteger && m_dataType->storageBytes() == 32)
+		{
+			solAssert(m_dataType->sizeOnStack() == 1, "Invalid stack size.");
+			// offset should be zero
+			m_context << Instruction::POP;
+			if (!_move)
+				m_context << Instruction::DUP2 << Instruction::SWAP1;
+
+			m_context << Instruction::SWAP1;
+			utils.convertType(_sourceType, *m_dataType, true);
+			m_context << Instruction::SWAP1;
+
+			m_context << Instruction::KSTORE;
+		}
+		else if (m_dataType->storageBytes() == 32)
 		{
 			solAssert(m_dataType->sizeOnStack() == 1, "Invalid stack size.");
 			// offset should be zero
