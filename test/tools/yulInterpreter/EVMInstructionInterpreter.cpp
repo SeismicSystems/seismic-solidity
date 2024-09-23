@@ -353,6 +353,11 @@ u256 EVMInstructionInterpreter::eval(
 	case Instruction::TSTORE:
 		m_state.transientStorage[h256(arg[0])] = h256(arg[1]);
 		return 0;
+	case Instruction::KLOAD:
+		return m_state.storage[h256(arg[0])];
+	case Instruction::KSTORE:
+		m_state.storage[h256(arg[0])] = h256(arg[1]);
+		return 0;
 	// --------------- calls ---------------
 	case Instruction::CREATE:
 		accessMemory(arg[1], arg[2]);
