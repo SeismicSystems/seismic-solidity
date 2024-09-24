@@ -130,6 +130,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 				// store new target length
 				solAssert(!_targetType.isByteArrayOrString());
 				_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::SSTORE;
+				
 			}
 			if (sourceBaseType->category() == Type::Category::Mapping)
 			{

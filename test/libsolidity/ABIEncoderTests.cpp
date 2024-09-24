@@ -271,6 +271,33 @@ BOOST_AUTO_TEST_CASE(storage_array)
 	)
 }
 
+BOOST_AUTO_TEST_CASE(shielded_storage_array)
+{
+	std::string sourceCode = R"(
+		contract C {
+			address[3] addr;
+			event E(address[3] a);
+			function f() public {
+				assembly {
+					kstore(0, sub(0, 1))
+					kstore(1, sub(0, 2))
+					kstore(2, sub(0, 3))
+				}
+				emit E(addr);
+			}
+		}
+	)";
+	BOTH_ENCODERS(
+		compileAndRun(sourceCode);
+		callContractFunction("f()");
+		REQUIRE_LOG_DATA(encodeArgs(
+			h160("ffffffffffffffffffffffffffffffffffffffff"),
+			h160("fffffffffffffffffffffffffffffffffffffffe"),
+			h160("fffffffffffffffffffffffffffffffffffffffd")
+		));
+	)
+}
+
 BOOST_AUTO_TEST_CASE(storage_array_dyn)
 {
 	std::string sourceCode = R"(
