@@ -616,7 +616,7 @@ std::string IntegerType::richIdentifier() const
 
 BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 {
-	if (_convertTo.category() == category())
+	if (_convertTo.category() == Category::Integer)
 	{
 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
 		// disallowing unsigned to signed conversion of different bits
@@ -738,9 +738,10 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		_other->category() != Category::RationalNumber &&
 		_other->category() != Category::FixedPoint &&
 		_other->category() != Category::ShieldedInteger &&
-		_other->category() != category() 
+		_other->category() != Category::Integer
 	)
 		return nullptr;
+	
 	if (TokenTraits::isShiftOp(_operator))
 	{
 		// Shifts are not symmetric with respect to the type
@@ -769,11 +770,11 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		}
 		return this;
 	}
-
+	
 	auto commonType = Type::commonType(this, _other); //might be an integer or fixed point
 	if (!commonType)
 		return nullptr;
-
+	
 	// All integer types can be compared
 	if (TokenTraits::isCompareOp(_operator))
 		return commonType;
