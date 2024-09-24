@@ -161,8 +161,10 @@ private:
 	/// and stores the new value at the given slot.
 	/// @returns the store operation, which might be invalid if storage was not modified
 	StoreOperation storeInStorage(Id _slot, Id _value,langutil::DebugData::ConstPtr _debugData);
+	StoreOperation storeInShieldedStorage(Id _slot, Id _value,langutil::DebugData::ConstPtr _debugData);
 	/// Retrieves the current value at the given slot in storage or creates a new special sload class.
 	Id loadFromStorage(Id _slot, langutil::DebugData::ConstPtr _debugData);
+	Id loadFromShieldedStorage(Id _slot, langutil::DebugData::ConstPtr _debugData);
 	/// Increments the sequence number, deletes all memory information that might be overwritten
 	/// and stores the new value at the given slot.
 	/// @returns the store operation, which might be invalid if memory was not modified

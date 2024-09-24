@@ -157,10 +157,19 @@ KnownState::StoreOperation KnownState::feedItem(AssemblyItem const& _item, bool 
 			case Instruction::SSTORE:
 				op = storeInStorage(arguments[0], arguments[1], _item.debugData());
 				break;
+			case Instruction::KSTORE:
+				op = storeInShieldedStorage(arguments[0], arguments[1], _item.debugData());
+				break;
 			case Instruction::SLOAD:
 				setStackElement(
 					m_stackHeight + static_cast<int>(_item.deposit()),
 					loadFromStorage(arguments[0], _item.debugData())
+				);
+				break;	
+			case Instruction::KLOAD:
+				setStackElement(
+					m_stackHeight + static_cast<int>(_item.deposit()),
+					loadFromShieldedStorage(arguments[0], _item.debugData())
 				);
 				break;
 			case Instruction::MSTORE:
@@ -348,12 +357,50 @@ KnownState::StoreOperation KnownState::storeInStorage(
 	return operation;
 }
 
+KnownState::StoreOperation KnownState::storeInShieldedStorage(
+	Id _slot,
+	Id _value,
+	langutil::DebugData::ConstPtr _debugData
+)
+{
+	if (m_storageContent.count(_slot) && m_storageContent[_slot] == _value)
+		// do not execute the storage if we know that the value is already there
+		return StoreOperation();
+	m_sequenceNumber++;
+	decltype(m_storageContent) storageContents;
+	// Copy over all values (i.e. retain knowledge about them) where we know that this store
+	// operation will not destroy the knowledge. Specifically, we copy storage locations we know
+	// are different from _slot or locations where we know that the stored value is equal to _value.
+	for (auto const& storageItem: m_storageContent)
+		if (m_expressionClasses->knownToBeDifferent(storageItem.first, _slot) || storageItem.second == _value)
+			storageContents.insert(storageItem);
+	m_storageContent = std::move(storageContents);
+
+	AssemblyItem item(Instruction::KSTORE, std::move(_debugData));
+	Id id = m_expressionClasses->find(item, {_slot, _value}, true, m_sequenceNumber);
+	StoreOperation operation{StoreOperation::Storage, _slot, m_sequenceNumber, id};
+	m_storageContent[_slot] = _value;
+	// increment a second time so that we get unique sequence numbers for writes
+	m_sequenceNumber++;
+
+	return operation;
+}
+
 ExpressionClasses::Id KnownState::loadFromStorage(Id _slot, langutil::DebugData::ConstPtr _debugData)
 {
 	if (m_storageContent.count(_slot))
 		return m_storageContent.at(_slot);
 
 	AssemblyItem item(Instruction::SLOAD, std::move(_debugData));
+	return m_storageContent[_slot] = m_expressionClasses->find(item, {_slot}, true, m_sequenceNumber);
+}
+
+ExpressionClasses::Id KnownState::loadFromShieldedStorage(Id _slot, langutil::DebugData::ConstPtr _debugData)
+{
+	if (m_storageContent.count(_slot))
+		return m_storageContent.at(_slot);
+
+	AssemblyItem item(Instruction::KLOAD, std::move(_debugData));
 	return m_storageContent[_slot] = m_expressionClasses->find(item, {_slot}, true, m_sequenceNumber);
 }
 

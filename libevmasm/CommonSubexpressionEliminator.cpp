@@ -236,13 +236,15 @@ void CSECodeGenerator::addDependencies(Id _c)
 	if (expr.item && expr.item->type() == Operation && (
 		expr.item->instruction() == Instruction::SLOAD ||
 		expr.item->instruction() == Instruction::MLOAD ||
+		expr.item->instruction() == Instruction::KLOAD ||
 		expr.item->instruction() == Instruction::KECCAK256
 	))
 	{
 		// this loads an unknown value from storage or memory and thus, in addition to its
 		// arguments, depends on all store operations to addresses where we do not know that
 		// they are different that occur before this load
-		StoreOperation::Target target = expr.item->instruction() == Instruction::SLOAD ?
+		StoreOperation::Target target = (expr.item->instruction() == Instruction::SLOAD 
+		|| expr.item->instruction() == Instruction::KLOAD) ?
 			StoreOperation::Storage : StoreOperation::Memory;
 		Id slotToLoadFrom = expr.arguments.at(0);
 		for (auto const& p: m_storeOperations)
@@ -257,6 +259,9 @@ void CSECodeGenerator::addDependencies(Id _c)
 			switch (expr.item->instruction())
 			{
 			case Instruction::SLOAD:
+				knownToBeIndependent = m_expressionClasses.knownToBeDifferent(slot, slotToLoadFrom);
+				break;
+			case Instruction::KLOAD:
 				knownToBeIndependent = m_expressionClasses.knownToBeDifferent(slot, slotToLoadFrom);
 				break;
 			case Instruction::MLOAD:
