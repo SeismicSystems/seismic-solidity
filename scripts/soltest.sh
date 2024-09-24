@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -eu
 
 REPO_ROOT="$(dirname "$0")"/..
 USE_DEBUGGER=0
@@ -62,7 +61,7 @@ do
 	shift
 done
 
-SOLTEST_COMMAND=("${SOLIDITY_BUILD_DIR}/test/soltest" "${BOOST_OPTIONS[@]}" -- --testpath "${REPO_ROOT}/test" "${SOLTEST_OPTIONS[@]}" --no-semantic-tests)
+SOLTEST_COMMAND=("${SOLIDITY_BUILD_DIR}/test/soltest" "${BOOST_OPTIONS[@]}" -- --testpath "${REPO_ROOT}/test" "${SOLTEST_OPTIONS[@]}")
 
 if [ "$USE_DEBUGGER" -ne "0" ]; then
 	# shellcheck disable=SC2086
