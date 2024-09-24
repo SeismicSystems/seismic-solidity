@@ -581,7 +581,7 @@ private:
 	/// @returns the name of a function that will clear given storage slot
 	/// starting with given offset until the end of the slot
 	/// signature: (slot, offset)
-	std::string partialClearStorageSlotFunction();
+	std::string partialClearStorageSlotFunction(ArrayType const& _type);
 
 	/// @returns the name of a function that will clear the given storage struct
 	/// signature: (slot) ->

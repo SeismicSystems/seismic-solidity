@@ -1444,7 +1444,7 @@ std::string YulUtilFunctions::cleanUpStorageArrayEndFunction(ArrayType const& _t
 		("packed", _type.baseType()->storageBytes() <= 16)
 		("itemsPerSlot", std::to_string(32 / _type.baseType()->storageBytes()))
 		("storageBytes", std::to_string(_type.baseType()->storageBytes()))
-		("partialClearStorageSlot", partialClearStorageSlotFunction())
+		("partialClearStorageSlot", partialClearStorageSlotFunction(_type))
 		.render();
 	});
 }
@@ -1455,7 +1455,7 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 	return m_functionCollector.createFunction(functionName, [&](std::vector<std::string>& _args, std::vector<std::string>&) {
 		_args = {"array", "newLen"};
 		return Whiskers(R"(
-			let data := sload(array)
+			let data := <loadOpcode>(array)
 			let oldLen := <extractLength>(data)
 
 			if gt(newLen, oldLen) {
@@ -1467,6 +1467,7 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 			}
 		)")
 		("extractLength", extractByteArrayLengthFunction())
+		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
 		("decreaseSize", decreaseByteArraySizeFunction(_type))
 		("increaseSize", increaseByteArraySizeFunction(_type))
 		.render();
@@ -1531,7 +1532,7 @@ std::string YulUtilFunctions::decreaseByteArraySizeFunction(ArrayType const& _ty
 			})")
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
-			("partialClearStorageSlot", partialClearStorageSlotFunction())
+			("partialClearStorageSlot", partialClearStorageSlotFunction(_type))
 			("clearStorageRange", clearStorageRangeFunction(*_type.baseType()))
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("div32Ceil", divide32CeilFunction())
@@ -1585,7 +1586,7 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 				// we need to copy elements from old array to new
 				// we want to copy only elements that are part of the array after resizing
 				let dataPos := <dataPosition>(array)
-				let data := <extractUsedApplyLen>(sload(dataPos), len)
+				let data := <extractUsedApplyLen>(<loadOpcode>(dataPos), len)
 				<storeOpcode>(array, data)
 				<storeOpcode>(dataPos, 0)
 			})")
@@ -1593,6 +1594,7 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
 			.render();
 	});
 }
@@ -1673,7 +1675,7 @@ std::string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 			function <functionName>(array) {
-				let data := sload(array)
+				let data := <loadOpcode>(array)
 				let oldLen := <extractByteArrayLength>(data)
 				if iszero(oldLen) { <panic>() }
 
@@ -1703,6 +1705,7 @@ std::string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("indexAccessNoChecks", longByteArrayStorageIndexAccessNoCheckFunction())
 			("setToZero", storageSetToZeroFunction(*_type.baseType()))
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
 			.render();
 	});
 }
@@ -1725,7 +1728,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 		return Whiskers(R"(
 			function <functionName>(array <values>) {
 				<?isByteArrayOrString>
-					let data := sload(array)
+					let data := <loadOpcode>(array)
 					let oldLen := <extractByteArrayLength>(data)
 					if iszero(lt(oldLen, <maxArrayLength>)) { <panic>() }
 
@@ -1770,6 +1773,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 			("panic", panicFunction(PanicCode::ResourceError))
 			("extractByteArrayLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
 			("dataAreaFunction", arrayDataAreaFunction(_type))
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
 			("isByteArrayOrString", _type.isByteArrayOrString())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
 			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType()))
@@ -1790,7 +1794,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 		return Whiskers(R"(
 			function <functionName>(array) -> slot, offset {
 				<?isBytes>
-					let data := sload(array)
+					let data := <loadOpcode>(array)
 					let oldLen := <extractLength>(data)
 					<increaseBytesSize>(array, data, oldLen, add(oldLen, 1))
 				<!isBytes>
@@ -1804,6 +1808,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 			("isBytes", _type.isByteArrayOrString())
 			("increaseBytesSize", _type.isByteArrayOrString() ? increaseByteArraySizeFunction(_type) : "")
 			("extractLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
 			("panic", panicFunction(PanicCode::ResourceError))
 			("fetchLength", arrayLengthFunction(_type))
 			("indexAccess", storageArrayIndexAccessFunction(_type))
@@ -1812,18 +1817,19 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 	});
 }
 
-std::string YulUtilFunctions::partialClearStorageSlotFunction()
+std::string YulUtilFunctions::partialClearStorageSlotFunction(ArrayType const& _type)
 {
 	std::string functionName = "partial_clear_storage_slot";
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 		function <functionName>(slot, offset) {
 			let mask := <shr>(mul(8, sub(32, offset)), <ones>)
-			<storeOpcode>(slot, and(mask, sload(slot)))
+			<storeOpcode>(slot, and(mask, <loadOpcode>(slot)))
 		}
 		)")
 		("functionName", functionName)
 		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
+		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
 		("ones", formatNumber((bigint(1) << 256) - 1))
 		("shr", shiftRightFunctionDynamic())
 		.render();
@@ -2157,7 +2163,7 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 				let fullSlots := div(length, <itemsPerSlot>)
 
 				<?isFromStorage>
-				let srcSlotValue := sload(srcPtr)
+				let srcSlotValue := <loadOpcode>(srcPtr)
 				let srcItemIndexInSlot := 0
 				</isFromStorage>
 
@@ -2242,6 +2248,7 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 		templ("itemsPerSlot", std::to_string(itemsPerSlot));
 		templ("multipleItemsPerSlotDst", itemsPerSlot > 1);
 		templ("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore");
+		templ("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "kload" : "sload");
 		bool sameTypeFromStorage = fromStorage && (*_fromType.baseType() == *_toType.baseType());
 		if (auto functionType = dynamic_cast<FunctionType const*>(_fromType.baseType()))
 		{
@@ -2817,7 +2824,7 @@ std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::o
 	return m_functionCollector.createFunction(functionName, [&] {
 		Whiskers templ(R"(
 			function <functionName>(slot<?dynamic>, offset</dynamic>) -> <?split>addr, selector<!split>value</split> {
-				<?split>let</split> value := <extract>(sload(slot)<?dynamic>, offset</dynamic>)
+				<?split>let</split> value := <extract>(<loadOpcode>(slot)<?dynamic>, offset</dynamic>)
 				<?split>
 					addr, selector := <splitFunction>(value)
 				</split>
@@ -2829,6 +2836,7 @@ std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::o
 			templ("extract", extractFromStorageValue(_type, *_offset));
 		else
 			templ("extract", extractFromStorageValueDynamic(_type));
+		templ("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload");
 		auto const* funType = dynamic_cast<FunctionType const*>(&_type);
 		bool split = _splitFunctionTypes && funType && funType->kind() == FunctionType::Kind::External;
 		templ("split", split);
@@ -2924,7 +2932,7 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			return Whiskers(R"(
 				function <functionName>(slot, <offset><fromValues>) {
 					let <toValues> := <convert>(<fromValues>)
-					<storeOpcode>(slot, <update>(sload(slot), <offset><prepare>(<toValues>)))
+					<storeOpcode>(slot, <update>(<loadOpcode>(slot), <offset><prepare>(<toValues>)))
 				}
 
 			)")
@@ -2940,6 +2948,7 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
 			("prepare", prepareStoreFunction(_toType))
 			("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
+			("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
 			.render();
 		}
 
