@@ -1558,7 +1558,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 				case 0 {
 					// we need to copy elements to data area as we changed array from packed to unpacked
 					data := and(not(0xff), data)
-					sstore(<dataPosition>(array), data)
+					<storeOpcode>(<dataPosition>(array), data)
 					sstore(array, add(mul(2, newLen), 1))
 				}
 				default {
@@ -1571,6 +1571,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 		("maxArrayLength", (u256(1) << 64).str())
 		("dataPosition", arrayDataAreaFunction(_type))
 		("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
+		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
 		.render();
 	});
 }
@@ -1585,12 +1586,13 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 				// we want to copy only elements that are part of the array after resizing
 				let dataPos := <dataPosition>(array)
 				let data := <extractUsedApplyLen>(sload(dataPos), len)
-				sstore(array, data)
-				sstore(dataPos, 0)
+				<storeOpcode>(array, data)
+				<storeOpcode>(dataPos, 0)
 			})")
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
+			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
 			.render();
 	});
 }
@@ -1736,7 +1738,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 							// We need to copy data
 							let dataArea := <dataAreaFunction>(array)
 							data := and(data, not(0xff))
-							sstore(dataArea, or(and(0xff, value), data))
+							<storeOpcode>(dataArea, or(and(0xff, value), data))
 							// New length is 32, encoded as (32 * 2 + 1)
 							sstore(array, 65)
 						}
@@ -1746,11 +1748,11 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 							let valueShifted := <shl>(shiftBits, and(0xff, value))
 							let mask := <shl>(shiftBits, 0xff)
 							data := or(and(data, not(mask)), valueShifted)
-							sstore(array, data)
+							<storeOpcode>(array, data)
 						}
 					}
 					default {
-						sstore(array, add(data, 2))
+						<storeOpcode>(array, add(data, 2))
 						let slot, offset := <indexAccess>(array, oldLen)
 						<storeValue>(slot, offset <values>)
 					}
@@ -1763,6 +1765,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 				</isByteArrayOrString>
 			})")
 			("functionName", functionName)
+			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
 			("values", _fromType->sizeOnStack() == 0 ? "" : ", " + suffixedVariableNameList("value", 0, _fromType->sizeOnStack()))
 			("panic", panicFunction(PanicCode::ResourceError))
 			("extractByteArrayLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
@@ -1816,10 +1819,11 @@ std::string YulUtilFunctions::partialClearStorageSlotFunction()
 		return Whiskers(R"(
 		function <functionName>(slot, offset) {
 			let mask := <shr>(mul(8, sub(32, offset)), <ones>)
-			sstore(slot, and(mask, sload(slot)))
+			<storeOpcode>(slot, and(mask, sload(slot)))
 		}
 		)")
 		("functionName", functionName)
+		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
 		("ones", formatNumber((bigint(1) << 256) - 1))
 		("shr", shiftRightFunctionDynamic())
 		.render();
@@ -1909,7 +1913,13 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 				auto const& slotDiff = _type.storageOffsetsOfMember(member.name).first;
 				if (!slotsCleared.count(slotDiff))
 				{
-					memberSetValues.emplace_back().emplace("clearMember", "sstore(add(slot, " + slotDiff.str() + "), 0)");
+					memberSetValues.emplace_back().emplace("clearMember", Whiskers(R"(
+						<storeOpcode>(add(slot, <memberSlotDiff>), 0)
+					)")
+					("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
+					("memberSlotDiff", slotDiff.str())
+					.render()
+				);
 					slotsCleared.emplace(slotDiff);
 				}
 			}
@@ -2178,7 +2188,7 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 						}
 					</sameTypeFromStorage>
 
-					sstore(add(dstSlot, i), dstSlotValue)
+					<storeOpcode>(add(dstSlot, i), dstSlotValue)
 				}
 
 				<?multipleItemsPerSlotDst>
@@ -2203,7 +2213,7 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 								<updateSrcPtr>
 							}
 						</sameTypeFromStorage>
-						sstore(add(dstSlot, fullSlots), dstSlotValue)
+						<storeOpcode>(add(dstSlot, fullSlots), dstSlotValue)
 					}
 				</multipleItemsPerSlotDst>
 			}
@@ -2231,6 +2241,7 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 		unsigned itemsPerSlot = 32 / _toType.storageStride();
 		templ("itemsPerSlot", std::to_string(itemsPerSlot));
 		templ("multipleItemsPerSlotDst", itemsPerSlot > 1);
+		templ("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore");
 		bool sameTypeFromStorage = fromStorage && (*_fromType.baseType() == *_toType.baseType());
 		if (auto functionType = dynamic_cast<FunctionType const*>(_fromType.baseType()))
 		{
@@ -2913,7 +2924,7 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			return Whiskers(R"(
 				function <functionName>(slot, <offset><fromValues>) {
 					let <toValues> := <convert>(<fromValues>)
-					sstore(slot, <update>(sload(slot), <offset><prepare>(<toValues>)))
+					<storeOpcode>(slot, <update>(sload(slot), <offset><prepare>(<toValues>)))
 				}
 
 			)")
@@ -2928,6 +2939,7 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("fromValues", suffixedVariableNameList("value_", 0, _fromType.sizeOnStack()))
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
 			("prepare", prepareStoreFunction(_toType))
+			("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
 			.render();
 		}
 
