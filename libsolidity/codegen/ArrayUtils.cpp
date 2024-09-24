@@ -130,7 +130,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 				// store new target length
 				solAssert(!_targetType.isByteArrayOrString());
 				_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::SSTORE;
-				
+				// TODO: investigate whether or not dynamically sized arrays with shielded objects should have a shielded length too
 			}
 			if (sourceBaseType->category() == Type::Category::Mapping)
 			{
