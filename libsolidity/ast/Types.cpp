@@ -77,7 +77,7 @@ BoolResult fitsIntegerType(bigint const& _value, IntegerType const& _type)
 
 	if (_type.minValue() > _value || _value > _type.maxValue())
 		return BoolResult::err("Literal is too large to fit in " + _type.toString(false) + ".");
-	
+
 
 	return true;
 }
@@ -741,7 +741,7 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		_other->category() != Category::Integer
 	)
 		return nullptr;
-	
+
 	if (TokenTraits::isShiftOp(_operator))
 	{
 		// Shifts are not symmetric with respect to the type
@@ -770,11 +770,11 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		}
 		return this;
 	}
-	
+
 	auto commonType = Type::commonType(this, _other); //might be an integer or fixed point
 	if (!commonType)
 		return nullptr;
-	
+
 	// All integer types can be compared
 	if (TokenTraits::isCompareOp(_operator))
 		return commonType;
@@ -801,12 +801,12 @@ std::string ShieldedIntegerType::richIdentifier() const
 // 			return false;
 // 		else
 // 			return true;
-  
+
 // 	}
-// 	else if ( _convertTo.category() == Category::Integer)	
+// 	else if ( _convertTo.category() == Category::Integer)
 // 	{
 // 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
-// 		return (numBits() == convertTo.numBits()) || (isSigned() == convertTo.isSigned());	
+// 		return (numBits() == convertTo.numBits()) || (isSigned() == convertTo.isSigned());
 // 	}
 // 	else if (_convertTo.category() == Category::FixedPoint)
 // 	{
@@ -871,7 +871,7 @@ std::string ShieldedIntegerType::toString(bool) const
 // {
 // 	if (
 // 		_other->category() != category() &&
-// 		 _other->category() != Category::RationalNumber && 
+// 		 _other->category() != Category::RationalNumber &&
 // 		 _other->category() != Category::FixedPoint &&
 // 		 _other->category() != Category::Integer
 
@@ -1195,7 +1195,7 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	}
 	case Category::FixedBytes:
 		return (m_value == rational(0)) || (m_compatibleBytesType && *m_compatibleBytesType == _convertTo);
-	// case Category::ShieldedInteger: 
+	// case Category::ShieldedInteger:
 	// {
 	// 	ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
 	// 	if (isNegative() && !targetType.isSigned())
