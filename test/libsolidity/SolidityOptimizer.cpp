@@ -657,8 +657,8 @@ BOOST_AUTO_TEST_CASE(optimise_multi_shielded_stores)
 	)";
 	compileBothVersions(sourceCode);
 	compareVersions("f()");
-	BOOST_CHECK_EQUAL(numInstructions(m_nonOptimizedBytecode, Instruction::KSTORE), 8);
-	BOOST_CHECK_EQUAL(numInstructions(m_optimizedBytecode, Instruction::KSTORE), 7);
+	BOOST_CHECK_EQUAL(numInstructions(m_nonOptimizedBytecode, Instruction::CSTORE), 8);
+	BOOST_CHECK_EQUAL(numInstructions(m_optimizedBytecode, Instruction::CSTORE), 7);
 }
 
 BOOST_AUTO_TEST_CASE(optimise_constant_to_codecopy)

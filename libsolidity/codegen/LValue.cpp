@@ -234,8 +234,8 @@ void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation con
 	}
 	if (!_remove)
 		CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
-	if (m_dataType->category() == Type::Category::ShieldedInteger && m_dataType->storageBytes() == 32) //assumes all shieldedintegers have 32 bytes for KLOAD instruction to work
-		m_context << Instruction::POP << Instruction::KLOAD;
+	if (m_dataType->category() == Type::Category::ShieldedInteger && m_dataType->storageBytes() == 32) //assumes all shieldedintegers have 32 bytes for CLOAD instruction to work
+		m_context << Instruction::POP << Instruction::CLOAD;
 	else if (m_dataType->storageBytes() == 32)
 		m_context << Instruction::POP << s_loadInstruction;
 	else
@@ -317,7 +317,7 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 			utils.convertType(_sourceType, *m_dataType, true);
 			m_context << Instruction::SWAP1;
 
-			m_context << Instruction::KSTORE;
+			m_context << Instruction::CSTORE;
 		}
 		else if (m_dataType->storageBytes() == 32)
 		{
@@ -516,7 +516,7 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 			// offset should be zero. remember, shielded integers have to be 32 bytes!!
 			m_context
 				<< Instruction::POP << u256(0)
-				<< Instruction::SWAP1 << Instruction::KSTORE;
+				<< Instruction::SWAP1 << Instruction::CSTORE;
 		}
 		else if (m_dataType->storageBytes() == 32)
 		{

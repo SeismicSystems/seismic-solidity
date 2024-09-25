@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(shielded_cse_intermediate_swap)
 	evmasm::CommonSubexpressionEliminator cse(state);
 	AssemblyItems input{
 		Instruction::SWAP1, Instruction::POP, Instruction::ADD, u256(0), Instruction::SWAP1,
-		Instruction::KLOAD, Instruction::SWAP1, u256(100), Instruction::EXP, Instruction::SWAP1,
+		Instruction::CLOAD, Instruction::SWAP1, u256(100), Instruction::EXP, Instruction::SWAP1,
 		Instruction::DIV, u256(0xff), Instruction::AND
 	};
 	BOOST_REQUIRE(cse.feedItems(input.begin(), input.end(), false) == input.end());
@@ -405,21 +405,21 @@ BOOST_AUTO_TEST_CASE(shielded_cse_storage)
 {
 	AssemblyItems input{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		Instruction::ADD,
 		u256(0),
-		Instruction::KSTORE
+		Instruction::CSTORE
 	};
 	checkCSE(input, {
 		u256(0),
 		Instruction::DUP1,
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		Instruction::DUP1,
 		Instruction::ADD,
 		Instruction::SWAP1,
-		Instruction::KSTORE
+		Instruction::CSTORE
 	});
 }
 
@@ -452,17 +452,17 @@ BOOST_AUTO_TEST_CASE(shielded_cse_noninterleaved_storage)
 	AssemblyItems input{
 		u256(7),
 		Instruction::DUP2,
-		Instruction::KSTORE,
+		Instruction::CSTORE,
 		Instruction::DUP1,
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		u256(8),
 		Instruction::DUP3,
-		Instruction::KSTORE
+		Instruction::CSTORE
 	};
 	checkCSE(input, {
 		u256(8),
 		Instruction::DUP2,
-		Instruction::KSTORE,
+		Instruction::CSTORE,
 		u256(7)
 	});
 }
@@ -489,12 +489,12 @@ BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage)
 	AssemblyItems input{
 		u256(7),
 		Instruction::DUP2,
-		Instruction::KSTORE, // store to "DUP1"
+		Instruction::CSTORE, // store to "DUP1"
 		Instruction::DUP2,
-		Instruction::KLOAD, // read from "DUP2", might be equal to "DUP1"
+		Instruction::CLOAD, // read from "DUP2", might be equal to "DUP1"
 		u256(0),
 		Instruction::DUP3,
-		Instruction::KSTORE
+		Instruction::CSTORE
 	};
 	checkCSE(input, input);
 }
@@ -531,21 +531,21 @@ BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_same_value)
 	AssemblyItems input{
 		u256(7),
 		Instruction::DUP2,
-		Instruction::KSTORE, // store to "DUP1"
+		Instruction::CSTORE, // store to "DUP1"
 		Instruction::DUP2,
-		Instruction::KLOAD, // read from "DUP2", might be equal to "DUP1"
+		Instruction::CLOAD, // read from "DUP2", might be equal to "DUP1"
 		u256(6),
 		u256(1),
 		Instruction::ADD,
 		Instruction::DUP3,
-		Instruction::KSTORE // store same value to "DUP1"
+		Instruction::CSTORE // store same value to "DUP1"
 	};
 	checkCSE(input, {
 		u256(7),
 		Instruction::DUP2,
-		Instruction::KSTORE,
+		Instruction::CSTORE,
 		Instruction::DUP2,
-		Instruction::KLOAD
+		Instruction::CLOAD
 	});
 }
 
@@ -579,19 +579,19 @@ BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_at_known_location)
 	AssemblyItems input{
 		u256(0x70),
 		u256(1),
-		Instruction::KSTORE, // store to 1
+		Instruction::CSTORE, // store to 1
 		u256(2),
-		Instruction::KLOAD, // read from 2, is different from 1
+		Instruction::CLOAD, // read from 2, is different from 1
 		u256(0x90),
 		u256(1),
-		Instruction::KSTORE // store different value at 1
+		Instruction::CSTORE // store different value at 1
 	};
 	checkCSE(input, {
 		u256(2),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		u256(0x90),
 		u256(1),
-		Instruction::KSTORE
+		Instruction::CSTORE
 	});
 }
 
@@ -637,27 +637,27 @@ BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_at_known_location_offset)
 		Instruction::DUP2,
 		u256(1),
 		Instruction::ADD,
-		Instruction::KSTORE, // store to "DUP1"+1
+		Instruction::CSTORE, // store to "DUP1"+1
 		Instruction::DUP1,
 		u256(2),
 		Instruction::ADD,
-		Instruction::KLOAD, // read from "DUP1"+2, is different from "DUP1"+1
+		Instruction::CLOAD, // read from "DUP1"+2, is different from "DUP1"+1
 		u256(0x90),
 		Instruction::DUP3,
 		u256(1),
 		Instruction::ADD,
-		Instruction::KSTORE // store different value at "DUP1"+1
+		Instruction::CSTORE // store different value at "DUP1"+1
 	};
 	checkCSE(input, {
 		u256(2),
 		Instruction::DUP2,
 		Instruction::ADD,
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		u256(0x90),
 		u256(1),
 		Instruction::DUP4,
 		Instruction::ADD,
-		Instruction::KSTORE
+		Instruction::CSTORE
 	});
 }
 
@@ -932,27 +932,27 @@ BOOST_AUTO_TEST_CASE(cse_access_previous_sequence)
 
 BOOST_AUTO_TEST_CASE(shielded_cse_access_previous_sequence)
 {
-	// Tests that the code generator detects whether it tries to access KLOAD instructions
+	// Tests that the code generator detects whether it tries to access CLOAD instructions
 	// from a sequenced expression which is not in its scope.
 	evmasm::KnownState state = createInitialState(AssemblyItems{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		u256(1),
 		Instruction::ADD,
 		u256(0),
-		Instruction::KSTORE
+		Instruction::CSTORE
 	});
 	// now stored: val_1 + 1 (value at sequence 1)
-	// if in the following instructions, the KLOAD cresolves to "val_1 + 1",
+	// if in the following instructions, the CLOAD cresolves to "val_1 + 1",
 	// this cannot be generated because we cannot load from sequence 1 anymore.
 	AssemblyItems input{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 	};
 	BOOST_CHECK_THROW(CSE(input, state), StackTooDeepException);
 	// @todo for now, this throws an exception, but it should recover to the following
 	// (or an even better version) at some point:
-	// 0, KLOAD, 1, ADD, KSTORE, 0 KLOAD
+	// 0, CLOAD, 1, ADD, CSTORE, 0 CLOAD
 }
 
 BOOST_AUTO_TEST_CASE(cse_optimise_return)
@@ -1157,7 +1157,7 @@ BOOST_AUTO_TEST_CASE(shielded_block_deduplicator_loops)
 {
 	AssemblyItems input{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		AssemblyItem(PushTag, 1),
 		AssemblyItem(PushTag, 2),
 		Instruction::JUMPI,
@@ -1165,13 +1165,13 @@ BOOST_AUTO_TEST_CASE(shielded_block_deduplicator_loops)
 		AssemblyItem(Tag, 1),
 		u256(5),
 		u256(6),
-		Instruction::KSTORE,
+		Instruction::CSTORE,
 		AssemblyItem(PushTag, 1),
 		Instruction::JUMP,
 		AssemblyItem(Tag, 2),
 		u256(5),
 		u256(6),
-		Instruction::KSTORE,
+		Instruction::CSTORE,
 		AssemblyItem(PushTag, 2),
 		Instruction::JUMP,
 	};
@@ -1225,11 +1225,11 @@ BOOST_AUTO_TEST_CASE(shielded_clear_unreachable_code)
 		AssemblyItem(PushTag, 1),
 		Instruction::JUMP,
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		AssemblyItem(Tag, 2),
 		u256(5),
 		u256(6),
-		Instruction::KSTORE,
+		Instruction::CSTORE,
 		AssemblyItem(PushTag, 1),
 		Instruction::JUMP,
 		u256(5),
@@ -1241,7 +1241,7 @@ BOOST_AUTO_TEST_CASE(shielded_clear_unreachable_code)
 		AssemblyItem(Tag, 2),
 		u256(5),
 		u256(6),
-		Instruction::KSTORE,
+		Instruction::CSTORE,
 		AssemblyItem(PushTag, 1),
 		Instruction::JUMP
 	};
@@ -1728,15 +1728,15 @@ BOOST_AUTO_TEST_CASE(shielded_cse_sload_verbatim_dup)
 	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
 	AssemblyItems input{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		verbatim
 	};
 
 	AssemblyItems output{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		Instruction::DUP1,
 		verbatim
 	};
@@ -1765,10 +1765,10 @@ BOOST_AUTO_TEST_CASE(shielded_cse_verbatim_sload_sideeffect)
 	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
 	AssemblyItems input{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		verbatim,
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 	};
 
 	checkFullCSE(input, input);
@@ -1793,7 +1793,7 @@ BOOST_AUTO_TEST_CASE(shielded_cse_verbatim_eq)
 	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
 	AssemblyItems input{
 		u256(0),
-		Instruction::KLOAD,
+		Instruction::CLOAD,
 		verbatim,
 		Instruction::DUP1,
 		Instruction::EQ

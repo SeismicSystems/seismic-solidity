@@ -157,7 +157,7 @@ KnownState::StoreOperation KnownState::feedItem(AssemblyItem const& _item, bool 
 			case Instruction::SSTORE:
 				op = storeInStorage(arguments[0], arguments[1], _item.debugData());
 				break;
-			case Instruction::KSTORE:
+			case Instruction::CSTORE:
 				op = storeInShieldedStorage(arguments[0], arguments[1], _item.debugData());
 				break;
 			case Instruction::SLOAD:
@@ -166,7 +166,7 @@ KnownState::StoreOperation KnownState::feedItem(AssemblyItem const& _item, bool 
 					loadFromStorage(arguments[0], _item.debugData())
 				);
 				break;	
-			case Instruction::KLOAD:
+			case Instruction::CLOAD:
 				setStackElement(
 					m_stackHeight + static_cast<int>(_item.deposit()),
 					loadFromShieldedStorage(arguments[0], _item.debugData())
@@ -376,7 +376,7 @@ KnownState::StoreOperation KnownState::storeInShieldedStorage(
 			storageContents.insert(storageItem);
 	m_storageContent = std::move(storageContents);
 
-	AssemblyItem item(Instruction::KSTORE, std::move(_debugData));
+	AssemblyItem item(Instruction::CSTORE, std::move(_debugData));
 	Id id = m_expressionClasses->find(item, {_slot, _value}, true, m_sequenceNumber);
 	StoreOperation operation{StoreOperation::Storage, _slot, m_sequenceNumber, id};
 	m_storageContent[_slot] = _value;
@@ -400,7 +400,7 @@ ExpressionClasses::Id KnownState::loadFromShieldedStorage(Id _slot, langutil::De
 	if (m_storageContent.count(_slot))
 		return m_storageContent.at(_slot);
 
-	AssemblyItem item(Instruction::KLOAD, std::move(_debugData));
+	AssemblyItem item(Instruction::CLOAD, std::move(_debugData));
 	return m_storageContent[_slot] = m_expressionClasses->find(item, {_slot}, true, m_sequenceNumber);
 }
 

@@ -353,9 +353,9 @@ u256 EVMInstructionInterpreter::eval(
 	case Instruction::TSTORE:
 		m_state.transientStorage[h256(arg[0])] = h256(arg[1]);
 		return 0;
-	case Instruction::KLOAD:
+	case Instruction::CLOAD:
 		return m_state.storage[h256(arg[0])];
-	case Instruction::KSTORE:
+	case Instruction::CSTORE:
 		m_state.storage[h256(arg[0])] = h256(arg[1]);
 		return 0;
 	// --------------- calls ---------------

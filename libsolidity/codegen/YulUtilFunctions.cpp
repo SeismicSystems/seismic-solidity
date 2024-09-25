@@ -1467,7 +1467,7 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 			}
 		)")
 		("extractLength", extractByteArrayLengthFunction())
-		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
+		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 		("decreaseSize", decreaseByteArraySizeFunction(_type))
 		("increaseSize", increaseByteArraySizeFunction(_type))
 		.render();
@@ -1572,7 +1572,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 		("maxArrayLength", (u256(1) << 64).str())
 		("dataPosition", arrayDataAreaFunction(_type))
 		("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
+		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
 		.render();
 	});
 }
@@ -1593,8 +1593,8 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
+			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 			.render();
 	});
 }
@@ -1705,7 +1705,7 @@ std::string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("indexAccessNoChecks", longByteArrayStorageIndexAccessNoCheckFunction())
 			("setToZero", storageSetToZeroFunction(*_type.baseType()))
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 			.render();
 	});
 }
@@ -1768,12 +1768,12 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 				</isByteArrayOrString>
 			})")
 			("functionName", functionName)
-			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
+			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
 			("values", _fromType->sizeOnStack() == 0 ? "" : ", " + suffixedVariableNameList("value", 0, _fromType->sizeOnStack()))
 			("panic", panicFunction(PanicCode::ResourceError))
 			("extractByteArrayLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
 			("dataAreaFunction", arrayDataAreaFunction(_type))
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 			("isByteArrayOrString", _type.isByteArrayOrString())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
 			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType()))
@@ -1808,7 +1808,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 			("isBytes", _type.isByteArrayOrString())
 			("increaseBytesSize", _type.isByteArrayOrString() ? increaseByteArraySizeFunction(_type) : "")
 			("extractLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
+			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 			("panic", panicFunction(PanicCode::ResourceError))
 			("fetchLength", arrayLengthFunction(_type))
 			("indexAccess", storageArrayIndexAccessFunction(_type))
@@ -1828,8 +1828,8 @@ std::string YulUtilFunctions::partialClearStorageSlotFunction(ArrayType const& _
 		}
 		)")
 		("functionName", functionName)
-		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
-		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
+		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
+		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 		("ones", formatNumber((bigint(1) << 256) - 1))
 		("shr", shiftRightFunctionDynamic())
 		.render();
@@ -1922,7 +1922,7 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 					memberSetValues.emplace_back().emplace("clearMember", Whiskers(R"(
 						<storeOpcode>(add(slot, <memberSlotDiff>), 0)
 					)")
-					("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
+					("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
 					("memberSlotDiff", slotDiff.str())
 					.render()
 				);
@@ -2247,8 +2247,8 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 		unsigned itemsPerSlot = 32 / _toType.storageStride();
 		templ("itemsPerSlot", std::to_string(itemsPerSlot));
 		templ("multipleItemsPerSlotDst", itemsPerSlot > 1);
-		templ("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore");
-		templ("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "kload" : "sload");
+		templ("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore");
+		templ("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "cload" : "sload");
 		bool sameTypeFromStorage = fromStorage && (*_fromType.baseType() == *_toType.baseType());
 		if (auto functionType = dynamic_cast<FunctionType const*>(_fromType.baseType()))
 		{
@@ -2836,7 +2836,7 @@ std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::o
 			templ("extract", extractFromStorageValue(_type, *_offset));
 		else
 			templ("extract", extractFromStorageValueDynamic(_type));
-		templ("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "kload" : "sload");
+		templ("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload");
 		auto const* funType = dynamic_cast<FunctionType const*>(&_type);
 		bool split = _splitFunctionTypes && funType && funType->kind() == FunctionType::Kind::External;
 		templ("split", split);
@@ -2947,8 +2947,8 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("fromValues", suffixedVariableNameList("value_", 0, _fromType.sizeOnStack()))
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
 			("prepare", prepareStoreFunction(_toType))
-			("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "kstore" : "sstore")
-			("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "kload" : "sload")
+			("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
+			("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 			.render();
 		}
 

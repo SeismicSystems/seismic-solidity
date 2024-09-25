@@ -279,9 +279,9 @@ BOOST_AUTO_TEST_CASE(shielded_storage_array)
 			event E(address[3] a);
 			function f() public {
 				assembly {
-					kstore(0, sub(0, 1))
-					kstore(1, sub(0, 2))
-					kstore(2, sub(0, 3))
+					cstore(0, sub(0, 1))
+					cstore(1, sub(0, 2))
+					cstore(2, sub(0, 3))
 				}
 				emit E(addr);
 			}

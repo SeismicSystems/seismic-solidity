@@ -205,8 +205,8 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 				solAssert(byteOffsetSize == 0, "Byte offset for direct copy.");
 				if (sourceBaseType->category() == Type::Category::ShieldedInteger)
 				_context
-					<< Instruction::DUP3 << Instruction::KLOAD
-					<< Instruction::DUP3 << Instruction::KSTORE;
+					<< Instruction::DUP3 << Instruction::CLOAD
+					<< Instruction::DUP3 << Instruction::CSTORE;
 				else
 				_context
 					<< Instruction::DUP3 << Instruction::SLOAD
@@ -571,9 +571,9 @@ void ArrayUtils::clearArray(ArrayType const& _typeIn) const
 
 					for (unsigned i = 1; i < _type.storageSize(); ++i)
 					_context
-						<< u256(0) << Instruction::DUP2 << Instruction::KSTORE
+						<< u256(0) << Instruction::DUP2 << Instruction::CSTORE
 						<< u256(1) << Instruction::ADD;
-				_context << u256(0) << Instruction::SWAP1 << Instruction::KSTORE;
+				_context << u256(0) << Instruction::SWAP1 << Instruction::CSTORE;
 				}
 				else {
 				// unroll loop for small arrays @todo choose a good value

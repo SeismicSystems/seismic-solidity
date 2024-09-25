@@ -4,6 +4,11 @@ contract C {
         sint32 z = x + y;
         return z;
     }
+    function g(sint32 x, int32 y) external pure returns (int32)
+    {
+        int32 z = x + y;
+        return z;
+    }
 }
 // ----
 
