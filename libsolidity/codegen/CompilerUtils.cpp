@@ -875,6 +875,7 @@ void CompilerUtils::convertType(
 			solAssert(
 				stackTypeCategory == Type::Category::Address ||
 				stackTypeCategory == Type::Category::Integer ||
+				stackTypeCategory == Type::Category::ShieldedInteger ||
 				stackTypeCategory == Type::Category::RationalNumber,
 				"Invalid conversion to FixedBytesType requested."
 			);
@@ -907,6 +908,7 @@ void CompilerUtils::convertType(
 			solAssert(
 				stackTypeCategory == Type::Category::Integer ||
 				stackTypeCategory == Type::Category::RationalNumber ||
+				stackTypeCategory == Type::Category::ShieldedInteger ||
 				stackTypeCategory == Type::Category::FixedPoint,
 				"Invalid conversion to FixedMxNType requested."
 			);

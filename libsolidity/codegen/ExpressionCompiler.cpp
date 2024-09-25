@@ -2607,8 +2607,6 @@ void ExpressionCompiler::appendShiftOperatorCode(Token _operator, Type const& _v
 	bool c_valueSigned = false;
 	if (auto valueType = dynamic_cast<IntegerType const*>(&_valueType))
 		c_valueSigned = valueType->isSigned();
-	else if (auto valueType = dynamic_cast<ShieldedIntegerType const*>(&_valueType))
-		c_valueSigned = valueType->isSigned();
 	else
 		solAssert(dynamic_cast<FixedBytesType const*>(&_valueType), "Only integer and fixed bytes type supported for shifts.");
 
