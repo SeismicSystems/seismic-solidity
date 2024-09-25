@@ -2,10 +2,10 @@
   "absolutePath": "a",
   "exportedSymbols": {
     "C": [
-      10
+      7
     ]
   },
-  "id": 11,
+  "id": 8,
   "nodeType": "SourceUnit",
   "nodes": [
     {
@@ -15,9 +15,9 @@
       "contractDependencies": [],
       "contractKind": "contract",
       "fullyImplemented": true,
-      "id": 10,
+      "id": 7,
       "linearizedBaseContracts": [
-        10
+        7
       ],
       "name": "C",
       "nameLocation": "9:1:1",
@@ -29,10 +29,10 @@
           "id": 3,
           "mutability": "immutable",
           "name": "a",
-          "nameLocation": "39:1:1",
+          "nameLocation": "40:1:1",
           "nodeType": "VariableDeclaration",
-          "scope": 10,
-          "src": "17:27:1",
+          "scope": 7,
+          "src": "17:28:1",
           "stateVariable": true,
           "storageLocation": "default",
           "typeDescriptions": {
@@ -43,7 +43,7 @@
             "id": 1,
             "name": "suint",
             "nodeType": "ElementaryTypeName",
-            "src": "17:4:1",
+            "src": "17:5:1",
             "typeDescriptions": {
               "typeIdentifier": "t_suint256",
               "typeString": "suint256"
@@ -58,25 +58,25 @@
             "kind": "number",
             "lValueRequested": false,
             "nodeType": "Literal",
-            "src": "43:1:1",
+            "src": "44:1:1",
             "typeDescriptions": {
               "typeIdentifier": "t_rational_4_by_1",
-              "typeString": "sint_const 4"
+              "typeString": "int_const 4"
             },
             "value": "4"
           },
           "visibility": "public"
         },
         {
-          "constant": true,
-          "functionSelector": "4df7e3d0",
+          "constant": false,
+          "functionSelector": "c3da42b8",
           "id": 6,
-          "mutability": "constant",
-          "name": "b",
-          "nameLocation": "71:1:1",
+          "mutability": "mutable",
+          "name": "c",
+          "nameLocation": "64:1:1",
           "nodeType": "VariableDeclaration",
-          "scope": 10,
-          "src": "50:26:1",
+          "scope": 7,
+          "src": "51:18:1",
           "stateVariable": true,
           "storageLocation": "default",
           "typeDescriptions": {
@@ -87,51 +87,7 @@
             "id": 4,
             "name": "suint",
             "nodeType": "ElementaryTypeName",
-            "src": "50:4:1",
-            "typeDescriptions": {
-              "typeIdentifier": "t_suint256",
-              "typeString": "suint256"
-            }
-          },
-          "value": {
-            "hexValue": "32",
-            "id": 5,
-            "isConstant": false,
-            "isLValue": false,
-            "isPure": true,
-            "kind": "number",
-            "lValueRequested": false,
-            "nodeType": "Literal",
-            "src": "75:1:1",
-            "typeDescriptions": {
-              "typeIdentifier": "t_rational_2_by_1",
-              "typeString": "sint_const 2"
-            },
-            "value": "2"
-          },
-          "visibility": "public"
-        },
-        {
-          "constant": false,
-          "functionSelector": "c3da42b8",
-          "id": 9,
-          "mutability": "mutable",
-          "name": "c",
-          "nameLocation": "94:1:1",
-          "nodeType": "VariableDeclaration",
-          "scope": 10,
-          "src": "82:17:1",
-          "stateVariable": true,
-          "storageLocation": "default",
-          "typeDescriptions": {
-            "typeIdentifier": "t_suint256",
-            "typeString": "suint256"
-          },
-          "typeName": {
-            "id": 7,
-            "name": "suint",
-            "nodeType": "ElementaryTypeName",
-            "src": "82:4:1",
+            "src": "51:5:1",
             "typeDescriptions": {
               "typeIdentifier": "t_suint256",
               "typeString": "suint256"
@@ -139,28 +95,28 @@
           },
           "value": {
             "hexValue": "33",
-            "id": 8,
+            "id": 5,
             "isConstant": false,
             "isLValue": false,
             "isPure": true,
             "kind": "number",
             "lValueRequested": false,
             "nodeType": "Literal",
-            "src": "98:1:1",
+            "src": "68:1:1",
             "typeDescriptions": {
               "typeIdentifier": "t_rational_3_by_1",
-              "typeString": "sint_const 3"
+              "typeString": "int_const 3"
             },
             "value": "3"
           },
           "visibility": "public"
         }
       ],
-      "scope": 11,
-      "src": "0:102:1",
+      "scope": 8,
+      "src": "0:72:1",
       "usedErrors": [],
       "usedEvents": []
     }
   ],
-  "src": "0:103:1"
+  "src": "0:73:1"
 }
