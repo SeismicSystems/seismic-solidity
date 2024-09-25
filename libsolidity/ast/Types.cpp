@@ -770,8 +770,11 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		}
 		return this;
 	}
+	auto commonType = Type::commonType(this, _other);
+	if (_other->category() == Category::ShieldedInteger)
+		commonType = Type::commonType(dynamic_cast<ShieldedIntegerType const*>(this), dynamic_cast<ShieldedIntegerType const*>(_other));
 
-	auto commonType = Type::commonType(this, _other); //might be an integer or fixed point
+	 //might be an integer or fixed point
 	if (!commonType)
 		return nullptr;
 
