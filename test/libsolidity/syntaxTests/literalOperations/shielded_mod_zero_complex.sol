@@ -1,5 +1,5 @@
 contract C {
-    suint constant b3 = 1 % (-4+((2)*2));
+    suint b3 = 1 % (-4+((2)*2));
 }
 // ----
-// DeclarationError 7491: (17-53): Shielded integers cannot be set to constant.
+// TypeError 2271: (28-44): Built-in binary operator % cannot be applied to types int_const 1 and int_const 0.
