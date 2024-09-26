@@ -1322,11 +1322,11 @@ void CompilerUtils::convertType(
 		else
 			// All other types should not be convertible to non-equal types.
 			solAssert(_typeOnStack == _targetType, "Invalid type conversion requested.");
-
+		
 		if (_cleanupNeeded && _targetType.canBeStored() && _targetType.storageBytes() < 32)
 			m_context
 				<< ((u256(1) << (8 * _targetType.storageBytes())) - 1)
-					<< Instruction::AND;
+				<< Instruction::AND;
 
 		break;
 	}
@@ -1611,7 +1611,7 @@ void CompilerUtils::cleanHigherOrderBits(IntegerType const& _typeOnStack)
 {
 
 	if (_typeOnStack.numBits() == 256)
-			return;
+		return;
 
 	else if (_typeOnStack.isSigned())
 		m_context << u256(_typeOnStack.numBits() / 8 - 1) << Instruction::SIGNEXTEND;
