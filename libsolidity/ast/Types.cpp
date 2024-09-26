@@ -674,7 +674,7 @@ TypeResult IntegerType::unaryOperatorResult(Token _operator) const
 
 bool IntegerType::operator==(Type const& _other) const
 {
-	if (_other.category() != category())
+	if (_other.category() != Category::Integer && _other.category() != Category::ShieldedInteger)
 		return false;
 	IntegerType const& other = dynamic_cast<IntegerType const&>(_other);
 	return other.m_bits == m_bits && other.m_modifier == m_modifier;
@@ -781,15 +781,6 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 std::string ShieldedIntegerType::richIdentifier() const
 {
 	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());
-}
-
-
-bool ShieldedIntegerType::operator==(Type const& _other) const
-{
-	if (_other.category() != category())
-		return false;
-	ShieldedIntegerType const& other = dynamic_cast<ShieldedIntegerType const&>(_other);
-	return other.m_bits == m_bits && other.m_modifier == m_modifier;
 }
 
 std::string ShieldedIntegerType::toString(bool) const
@@ -1075,15 +1066,6 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	}
 	case Category::FixedBytes:
 		return (m_value == rational(0)) || (m_compatibleBytesType && *m_compatibleBytesType == _convertTo);
-	// case Category::ShieldedInteger:
-	// {
-	// 	ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
-	// 	if (isNegative() && !targetType.isSigned())
-	// 		return false;
-	// 	if (isFractional())
-	// 		return false;
-	// 	return fitsShieldedIntegerType(m_value.numerator(), targetType);
-	// }
 	default:
 		return false;
 	}

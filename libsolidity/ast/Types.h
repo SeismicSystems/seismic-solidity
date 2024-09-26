@@ -510,7 +510,7 @@ public:
 	virtual TypeResult interfaceType(bool) const override { return this; }
 
 	virtual unsigned numBits() const { return m_bits; }
-	bool isSigned() const { return m_modifier == Modifier::Signed; }
+	virtual bool isSigned() const { return m_modifier == Modifier::Signed; }
 
 	u256 min() const;
 	u256 max() const;
@@ -540,10 +540,11 @@ public:
 	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
-	bool operator==(Type const& _other) const override;
 
 	std::string toString(bool _withoutDataLocation) const override;
 	unsigned numBits() const override { return m_bits; }
+
+	bool isSigned() const override { return m_modifier == Modifier::Signed; }
 
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
