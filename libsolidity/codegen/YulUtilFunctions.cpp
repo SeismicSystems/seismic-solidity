@@ -599,7 +599,6 @@ std::string YulUtilFunctions::typedShiftRightFunction(Type const& _type, Type co
 	});
 }
 
-
 std::string YulUtilFunctions::updateByteSliceFunction(size_t _numBytes, size_t _shiftBytes)
 {
 	solAssert(_numBytes <= 32, "");
