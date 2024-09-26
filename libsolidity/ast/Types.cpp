@@ -71,13 +71,11 @@ bool fitsPrecisionBase10(bigint const& _mantissa, uint32_t _expBase10)
 /// Checks whether _value fits into IntegerType _type.
 BoolResult fitsIntegerType(bigint const& _value, IntegerType const& _type)
 {
-
 	if (_value < 0 && !_type.isSigned())
 		return BoolResult::err("Cannot implicitly convert signed literal to unsigned type.");
 
 	if (_type.minValue() > _value || _value > _type.maxValue())
 		return BoolResult::err("Literal is too large to fit in " + _type.toString(false) + ".");
-
 
 	return true;
 }
@@ -776,7 +774,6 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		return nullptr;
 	return commonType;
 }
-
 
 std::string ShieldedIntegerType::richIdentifier() const
 {
