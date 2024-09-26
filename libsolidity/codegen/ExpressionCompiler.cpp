@@ -503,7 +503,7 @@ bool ExpressionCompiler::visit(UnaryOperation const& _unaryOperation)
 		{
 			if (m_context.arithmetic() == Arithmetic::Checked)
 				m_context.callYulFunction(m_context.utilFunctions().decrementCheckedFunction(type), 1, 1);
-			else 
+			else
 			{
 				m_context << u256(1);
 				m_context << Instruction::SWAP1 << Instruction::SUB;
