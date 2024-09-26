@@ -1808,9 +1808,8 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		)
 		{
 			// These rules are enforced by the binary operator, but assert them here too.
-			if (auto type = dynamic_cast<IntegerType const*>(commonType)) 
+			if (auto type = dynamic_cast<IntegerType const*>(commonType))
 				solAssert(type->numBits() == 256, "");
-		
 			if (auto type = dynamic_cast<FixedPointType const*>(commonType))
 				solAssert(type->numBits() == 256, "");
 		}
