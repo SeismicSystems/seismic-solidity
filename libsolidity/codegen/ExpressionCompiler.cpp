@@ -503,7 +503,8 @@ bool ExpressionCompiler::visit(UnaryOperation const& _unaryOperation)
 		{
 			if (m_context.arithmetic() == Arithmetic::Checked)
 				m_context.callYulFunction(m_context.utilFunctions().decrementCheckedFunction(type), 1, 1);
-			else {
+			else 
+			{
 				m_context << u256(1);
 				m_context << Instruction::SWAP1 << Instruction::SUB;
 			}
@@ -722,7 +723,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				utils().rightShiftNumberOnStack(32);
 			else
 				// Extract the runtime part.
-				m_context << ((u256(1) << 32) - 1) << Instruction::AND; 
+				m_context << ((u256(1) << 32) - 1) << Instruction::AND;
 
 			m_context.appendJump(evmasm::AssemblyItem::JumpType::IntoFunction);
 			m_context << returnLabel;
