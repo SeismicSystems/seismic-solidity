@@ -1322,12 +1322,11 @@ void CompilerUtils::convertType(
 		else
 			// All other types should not be convertible to non-equal types.
 			solAssert(_typeOnStack == _targetType, "Invalid type conversion requested.");
-		
+
 		if (_cleanupNeeded && _targetType.canBeStored() && _targetType.storageBytes() < 32)
 			m_context
 				<< ((u256(1) << (8 * _targetType.storageBytes())) - 1)
 				<< Instruction::AND;
-
 		break;
 	}
 
@@ -1609,15 +1608,12 @@ unsigned CompilerUtils::loadFromMemoryHelper(Type const& _type, bool _fromCallda
 
 void CompilerUtils::cleanHigherOrderBits(IntegerType const& _typeOnStack)
 {
-
 	if (_typeOnStack.numBits() == 256)
 		return;
-
 	else if (_typeOnStack.isSigned())
 		m_context << u256(_typeOnStack.numBits() / 8 - 1) << Instruction::SIGNEXTEND;
 	else
 		m_context << ((u256(1) << _typeOnStack.numBits()) - 1) << Instruction::AND;
-
 }
 
 void CompilerUtils::leftShiftNumberOnStack(unsigned _bits)

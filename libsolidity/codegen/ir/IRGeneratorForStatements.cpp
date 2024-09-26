@@ -786,7 +786,6 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		else
 			solUnimplemented("Unary operator not yet implemented");
 	}
-	
 	else if (resultType.category() == Type::Category::FixedBytes)
 	{
 		solAssert(op == Token::BitNot, "Only bitwise negation is allowed for FixedBytes");
