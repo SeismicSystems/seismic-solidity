@@ -859,9 +859,7 @@ ASTPointer<VariableDeclaration> Parser::parseVariableDeclaration(
 						(mutability == VariableDeclaration::Mutability::Constant ? "\"constant\"" : "\"immutable\"")
 					);
 				else if (token == Token::Constant)
-					{
-						mutability = VariableDeclaration::Mutability::Constant;
-			}
+					mutability = VariableDeclaration::Mutability::Constant;
 				else if (token == Token::Immutable)
 					mutability = VariableDeclaration::Mutability::Immutable;
 			}

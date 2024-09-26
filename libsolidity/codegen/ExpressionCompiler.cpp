@@ -2440,7 +2440,6 @@ void ExpressionCompiler::appendCompareOperatorCode(Token _operator, Type const& 
 		FunctionType const* functionType = dynamic_cast<decltype(functionType)>(&_type);
 		if (functionType && functionType->kind() == FunctionType::Kind::External)
 		{
-			
 			solUnimplementedAssert(functionType->sizeOnStack() == 2, "");
 			m_context << Instruction::SWAP3;
 
@@ -2580,8 +2579,6 @@ void ExpressionCompiler::appendArithmeticOperatorCode(Token _operator, Type cons
 			}
 		}
 	}
-	
-
 
 void ExpressionCompiler::appendBitOperatorCode(Token _operator)
 {
