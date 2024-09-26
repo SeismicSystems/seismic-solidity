@@ -738,7 +738,12 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 	}
 	else if (Token::Exp == _operator)
 	{
-		if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
+		if (auto otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
+		{
+			if (otherIntType->isSigned())
+				return TypeResult::err("Exponentiation power is not allowed to be a signed shielded integer type.");
+		}
+		else if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
 		{
 			if (otherIntType->isSigned())
 				return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
@@ -1136,7 +1141,12 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 		}
 		else if (Token::Exp == _operator)
 		{
-			if (auto const* otherIntType = dynamic_cast<IntegerType const*>(_other))
+			if (auto const* otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
+			{
+				if (otherIntType->isSigned())
+					return TypeResult::err("Exponentiation power is not allowed to be a signed shielded integer type.");
+			}
+			else if (auto const* otherIntType = dynamic_cast<IntegerType const*>(_other))
 			{
 				if (otherIntType->isSigned())
 					return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
