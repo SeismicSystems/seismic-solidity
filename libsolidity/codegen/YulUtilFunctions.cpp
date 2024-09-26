@@ -778,7 +778,6 @@ std::string YulUtilFunctions::wrappingIntAddFunction(IntegerType const& _type)
 	});
 }
 
-
 std::string YulUtilFunctions::overflowCheckedIntMulFunction(IntegerType const& _type)
 {
 	std::string functionName = "checked_mul_" + _type.identifier();
@@ -879,8 +878,6 @@ std::string YulUtilFunctions::overflowCheckedIntDivFunction(IntegerType const& _
 	});
 }
 
-
-
 std::string YulUtilFunctions::wrappingIntDivFunction(IntegerType const& _type)
 {
 	std::string functionName = "wrapping_div_" + _type.identifier();
@@ -967,7 +964,6 @@ std::string YulUtilFunctions::overflowCheckedIntSubFunction(IntegerType const& _
 	});
 }
 
-
 std::string YulUtilFunctions::wrappingIntSubFunction(IntegerType const& _type)
 {
 	std::string functionName = "wrapping_sub_" + _type.identifier();
@@ -983,7 +979,6 @@ std::string YulUtilFunctions::wrappingIntSubFunction(IntegerType const& _type)
 			.render();
 	});
 }
-
 
 std::string YulUtilFunctions::overflowCheckedIntExpFunction(
 	IntegerType const& _type,
@@ -1130,7 +1125,6 @@ std::string YulUtilFunctions::overflowCheckedIntLiteralExpFunction(
 			.render();
 	});
 }
-
 
 std::string YulUtilFunctions::overflowCheckedUnsignedExpFunction()
 {
@@ -1303,7 +1297,6 @@ std::string YulUtilFunctions::wrappingIntExpFunction(
 			.render();
 	});
 }
-
 
 std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 {
