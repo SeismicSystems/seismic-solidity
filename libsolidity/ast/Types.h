@@ -540,11 +540,7 @@ public:
 	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
-	//BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
-	//BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
-	//richTypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
-
 	bool operator==(Type const& _other) const override;
 
 	std::string toString(bool _withoutDataLocation) const override;
