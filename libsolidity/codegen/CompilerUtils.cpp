@@ -726,7 +726,6 @@ void CompilerUtils::splitExternalFunctionType(bool _leftAligned)
 		m_context << ((u256(1) << 160) - 1) << Instruction::AND << Instruction::SWAP1;
 	}
 	m_context << u256(0xffffffffUL) << Instruction::AND;
-
 }
 
 void CompilerUtils::combineExternalFunctionType(bool _leftAligned)

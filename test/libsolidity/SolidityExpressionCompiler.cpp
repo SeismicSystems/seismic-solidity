@@ -500,7 +500,6 @@ BOOST_AUTO_TEST_CASE(unary_operators)
 			uint8_t(Instruction::EQ),
 			uint8_t(Instruction::ISZERO)
 		};
-
 	BOOST_CHECK_EQUAL_COLLECTIONS(code.begin(), code.end(), expectation.begin(), expectation.end());
 }
 
