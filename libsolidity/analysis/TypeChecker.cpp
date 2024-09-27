@@ -4064,6 +4064,12 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 				var->location(),
 				"Type containing a (nested) mapping is not allowed as " + kind + " parameter type."
 			);
+		if (type(*var)->category()==Type::Category::ShieldedInteger)
+			m_errorReporter.fatalTypeError(
+				4626_error,
+				var->location(),
+				"Type containing a shielded integer is not allowed as " + kind + " parameter type."
+			);
 		if (!type(*var)->interfaceType(false))
 			m_errorReporter.typeError(3417_error, var->location(), "Internal or recursive type is not allowed as " + kind + " parameter type.");
 		if (
