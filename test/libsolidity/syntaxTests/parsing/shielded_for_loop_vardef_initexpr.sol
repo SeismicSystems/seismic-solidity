@@ -6,8 +6,9 @@ contract test {
     }
 }
 // ----
-//Warning 5740: (91-94): Unreachable code.
-//Warning 5740: (133-141): Unreachable code.
-//Warning 5667: (33-43): Unused function parameter. Remove or comment out the variable name to silence this warning.
-//Warning 2072: (110-120): Unused local variable.
-//Warning 2018: (20-158): Function state mutability can be restricted to pure
+// Warning 9660: (67-81): Literals converted to shielded integers will leak during contract deployment.
+// Warning 5740: (91-94): Unreachable code.
+// Warning 5740: (133-141): Unreachable code.
+// Warning 5667: (33-43): Unused function parameter. Remove or comment out the variable name to silence this warning.
+// Warning 2072: (110-120): Unused local variable.
+// Warning 2018: (20-158): Function state mutability can be restricted to pure

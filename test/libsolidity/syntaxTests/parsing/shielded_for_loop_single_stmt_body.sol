@@ -6,5 +6,6 @@ contract test {
     }
 }
 // ----
+// Warning 9660: (62-76): Literals converted to shielded integers will leak during contract deployment.
 // Warning 5667: (33-43): Unused function parameter. Remove or comment out the variable name to silence this warning.
 // Warning 2018: (20-138): Function state mutability can be restricted to pure

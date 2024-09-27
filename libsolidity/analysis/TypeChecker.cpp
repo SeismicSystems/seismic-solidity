@@ -1317,6 +1317,14 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
+		else if (valueComponentType->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger) 
+		{
+			m_errorReporter.warning(
+			9660_error,
+			_statement.location(),
+			"Literals converted to shielded integers will leak during contract deployment."
+		);
+		}
 	}
 
 	if (valueTypes.size() != variables.size())

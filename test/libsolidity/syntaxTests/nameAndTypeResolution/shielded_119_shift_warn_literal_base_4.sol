@@ -5,3 +5,4 @@ contract test {
     }
 }
 // ----
+// Warning 9660: (71-85): Literals converted to shielded integers will leak during contract deployment.
