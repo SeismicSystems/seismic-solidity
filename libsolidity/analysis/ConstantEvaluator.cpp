@@ -242,13 +242,6 @@ std::optional<TypedRational> convertType(rational const& _value, Type const& _ty
 		else
 			return TypedRational{&_type, _value.numerator() / _value.denominator()};
 	}
-	else if (auto const* shieldedIntegerType = dynamic_cast<ShieldedIntegerType const*>(&_type))
-	{
-		if (_value > shieldedIntegerType->maxValue() || _value < shieldedIntegerType->minValue())
-			return std::nullopt;
-		else
-			return TypedRational{&_type, _value.numerator() / _value.denominator()};
-	}
 	else
 		return std::nullopt;
 }
