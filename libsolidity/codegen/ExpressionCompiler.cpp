@@ -2517,68 +2517,68 @@ void ExpressionCompiler::appendArithmeticOperatorCode(Token _operator, Type cons
 		solUnimplemented("Not yet implemented - FixedPointType.");
 
 
-		IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
-		if (m_context.arithmetic() == Arithmetic::Checked)
+	IntegerType const& type = dynamic_cast<IntegerType const&>(_type);
+	if (m_context.arithmetic() == Arithmetic::Checked)
+	{
+		std::string functionName;
+		switch (_operator)
 		{
-			std::string functionName;
-			switch (_operator)
-			{
-			case Token::Add:
-				functionName = m_context.utilFunctions().overflowCheckedIntAddFunction(type);
-				break;
-			case Token::Sub:
-				functionName = m_context.utilFunctions().overflowCheckedIntSubFunction(type);
-				break;
-			case Token::Mul:
-				functionName = m_context.utilFunctions().overflowCheckedIntMulFunction(type);
-				break;
-			case Token::Div:
-				functionName = m_context.utilFunctions().overflowCheckedIntDivFunction(type);
-				break;
-			case Token::Mod:
-				functionName = m_context.utilFunctions().intModFunction(type);
-				break;
-			case Token::Exp:
+		case Token::Add:
+			functionName = m_context.utilFunctions().overflowCheckedIntAddFunction(type);
+			break;
+		case Token::Sub:
+			functionName = m_context.utilFunctions().overflowCheckedIntSubFunction(type);
+			break;
+		case Token::Mul:
+			functionName = m_context.utilFunctions().overflowCheckedIntMulFunction(type);
+			break;
+		case Token::Div:
+			functionName = m_context.utilFunctions().overflowCheckedIntDivFunction(type);
+			break;
+		case Token::Mod:
+			functionName = m_context.utilFunctions().intModFunction(type);
+			break;
+		case Token::Exp:
 				// EXP is handled in a different function.
-			default:
-				solAssert(false, "Unknown arithmetic operator.");
-			}
-			// TODO Maybe we want to force-inline this?
-			m_context.callYulFunction(functionName, 2, 1);
+		default:
+			solAssert(false, "Unknown arithmetic operator.");
 		}
-		else
+		// TODO Maybe we want to force-inline this?
+		m_context.callYulFunction(functionName, 2, 1);
+	}
+	else
+	{
+		bool const c_isSigned = type.isSigned();
+
+		switch (_operator)
 		{
-			bool const c_isSigned = type.isSigned();
+		case Token::Add:
+			m_context << Instruction::ADD;
+			break;
+		case Token::Sub:
+			m_context << Instruction::SUB;
+			break;
+		case Token::Mul:
+			m_context << Instruction::MUL;
+			break;
+		case Token::Div:
+		case Token::Mod:
+		{
+			// Test for division by zero
+			m_context << Instruction::DUP2 << Instruction::ISZERO;
+			m_context.appendConditionalPanic(util::PanicCode::DivisionByZero);
 
-			switch (_operator)
-			{
-			case Token::Add:
-				m_context << Instruction::ADD;
-				break;
-			case Token::Sub:
-				m_context << Instruction::SUB;
-				break;
-			case Token::Mul:
-				m_context << Instruction::MUL;
-				break;
-			case Token::Div:
-			case Token::Mod:
-			{
-				// Test for division by zero
-				m_context << Instruction::DUP2 << Instruction::ISZERO;
-				m_context.appendConditionalPanic(util::PanicCode::DivisionByZero);
-
-				if (_operator == Token::Div)
-					m_context << (c_isSigned ? Instruction::SDIV : Instruction::DIV);
-				else
-					m_context << (c_isSigned ? Instruction::SMOD : Instruction::MOD);
-				break;
-			}
-			default:
-				solAssert(false, "Unknown arithmetic operator.");
-			}
+			if (_operator == Token::Div)
+				m_context << (c_isSigned ? Instruction::SDIV : Instruction::DIV);
+			else
+				m_context << (c_isSigned ? Instruction::SMOD : Instruction::MOD);
+			break;
+		}
+		default:
+			solAssert(false, "Unknown arithmetic operator.");
 		}
 	}
+}
 
 void ExpressionCompiler::appendBitOperatorCode(Token _operator)
 {
