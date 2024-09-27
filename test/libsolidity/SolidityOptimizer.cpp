@@ -126,18 +126,18 @@ protected:
 
 BOOST_FIXTURE_TEST_SUITE(SolidityOptimizer, OptimizerTestFramework)
 
-// BOOST_AUTO_TEST_CASE(smoke_test)
-// {
-// 	char const* sourceCode = R"(
-// 		contract test {
-// 			function f(uint a) public returns (uint b) {
-// 				return a;
-// 			}
-// 		}
-// 	)";
-// 	compileBothVersions(sourceCode);
-// 	compareVersions("f(uint256)", u256(7));
-// }
+BOOST_AUTO_TEST_CASE(smoke_test)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f(uint a) public returns (uint b) {
+				return a;
+			}
+		}
+	)";
+	compileBothVersions(sourceCode);
+	compareVersions("f(uint256)", u256(7));
+}
 
 BOOST_AUTO_TEST_CASE(identities)
 {

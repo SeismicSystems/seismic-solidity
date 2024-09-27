@@ -638,9 +638,8 @@ BoolResult IntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
 		return true;
-	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo)) {
+	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
 		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
-	}
 	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
 		return
 			(addressType->stateMutability() != StateMutability::Payable) &&
