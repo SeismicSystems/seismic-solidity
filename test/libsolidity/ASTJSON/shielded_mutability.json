@@ -25,14 +25,13 @@
       "nodes": [
         {
           "constant": false,
-          "functionSelector": "0dbe671f",
           "id": 3,
           "mutability": "immutable",
           "name": "a",
-          "nameLocation": "40:1:1",
+          "nameLocation": "33:1:1",
           "nodeType": "VariableDeclaration",
           "scope": 7,
-          "src": "17:28:1",
+          "src": "17:21:1",
           "stateVariable": true,
           "storageLocation": "default",
           "typeDescriptions": {
@@ -58,25 +57,24 @@
             "kind": "number",
             "lValueRequested": false,
             "nodeType": "Literal",
-            "src": "44:1:1",
+            "src": "37:1:1",
             "typeDescriptions": {
               "typeIdentifier": "t_rational_4_by_1",
               "typeString": "int_const 4"
             },
             "value": "4"
           },
-          "visibility": "public"
+          "visibility": "internal"
         },
         {
           "constant": false,
-          "functionSelector": "c3da42b8",
           "id": 6,
           "mutability": "mutable",
           "name": "c",
-          "nameLocation": "64:1:1",
+          "nameLocation": "50:1:1",
           "nodeType": "VariableDeclaration",
           "scope": 7,
-          "src": "51:18:1",
+          "src": "44:11:1",
           "stateVariable": true,
           "storageLocation": "default",
           "typeDescriptions": {
@@ -87,7 +85,7 @@
             "id": 4,
             "name": "suint",
             "nodeType": "ElementaryTypeName",
-            "src": "51:5:1",
+            "src": "44:5:1",
             "typeDescriptions": {
               "typeIdentifier": "t_suint256",
               "typeString": "suint256"
@@ -102,21 +100,21 @@
             "kind": "number",
             "lValueRequested": false,
             "nodeType": "Literal",
-            "src": "68:1:1",
+            "src": "54:1:1",
             "typeDescriptions": {
               "typeIdentifier": "t_rational_3_by_1",
               "typeString": "int_const 3"
             },
             "value": "3"
           },
-          "visibility": "public"
+          "visibility": "internal"
         }
       ],
       "scope": 8,
-      "src": "0:72:1",
+      "src": "0:58:1",
       "usedErrors": [],
       "usedEvents": []
     }
   ],
-  "src": "0:73:1"
+  "src": "0:59:1"
 }

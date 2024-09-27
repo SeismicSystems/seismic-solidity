@@ -1,4 +1,4 @@
 contract test {
-    sint8 public i = -128;
+    sint8 i = -128;
 }
 // ----
