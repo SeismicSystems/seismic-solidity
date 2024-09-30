@@ -602,6 +602,9 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (_convertTo.category() == Category::Integer)
 	{
+		if (category() == Category::ShieldedInteger) {
+			return false;
+		}
 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
 		// disallowing unsigned to signed conversion of different bits
 		if (isSigned() != convertTo.isSigned()) {

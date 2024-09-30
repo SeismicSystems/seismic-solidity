@@ -11,4 +11,5 @@ contract C {
     }
 }
 // ----
+// TypeError 9574: (212-227): Type sint32 is not implicitly convertible to expected type int32.
 
