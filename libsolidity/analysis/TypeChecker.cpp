@@ -1823,6 +1823,15 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 			if (auto type = dynamic_cast<FixedPointType const*>(commonType))
 				solAssert(type->numBits() == 256, "");
 		}
+		if (_operation.getOperator() == Token::Exp && rightType->category() == Type::Category::ShieldedInteger) {
+			m_errorReporter.warning(
+				3817_error,
+				_operation.location(),
+				fmt::format(
+					"Shielded integer exponentiation will leak the exponent value through gas cost."
+				)
+			);
+		}
 		if (
 			(commonType->category() == Type::Category::Integer &&
 			rightType->category() == Type::Category::Integer &&
