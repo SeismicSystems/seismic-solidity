@@ -2539,7 +2539,7 @@ void ExpressionCompiler::appendArithmeticOperatorCode(Token _operator, Type cons
 			functionName = m_context.utilFunctions().intModFunction(type);
 			break;
 		case Token::Exp:
-				// EXP is handled in a different function.
+			// EXP is handled in a different function.
 		default:
 			solAssert(false, "Unknown arithmetic operator.");
 		}
