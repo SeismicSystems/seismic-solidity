@@ -324,6 +324,10 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		}
 		return address();
 	}
+	case Token::ShieldedAddress:
+	{
+		return shieldedAddress();
+	}
 	case Token::Bool:
 		return boolean();
 	case Token::Bytes:

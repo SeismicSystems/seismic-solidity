@@ -441,7 +441,7 @@ protected:
 class AddressType: public Type
 {
 public:
-	explicit AddressType(StateMutability _stateMutability);
+	explicit AddressType(StateMutability _stateMutability, bool _isShielded=false);
 
 	Category category() const override { return Category::Address; }
 
@@ -473,7 +473,48 @@ public:
 
 private:
 	StateMutability m_stateMutability;
+	bool m_isShielded;
 };
+
+// /**
+//  * Type for addresses.
+//  */
+// class ShieldedAddressType: public AddressType
+// {
+// public:
+// 	explicit ShieldedAddressType(StateMutability _stateMutability);
+
+// 	Category category() const override { return Category::Address; }
+
+// 	std::string richIdentifier() const override;
+// 	BoolResult isImplicitlyConvertibleTo(Type const& _other) const override;
+// 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+// 	TypeResult unaryOperatorResult(Token _operator) const override;
+// 	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
+
+// 	bool operator==(Type const& _other) const override;
+
+// 	unsigned calldataEncodedSize(bool _padded = true) const override { return _padded ? 32 : 160 / 8; }
+// 	unsigned storageBytes() const override { return 160 / 8; }
+// 	bool leftAligned() const override { return false; }
+// 	bool isValueType() const override { return true; }
+// 	bool nameable() const override { return true; }
+
+// 	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
+
+// 	std::string toString(bool _withoutDataLocation) const override;
+// 	std::string canonicalName() const override;
+
+// 	u256 literalValue(Literal const* _literal) const override;
+
+// 	Type const* encodingType() const override { return this; }
+// 	TypeResult interfaceType(bool) const override { return this; }
+
+// 	StateMutability stateMutability(void) const { return m_stateMutability; }
+
+// private:
+// 	StateMutability m_stateMutability;
+// };
 
 /**
  * Any kind of integer type (signed, unsigned).
