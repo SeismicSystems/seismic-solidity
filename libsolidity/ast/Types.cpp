@@ -541,7 +541,7 @@ TypeResult AddressType::binaryOperatorResult(Token _operator, Type const* _other
 
 bool AddressType::operator==(Type const& _other) const
 {
-	if (_other.category() != category())
+	if (_other.category() != Category::Address && _other.category() != Category::ShieldedAddress)
 		return false;
 	AddressType const& other = dynamic_cast<AddressType const&>(_other);
 	return other.m_stateMutability == m_stateMutability;
