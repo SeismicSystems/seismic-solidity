@@ -547,6 +547,7 @@ bool AddressType::operator==(Type const& _other) const
 	return other.m_stateMutability == m_stateMutability;
 }
 
+
 MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 {
 	MemberList::MemberMap members = {
@@ -565,6 +566,28 @@ MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 	}
 	return members;
 }
+
+std::string ShieldedAddressType::richIdentifier() const
+{
+	if (m_stateMutability == StateMutability::Payable)
+		return "t_saddress_payable";
+	else
+		return "t_saddress";
+}
+
+std::string ShieldedAddressType::toString(bool) const
+{
+	if (m_stateMutability == StateMutability::Payable)
+		return "shielded address payable";
+	else
+		return "shielded address";
+}
+
+std::string ShieldedAddressType::canonicalName() const
+{
+	return "shielded address";
+}
+
 
 namespace
 {

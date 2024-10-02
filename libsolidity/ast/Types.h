@@ -445,7 +445,7 @@ public:
 
 	Category category() const override { return Category::Address; }
 
-	std::string richIdentifier() const override;
+	virtual std::string richIdentifier() const override;
 	BoolResult isImplicitlyConvertibleTo(Type const& _other) const override;
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
@@ -461,8 +461,8 @@ public:
 
 	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
 
-	std::string toString(bool _withoutDataLocation) const override;
-	std::string canonicalName() const override;
+	virtual std::string toString(bool _withoutDataLocation) const override;
+	virtual std::string canonicalName() const override;
 
 	u256 literalValue(Literal const* _literal) const override;
 
@@ -503,8 +503,8 @@ public:
 
 	// MemberList::MemberMap nativeMembers(ASTNode const*) const override;
 
-	// std::string toString(bool _withoutDataLocation) const override;
-	// std::string canonicalName() const override;
+	std::string toString(bool _withoutDataLocation) const override;
+	std::string canonicalName() const override;
 
 	// u256 literalValue(Literal const* _literal) const override;
 
