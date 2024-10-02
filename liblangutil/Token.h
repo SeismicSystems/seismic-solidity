@@ -213,6 +213,7 @@ namespace solidity::langutil
 	K(Bytes, "bytes", 0)                                               \
 	K(String, "string", 0)                                             \
 	K(Address, "address", 0)                                           \
+	K(ShieldedAddress, "saddress", 0)                                  \
 	K(Bool, "bool", 0)                                                 \
 	K(Fixed, "fixed", 0)                                               \
 	K(UFixed, "ufixed", 0)                                             \

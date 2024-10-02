@@ -175,6 +175,7 @@ public:
 	enum class Category
 	{
 		Address,
+		ShieldedAddress,
 		Integer,
 		ShieldedInteger,
 		RationalNumber,
