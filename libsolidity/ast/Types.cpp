@@ -490,7 +490,7 @@ BoolResult AddressType::isImplicitlyConvertibleTo(Type const& _other) const
 
 BoolResult AddressType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
-	if ((_convertTo.category() == category()) || isImplicitlyConvertibleTo(_convertTo))
+	if ((_convertTo.category() == Category::Address) || (_convertTo.category() == Category::ShieldedAddress) || isImplicitlyConvertibleTo(_convertTo))
 		return true;
 	else if (auto const* contractType = dynamic_cast<ContractType const*>(&_convertTo))
 		return (m_stateMutability >= StateMutability::Payable) || !contractType->isPayable();
