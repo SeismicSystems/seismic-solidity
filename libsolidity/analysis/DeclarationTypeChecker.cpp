@@ -41,21 +41,34 @@ bool DeclarationTypeChecker::visit(ElementaryTypeName const& _typeName)
 	if (_typeName.stateMutability().has_value())
 	{
 		// for non-address types this was already caught by the parser
-		solAssert(_typeName.annotation().type->category() == Type::Category::Address, "");
+		solAssert(_typeName.annotation().type->category() == Type::Category::Address || _typeName.annotation().type->category() == Type::Category::ShieldedAddress, "");
 		switch (*_typeName.stateMutability())
 		{
 			case StateMutability::Payable:
-				_typeName.annotation().type = TypeProvider::payableAddress();
+				if (_typeName.annotation().type->category() == Type::Category::Address)
+					_typeName.annotation().type = TypeProvider::payableAddress();
+				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
+					_typeName.annotation().type = TypeProvider::payableShieldedAddress();
 				break;
 			case StateMutability::NonPayable:
-				_typeName.annotation().type = TypeProvider::address();
+				if (_typeName.annotation().type->category() == Type::Category::Address)
+					_typeName.annotation().type = TypeProvider::address();
+				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
+					_typeName.annotation().type = TypeProvider::shieldedAddress();
 				break;
 			default:
-				m_errorReporter.typeError(
-					2311_error,
-					_typeName.location(),
-					"Address types can only be payable or non-payable."
-				);
+				if (_typeName.annotation().type->category() == Type::Category::Address)
+					m_errorReporter.typeError(
+						2311_error,
+						_typeName.location(),
+						"Address types can only be payable or non-payable."
+					);
+				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
+					m_errorReporter.typeError(
+						2311_error,
+						_typeName.location(),
+						"Shielded address types can only be payable or non-payable."
+					);
 				break;
 		}
 	}

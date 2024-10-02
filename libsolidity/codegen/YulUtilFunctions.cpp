@@ -380,6 +380,7 @@ std::string YulUtilFunctions::leftAlignFunction(Type const& _type)
 		switch (_type.category())
 		{
 		case Type::Category::Address:
+		case Type::Category::ShieldedAddress:
 			templ("body", "aligned := " + leftAlignFunction(IntegerType(160)) + "(value)");
 			break;
 		case Type::Category::Integer:
@@ -3482,6 +3483,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 		switch (fromCategory)
 		{
 		case Type::Category::Address:
+		case Type::Category::ShieldedAddress:
 		case Type::Category::Contract:
 			body =
 				Whiskers("converted := <convert>(value)")
@@ -3497,7 +3499,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 				if (rational->isFractional())
 					solAssert(toCategory == Type::Category::FixedPoint, "");
 
-			if (toCategory == Type::Category::Address || toCategory == Type::Category::Contract)
+			if (toCategory == Type::Category::Address || toCategory == Type::Category::Contract || toCategory == Type::Category::ShieldedAddress)
 				body =
 					Whiskers("converted := <convert>(value)")
 					("convert", conversionFunction(_from, IntegerType(160)))
@@ -3592,7 +3594,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 					("shift", shiftRightFunction(256 - from.numBytes() * 8))
 					("convert", conversionFunction(IntegerType(from.numBytes() * 8), _to))
 					.render();
-			else if (toCategory == Type::Category::Address)
+			else if (toCategory == Type::Category::Address || toCategory == Type::Category::ShieldedAddress)
 				body =
 					Whiskers("converted := <convert>(value)")
 						("convert", conversionFunction(_from, IntegerType(160)))
@@ -3925,7 +3927,8 @@ std::string YulUtilFunctions::cleanupFunction(Type const& _type)
 		templ("functionName", functionName);
 		switch (_type.category())
 		{
-		case Type::Category::Address:
+		case Type::Category::Address:	
+		case Type::Category::ShieldedAddress:
 			templ("body", "cleaned := " + cleanupFunction(IntegerType(160)) + "(value)");
 			break;
 		case Type::Category::Integer:
@@ -4025,7 +4028,8 @@ std::string YulUtilFunctions::validatorFunction(Type const& _type, bool _revertO
 
 		switch (_type.category())
 		{
-		case Type::Category::Address:
+		case Type::Category::Address:	
+		case Type::Category::ShieldedAddress:
 		case Type::Category::Integer:
 		case Type::Category::ShieldedInteger:
 		case Type::Category::RationalNumber:

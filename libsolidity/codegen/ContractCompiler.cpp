@@ -755,6 +755,7 @@ bool ContractCompiler::visit(InlineAssembly const& _inlineAssembly)
 						{
 						case Type::Category::Bool:
 						case Type::Category::Address:
+						case Type::Category::ShieldedAddress:
 							// Either both the literal and the variable are bools, or they are both addresses.
 							// If they are both bools, comparing category is the same as comparing the types.
 							// If they are both addresses, compare category so that payable/nonpayable is not compared.

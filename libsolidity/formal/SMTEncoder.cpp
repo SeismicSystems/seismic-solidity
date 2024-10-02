@@ -1469,7 +1469,7 @@ bool SMTEncoder::visit(MemberAccess const& _memberAccess)
 			}
 		}
 	}
-	else if (exprType->category() == Type::Category::Address)
+	else if (exprType->category() == Type::Category::Address || exprType->category() == Type::Category::ShieldedAddress)
 	{
 		memberExpr->accept(*this);
 		if (_memberAccess.memberName() == "balance")

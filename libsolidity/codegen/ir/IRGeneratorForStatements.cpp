@@ -142,6 +142,7 @@ private:
 				{
 				case Type::Category::Bool:
 				case Type::Category::Address:
+				case Type::Category::ShieldedAddress:
 					solAssert(type->category() == variable->annotation().type->category());
 					value = toCompactHexWithPrefix(type->literalValue(literal));
 					break;
@@ -1726,7 +1727,7 @@ bool IRGeneratorForStatements::visit(MemberAccess const& _memberAccess)
 		_memberAccess.memberName() == "length" &&
 		innerExpression &&
 		innerExpression->memberName() == "code" &&
-		innerExpression->expression().annotation().type->category() == Type::Category::Address
+		(innerExpression->expression().annotation().type->category() == Type::Category::Address || innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)	
 	)
 	{
 		solAssert(innerExpression->annotation().type->category() == Type::Category::Array);
@@ -1836,6 +1837,38 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 			define(IRVariable{_memberAccess}.part("address"), _memberAccess.expression());
 		else
 			solAssert(false, "Invalid member access to address");
+		break;
+	}
+	case Type::Category::ShieldedAddress:
+	{
+		if (member == "balance")
+			define(_memberAccess) <<
+				"balance(" <<
+				expressionAsType(_memberAccess.expression(), *TypeProvider::shieldedAddress()) <<
+				")\n";		
+		else if (member == "code")
+		{
+			std::string externalCodeFunction = m_utils.externalCodeFunction();
+			define(_memberAccess) <<
+				externalCodeFunction <<
+				"(" <<
+				expressionAsType(_memberAccess.expression(), *TypeProvider::shieldedAddress()) <<
+				")\n";
+		}
+		else if (member == "codehash")
+			define(_memberAccess) <<
+				"extcodehash(" <<
+				expressionAsType(_memberAccess.expression(), *TypeProvider::shieldedAddress()) <<
+				")\n";
+		else if (std::set<std::string>{"send", "transfer"}.count(member))
+		{
+			solAssert(dynamic_cast<ShieldedAddressType const&>(*_memberAccess.expression().annotation().type).stateMutability() == StateMutability::Payable);
+			define(IRVariable{_memberAccess}.part("address"), _memberAccess.expression());
+		}
+		else if (std::set<std::string>{"call", "callcode", "delegatecall", "staticcall"}.count(member))
+			define(IRVariable{_memberAccess}.part("address"), _memberAccess.expression());
+		else
+			solAssert(false, "Invalid member access to shielded address");
 		break;
 	}
 	case Type::Category::Function:
@@ -2081,12 +2114,20 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 				auto innerExpression = dynamic_cast<MemberAccess const*>(&_memberAccess.expression());
 				innerExpression &&
 				innerExpression->memberName() == "code" &&
-				innerExpression->expression().annotation().type->category() == Type::Category::Address
-			)
-				define(_memberAccess) <<
-					"extcodesize(" <<
+				(innerExpression->expression().annotation().type->category() == Type::Category::Address || innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)
+			)	
+			{
+				if (innerExpression->expression().annotation().type->category() == Type::Category::Address)
+					define(_memberAccess) <<
+						"extcodesize(" <<
 					expressionAsType(innerExpression->expression(), *TypeProvider::address()) <<
 					")\n";
+				else
+					define(_memberAccess) <<
+						"extcodesize(" <<
+						expressionAsType(innerExpression->expression(), *TypeProvider::shieldedAddress()) <<
+						")\n";
+			}
 			else
 				define(_memberAccess) <<
 					m_utils.arrayLengthFunction(type) <<
@@ -2531,6 +2572,7 @@ bool IRGeneratorForStatements::visit(Literal const& _literal)
 	case Type::Category::RationalNumber:
 	case Type::Category::Bool:
 	case Type::Category::Address:
+	case Type::Category::ShieldedAddress:
 		define(_literal) << toCompactHexWithPrefix(literalType.literalValue(&_literal)) << "\n";
 		break;
 	case Type::Category::StringLiteral:

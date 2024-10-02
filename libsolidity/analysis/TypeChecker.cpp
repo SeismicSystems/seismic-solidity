@@ -151,6 +151,8 @@ TypePointers TypeChecker::typeCheckABIDecodeAndRetrieveReturnType(FunctionCall c
 			// We force address payable for address types.
 			if (actualType->category() == Type::Category::Address)
 				actualType = TypeProvider::payableAddress();
+			else if (actualType->category() == Type::Category::ShieldedAddress)
+				actualType = TypeProvider::payableShieldedAddress();
 			solAssert(
 				!actualType->dataStoredIn(DataLocation::CallData) &&
 				!actualType->dataStoredIn(DataLocation::Storage),
@@ -1927,7 +1929,8 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 		{
 			if (
 				resultType->category() == Type::Category::Contract &&
-				argType->category() == Type::Category::Address
+				(argType->category() == Type::Category::Address ||
+				argType->category() == Type::Category::ShieldedAddress)
 			)
 			{
 				solAssert(dynamic_cast<ContractType const*>(resultType)->isPayable(), "");
@@ -1962,7 +1965,7 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 				auto const* functionType = dynamic_cast<FunctionType const*>(argType);
 				functionType &&
 				functionType->kind() == FunctionType::Kind::External &&
-				resultType->category() == Type::Category::Address
+				(resultType->category() == Type::Category::Address || resultType->category() == Type::Category::ShieldedAddress)
 			)
 				m_errorReporter.typeError(
 					5030_error,
@@ -3372,7 +3375,8 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 	}
 
 	if (
-		_memberAccess.expression().annotation().type->category() == Type::Category::Address &&
+		(_memberAccess.expression().annotation().type->category() == Type::Category::Address ||
+		_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress) &&
 		memberName == "codehash" &&
 		!m_evmVersion.hasExtCodeHash()
 	)

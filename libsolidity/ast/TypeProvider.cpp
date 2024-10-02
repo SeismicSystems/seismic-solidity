@@ -331,7 +331,7 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		}
 		return address();
 	}
-	case Token::ShieldedAddress:
+	case Token::SAddress:
 	{
 		if (_stateMutability)
 		{

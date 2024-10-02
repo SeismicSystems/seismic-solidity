@@ -827,7 +827,7 @@ void CompilerUtils::convertType(
 			if (targetIntegerType.numBits() < typeOnStack.numBytes() * 8)
 				convertType(IntegerType(typeOnStack.numBytes() * 8), _targetType, _cleanupNeeded);
 		}
-		else if (targetTypeCategory == Type::Category::Address)
+		else if (targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress)
 		{
 			solAssert(typeOnStack.numBytes() * 8 == 160);
 			rightShiftNumberOnStack(256 - 160);
@@ -865,6 +865,7 @@ void CompilerUtils::convertType(
 	case Type::Category::FixedPoint:
 		solUnimplemented("Not yet implemented - FixedPointType.");
 	case Type::Category::Address:
+	case Type::Category::ShieldedAddress:	
 	case Type::Category::Integer:
 	case Type::Category::Contract:
 	case Type::Category::RationalNumber:
@@ -872,7 +873,8 @@ void CompilerUtils::convertType(
 		if (targetTypeCategory == Type::Category::FixedBytes)
 		{
 			solAssert(
-				stackTypeCategory == Type::Category::Address ||
+				(stackTypeCategory == Type::Category::Address ||
+				stackTypeCategory == Type::Category::ShieldedAddress) ||
 				stackTypeCategory == Type::Category::Integer ||
 				stackTypeCategory == Type::Category::ShieldedInteger ||
 				stackTypeCategory == Type::Category::RationalNumber,
@@ -892,7 +894,7 @@ void CompilerUtils::convertType(
 		}
 		else if (targetTypeCategory == Type::Category::Enum)
 		{
-			solAssert(stackTypeCategory != Type::Category::Address, "Invalid conversion to EnumType requested.");
+			solAssert((stackTypeCategory != Type::Category::Address || stackTypeCategory != Type::Category::ShieldedAddress), "Invalid conversion to EnumType requested.");
 			solAssert(_typeOnStack.mobileType());
 			// just clean
 			convertType(_typeOnStack, *_typeOnStack.mobileType(), true);
@@ -923,7 +925,8 @@ void CompilerUtils::convertType(
 			solAssert(
 				targetTypeCategory == Type::Category::Integer ||
 				targetTypeCategory == Type::Category::Contract ||
-				targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedInteger,
+				targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress ||
+				targetTypeCategory == Type::Category::ShieldedInteger,
 				""
 			);
 			IntegerType addressType(160);
@@ -1305,7 +1308,7 @@ void CompilerUtils::convertType(
 		break;
 	default:
 		// we used to allow conversions from function to address
-		solAssert(!(stackTypeCategory == Type::Category::Function && targetTypeCategory == Type::Category::Address));
+		solAssert(!(stackTypeCategory == Type::Category::Function && (targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress)));
 		if (stackTypeCategory == Type::Category::Function && targetTypeCategory == Type::Category::Function)
 		{
 			FunctionType const& typeOnStack = dynamic_cast<FunctionType const&>(_typeOnStack);
