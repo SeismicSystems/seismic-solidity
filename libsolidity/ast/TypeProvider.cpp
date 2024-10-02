@@ -39,6 +39,9 @@ std::unique_ptr<ArrayType> TypeProvider::m_stringMemory;
 TupleType const TypeProvider::m_emptyTuple{};
 AddressType const TypeProvider::m_payableAddress{StateMutability::Payable};
 AddressType const TypeProvider::m_address{StateMutability::NonPayable};
+ShieldedAddressType const TypeProvider::m_payableShieldedAddress{StateMutability::Payable};
+ShieldedAddressType const TypeProvider::m_shieldedAddress{StateMutability::NonPayable};
+
 
 std::array<std::unique_ptr<IntegerType>, 32> const TypeProvider::m_intM{{
 	{std::make_unique<IntegerType>(8 * 1, IntegerType::Modifier::Signed)},
@@ -257,8 +260,12 @@ void TypeProvider::reset()
 	clearCache(m_emptyTuple);
 	clearCache(m_payableAddress);
 	clearCache(m_address);
+	clearCache(m_payableShieldedAddress);
+	clearCache(m_shieldedAddress);
 	clearCaches(instance().m_intM);
 	clearCaches(instance().m_uintM);
+	clearCaches(instance().m_suintM);
+	clearCaches(instance().m_sintM);
 	clearCaches(instance().m_bytesM);
 	clearCaches(instance().m_magics);
 
@@ -326,6 +333,11 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 	}
 	case Token::ShieldedAddress:
 	{
+		if (_stateMutability)
+		{
+			solAssert(*_stateMutability == StateMutability::Payable, "");
+			return payableShieldedAddress();
+		}
 		return shieldedAddress();
 	}
 	case Token::Bool:
@@ -379,6 +391,17 @@ Type const* TypeProvider::fromElementaryTypeName(std::string const& _name)
 				solAssert(false, "Invalid state mutability for address type: " + nameParts[1]);
 		}
 		return address();
+	}
+	else if (t->category() == Type::Category::ShieldedAddress)
+	{
+		if (nameParts.size() == 2)
+		{
+			if (nameParts[1] == "payable")
+				return payableShieldedAddress();
+			else
+				solAssert(false, "Invalid state mutability for shielded address type: " + nameParts[1]);
+		}
+		return shieldedAddress();
 	}
 	else
 	{
