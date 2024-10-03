@@ -578,14 +578,14 @@ std::string ShieldedAddressType::richIdentifier() const
 std::string ShieldedAddressType::toString(bool) const
 {
 	if (m_stateMutability == StateMutability::Payable)
-		return "shielded address payable";
+		return "saddress payable";
 	else
-		return "shielded address";
+		return "saddress";
 }
 
 std::string ShieldedAddressType::canonicalName() const
 {
-	return "shielded address";
+	return "saddress";
 }
 
 

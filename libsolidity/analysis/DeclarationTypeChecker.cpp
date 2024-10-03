@@ -42,7 +42,6 @@ bool DeclarationTypeChecker::visit(ElementaryTypeName const& _typeName)
 	{
 		// for non-address types this was already caught by the parser
 		solAssert(_typeName.annotation().type->category() == Type::Category::Address || _typeName.annotation().type->category() == Type::Category::ShieldedAddress, "");
-		std::cout << "ElementaryTypeName::visit" << std::endl;
 		switch (*_typeName.stateMutability())
 		{
 			

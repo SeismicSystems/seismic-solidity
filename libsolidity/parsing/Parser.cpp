@@ -1228,7 +1228,6 @@ ASTPointer<TypeName> Parser::parseTypeName()
 			: std::nullopt;
 		if (TokenTraits::isStateMutabilitySpecifier(m_scanner->currentToken()))
 		{
-			std::cout << elemTypeName.token() << std::endl;
 			if (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			{
 				nodeFactory.markEndPosition();
