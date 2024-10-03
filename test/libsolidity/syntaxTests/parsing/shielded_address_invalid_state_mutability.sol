@@ -28,23 +28,23 @@ contract C {
 saddress view constant f_a;
 saddress pure constant f_b;
 // ----
-// TypeError 2311: (17-29): Address types can only be payable or non-payable.
-// TypeError 2311: (39-51): Address types can only be payable or non-payable.
-// TypeError 2311: (61-73): Address types can only be payable or non-payable.
-// TypeError 2311: (101-113): Address types can only be payable or non-payable.
-// TypeError 2311: (159-171): Address types can only be payable or non-payable.
-// TypeError 2311: (183-195): Address types can only be payable or non-payable.
-// TypeError 2311: (234-246): Address types can only be payable or non-payable.
-// TypeError 2311: (278-290): Address types can only be payable or non-payable.
-// TypeError 2311: (345-357): Address types can only be payable or non-payable.
-// TypeError 2311: (400-412): Address types can only be payable or non-payable.
-// TypeError 2311: (433-445): Address types can only be payable or non-payable.
-// TypeError 2311: (468-480): Address types can only be payable or non-payable.
-// TypeError 2311: (500-512): Address types can only be payable or non-payable.
-// TypeError 2311: (528-540): Address types can only be payable or non-payable.
-// TypeError 2311: (558-570): Address types can only be payable or non-payable.
-// TypeError 2311: (588-600): Address types can only be payable or non-payable.
-// TypeError 2311: (684-696): Address types can only be payable or non-payable.
-// TypeError 2311: (801-813): Address types can only be payable or non-payable.
-// TypeError 2311: (839-851): Address types can only be payable or non-payable.
-// TypeError 2311: (866-878): Address types can only be payable or non-payable.
+//  TypeError 2311: (17-30): Address types can only be payable or non-payable.
+//  TypeError 2311: (40-53): Address types can only be payable or non-payable.
+//  TypeError 2311: (63-76): Address types can only be payable or non-payable.
+//  TypeError 2311: (104-117): Address types can only be payable or non-payable.
+//  TypeError 2311: (163-176): Address types can only be payable or non-payable.
+//  TypeError 2311: (188-201): Address types can only be payable or non-payable.
+//  TypeError 2311: (240-253): Address types can only be payable or non-payable.
+//  TypeError 2311: (285-298): Address types can only be payable or non-payable.
+//  TypeError 2311: (353-366): Address types can only be payable or non-payable.
+//  TypeError 2311: (409-422): Address types can only be payable or non-payable.
+//  TypeError 2311: (443-456): Address types can only be payable or non-payable.
+//  TypeError 2311: (479-492): Address types can only be payable or non-payable.
+//  TypeError 2311: (512-525): Address types can only be payable or non-payable.
+//  TypeError 2311: (541-554): Address types can only be payable or non-payable.
+//  TypeError 2311: (572-585): Address types can only be payable or non-payable.
+//  TypeError 2311: (603-616): Address types can only be payable or non-payable.
+//  TypeError 2311: (701-714): Address types can only be payable or non-payable.
+//  TypeError 2311: (820-833): Address types can only be payable or non-payable.
+//  TypeError 2311: (859-872): Address types can only be payable or non-payable.
+//  TypeError 2311: (887-900): Address types can only be payable or non-payable.

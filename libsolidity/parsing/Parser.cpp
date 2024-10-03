@@ -1228,7 +1228,8 @@ ASTPointer<TypeName> Parser::parseTypeName()
 			: std::nullopt;
 		if (TokenTraits::isStateMutabilitySpecifier(m_scanner->currentToken()))
 		{
-			if (elemTypeName.token() == Token::Address)
+			std::cout << elemTypeName.token() << std::endl;
+			if (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			{
 				nodeFactory.markEndPosition();
 				stateMutability = parseStateMutability();
@@ -2744,6 +2745,11 @@ ASTPointer<ASTString> Parser::expectIdentifierTokenOrAddress()
 	if (m_scanner->currentToken() == Token::Address)
 	{
 		result = std::make_shared<ASTString>("address");
+		advance();
+	}
+	else if (m_scanner->currentToken() == Token::SAddress)
+	{
+		result = std::make_shared<ASTString>("saddress");
 		advance();
 	}
 	else

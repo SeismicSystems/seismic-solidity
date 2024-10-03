@@ -5,4 +5,4 @@ contract C {
     }
 }
 // ----
-// Warning 6321: (197-267): Unnamed return variable can remain unassigned. Add an explicit return with value to all non-reverting code paths or name the variable.
+// Warning 6321: (201-273): Unnamed return variable can remain unassigned. Add an explicit return with value to all non-reverting code paths or name the variable.
