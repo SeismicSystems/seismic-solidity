@@ -482,7 +482,7 @@ private:
 class ShieldedAddressType: public AddressType
 {
 public:
-	explicit ShieldedAddressType(StateMutability _stateMutability): AddressType(_stateMutability) {
+	explicit ShieldedAddressType(StateMutability _stateMutability): AddressType(_stateMutability), m_stateMutability(_stateMutability) {
 		solAssert(m_stateMutability == StateMutability::Payable || m_stateMutability == StateMutability::NonPayable, "");
 	}
 
