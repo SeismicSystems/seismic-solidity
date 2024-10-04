@@ -524,6 +524,7 @@ StateMutability Parser::parseStateMutability()
 {
 	StateMutability stateMutability(StateMutability::NonPayable);
 	Token token = m_scanner->currentToken();
+	std::cout << "here 1" << std::endl;
 	switch (token)
 	{
 		case Token::Payable:
@@ -1230,6 +1231,7 @@ ASTPointer<TypeName> Parser::parseTypeName()
 		{
 			if (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			{
+				std::cout << "line 1234 in Parser.cpp: " << elemTypeName.token() << std::endl;
 				nodeFactory.markEndPosition();
 				stateMutability = parseStateMutability();
 			}
@@ -1252,8 +1254,9 @@ ASTPointer<TypeName> Parser::parseTypeName()
 
 	solAssert(type, "");
 	// Parse "[...]" postfixes for arrays.
+	std::cout << (type->annotation().type->category()==Type::Category::ShieldedAddress) << std::endl;
 	type = parseTypeNameSuffix(type, nodeFactory);
-
+	
 	return type;
 }
 

@@ -3767,7 +3767,6 @@ bool FunctionType::isPure() const
 
 TypePointers FunctionType::parseElementaryTypeVector(strings const& _types)
 {
-	std::cout<< "here 4" << std::endl;
 	TypePointers pointers;
 	pointers.reserve(_types.size());
 	for (std::string const& type: _types)
