@@ -363,7 +363,7 @@ Type const* TypeProvider::fromElementaryTypeName(std::string const& _name)
 	Token token;
 	unsigned short firstNum, secondNum;
 	std::tie(token, firstNum, secondNum) = TokenTraits::fromIdentifierOrKeyword(nameParts[0]);
-
+	std::cout<< nameParts[0] << std::endl;
 	auto t = fromElementaryTypeName(ElementaryTypeNameToken(token, firstNum, secondNum));
 	if (auto* ref = dynamic_cast<ReferenceType const*>(t))
 	{
@@ -385,6 +385,7 @@ Type const* TypeProvider::fromElementaryTypeName(std::string const& _name)
 	{
 		if (nameParts.size() == 2)
 		{
+			std::cout << "here" << std::endl;
 			if (nameParts[1] == "payable")
 				return payableAddress();
 			else
@@ -396,6 +397,7 @@ Type const* TypeProvider::fromElementaryTypeName(std::string const& _name)
 	{
 		if (nameParts.size() == 2)
 		{
+			std::cout << "here 2" << std::endl;
 			if (nameParts[1] == "payable")
 				return payableShieldedAddress();
 			else

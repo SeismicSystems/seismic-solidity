@@ -3448,6 +3448,7 @@ FunctionTypePointer FunctionType::interfaceFunctionType() const
 
 MemberList::MemberMap FunctionType::nativeMembers(ASTNode const* _scope) const
 {
+	std::cout<< "here 3" << std::endl;
 	switch (m_kind)
 	{
 	case Kind::Declaration:
@@ -3766,6 +3767,7 @@ bool FunctionType::isPure() const
 
 TypePointers FunctionType::parseElementaryTypeVector(strings const& _types)
 {
+	std::cout<< "here 4" << std::endl;
 	TypePointers pointers;
 	pointers.reserve(_types.size());
 	for (std::string const& type: _types)
