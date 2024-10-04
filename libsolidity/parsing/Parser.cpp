@@ -1195,6 +1195,7 @@ ASTPointer<IdentifierPath> Parser::parseIdentifierPath()
 
 ASTPointer<TypeName> Parser::parseTypeNameSuffix(ASTPointer<TypeName> type, ASTNodeFactory& nodeFactory)
 {
+	std::cout << "here again!" << std::endl;
 	RecursionGuard recursionGuard(*this);
 	while (m_scanner->currentToken() == Token::LBrack)
 	{
@@ -1254,7 +1255,7 @@ ASTPointer<TypeName> Parser::parseTypeName()
 
 	solAssert(type, "");
 	// Parse "[...]" postfixes for arrays.
-	std::cout << (type->annotation().type->category()==Type::Category::ShieldedAddress) << std::endl;
+
 	type = parseTypeNameSuffix(type, nodeFactory);
 	
 	return type;
