@@ -4,4 +4,4 @@ contract C {
     }
 }
 // ----
-// TypeError 9640: (52-128): Explicit type conversion not allowed from "int_const 1239...(70 digits omitted)...8130" to "saddress".
+// TypeError 9640: (52-129): Explicit type conversion not allowed from "int_const 1239...(70 digits omitted)...8130" to "saddress".
