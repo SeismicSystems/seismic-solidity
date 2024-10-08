@@ -28,23 +28,25 @@ contract C {
 saddress view constant f_a;
 saddress pure constant f_b;
 // ----
-//  TypeError 2311: (17-30): Address types can only be payable or non-payable.
-//  TypeError 2311: (40-53): Address types can only be payable or non-payable.
-//  TypeError 2311: (63-76): Address types can only be payable or non-payable.
-//  TypeError 2311: (104-117): Address types can only be payable or non-payable.
-//  TypeError 2311: (163-176): Address types can only be payable or non-payable.
-//  TypeError 2311: (188-201): Address types can only be payable or non-payable.
-//  TypeError 2311: (240-253): Address types can only be payable or non-payable.
-//  TypeError 2311: (285-298): Address types can only be payable or non-payable.
-//  TypeError 2311: (353-366): Address types can only be payable or non-payable.
-//  TypeError 2311: (409-422): Address types can only be payable or non-payable.
-//  TypeError 2311: (443-456): Address types can only be payable or non-payable.
-//  TypeError 2311: (479-492): Address types can only be payable or non-payable.
-//  TypeError 2311: (512-525): Address types can only be payable or non-payable.
-//  TypeError 2311: (541-554): Address types can only be payable or non-payable.
-//  TypeError 2311: (572-585): Address types can only be payable or non-payable.
-//  TypeError 2311: (603-616): Address types can only be payable or non-payable.
-//  TypeError 2311: (701-714): Address types can only be payable or non-payable.
-//  TypeError 2311: (820-833): Address types can only be payable or non-payable.
-//  TypeError 2311: (859-872): Address types can only be payable or non-payable.
-//  TypeError 2311: (887-900): Address types can only be payable or non-payable.
+// TypeError 2311: (17-30): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (40-53): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (63-76): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (104-117): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (163-176): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (188-201): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (240-253): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (285-298): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (353-366): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (409-422): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (443-456): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (479-492): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (512-525): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (541-554): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (572-585): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (603-616): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (701-714): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (820-833): Shielded address types can only be payable or non-payable.
+// TypeError 2311: (859-872): Shielded address types can only be payable or non-payable.
+// DeclarationError 7491: (859-885): Shielded objects cannot be set to constant.
+// TypeError 2311: (887-900): Shielded address types can only be payable or non-payable.
+// DeclarationError 7491: (887-913): Shielded objects cannot be set to constant.
