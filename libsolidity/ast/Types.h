@@ -486,7 +486,7 @@ public:
 		solAssert(m_stateMutability == StateMutability::Payable || m_stateMutability == StateMutability::NonPayable, "");
 	}
 
-	Category category() const override { return Category::Address; }
+	Category category() const override { return Category::ShieldedAddress; }
 
 	std::string richIdentifier() const override;
 
