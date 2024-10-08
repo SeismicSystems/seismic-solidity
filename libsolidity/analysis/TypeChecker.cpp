@@ -1321,7 +1321,7 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
-		else if (valueComponentType->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger) 
+		else if (valueComponentType->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
 		{
 			m_errorReporter.warning(
 			9660_error,
@@ -1329,7 +1329,7 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 			"Literals converted to shielded integers will leak during contract deployment."
 		);
 		}
-		else if (valueComponentType->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger) 
+		else if (valueComponentType->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
 		{
 			m_errorReporter.warning(
 			1457_error,

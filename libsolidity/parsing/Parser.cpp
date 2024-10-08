@@ -524,7 +524,6 @@ StateMutability Parser::parseStateMutability()
 {
 	StateMutability stateMutability(StateMutability::NonPayable);
 	Token token = m_scanner->currentToken();
-	std::cout << "here 1" << std::endl;
 	switch (token)
 	{
 		case Token::Payable:
@@ -1195,7 +1194,6 @@ ASTPointer<IdentifierPath> Parser::parseIdentifierPath()
 
 ASTPointer<TypeName> Parser::parseTypeNameSuffix(ASTPointer<TypeName> type, ASTNodeFactory& nodeFactory)
 {
-	std::cout << "here again!" << std::endl;
 	RecursionGuard recursionGuard(*this);
 	while (m_scanner->currentToken() == Token::LBrack)
 	{
@@ -1225,14 +1223,13 @@ ASTPointer<TypeName> Parser::parseTypeName()
 		ASTNodeFactory nodeFactory(*this);
 		nodeFactory.markEndPosition();
 		advance();
-		auto stateMutability = elemTypeName.token() == Token::Address
+		auto stateMutability = (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			? std::optional<StateMutability>{StateMutability::NonPayable}
 			: std::nullopt;
 		if (TokenTraits::isStateMutabilitySpecifier(m_scanner->currentToken()))
 		{
 			if (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			{
-				std::cout << "line 1234 in Parser.cpp: " << elemTypeName.token() << std::endl;
 				nodeFactory.markEndPosition();
 				stateMutability = parseStateMutability();
 			}
@@ -1257,7 +1254,6 @@ ASTPointer<TypeName> Parser::parseTypeName()
 	// Parse "[...]" postfixes for arrays.
 
 	type = parseTypeNameSuffix(type, nodeFactory);
-	
 	return type;
 }
 
