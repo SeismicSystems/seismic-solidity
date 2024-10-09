@@ -1,6 +1,6 @@
 contract C {
     function f(saddress payable a) public {
-        selfdestruct(a);
+        selfdestruct(payable(address(a)));
     }
 }
 // ----

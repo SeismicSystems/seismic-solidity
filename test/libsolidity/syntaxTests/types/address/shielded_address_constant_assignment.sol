@@ -7,5 +7,5 @@ contract C {
     }
 }
 // ----
-// TypeError 6520: (132-133: Cannot assign to a constant variable.
-// TypeError 6520: (157-158): Cannot assign to a constant variable.
+// DeclarationError 7491: (17-50): Shielded objects cannot be set to constant.
+// DeclarationError 7491: (56-96): Shielded objects cannot be set to constant.

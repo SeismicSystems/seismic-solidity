@@ -7,4 +7,4 @@ contract C {
   }
 }
 // ----
-// TypeError 7398: (92-96): Explicit type conversion not allowed from non-payable "saddress" to "contract C", which has a payable fallback function.
+// TypeError 7398: (94-98): Explicit type conversion not allowed from non-payable "saddress" to "contract C", which has a payable fallback function.
