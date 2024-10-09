@@ -1254,6 +1254,7 @@ ASTPointer<TypeName> Parser::parseTypeName()
 	// Parse "[...]" postfixes for arrays.
 
 	type = parseTypeNameSuffix(type, nodeFactory);
+
 	return type;
 }
 
@@ -2197,13 +2198,26 @@ ASTPointer<Expression> Parser::parseLeftHandSideExpression(
 	}
 	else if (m_scanner->currentToken() == Token::Payable)
 	{
+		//peek into inner payable() argument and check for Saddress
+        Token nextNextToken = m_scanner->peekNextNextToken();
+
 		expectToken(Token::Payable);
 		nodeFactory.markEndPosition();
-		auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
-			ElementaryTypeNameToken(Token::Address, 0, 0),
-			std::make_optional(StateMutability::Payable)
-		);
-		expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
+		if (nextNextToken == Token::SAddress){
+			auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
+				ElementaryTypeNameToken(Token::SAddress, 0, 0),
+				std::make_optional(StateMutability::Payable)
+			);
+			expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
+		}
+		else
+		{
+			auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
+				ElementaryTypeNameToken(Token::Address, 0, 0),
+				std::make_optional(StateMutability::Payable)
+			);
+			expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
+		}
 		expectToken(Token::LParen, false);
 	}
 	else
