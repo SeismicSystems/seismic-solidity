@@ -1956,7 +1956,9 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 					7398_error,
 					_functionCall.location(),
 					ssl,
-					"Explicit type conversion not allowed from non-payable \"address\" to \"" +
+					"Explicit type conversion not allowed from non-payable \"" +
+					argType->humanReadableName() +
+					"\" to \"" +
 					resultType->humanReadableName() +
 					"\", which has a payable fallback function."
 				);
