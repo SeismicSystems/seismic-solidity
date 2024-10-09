@@ -6,3 +6,5 @@ contract C {
     }
 }
 // ----
+// DeclarationError 7491: (17-50): Shielded objects cannot be set to constant.
+// DeclarationError 7491: (56-96): Shielded objects cannot be set to constant.

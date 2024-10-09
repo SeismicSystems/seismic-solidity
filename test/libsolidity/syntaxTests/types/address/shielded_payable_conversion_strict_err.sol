@@ -12,9 +12,13 @@ contract C {
     }
 }
 // ----
-// TypeError 9640: (72-91): Explicit type conversion not allowed from "uint160" to "saddress payable".
-// TypeError 9640: (121-140): Explicit type conversion not allowed from "bytes20" to "saddress payable".
-// TypeError 9640: (170-180): Explicit type conversion not allowed from "int_const 2" to "saddress payable".
-// TypeError 9640: (260-301): Explicit type conversion not allowed from "int_const 6807...(25 digits omitted)...4970" to "saddress payable".
-// TypeError 9640: (375-394): Explicit type conversion not allowed from "saddress payable" to "uint160".
-// TypeError 9640: (417-436): Explicit type conversion not allowed from "saddress payable" to "bytes20".
+// TypeError 9640: (73-92): Explicit type conversion not allowed from "uint160" to "address payable".
+// TypeError 9574: (52-92): Type address payable is not implicitly convertible to expected type saddress payable.
+// TypeError 9640: (123-142): Explicit type conversion not allowed from "bytes20" to "address payable".
+// TypeError 9574: (102-142): Type address payable is not implicitly convertible to expected type saddress payable.
+// TypeError 9640: (173-183): Explicit type conversion not allowed from "int_const 2" to "address payable".
+// TypeError 9574: (152-183): Type address payable is not implicitly convertible to expected type saddress payable.
+// TypeError 9640: (264-305): Explicit type conversion not allowed from "int_const 6807...(25 digits omitted)...4970" to "address payable".
+// TypeError 9574: (243-305): Type address payable is not implicitly convertible to expected type saddress payable.
+// TypeError 9640: (379-398): Explicit type conversion not allowed from "address payable" to "uint160".
+// TypeError 9640: (421-440): Explicit type conversion not allowed from "address payable" to "bytes20".

@@ -6,6 +6,6 @@ contract C {
     }
 }
 // ----
-// TypeError 9574: (52-91): Type saddress is not implicitly convertible to expected type saddress payable.
-// TypeError 9574: (101-140): Type saddress is not implicitly convertible to expected type saddress payable.
-// TypeError 9574: (150-183): Type saddress is not implicitly convertible to expected type saddress payable.
+// TypeError 9574: (52-93): Type saddress is not implicitly convertible to expected type saddress payable.
+// TypeError 9574: (103-144): Type saddress is not implicitly convertible to expected type saddress payable.
+// TypeError 9574: (154-189): Type saddress is not implicitly convertible to expected type saddress payable.
