@@ -674,7 +674,7 @@ TypeResult IntegerType::unaryOperatorResult(Token _operator) const
 
 bool IntegerType::operator==(Type const& _other) const
 {
-	if (_other.category() != Category::Integer && _other.category() != Category::ShieldedInteger)
+ 	if (_other.category() != category())
 		return false;
 	IntegerType const& other = dynamic_cast<IntegerType const&>(_other);
 	return other.m_bits == m_bits && other.m_modifier == m_modifier;
