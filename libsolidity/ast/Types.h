@@ -455,7 +455,7 @@ public:
 	bool operator==(Type const& _other) const override;
 
 	unsigned calldataEncodedSize(bool _padded = true) const override { return _padded ? 32 : 160 / 8; }
-	unsigned storageBytes() const override { return 160 / 8; }
+	virtual unsigned storageBytes() const override { return 160 / 8; }
 	bool leftAligned() const override { return false; }
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
@@ -477,7 +477,7 @@ private:
 };
 
 /**
- * Type for addresses.
+ * Type for shielded addresses.
  */
 class ShieldedAddressType: public AddressType
 {
@@ -490,12 +490,9 @@ public:
 
 	std::string richIdentifier() const override;
 
-	// MemberList::MemberMap nativeMembers(ASTNode const*) const override;
-
+	virtual unsigned storageBytes() const override { return 32; }
 	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
-
-	// u256 literalValue(Literal const* _literal) const override;
 
 	StateMutability stateMutability(void) const { return m_stateMutability; }
 
