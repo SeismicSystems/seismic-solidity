@@ -11,5 +11,5 @@ contract C {
 // leftU(uint8,uint8): 255, 8 -> 0
 // leftU(uint8,uint8): 255, 1 -> 254
 // leftU(uint8,uint8): 255, 0 -> 255
-// leftS(int8,uint8): 1, 7 -> -128 # Result is -128 and output is sign-extended, not zero-padded. #
+// leftS(int8,uint8): 1, 7 -> -128
 // leftS(int8,uint8): 1, 6 -> 64
