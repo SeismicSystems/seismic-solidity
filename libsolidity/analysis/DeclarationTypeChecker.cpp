@@ -44,7 +44,7 @@ bool DeclarationTypeChecker::visit(ElementaryTypeName const& _typeName)
 		solAssert(_typeName.annotation().type->category() == Type::Category::Address || _typeName.annotation().type->category() == Type::Category::ShieldedAddress, "");
 		switch (*_typeName.stateMutability())
 		{
-			
+
 			case StateMutability::Payable:
 				if (_typeName.annotation().type->category() == Type::Category::Address)
 					_typeName.annotation().type = TypeProvider::payableAddress();

@@ -1,0 +1,554 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "C": [
+      42
+    ]
+  },
+  "id": 43,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "C",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 42,
+      "linearizedBaseContracts": [
+        42
+      ],
+      "name": "C",
+      "nameLocation": "9:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "constant": false,
+          "functionSelector": "a743a5a4",
+          "id": 4,
+          "mutability": "mutable",
+          "name": "m",
+          "nameLocation": "62:1:1",
+          "nodeType": "VariableDeclaration",
+          "scope": 42,
+          "src": "17:46:1",
+          "stateVariable": true,
+          "storageLocation": "default",
+          "typeDescriptions": {
+            "typeIdentifier": "t_mapping$_t_saddress_$_t_saddress_payable_$",
+            "typeString": "mapping(saddress => saddress payable)"
+          },
+          "typeName": {
+            "id": 3,
+            "keyName": "",
+            "keyNameLocation": "-1:-1:-1",
+            "keyType": {
+              "id": 1,
+              "name": "saddress",
+              "nodeType": "ElementaryTypeName",
+              "src": "25:8:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_saddress",
+                "typeString": "saddress"
+              }
+            },
+            "nodeType": "Mapping",
+            "src": "17:37:1",
+            "typeDescriptions": {
+              "typeIdentifier": "t_mapping$_t_saddress_$_t_saddress_payable_$",
+              "typeString": "mapping(saddress => saddress payable)"
+            },
+            "valueName": "",
+            "valueNameLocation": "-1:-1:-1",
+            "valueType": {
+              "id": 2,
+              "name": "saddress",
+              "nodeType": "ElementaryTypeName",
+              "src": "37:16:1",
+              "stateMutability": "payable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_saddress_payable",
+                "typeString": "saddress payable"
+              }
+            }
+          },
+          "visibility": "public"
+        },
+        {
+          "body": {
+            "id": 40,
+            "nodeType": "Block",
+            "src": "138:135:1",
+            "statements": [
+              {
+                "assignments": [
+                  12
+                ],
+                "declarations": [
+                  {
+                    "constant": false,
+                    "id": 12,
+                    "mutability": "mutable",
+                    "name": "a",
+                    "nameLocation": "165:1:1",
+                    "nodeType": "VariableDeclaration",
+                    "scope": 40,
+                    "src": "148:18:1",
+                    "stateVariable": false,
+                    "storageLocation": "default",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_saddress_payable",
+                      "typeString": "saddress payable"
+                    },
+                    "typeName": {
+                      "id": 11,
+                      "name": "saddress",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "148:16:1",
+                      "stateMutability": "payable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_saddress_payable",
+                        "typeString": "saddress payable"
+                      }
+                    },
+                    "visibility": "internal"
+                  }
+                ],
+                "id": 16,
+                "initialValue": {
+                  "baseExpression": {
+                    "id": 13,
+                    "name": "m",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 4,
+                    "src": "169:1:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_mapping$_t_saddress_$_t_saddress_payable_$",
+                      "typeString": "mapping(saddress => saddress payable)"
+                    }
+                  },
+                  "id": 15,
+                  "indexExpression": {
+                    "id": 14,
+                    "name": "arg",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 6,
+                    "src": "171:3:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_saddress_payable",
+                      "typeString": "saddress payable"
+                    }
+                  },
+                  "isConstant": false,
+                  "isLValue": true,
+                  "isPure": false,
+                  "lValueRequested": false,
+                  "nodeType": "IndexAccess",
+                  "src": "169:6:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_saddress_payable",
+                    "typeString": "saddress payable"
+                  }
+                },
+                "nodeType": "VariableDeclarationStatement",
+                "src": "148:27:1"
+              },
+              {
+                "expression": {
+                  "id": 19,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": false,
+                  "lValueRequested": false,
+                  "leftHandSide": {
+                    "id": 17,
+                    "name": "r",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 9,
+                    "src": "185:1:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_saddress_payable",
+                      "typeString": "saddress payable"
+                    }
+                  },
+                  "nodeType": "Assignment",
+                  "operator": "=",
+                  "rightHandSide": {
+                    "id": 18,
+                    "name": "arg",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 6,
+                    "src": "189:3:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_saddress_payable",
+                      "typeString": "saddress payable"
+                    }
+                  },
+                  "src": "185:7:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_saddress_payable",
+                    "typeString": "saddress payable"
+                  }
+                },
+                "id": 20,
+                "nodeType": "ExpressionStatement",
+                "src": "185:7:1"
+              },
+              {
+                "assignments": [
+                  22
+                ],
+                "declarations": [
+                  {
+                    "constant": false,
+                    "id": 22,
+                    "mutability": "mutable",
+                    "name": "c",
+                    "nameLocation": "211:1:1",
+                    "nodeType": "VariableDeclaration",
+                    "scope": 40,
+                    "src": "202:10:1",
+                    "stateVariable": false,
+                    "storageLocation": "default",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_saddress",
+                      "typeString": "saddress"
+                    },
+                    "typeName": {
+                      "id": 21,
+                      "name": "saddress",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "202:8:1",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_saddress",
+                        "typeString": "saddress"
+                      }
+                    },
+                    "visibility": "internal"
+                  }
+                ],
+                "id": 27,
+                "initialValue": {
+                  "arguments": [
+                    {
+                      "id": 25,
+                      "name": "this",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": -28,
+                      "src": "224:4:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_C_$42",
+                        "typeString": "contract C"
+                      }
+                    }
+                  ],
+                  "expression": {
+                    "argumentTypes": [
+                      {
+                        "typeIdentifier": "t_contract$_C_$42",
+                        "typeString": "contract C"
+                      }
+                    ],
+                    "id": 24,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "lValueRequested": false,
+                    "nodeType": "ElementaryTypeNameExpression",
+                    "src": "215:8:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_type$_t_saddress_$",
+                      "typeString": "type(saddress)"
+                    },
+                    "typeName": {
+                      "id": 23,
+                      "name": "saddress",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "215:8:1",
+                      "typeDescriptions": {}
+                    }
+                  },
+                  "id": 26,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": false,
+                  "kind": "typeConversion",
+                  "lValueRequested": false,
+                  "nameLocations": [],
+                  "names": [],
+                  "nodeType": "FunctionCall",
+                  "src": "215:14:1",
+                  "tryCall": false,
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_saddress",
+                    "typeString": "saddress"
+                  }
+                },
+                "nodeType": "VariableDeclarationStatement",
+                "src": "202:27:1"
+              },
+              {
+                "expression": {
+                  "id": 38,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": false,
+                  "lValueRequested": false,
+                  "leftHandSide": {
+                    "baseExpression": {
+                      "id": 28,
+                      "name": "m",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 4,
+                      "src": "239:1:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_mapping$_t_saddress_$_t_saddress_payable_$",
+                        "typeString": "mapping(saddress => saddress payable)"
+                      }
+                    },
+                    "id": 30,
+                    "indexExpression": {
+                      "id": 29,
+                      "name": "c",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 22,
+                      "src": "241:1:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_saddress",
+                        "typeString": "saddress"
+                      }
+                    },
+                    "isConstant": false,
+                    "isLValue": true,
+                    "isPure": false,
+                    "lValueRequested": true,
+                    "nodeType": "IndexAccess",
+                    "src": "239:4:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_saddress_payable",
+                      "typeString": "saddress payable"
+                    }
+                  },
+                  "nodeType": "Assignment",
+                  "operator": "=",
+                  "rightHandSide": {
+                    "arguments": [
+                      {
+                        "arguments": [
+                          {
+                            "hexValue": "30",
+                            "id": 35,
+                            "isConstant": false,
+                            "isLValue": false,
+                            "isPure": true,
+                            "kind": "number",
+                            "lValueRequested": false,
+                            "nodeType": "Literal",
+                            "src": "263:1:1",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_rational_0_by_1",
+                              "typeString": "int_const 0"
+                            },
+                            "value": "0"
+                          }
+                        ],
+                        "expression": {
+                          "argumentTypes": [
+                            {
+                              "typeIdentifier": "t_rational_0_by_1",
+                              "typeString": "int_const 0"
+                            }
+                          ],
+                          "id": 34,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "nodeType": "ElementaryTypeNameExpression",
+                          "src": "254:8:1",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_type$_t_saddress_$",
+                            "typeString": "type(saddress)"
+                          },
+                          "typeName": {
+                            "id": 33,
+                            "name": "saddress",
+                            "nodeType": "ElementaryTypeName",
+                            "src": "254:8:1",
+                            "typeDescriptions": {}
+                          }
+                        },
+                        "id": 36,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "typeConversion",
+                        "lValueRequested": false,
+                        "nameLocations": [],
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "254:11:1",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_saddress",
+                          "typeString": "saddress"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_saddress",
+                          "typeString": "saddress"
+                        }
+                      ],
+                      "id": 32,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "lValueRequested": false,
+                      "nodeType": "ElementaryTypeNameExpression",
+                      "src": "246:8:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_type$_t_saddress_payable_$",
+                        "typeString": "type(saddress payable)"
+                      },
+                      "typeName": {
+                        "id": 31,
+                        "name": "saddress",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "246:8:1",
+                        "stateMutability": "payable",
+                        "typeDescriptions": {}
+                      }
+                    },
+                    "id": 37,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "kind": "typeConversion",
+                    "lValueRequested": false,
+                    "nameLocations": [],
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "246:20:1",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_saddress_payable",
+                      "typeString": "saddress payable"
+                    }
+                  },
+                  "src": "239:27:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_saddress_payable",
+                    "typeString": "saddress payable"
+                  }
+                },
+                "id": 39,
+                "nodeType": "ExpressionStatement",
+                "src": "239:27:1"
+              }
+            ]
+          },
+          "functionSelector": "28083cc1",
+          "id": 41,
+          "implemented": true,
+          "kind": "function",
+          "modifiers": [],
+          "name": "f",
+          "nameLocation": "78:1:1",
+          "nodeType": "FunctionDefinition",
+          "parameters": {
+            "id": 7,
+            "nodeType": "ParameterList",
+            "parameters": [
+              {
+                "constant": false,
+                "id": 6,
+                "mutability": "mutable",
+                "name": "arg",
+                "nameLocation": "97:3:1",
+                "nodeType": "VariableDeclaration",
+                "scope": 41,
+                "src": "80:20:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_saddress_payable",
+                  "typeString": "saddress payable"
+                },
+                "typeName": {
+                  "id": 5,
+                  "name": "saddress",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "80:16:1",
+                  "stateMutability": "payable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_saddress_payable",
+                    "typeString": "saddress payable"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "src": "79:22:1"
+          },
+          "returnParameters": {
+            "id": 10,
+            "nodeType": "ParameterList",
+            "parameters": [
+              {
+                "constant": false,
+                "id": 9,
+                "mutability": "mutable",
+                "name": "r",
+                "nameLocation": "135:1:1",
+                "nodeType": "VariableDeclaration",
+                "scope": 41,
+                "src": "118:18:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_saddress_payable",
+                  "typeString": "saddress payable"
+                },
+                "typeName": {
+                  "id": 8,
+                  "name": "saddress",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "118:16:1",
+                  "stateMutability": "payable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_saddress_payable",
+                    "typeString": "saddress payable"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "src": "117:20:1"
+          },
+          "scope": 42,
+          "src": "69:204:1",
+          "stateMutability": "nonpayable",
+          "virtual": false,
+          "visibility": "public"
+        }
+      ],
+      "scope": 43,
+      "src": "0:275:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:276:1"
+}

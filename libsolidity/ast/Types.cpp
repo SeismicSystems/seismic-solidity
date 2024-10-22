@@ -697,7 +697,7 @@ TypeResult IntegerType::unaryOperatorResult(Token _operator) const
 
 bool IntegerType::operator==(Type const& _other) const
 {
-	if (_other.category() != Category::Integer && _other.category() != Category::ShieldedInteger)
+ 	if (_other.category() != category())
 		return false;
 	IntegerType const& other = dynamic_cast<IntegerType const&>(_other);
 	return other.m_bits == m_bits && other.m_modifier == m_modifier;
@@ -3448,7 +3448,6 @@ FunctionTypePointer FunctionType::interfaceFunctionType() const
 
 MemberList::MemberMap FunctionType::nativeMembers(ASTNode const* _scope) const
 {
-	std::cout<< "here 3" << std::endl;
 	switch (m_kind)
 	{
 	case Kind::Declaration:

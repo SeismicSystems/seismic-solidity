@@ -4,4 +4,4 @@ contract C {
     }
 }
 // ----
-// TypeError 9640: (52-66): Explicit type conversion not allowed from "type(contract super C)" to "saddress".
+// TypeError 9640: (52-67): Explicit type conversion not allowed from "type(contract super C)" to "saddress".

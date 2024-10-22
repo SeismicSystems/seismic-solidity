@@ -8,4 +8,4 @@ contract C {
     }
 }
 // ----
-// TypeError 7407: (172-173): Type saddress payable[] storage pointer is not implicitly convertible to expected type saddress[] storage pointer.
+// TypeError 7407: (176-177): Type saddress payable[] storage pointer is not implicitly convertible to expected type saddress[] storage pointer.

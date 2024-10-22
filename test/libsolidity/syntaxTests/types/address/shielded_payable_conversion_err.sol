@@ -12,6 +12,6 @@ contract D {
     }
 }
 // ----
-// TypeError 9574: (47-83): Type saddress is not implicitly convertible to expected type saddress payable.
-// TypeError 9640: (164-174): Explicit type conversion not allowed from "type(contract D)" to "saddress".
-// TypeError 9574: (144-174): Type saddress is not implicitly convertible to expected type saddress payable.
+// TypeError 9574: (47-85): Type saddress is not implicitly convertible to expected type saddress payable.
+// TypeError 9640: (167-178): Explicit type conversion not allowed from "type(contract D)" to "saddress".
+// TypeError 9574: (146-178): Type saddress is not implicitly convertible to expected type saddress payable.

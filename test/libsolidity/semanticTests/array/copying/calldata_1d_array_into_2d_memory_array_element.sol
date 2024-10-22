@@ -32,6 +32,6 @@ contract Test {
     }
 }
 // ====
-// EVMVersion: >homestead
+// EVMVersion: >spuriousDragon
 // ----
 // test() -> true

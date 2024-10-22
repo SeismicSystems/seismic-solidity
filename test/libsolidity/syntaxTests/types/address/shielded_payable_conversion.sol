@@ -1,8 +1,8 @@
 contract C {
     function f() public {
         saddress payable a = payable(saddress(new D()));
-        saddress payable b = payable(new E());
-        saddress payable c = payable(new F());
+        saddress payable b = payable(saddress(new E()));
+        saddress payable c = payable(saddress(new F()));
 
         a;
         b;
