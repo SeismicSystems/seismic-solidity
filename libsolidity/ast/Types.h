@@ -563,6 +563,8 @@ public:
 			);
 	}
 
+	virtual unsigned storageBytes() const override { return 32; }
+
 	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
