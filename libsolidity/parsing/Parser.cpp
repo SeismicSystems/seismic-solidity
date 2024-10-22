@@ -1223,12 +1223,12 @@ ASTPointer<TypeName> Parser::parseTypeName()
 		ASTNodeFactory nodeFactory(*this);
 		nodeFactory.markEndPosition();
 		advance();
-		auto stateMutability = elemTypeName.token() == Token::Address
+		auto stateMutability = (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			? std::optional<StateMutability>{StateMutability::NonPayable}
 			: std::nullopt;
 		if (TokenTraits::isStateMutabilitySpecifier(m_scanner->currentToken()))
 		{
-			if (elemTypeName.token() == Token::Address)
+			if (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			{
 				nodeFactory.markEndPosition();
 				stateMutability = parseStateMutability();
@@ -1252,6 +1252,7 @@ ASTPointer<TypeName> Parser::parseTypeName()
 
 	solAssert(type, "");
 	// Parse "[...]" postfixes for arrays.
+
 	type = parseTypeNameSuffix(type, nodeFactory);
 
 	return type;
@@ -2197,13 +2198,26 @@ ASTPointer<Expression> Parser::parseLeftHandSideExpression(
 	}
 	else if (m_scanner->currentToken() == Token::Payable)
 	{
+		//peek into inner payable() argument and check for Saddress
+        Token nextNextToken = m_scanner->peekNextNextToken();
+
 		expectToken(Token::Payable);
 		nodeFactory.markEndPosition();
-		auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
-			ElementaryTypeNameToken(Token::Address, 0, 0),
-			std::make_optional(StateMutability::Payable)
-		);
-		expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
+		if (nextNextToken == Token::SAddress){
+			auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
+				ElementaryTypeNameToken(Token::SAddress, 0, 0),
+				std::make_optional(StateMutability::Payable)
+			);
+			expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
+		}
+		else
+		{
+			auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
+				ElementaryTypeNameToken(Token::Address, 0, 0),
+				std::make_optional(StateMutability::Payable)
+			);
+			expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
+		}
 		expectToken(Token::LParen, false);
 	}
 	else
@@ -2744,6 +2758,11 @@ ASTPointer<ASTString> Parser::expectIdentifierTokenOrAddress()
 	if (m_scanner->currentToken() == Token::Address)
 	{
 		result = std::make_shared<ASTString>("address");
+		advance();
+	}
+	else if (m_scanner->currentToken() == Token::SAddress)
+	{
+		result = std::make_shared<ASTString>("saddress");
 		advance();
 	}
 	else

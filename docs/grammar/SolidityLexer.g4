@@ -73,6 +73,7 @@ Receive: 'receive';
 Return: 'return';
 Returns: 'returns';
 Revert: 'revert'; // not a real keyword
+ShieldedAddress: 'saddress';
 /**
  * Sized shieled unsigned integer types.
  * suint is an alias of suint256.

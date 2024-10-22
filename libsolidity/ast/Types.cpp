@@ -490,7 +490,7 @@ BoolResult AddressType::isImplicitlyConvertibleTo(Type const& _other) const
 
 BoolResult AddressType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
-	if ((_convertTo.category() == category()) || isImplicitlyConvertibleTo(_convertTo))
+	if ((_convertTo.category() == Category::Address) || (_convertTo.category() == Category::ShieldedAddress) || isImplicitlyConvertibleTo(_convertTo))
 		return true;
 	else if (auto const* contractType = dynamic_cast<ContractType const*>(&_convertTo))
 		return (m_stateMutability >= StateMutability::Payable) || !contractType->isPayable();
@@ -541,11 +541,12 @@ TypeResult AddressType::binaryOperatorResult(Token _operator, Type const* _other
 
 bool AddressType::operator==(Type const& _other) const
 {
-	if (_other.category() != category())
+	if (_other.category() != Category::Address && _other.category() != Category::ShieldedAddress)
 		return false;
 	AddressType const& other = dynamic_cast<AddressType const&>(_other);
 	return other.m_stateMutability == m_stateMutability;
 }
+
 
 MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 {
@@ -565,6 +566,28 @@ MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 	}
 	return members;
 }
+
+std::string ShieldedAddressType::richIdentifier() const
+{
+	if (m_stateMutability == StateMutability::Payable)
+		return "t_saddress_payable";
+	else
+		return "t_saddress";
+}
+
+std::string ShieldedAddressType::toString(bool) const
+{
+	if (m_stateMutability == StateMutability::Payable)
+		return "saddress payable";
+	else
+		return "saddress";
+}
+
+std::string ShieldedAddressType::canonicalName() const
+{
+	return "saddress";
+}
+
 
 namespace
 {

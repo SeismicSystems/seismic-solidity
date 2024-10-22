@@ -85,7 +85,8 @@ public:
 
 	static AddressType const* payableAddress() noexcept { return &m_payableAddress; }
 	static AddressType const* address() noexcept { return &m_address; }
-
+	static ShieldedAddressType const* payableShieldedAddress() noexcept { return &m_payableShieldedAddress; }
+	static ShieldedAddressType const* shieldedAddress() noexcept { return &m_shieldedAddress; }
 	static IntegerType const* integer(unsigned _bits, IntegerType::Modifier _modifier)
 	{
 		solAssert((_bits % 8) == 0, "");
@@ -235,6 +236,8 @@ private:
 	static TupleType const m_emptyTuple;
 	static AddressType const m_payableAddress;
 	static AddressType const m_address;
+	static ShieldedAddressType const m_payableShieldedAddress;
+	static ShieldedAddressType const m_shieldedAddress;
 	static std::array<std::unique_ptr<IntegerType>, 32> const m_intM;
 	static std::array<std::unique_ptr<IntegerType>, 32> const m_uintM;
 	static std::array<std::unique_ptr<ShieldedIntegerType>, 32> const m_suintM;

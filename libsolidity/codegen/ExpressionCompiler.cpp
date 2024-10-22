@@ -1753,13 +1753,16 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 	if (
 		m_context.evmVersion().hasSelfBalance() &&
 		member == "balance" &&
-		_memberAccess.expression().annotation().type->category() == Type::Category::Address
+		(_memberAccess.expression().annotation().type->category() == Type::Category::Address ||
+		_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
 	)
 		if (FunctionCall const* funCall = dynamic_cast<FunctionCall const*>(&_memberAccess.expression()))
 			if (auto const* addr = dynamic_cast<ElementaryTypeNameExpression const*>(&funCall->expression()))
 				if (
-					addr->type().typeName().token() == Token::Address &&
-					funCall->arguments().size() == 1
+					(addr->type().typeName().token() == Token::Address &&
+					funCall->arguments().size() == 1) ||
+					(addr->type().typeName().token() == Token::SAddress &&
+					funCall->arguments().size() == 1)
 				)
 					if (auto arg = dynamic_cast<Identifier const*>( funCall->arguments().front().get()))
 						if (
@@ -1777,16 +1780,23 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		member == "length" &&
 		innerExpression &&
 		innerExpression->memberName() == "code" &&
-		innerExpression->expression().annotation().type->category() == Type::Category::Address
+		(innerExpression->expression().annotation().type->category() == Type::Category::Address ||
+		innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)
 	)
 	{
 		solAssert(innerExpression->annotation().type->category() == Type::Category::Array, "");
 
 		innerExpression->expression().accept(*this);
-
-		utils().convertType(
-			*innerExpression->expression().annotation().type,
-			*TypeProvider::address(),
+		if (innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)
+			utils().convertType(
+				*innerExpression->expression().annotation().type,
+				*TypeProvider::shieldedAddress(),
+				true
+			);
+		else
+			utils().convertType(
+				*innerExpression->expression().annotation().type,
+				*TypeProvider::address(),
 			true
 		);
 		m_context << Instruction::EXTCODESIZE;
@@ -1823,23 +1833,38 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		break;
 	}
 	case Type::Category::Address:
+	case Type::Category::ShieldedAddress:
 	{
 		if (member == "balance")
 		{
-			utils().convertType(
-				*_memberAccess.expression().annotation().type,
-				*TypeProvider::address(),
-				true
-			);
+			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
+				utils().convertType(
+					*_memberAccess.expression().annotation().type,
+					*TypeProvider::shieldedAddress(),
+					true
+				);
+			else
+				utils().convertType(
+					*_memberAccess.expression().annotation().type,
+					*TypeProvider::address(),
+					true	
+				);
 			m_context << Instruction::BALANCE;
 		}
 		else if (member == "code")
 		{
 			// Stack: <address>
-			utils().convertType(
-				*_memberAccess.expression().annotation().type,
-				*TypeProvider::address(),
-				true
+			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
+				utils().convertType(
+					*_memberAccess.expression().annotation().type,
+					*TypeProvider::shieldedAddress(),
+					true
+				);
+			else
+				utils().convertType(
+					*_memberAccess.expression().annotation().type,
+					*TypeProvider::address(),
+					true
 			);
 
 			m_context << Instruction::DUP1 << Instruction::EXTCODESIZE;
@@ -1878,18 +1903,34 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		else if ((std::set<std::string>{"send", "transfer"}).count(member))
 		{
 			solAssert(dynamic_cast<AddressType const&>(*_memberAccess.expression().annotation().type).stateMutability() == StateMutability::Payable, "");
-			utils().convertType(
-				*_memberAccess.expression().annotation().type,
-				AddressType(StateMutability::Payable),
-				true
-			);
+			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
+				utils().convertType(	
+					*_memberAccess.expression().annotation().type,
+					*TypeProvider::shieldedAddress(),
+					true
+				);
+			else
+				utils().convertType(
+					*_memberAccess.expression().annotation().type,
+					AddressType(StateMutability::Payable),
+					true
+				);
 		}
 		else if ((std::set<std::string>{"call", "callcode", "delegatecall", "staticcall"}).count(member))
-			utils().convertType(
-				*_memberAccess.expression().annotation().type,
-				*TypeProvider::address(),
-				true
-			);
+		{
+			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
+				utils().convertType(
+					*_memberAccess.expression().annotation().type,
+					*TypeProvider::shieldedAddress(),
+					true
+				);
+			else
+				utils().convertType(
+					*_memberAccess.expression().annotation().type,
+					*TypeProvider::address(),
+					true
+				);
+		}
 		else
 			solAssert(false, "Invalid member access to address");
 		break;
@@ -2407,8 +2448,9 @@ void ExpressionCompiler::endVisit(Literal const& _literal)
 	switch (type->category())
 	{
 	case Type::Category::RationalNumber:
-	case Type::Category::Bool:
+	case Type::Category::Bool:	
 	case Type::Category::Address:
+	case Type::Category::ShieldedAddress:
 		m_context << type->literalValue(&_literal);
 		break;
 	case Type::Category::StringLiteral:

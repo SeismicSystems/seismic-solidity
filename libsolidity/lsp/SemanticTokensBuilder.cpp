@@ -40,6 +40,7 @@ std::optional<SemanticTokenType> semanticTokenTypeForType(frontend::Type const* 
 	switch (_type->category())
 	{
 	case frontend::Type::Category::Address: return SemanticTokenType::Class;
+	case frontend::Type::Category::ShieldedAddress: return SemanticTokenType::Class;
 	case frontend::Type::Category::Bool: return SemanticTokenType::Number;
 	case frontend::Type::Category::Enum: return SemanticTokenType::Enum;
 	case frontend::Type::Category::Function: return SemanticTokenType::Function;

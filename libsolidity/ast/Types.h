@@ -175,6 +175,7 @@ public:
 	enum class Category
 	{
 		Address,
+		ShieldedAddress,
 		Integer,
 		ShieldedInteger,
 		RationalNumber,
@@ -443,9 +444,9 @@ class AddressType: public Type
 public:
 	explicit AddressType(StateMutability _stateMutability);
 
-	Category category() const override { return Category::Address; }
+	virtual Category category() const override { return Category::Address; }
 
-	std::string richIdentifier() const override;
+	virtual std::string richIdentifier() const override;
 	BoolResult isImplicitlyConvertibleTo(Type const& _other) const override;
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
@@ -454,20 +455,44 @@ public:
 	bool operator==(Type const& _other) const override;
 
 	unsigned calldataEncodedSize(bool _padded = true) const override { return _padded ? 32 : 160 / 8; }
-	unsigned storageBytes() const override { return 160 / 8; }
+	virtual unsigned storageBytes() const override { return 160 / 8; }
 	bool leftAligned() const override { return false; }
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
 
 	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
 
-	std::string toString(bool _withoutDataLocation) const override;
-	std::string canonicalName() const override;
+	virtual std::string toString(bool _withoutDataLocation) const override;
+	virtual std::string canonicalName() const override;
 
 	u256 literalValue(Literal const* _literal) const override;
 
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
+
+	StateMutability stateMutability(void) const { return m_stateMutability; }
+
+private:
+	StateMutability m_stateMutability;
+};
+
+/**
+ * Type for shielded addresses.
+ */
+class ShieldedAddressType: public AddressType
+{
+public:
+	explicit ShieldedAddressType(StateMutability _stateMutability): AddressType(_stateMutability), m_stateMutability(_stateMutability) {
+		solAssert(m_stateMutability == StateMutability::Payable || m_stateMutability == StateMutability::NonPayable, "");
+	}
+
+	Category category() const override { return Category::ShieldedAddress; }
+
+	std::string richIdentifier() const override;
+
+	virtual unsigned storageBytes() const override { return 32; }
+	std::string toString(bool _withoutDataLocation) const override;
+	std::string canonicalName() const override;
 
 	StateMutability stateMutability(void) const { return m_stateMutability; }
 
