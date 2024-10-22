@@ -4,4 +4,4 @@ contract C {
 }
 
 // ----
-// TypeError 4626: (51-52): Type containing a shielded integer is not allowed as error parameter type.
+// TypeError 4626: (51-52): Shielded Types are not allowed as error parameter type.

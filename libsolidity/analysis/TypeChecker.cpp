@@ -4092,12 +4092,12 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 	for (ASTPointer<VariableDeclaration> const& var: _callable.parameters())
 	{
 		Type const* varType = type(*var);
-		if (varType->containsTypeCategory(Type::Category::ShieldedInteger))
+		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
         {
             m_errorReporter.fatalTypeError(
                 4626_error,
                 var->location(),
-                "Type containing a shielded integer is not allowed as " + kind + " parameter type."
+                "Shielded Types are not allowed as " + kind + " parameter type."
             );
         }
 		if (type(*var)->containsNestedMapping())
