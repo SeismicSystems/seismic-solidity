@@ -4091,17 +4091,20 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 	std::string kind = dynamic_cast<EventDefinition const*>(&_callable) ? "event" : "error";
 	for (ASTPointer<VariableDeclaration> const& var: _callable.parameters())
 	{
+		Type const* varType = type(*var);
+		if (varType->containsTypeCategory(Type::Category::ShieldedInteger))
+        {
+            m_errorReporter.fatalTypeError(
+                4626_error,
+                var->location(),
+                "Type containing a shielded integer is not allowed as " + kind + " parameter type."
+            );
+        }
 		if (type(*var)->containsNestedMapping())
 			m_errorReporter.fatalTypeError(
 				3448_error,
 				var->location(),
 				"Type containing a (nested) mapping is not allowed as " + kind + " parameter type."
-			);
-		if (type(*var)->category()==Type::Category::ShieldedInteger)
-			m_errorReporter.fatalTypeError(
-				4626_error,
-				var->location(),
-				"Type containing a shielded integer is not allowed as " + kind + " parameter type."
 			);
 		if (!type(*var)->interfaceType(false))
 			m_errorReporter.typeError(3417_error, var->location(), "Internal or recursive type is not allowed as " + kind + " parameter type.");

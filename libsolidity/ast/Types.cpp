@@ -1589,6 +1589,18 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 	return res;
 }
 
+bool CompositeType::containsTypeCategory(Type::Category _category) const
+{
+    if (category() == _category)
+        return true;
+
+    for (Type const* subType : decomposition())
+    {
+        if (subType->category() == _category)
+            return true;
+    }
+    return false;
+}
 Type const* ReferenceType::withLocation(DataLocation _location, bool _isPointer) const
 {
 	return TypeProvider::withLocation(this, _location, _isPointer);
