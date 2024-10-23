@@ -3,7 +3,6 @@ contract C {
         suint256 contents;
     }
     suint256 separator;
-    // the below shouldn't work if we're being straight across the board
     Data a;
     suint256 separator2;
 
