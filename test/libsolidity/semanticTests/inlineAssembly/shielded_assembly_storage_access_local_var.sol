@@ -1,5 +1,5 @@
 contract C {
-    suint256[] public a;
+    suint256[] a;
 
     function f() public returns (suint256) {
         suint256[] storage x = a;
