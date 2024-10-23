@@ -18,9 +18,9 @@
           "id": 4,
           "mutability": "mutable",
           "name": "m",
-          "nameLocation": "62:1:1",
+          "nameLocation": "55:1:1",
           "nodeType": "VariableDeclaration",
-          "src": "17:46:1",
+          "src": "17:39:1",
           "stateVariable": false,
           "storageLocation": "default",
           "typeDescriptions": {},
@@ -49,13 +49,13 @@
               "typeDescriptions": {}
             }
           },
-          "visibility": "public"
+          "visibility": "internal"
         },
         {
           "body": {
             "id": 40,
             "nodeType": "Block",
-            "src": "138:135:1",
+            "src": "131:135:1",
             "statements": [
               {
                 "assignments": [
@@ -67,9 +67,9 @@
                     "id": 12,
                     "mutability": "mutable",
                     "name": "a",
-                    "nameLocation": "165:1:1",
+                    "nameLocation": "158:1:1",
                     "nodeType": "VariableDeclaration",
-                    "src": "148:18:1",
+                    "src": "141:18:1",
                     "stateVariable": false,
                     "storageLocation": "default",
                     "typeDescriptions": {},
@@ -77,7 +77,7 @@
                       "id": 11,
                       "name": "saddress",
                       "nodeType": "ElementaryTypeName",
-                      "src": "148:16:1",
+                      "src": "141:16:1",
                       "stateMutability": "payable",
                       "typeDescriptions": {}
                     },
@@ -91,7 +91,7 @@
                     "name": "m",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "src": "169:1:1",
+                    "src": "162:1:1",
                     "typeDescriptions": {}
                   },
                   "id": 15,
@@ -100,15 +100,15 @@
                     "name": "arg",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "src": "171:3:1",
+                    "src": "164:3:1",
                     "typeDescriptions": {}
                   },
                   "nodeType": "IndexAccess",
-                  "src": "169:6:1",
+                  "src": "162:6:1",
                   "typeDescriptions": {}
                 },
                 "nodeType": "VariableDeclarationStatement",
-                "src": "148:27:1"
+                "src": "141:27:1"
               },
               {
                 "expression": {
@@ -118,7 +118,7 @@
                     "name": "r",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "src": "185:1:1",
+                    "src": "178:1:1",
                     "typeDescriptions": {}
                   },
                   "nodeType": "Assignment",
@@ -128,15 +128,15 @@
                     "name": "arg",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "src": "189:3:1",
+                    "src": "182:3:1",
                     "typeDescriptions": {}
                   },
-                  "src": "185:7:1",
+                  "src": "178:7:1",
                   "typeDescriptions": {}
                 },
                 "id": 20,
                 "nodeType": "ExpressionStatement",
-                "src": "185:7:1"
+                "src": "178:7:1"
               },
               {
                 "assignments": [
@@ -148,9 +148,9 @@
                     "id": 22,
                     "mutability": "mutable",
                     "name": "c",
-                    "nameLocation": "211:1:1",
+                    "nameLocation": "204:1:1",
                     "nodeType": "VariableDeclaration",
-                    "src": "202:10:1",
+                    "src": "195:10:1",
                     "stateVariable": false,
                     "storageLocation": "default",
                     "typeDescriptions": {},
@@ -158,7 +158,7 @@
                       "id": 21,
                       "name": "saddress",
                       "nodeType": "ElementaryTypeName",
-                      "src": "202:8:1",
+                      "src": "195:8:1",
                       "stateMutability": "nonpayable",
                       "typeDescriptions": {}
                     },
@@ -173,20 +173,20 @@
                       "name": "this",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "src": "224:4:1",
+                      "src": "217:4:1",
                       "typeDescriptions": {}
                     }
                   ],
                   "expression": {
                     "id": 24,
                     "nodeType": "ElementaryTypeNameExpression",
-                    "src": "215:8:1",
+                    "src": "208:8:1",
                     "typeDescriptions": {},
                     "typeName": {
                       "id": 23,
                       "name": "saddress",
                       "nodeType": "ElementaryTypeName",
-                      "src": "215:8:1",
+                      "src": "208:8:1",
                       "typeDescriptions": {}
                     }
                   },
@@ -194,12 +194,12 @@
                   "nameLocations": [],
                   "names": [],
                   "nodeType": "FunctionCall",
-                  "src": "215:14:1",
+                  "src": "208:14:1",
                   "tryCall": false,
                   "typeDescriptions": {}
                 },
                 "nodeType": "VariableDeclarationStatement",
-                "src": "202:27:1"
+                "src": "195:27:1"
               },
               {
                 "expression": {
@@ -210,7 +210,7 @@
                       "name": "m",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "src": "239:1:1",
+                      "src": "232:1:1",
                       "typeDescriptions": {}
                     },
                     "id": 30,
@@ -219,11 +219,11 @@
                       "name": "c",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "src": "241:1:1",
+                      "src": "234:1:1",
                       "typeDescriptions": {}
                     },
                     "nodeType": "IndexAccess",
-                    "src": "239:4:1",
+                    "src": "232:4:1",
                     "typeDescriptions": {}
                   },
                   "nodeType": "Assignment",
@@ -237,7 +237,7 @@
                             "id": 35,
                             "kind": "number",
                             "nodeType": "Literal",
-                            "src": "263:1:1",
+                            "src": "256:1:1",
                             "typeDescriptions": {},
                             "value": "0"
                           }
@@ -245,13 +245,13 @@
                         "expression": {
                           "id": 34,
                           "nodeType": "ElementaryTypeNameExpression",
-                          "src": "254:8:1",
+                          "src": "247:8:1",
                           "typeDescriptions": {},
                           "typeName": {
                             "id": 33,
                             "name": "saddress",
                             "nodeType": "ElementaryTypeName",
-                            "src": "254:8:1",
+                            "src": "247:8:1",
                             "typeDescriptions": {}
                           }
                         },
@@ -259,7 +259,7 @@
                         "nameLocations": [],
                         "names": [],
                         "nodeType": "FunctionCall",
-                        "src": "254:11:1",
+                        "src": "247:11:1",
                         "tryCall": false,
                         "typeDescriptions": {}
                       }
@@ -267,13 +267,13 @@
                     "expression": {
                       "id": 32,
                       "nodeType": "ElementaryTypeNameExpression",
-                      "src": "246:8:1",
+                      "src": "239:8:1",
                       "typeDescriptions": {},
                       "typeName": {
                         "id": 31,
                         "name": "saddress",
                         "nodeType": "ElementaryTypeName",
-                        "src": "246:8:1",
+                        "src": "239:8:1",
                         "stateMutability": "payable",
                         "typeDescriptions": {}
                       }
@@ -282,16 +282,16 @@
                     "nameLocations": [],
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "246:20:1",
+                    "src": "239:20:1",
                     "tryCall": false,
                     "typeDescriptions": {}
                   },
-                  "src": "239:27:1",
+                  "src": "232:27:1",
                   "typeDescriptions": {}
                 },
                 "id": 39,
                 "nodeType": "ExpressionStatement",
-                "src": "239:27:1"
+                "src": "232:27:1"
               }
             ]
           },
@@ -300,7 +300,7 @@
           "kind": "function",
           "modifiers": [],
           "name": "f",
-          "nameLocation": "78:1:1",
+          "nameLocation": "71:1:1",
           "nodeType": "FunctionDefinition",
           "parameters": {
             "id": 7,
@@ -311,9 +311,9 @@
                 "id": 6,
                 "mutability": "mutable",
                 "name": "arg",
-                "nameLocation": "97:3:1",
+                "nameLocation": "90:3:1",
                 "nodeType": "VariableDeclaration",
-                "src": "80:20:1",
+                "src": "73:20:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {},
@@ -321,14 +321,14 @@
                   "id": 5,
                   "name": "saddress",
                   "nodeType": "ElementaryTypeName",
-                  "src": "80:16:1",
+                  "src": "73:16:1",
                   "stateMutability": "payable",
                   "typeDescriptions": {}
                 },
                 "visibility": "internal"
               }
             ],
-            "src": "79:22:1"
+            "src": "72:22:1"
           },
           "returnParameters": {
             "id": 10,
@@ -339,9 +339,9 @@
                 "id": 9,
                 "mutability": "mutable",
                 "name": "r",
-                "nameLocation": "135:1:1",
+                "nameLocation": "128:1:1",
                 "nodeType": "VariableDeclaration",
-                "src": "118:18:1",
+                "src": "111:18:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {},
@@ -349,25 +349,25 @@
                   "id": 8,
                   "name": "saddress",
                   "nodeType": "ElementaryTypeName",
-                  "src": "118:16:1",
+                  "src": "111:16:1",
                   "stateMutability": "payable",
                   "typeDescriptions": {}
                 },
                 "visibility": "internal"
               }
             ],
-            "src": "117:20:1"
+            "src": "110:20:1"
           },
-          "src": "69:204:1",
+          "src": "62:204:1",
           "stateMutability": "nonpayable",
           "virtual": false,
           "visibility": "public"
         }
       ],
-      "src": "0:275:1",
+      "src": "0:268:1",
       "usedErrors": [],
       "usedEvents": []
     }
   ],
-  "src": "0:276:1"
+  "src": "0:269:1"
 }

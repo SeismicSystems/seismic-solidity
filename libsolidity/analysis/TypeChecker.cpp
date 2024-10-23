@@ -209,6 +209,7 @@ TypePointers TypeChecker::typeCheckMetaTypeFunctionAndRetrieveReturnType(Functio
 			wrongType = contractType->isSuper();
 		else if (
 			typeCategory != Type::Category::Integer &&
+			typeCategory != Type::Category::ShieldedInteger &&
 			typeCategory != Type::Category::Enum
 		)
 			wrongType = true;
@@ -532,8 +533,10 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 	}
 	else if (_variable.visibility() >= Visibility::Public)
 	{
-		if (varType->category()==Type::Category::ShieldedInteger)
-			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded integers are not supported for public state variables.");
+		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
+        {
+			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded Types are not supported for public state variables.");
+        }
 		FunctionType getter(_variable);
 		if (!useABICoderV2())
 		{
@@ -4091,17 +4094,20 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 	std::string kind = dynamic_cast<EventDefinition const*>(&_callable) ? "event" : "error";
 	for (ASTPointer<VariableDeclaration> const& var: _callable.parameters())
 	{
+		Type const* varType = type(*var);
+		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
+        {
+            m_errorReporter.fatalTypeError(
+                4626_error,
+                var->location(),
+                "Shielded Types are not allowed as " + kind + " parameter type."
+            );
+        }
 		if (type(*var)->containsNestedMapping())
 			m_errorReporter.fatalTypeError(
 				3448_error,
 				var->location(),
 				"Type containing a (nested) mapping is not allowed as " + kind + " parameter type."
-			);
-		if (type(*var)->category()==Type::Category::ShieldedInteger)
-			m_errorReporter.fatalTypeError(
-				4626_error,
-				var->location(),
-				"Type containing a shielded integer is not allowed as " + kind + " parameter type."
 			);
 		if (!type(*var)->interfaceType(false))
 			m_errorReporter.typeError(3417_error, var->location(), "Internal or recursive type is not allowed as " + kind + " parameter type.");

@@ -669,6 +669,7 @@ MagicType const* TypeProvider::meta(Type const* _type)
 		_type && (
 			_type->category() == Type::Category::Contract ||
 			_type->category() == Type::Category::Integer ||
+			_type->category() == Type::Category::ShieldedInteger ||
 			_type->category() == Type::Category::Enum
 		),
 		"Only enum, contracts or integer types supported for now."

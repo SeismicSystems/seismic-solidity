@@ -203,6 +203,7 @@ public:
 	static Type const* commonType(Type const* _a, Type const* _b);
 
 	virtual Category category() const = 0;
+	virtual bool containsTypeCategory(Category _category) const { return category() == _category; }
 	/// @returns a valid solidity identifier such that two types should compare equal if and
 	/// only if they have the same identifier.
 	/// The identifier should start with "t_".
@@ -562,6 +563,8 @@ public:
 			);
 	}
 
+	virtual unsigned storageBytes() const override { return 32; }
+
 	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
@@ -807,6 +810,7 @@ public:
 	/// elements of decomposition of these elements and so on, up to non-composite types.
 	/// Each type is included only once.
 	std::vector<Type const*> fullDecomposition() const;
+    virtual bool containsTypeCategory(Type::Category _category) const;
 
 protected:
 	/// @returns a list of types that together make up the data part of this type.

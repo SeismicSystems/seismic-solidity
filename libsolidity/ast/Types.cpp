@@ -1589,6 +1589,18 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 	return res;
 }
 
+bool CompositeType::containsTypeCategory(Type::Category _category) const
+{
+    if (category() == _category)
+        return true;
+
+    for (Type const* subType : decomposition())
+    {
+        if (subType->category() == _category)
+            return true;
+    }
+    return false;
+}
 Type const* ReferenceType::withLocation(DataLocation _location, bool _isPointer) const
 {
 	return TypeProvider::withLocation(this, _location, _isPointer);
@@ -4302,6 +4314,7 @@ MemberList::MemberMap MagicType::nativeMembers(ASTNode const*) const
 			m_typeArgument && (
 					m_typeArgument->category() == Type::Category::Contract ||
 					m_typeArgument->category() == Type::Category::Integer ||
+					m_typeArgument->category() == Type::Category::ShieldedInteger ||
 					m_typeArgument->category() == Type::Category::Enum
 			),
 			"Only enums, contracts or integer types supported for now"
@@ -4328,6 +4341,14 @@ MemberList::MemberMap MagicType::nativeMembers(ASTNode const*) const
 			return MemberList::MemberMap({
 				{"min", integerTypePointer},
 				{"max", integerTypePointer},
+			});
+		}
+		else if (m_typeArgument->category() == Type::Category::ShieldedInteger)
+		{
+			ShieldedIntegerType const* shieldedIntegerTypePointer = dynamic_cast<ShieldedIntegerType const*>(m_typeArgument);
+			return MemberList::MemberMap({
+				{"min", shieldedIntegerTypePointer},
+				{"max", shieldedIntegerTypePointer},
 			});
 		}
 		else if (m_typeArgument->category() == Type::Category::Enum)
