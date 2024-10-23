@@ -1,5 +1,5 @@
 contract C {
-    mapping(saddress => saddress payable) public m;
+    mapping(saddress => saddress payable) m;
     function f(saddress payable arg) public returns (saddress payable r) {
         saddress payable a = m[arg];
         r = arg;
