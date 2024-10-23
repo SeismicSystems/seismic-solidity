@@ -13,7 +13,7 @@ contract C {
 
     function get() public returns (uint256 my_addr, uint16 packed_uints) {
         assembly {
-            my_addr := sload(slot_0_a.slot)
+            my_addr := cload(slot_0_a.slot)
             packed_uints := sload(slot_1.slot)
         }
     }
