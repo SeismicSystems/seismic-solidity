@@ -532,8 +532,10 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 	}
 	else if (_variable.visibility() >= Visibility::Public)
 	{
-		if (varType->category()==Type::Category::ShieldedInteger)
-			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded integers are not supported for public state variables.");
+		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
+        {
+			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded Types are not supported for public state variables.");
+        }
 		FunctionType getter(_variable);
 		if (!useABICoderV2())
 		{
