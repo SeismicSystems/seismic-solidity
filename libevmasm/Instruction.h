@@ -182,8 +182,8 @@ enum class Instruction: uint8_t
 	LOG3,                     ///< Makes a log entry; 3 topics.
 	LOG4,                     ///< Makes a log entry; 4 topics.
 
-	CLOAD = 0xb0,			  ///< loads shielded objects from kernel
-	CSTORE = 0xb1,			  ///< stores shielded objects from kernel
+	CLOAD = 0xb0,			  ///< loads shielded objects
+	CSTORE = 0xb1,			  ///< stores shielded objects
 
 	CREATE = 0xf0,            ///< create a new account with associated code
 	CALL,                     ///< message-call into an account
