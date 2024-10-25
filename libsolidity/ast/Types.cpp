@@ -1592,15 +1592,29 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 bool CompositeType::containsTypeCategory(Type::Category _category) const
 {
     if (category() == _category)
+    {
         return true;
+    }
 
     for (Type const* subType : decomposition())
     {
         if (subType->category() == _category)
+        {
             return true;
+        }
+
+        // If subType is also a CompositeType, recursively check its components
+        if (auto compositeSubType = dynamic_cast<CompositeType const*>(subType))
+        {
+            if (compositeSubType->containsTypeCategory(_category))
+            {
+                return true;
+            }
+        }
     }
     return false;
 }
+
 Type const* ReferenceType::withLocation(DataLocation _location, bool _isPointer) const
 {
 	return TypeProvider::withLocation(this, _location, _isPointer);
