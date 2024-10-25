@@ -54,7 +54,7 @@ contract test {
             let hash := keccak256(0x0, 0x40)
 
             // Load the length of the dynamic array `dynamicData[a]`
-            let len := sload(hash)
+            let len := cload(hash)
 
             // Ensure index `b` is within bounds (0 <= b < len)
             if iszero(lt(b, len)) {
