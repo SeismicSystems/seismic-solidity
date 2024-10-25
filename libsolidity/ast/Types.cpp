@@ -1591,6 +1591,19 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 
 bool CompositeType::containsTypeCategory(Type::Category _category) const
 {
+    std::unordered_set<Type const*> visited;
+    return containsTypeCategoryRecurse(_category, visited);
+}
+
+bool CompositeType::containsTypeCategoryRecurse(Type::Category _category, std::unordered_set<Type const*>& visited) const
+{
+    // Avoid infinite recursion
+    if (visited.find(this) != visited.end())
+    {
+        return false;
+    }
+    visited.insert(this);
+
     if (category() == _category)
     {
         return true;
@@ -1603,10 +1616,9 @@ bool CompositeType::containsTypeCategory(Type::Category _category) const
             return true;
         }
 
-        // If subType is also a CompositeType, recursively check its components
         if (auto compositeSubType = dynamic_cast<CompositeType const*>(subType))
         {
-            if (compositeSubType->containsTypeCategory(_category))
+            if (compositeSubType->containsTypeCategoryRecurse(_category, visited))
             {
                 return true;
             }
