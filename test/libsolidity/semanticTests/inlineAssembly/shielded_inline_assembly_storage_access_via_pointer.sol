@@ -10,7 +10,7 @@ contract C {
         Data storage x = a;
         suint256 off;
         assembly {
-            sstore(x.slot, 7)
+            cstore(x.slot, 7)
             off := x.offset
         }
         assert(off == 0);
