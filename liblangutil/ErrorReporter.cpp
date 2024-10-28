@@ -150,6 +150,23 @@ void ErrorReporter::clear()
 	m_errorList.clear();
 }
 
+void ErrorReporter::removeError(ErrorId _errorId)
+{
+    auto& errors = m_errorList;
+    auto it = std::remove_if(
+        errors.begin(),
+        errors.end(),
+        [_errorId](std::shared_ptr<Error const> const& errorPtr) {
+            return errorPtr->errorId() == _errorId;
+        }
+    );
+    if (it != errors.end())
+    {
+        m_errorCount -= std::distance(it, errors.end());
+        errors.erase(it, errors.end());
+    }
+}
+
 void ErrorReporter::declarationError(ErrorId _error, SourceLocation const& _location, SecondarySourceLocation const& _secondaryLocation, std::string const& _description)
 {
 	error(

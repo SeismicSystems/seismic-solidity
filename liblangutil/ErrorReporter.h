@@ -124,7 +124,9 @@ public:
 
 	void clear();
 
-	/// @returns true iff there is any error (ignores warnings and infos).
+	void removeError(ErrorId _errorId);
+
+		/// @returns true iff there is any error (ignores warnings and infos).
 	bool hasErrors() const
 	{
 		return m_errorCount > 0;
