@@ -1,0 +1,31 @@
+pragma abicoder v2;
+
+contract C {
+    struct S {
+        suint8[][] y;
+    }
+
+    mapping (suint8 => S) src;
+
+    constructor() {
+        suint8[] memory d = new suint8[](2);
+        d[0] = suint8(3);
+        d[1] = suint8(4);
+
+        suint8[][] memory y = new suint8[][](2);
+        y[0] = d;
+        y[1] = d;
+
+        src[0] = S({y: y});
+    }
+
+    function f() public returns (S memory) {
+        return src[0];
+    }
+}
+// ----
+// f() -> 0x20, 7, 8, 9, 0xa0, 13, 2, 0x40, 0xa0, 2, 3, 4
+// gas irOptimized: 197102
+// gas legacy: 199887
+// gas legacyOptimized: 196845
+
