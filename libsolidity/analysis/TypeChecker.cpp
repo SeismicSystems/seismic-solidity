@@ -1287,6 +1287,7 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 		solAssert(var.annotation().type, "");
 
 		var.accept(*this);
+
 		BoolResult result = valueComponentType->isImplicitlyConvertibleTo(*var.annotation().type);
 		if (!result)
 		{
@@ -3430,12 +3431,24 @@ bool TypeChecker::visit(IndexAccess const& _access)
 		{
 			expectType(*index, *TypeProvider::uint256());
 			if (!m_errorReporter.hasErrors())
+			{
 				if (auto numberType = dynamic_cast<RationalNumberType const*>(type(*index)))
 				{
 					solAssert(!numberType->isFractional(), "");
 					if (!actualType.isDynamicallySized() && actualType.length() <= numberType->literalValue(nullptr))
 						m_errorReporter.typeError(3383_error, _access.location(), "Out of bounds array access.");
 				}
+			}
+			else {
+				if (m_errorReporter.hasError(7407_error) && m_errorReporter.errorCount() == 1)
+				{
+					Type const* indexType = type(*index);
+					if (indexType->category() == Type::Category::ShieldedInteger)
+					    {
+						    m_errorReporter.removeError(7407_error);
+						}
+				}
+			}
 		}
 		resultType = actualType.baseType();
 		isLValue = actualType.location() != DataLocation::CallData;
