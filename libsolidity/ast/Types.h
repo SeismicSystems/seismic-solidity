@@ -436,7 +436,7 @@ protected:
 	mutable std::map<ASTNode const*, std::unique_ptr<MemberList>> m_members;
 	mutable std::optional<std::vector<std::tuple<std::string, Type const*>>> m_stackItems;
 	mutable std::optional<size_t> m_stackSize;
-	virtual bool containsTypeCategoryRecurse(Category _category, std::unordered_set<Type const*>& visited) const {
+	virtual bool containsTypeCategoryRecurse(Category _category, std::unordered_set<std::string>& visited) const {
 		(void)visited;
 		return category() == _category; }
 };
@@ -823,7 +823,7 @@ protected:
 	/// the component types for tuples and the value type for mappings
 	/// (note that the key type of a mapping is *not* part of the list).
 	virtual std::vector<Type const*> decomposition() const = 0;
-	virtual bool containsTypeCategoryRecurse(Category _category, std::unordered_set<Type const*>& visited) const;
+	virtual bool containsTypeCategoryRecurse(Category _category, std::unordered_set<std::string>& visited) const;
 };
 
 /**

@@ -1591,18 +1591,19 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 
 bool CompositeType::containsTypeCategory(Type::Category _category) const
 {
-    std::unordered_set<Type const*> visited;
+    std::unordered_set<std::string> visited;
     return containsTypeCategoryRecurse(_category, visited);
 }
 
-bool CompositeType::containsTypeCategoryRecurse(Type::Category _category, std::unordered_set<Type const*>& visited) const
+bool CompositeType::containsTypeCategoryRecurse(Type::Category _category, std::unordered_set<std::string>& visited) const
 {
-    // Avoid infinite recursion
-    if (visited.find(this) != visited.end())
+	std::string id = richIdentifier();
+	// Avoid infinite recursion
+    if (visited.find(id) != visited.end())
     {
         return false;
     }
-    visited.insert(this);
+    visited.insert(id);
 
     if (category() == _category)
     {
