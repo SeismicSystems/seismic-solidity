@@ -769,7 +769,7 @@ void ArrayUtils::resizeDynamicArray(ArrayType const& _typeIn) const
 			if (_type.baseType()->category() == Type::Category::ShieldedInteger)
 				_context << Instruction::DUP4 << Instruction::CSTORE;
 			else
-				_context << Instruction::DUP4 << Instruction::CSTORE;
+				_context << Instruction::DUP4 << Instruction::SSTORE;
 			// skip if size is not reduced
 			_context << Instruction::DUP2 << Instruction::DUP2
 				<< Instruction::GT << Instruction::ISZERO;
@@ -939,7 +939,7 @@ void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
 		}
 
 		// Stack: ArrayReference newLength
-		if (_type.baseType()->category() == Type::Category::ShieldedInteger || _type.baseType()->category() == Type::Category::ShieldedAddress)
+		if (_type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress))
 			m_context << Instruction::SWAP1 << Instruction::CSTORE;
 		else
 			m_context << Instruction::SWAP1 << Instruction::SSTORE;
