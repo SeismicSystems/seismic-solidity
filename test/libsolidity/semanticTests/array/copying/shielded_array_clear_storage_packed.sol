@@ -1,37 +1,37 @@
 contract C {
-    uint128[] x;
-    uint64[] x1;
-    uint120[] x2;
-    function f() public returns(uint128) {
+    suint128[] x;
+    suint64[] x1;
+    suint120[] x2;
+    function f() public returns(suint128) {
         x.push(42); x.push(42); x.push(42); x.push(42);
-        uint128[] memory y = new uint128[](1);
+        suint128[] memory y = new suint128[](1);
         y[0] = 23;
         x = y;
-        assembly { sstore(x.slot, 4) }
+        assembly { cstore(x.slot, 4) }
         assert(x[0] == 23);
         assert(x[2] == 0);
         assert(x[3] == 0);
         return x[1];
     }
 
-    function g() public returns(uint64) {
+    function g() public returns(suint64) {
         x1.push(42); x1.push(42); x1.push(42); x1.push(42);
-        uint64[] memory y = new uint64[](1);
+        suint64[] memory y = new suint64[](1);
         y[0] = 23;
         x1 = y;
-        assembly { sstore(x1.slot, 4) }
+        assembly { cstore(x1.slot, 4) }
         assert(x1[0] == 23);
         assert(x1[2] == 0);
         assert(x1[3] == 0);
         return x1[1];
     }
 
-    function h() public returns(uint120) {
+    function h() public returns(suint120) {
         x2.push(42); x2.push(42); x2.push(42); x2.push(42);
-        uint120[] memory y = new uint120[](1);
+        suint120[] memory y = new suint120[](1);
         y[0] = 23;
         x2 = y;
-        assembly { sstore(x2.slot, 4) }
+        assembly { cstore(x2.slot, 4) }
         assert(x2[0] == 23);
         assert(x2[2] == 0);
         assert(x2[3] == 0);

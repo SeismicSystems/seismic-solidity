@@ -11,6 +11,7 @@ contract C {
         s1.x = suint256(2**200);
         S storage s2 = data.push();
         s2.x = suint256(2**200);
+        data.pop();
         delete data;
         return true;
     }
