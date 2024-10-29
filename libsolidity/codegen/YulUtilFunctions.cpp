@@ -1299,34 +1299,28 @@ std::string YulUtilFunctions::wrappingIntExpFunction(
 	});
 }
 
-std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
+std::string YulUtilFunctions::arrayLengthFunction(const ArrayType& _type)
 {
 	std::string functionName = "array_length_" + _type.identifier();
-	return m_functionCollector.createFunction(functionName, [&]() {
+	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+
+	return m_functionCollector.createFunction(functionName, [&, isShielded]() {
 		Whiskers w(R"(
 			function <functionName>(value<?dynamic><?calldata>, len</calldata></dynamic>) -> length {
 				<?dynamic>
-					<?memory>
-						length := mload(value)
-					</memory>
+					<?memory> length := mload(value) </memory>
 					<?storage>
-						length := sload(value)
-						<?byteArray>
-							length := <extractByteArrayLength>(length)
-						</byteArray>
+						length := <s_or_c_load>(value)
+						<?byteArray> length := <extractByteArrayLength>(length) </byteArray>
 					</storage>
-					<?calldata>
-						length := len
-					</calldata>
-				<!dynamic>
-					length := <length>
-				</dynamic>
+					<?calldata> length := len </calldata>
+				<!dynamic> length := <length> </dynamic>
 			}
 		)");
 		w("functionName", functionName);
 		w("dynamic", _type.isDynamicallySized());
-		if (!_type.isDynamicallySized())
-			w("length", toCompactHexWithPrefix(_type.length()));
+		w("s_or_c_load", isShielded ? "cload" : "sload");
+		if (!_type.isDynamicallySized()) w("length", toCompactHexWithPrefix(_type.length()));
 		w("memory", _type.location() == DataLocation::Memory);
 		w("storage", _type.location() == DataLocation::Storage);
 		w("calldata", _type.location() == DataLocation::CallData);
@@ -1372,6 +1366,8 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 	if (_type.isByteArrayOrString())
 		return resizeDynamicByteArrayFunction(_type);
 
+	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+
 	std::string functionName = "resize_array_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		Whiskers templ(R"(
@@ -1384,7 +1380,7 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 
 				<?isDynamic>
 					// Store new length
-					sstore(array, newLen)
+					<store_instruction>(array, newLen)
 				</isDynamic>
 
 				<?needsClearing>
@@ -1396,6 +1392,7 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 			templ("panic", panicFunction(util::PanicCode::ResourceError));
 			templ("fetchLength", arrayLengthFunction(_type));
 			templ("isDynamic", _type.isDynamicallySized());
+			templ("store_instruction", isShielded ? "cstore" : "sstore");
 			bool isMappingBase = _type.baseType()->category() == Type::Category::Mapping;
 			templ("needsClearing", !isMappingBase);
 			if (!isMappingBase)
@@ -1711,7 +1708,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 		_fromType = _type.baseType();
 	else if (_fromType->isValueType())
 		solUnimplementedAssert(*_fromType == *_type.baseType());
-
+	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
 	std::string functionName =
 		std::string{"array_push_from_"} +
 		_fromType->identifier() +
@@ -1721,7 +1718,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 		return Whiskers(R"(
 			function <functionName>(array <values>) {
 				<?isByteArrayOrString>
-					let data := <loadOpcode>(array)
+					let data := sload(array)
 					let oldLen := <extractByteArrayLength>(data)
 					if iszero(lt(oldLen, <maxArrayLength>)) { <panic>() }
 
@@ -1734,7 +1731,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 							// We need to copy data
 							let dataArea := <dataAreaFunction>(array)
 							data := and(data, not(0xff))
-							<storeOpcode>(dataArea, or(and(0xff, value), data))
+							sload(dataArea, or(and(0xff, value), data))
 							// New length is 32, encoded as (32 * 2 + 1)
 							sstore(array, 65)
 						}
@@ -1744,29 +1741,29 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 							let valueShifted := <shl>(shiftBits, and(0xff, value))
 							let mask := <shl>(shiftBits, 0xff)
 							data := or(and(data, not(mask)), valueShifted)
-							<storeOpcode>(array, data)
+							sstore(array, data)
 						}
 					}
 					default {
-						<storeOpcode>(array, add(data, 2))
+						sload(array, add(data, 2))
 						let slot, offset := <indexAccess>(array, oldLen)
-						<storeValue>(slot, offset <values>)
+						storeValue(slot, offset <values>)
 					}
 				<!isByteArrayOrString>
-					let oldLen := sload(array)
+					let oldLen := <loadOpcode>(array)
 					if iszero(lt(oldLen, <maxArrayLength>)) { <panic>() }
-					sstore(array, add(oldLen, 1))
+					<storeOpcode>(array, add(oldLen, 1))
 					let slot, offset := <indexAccess>(array, oldLen)
 					<storeValue>(slot, offset <values>)
 				</isByteArrayOrString>
 			})")
 			("functionName", functionName)
-			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
+			("storeOpcode", isShielded ? "cstore" : "sstore")
 			("values", _fromType->sizeOnStack() == 0 ? "" : ", " + suffixedVariableNameList("value", 0, _fromType->sizeOnStack()))
 			("panic", panicFunction(PanicCode::ResourceError))
 			("extractByteArrayLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
 			("dataAreaFunction", arrayDataAreaFunction(_type))
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("loadOpcode", isShielded ? "cload" : "sload")
 			("isByteArrayOrString", _type.isByteArrayOrString())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
 			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType()))
@@ -1781,7 +1778,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 	solAssert(_type.location() == DataLocation::Storage, "");
 	solAssert(_type.isDynamicallySized(), "");
 	solUnimplementedAssert(_type.baseType()->storageBytes() <= 32, "Base type is not yet implemented.");
-
+	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
 	std::string functionName = "array_push_zero_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
@@ -1793,7 +1790,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 				<!isBytes>
 					let oldLen := <fetchLength>(array)
 					if iszero(lt(oldLen, <maxArrayLength>)) { <panic>() }
-					sstore(array, add(oldLen, 1))
+					<storeOpcode>(array, add(oldLen, 1))
 				</isBytes>
 				slot, offset := <indexAccess>(array, oldLen)
 			})")
@@ -1801,7 +1798,8 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 			("isBytes", _type.isByteArrayOrString())
 			("increaseBytesSize", _type.isByteArrayOrString() ? increaseByteArraySizeFunction(_type) : "")
 			("extractLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("loadOpcode", isShielded ? "cload" : "sload")
+			("storeOpcode", isShielded ? "cstore" : "sstore")
 			("panic", panicFunction(PanicCode::ResourceError))
 			("fetchLength", arrayLengthFunction(_type))
 			("indexAccess", storageArrayIndexAccessFunction(_type))
@@ -1813,6 +1811,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 std::string YulUtilFunctions::partialClearStorageSlotFunction(ArrayType const& _type)
 {
 	std::string functionName = "partial_clear_storage_slot";
+	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 		function <functionName>(slot, offset) {
@@ -1821,8 +1820,8 @@ std::string YulUtilFunctions::partialClearStorageSlotFunction(ArrayType const& _
 		}
 		)")
 		("functionName", functionName)
-		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
-		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+		("storeOpcode", isShielded ? "cstore" : "sstore")
+		("loadOpcode", isShielded ? "cload" : "sload")
 		("ones", formatNumber((bigint(1) << 256) - 1))
 		("shr", shiftRightFunctionDynamic())
 		.render();
@@ -1898,6 +1897,8 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 
 	std::string functionName = "clear_struct_storage_" + _type.identifier();
 
+	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+
 	return m_functionCollector.createFunction(functionName, [&] {
 		MemberList::MemberMap structMembers = _type.nativeMembers(nullptr);
 		std::vector<std::map<std::string, std::string>> memberSetValues;
@@ -1915,7 +1916,7 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 					memberSetValues.emplace_back().emplace("clearMember", Whiskers(R"(
 						<storeOpcode>(add(slot, <memberSlotDiff>), 0)
 					)")
-					("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
+					("storeOpcode", isShielded ? "cstore" : "sstore")
 					("memberSlotDiff", slotDiff.str())
 					.render()
 				);
@@ -2240,8 +2241,8 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 		unsigned itemsPerSlot = 32 / _toType.storageStride();
 		templ("itemsPerSlot", std::to_string(itemsPerSlot));
 		templ("multipleItemsPerSlotDst", itemsPerSlot > 1);
-		templ("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore");
-		templ("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "cload" : "sload");
+		templ("storeOpcode", _toType.containsTypeCategory(Type::Category::ShieldedInteger)? "cstore" : "sstore");
+		templ("loadOpcode", _fromType.containsTypeCategory(Type::Category::ShieldedInteger)? "cload" : "sload");
 		bool sameTypeFromStorage = fromStorage && (*_fromType.baseType() == *_toType.baseType());
 		if (auto functionType = dynamic_cast<FunctionType const*>(_fromType.baseType()))
 		{
@@ -2940,8 +2941,8 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("fromValues", suffixedVariableNameList("value_", 0, _fromType.sizeOnStack()))
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
 			("prepare", prepareStoreFunction(_toType))
-			("storeOpcode", _toType.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
-			("loadOpcode", _fromType.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("storeOpcode", (_toType.category() == Type::Category::ShieldedInteger || _toType.category() == Type::Category::ShieldedAddress) ? "cstore" : "sstore")
+			("loadOpcode", (_toType.category() == Type::Category::ShieldedInteger || _toType.category() == Type::Category::ShieldedAddress) ? "cload" : "sload")
 			.render();
 		}
 
@@ -3011,7 +3012,6 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 				dynamic_cast<StructType const&>(_fromType),
 				dynamic_cast<StructType const&>(_toType)
 			));
-
 		return templ.render();
 	});
 }
@@ -3927,7 +3927,7 @@ std::string YulUtilFunctions::cleanupFunction(Type const& _type)
 		templ("functionName", functionName);
 		switch (_type.category())
 		{
-		case Type::Category::Address:	
+		case Type::Category::Address:
 		case Type::Category::ShieldedAddress:
 			templ("body", "cleaned := " + cleanupFunction(IntegerType(160)) + "(value)");
 			break;
@@ -4028,7 +4028,7 @@ std::string YulUtilFunctions::validatorFunction(Type const& _type, bool _revertO
 
 		switch (_type.category())
 		{
-		case Type::Category::Address:	
+		case Type::Category::Address:
 		case Type::Category::ShieldedAddress:
 		case Type::Category::Integer:
 		case Type::Category::ShieldedInteger:
