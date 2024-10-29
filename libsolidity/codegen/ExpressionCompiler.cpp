@@ -1847,7 +1847,7 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 				utils().convertType(
 					*_memberAccess.expression().annotation().type,
 					*TypeProvider::address(),
-					true	
+					true
 				);
 			m_context << Instruction::BALANCE;
 		}
@@ -1904,7 +1904,7 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		{
 			solAssert(dynamic_cast<AddressType const&>(*_memberAccess.expression().annotation().type).stateMutability() == StateMutability::Payable, "");
 			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
-				utils().convertType(	
+				utils().convertType(
 					*_memberAccess.expression().annotation().type,
 					*TypeProvider::shieldedAddress(),
 					true
@@ -2448,7 +2448,7 @@ void ExpressionCompiler::endVisit(Literal const& _literal)
 	switch (type->category())
 	{
 	case Type::Category::RationalNumber:
-	case Type::Category::Bool:	
+	case Type::Category::Bool:
 	case Type::Category::Address:
 	case Type::Category::ShieldedAddress:
 		m_context << type->literalValue(&_literal);
