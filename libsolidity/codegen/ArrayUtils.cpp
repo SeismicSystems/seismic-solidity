@@ -129,7 +129,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			{
 				// store new target length
 				solAssert(!_targetType.isByteArrayOrString());
-				if (_targetType.category() == Type::Category::ShieldedInteger || _targetType.category() == Type::Category::ShieldedAddress) {
+				if (_targetType.containsTypeCategory(Type::Category::ShieldedInteger) || _targetType.containsTypeCategory(Type::Category::ShieldedAddress)) {
 					_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::CSTORE;
 				}
 				else {
@@ -315,8 +315,6 @@ void ArrayUtils::copyArrayToMemory(ArrayType const& _sourceType, bool _padToWord
 		"Nested dynamic arrays not implemented here."
 	);
 	CompilerUtils utils(m_context);
-
-	std::cout << "copyArrayToMemory CopyArrayToStorage: " << _sourceType.baseType()->toString() << std::endl;
 
 	if (_sourceType.location() == DataLocation::CallData)
 	{
@@ -841,7 +839,8 @@ void ArrayUtils::incrementDynamicArraySize(ArrayType const& _type) const
 		m_context << Instruction::POP << Instruction::POP;
 	}
 	else
-		if(_type.baseType()->category() == Type::Category::ShieldedInteger || _type.baseType()->category() == Type::Category::ShieldedAddress)
+	{
+		if(_type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress))
 			m_context.appendInlineAssembly(R"({
 				let new_length := add(cload(ref), 1)
 				cstore(ref, new_length)
@@ -853,6 +852,7 @@ void ArrayUtils::incrementDynamicArraySize(ArrayType const& _type) const
 				sstore(ref, new_length)
 				ref := new_length
 			})", {"ref"});
+	}
 }
 
 void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
@@ -1042,7 +1042,7 @@ void ArrayUtils::retrieveLength(ArrayType const& _arrayType, unsigned _stackDept
 			m_context << Instruction::MLOAD;
 			break;
 		case DataLocation::Storage:
-			if(_arrayType.baseType()->category() == Type::Category::ShieldedInteger || _arrayType.baseType()->category() == Type::Category::ShieldedAddress)
+			if(_arrayType.containsTypeCategory(Type::Category::ShieldedInteger) || _arrayType.containsTypeCategory(Type::Category::ShieldedAddress))
 				m_context << Instruction::CLOAD;
 			else
 				m_context << Instruction::SLOAD;
