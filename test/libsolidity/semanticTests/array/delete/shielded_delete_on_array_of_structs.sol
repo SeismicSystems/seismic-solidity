@@ -8,9 +8,9 @@ contract C {
 
     function f() public returns (bool) {
         S storage s1 = data.push();
-        s1.x = 2**200;
+        s1.x = suint256(2**200);
         S storage s2 = data.push();
-        s2.x = 2**200;
+        s2.x = suint256(2**200);
         delete data;
         return true;
     }

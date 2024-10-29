@@ -2,7 +2,9 @@ pragma abicoder v2;
 
 contract C {
     struct S {
+        suint8[3] x;
         suint8[][] y;
+        suint16 z;
     }
 
     mapping (suint8 => S) src;
@@ -17,7 +19,7 @@ contract C {
         y[0] = d;
         y[1] = d;
 
-        src[0] = S({y: y});
+        src[0] = S({x: [suint8(7), suint8(8), suint8(9)], y: y, z: 13});
     }
 
     function f() public returns (S memory) {
@@ -26,7 +28,8 @@ contract C {
     }
 }
 // ----
-// f() -> 0x20, 7, 8, 9, 0xa0, 13, 2, 0x40, 0xa0, 2, 3, 4
+// f() -> 0x20, 7, 8, 9, 0xa0, 13, 2, 0x40, 0xa0, 2, 3, 4, 2, 3, 4
 // gas irOptimized: 197102
 // gas legacy: 199887
 // gas legacyOptimized: 196845
+
