@@ -1287,7 +1287,6 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 		solAssert(var.annotation().type, "");
 
 		var.accept(*this);
-
 		BoolResult result = valueComponentType->isImplicitlyConvertibleTo(*var.annotation().type);
 		if (!result)
 		{
