@@ -126,7 +126,7 @@ public:
 
 	void removeError(ErrorId _errorId);
 
-		/// @returns true iff there is any error (ignores warnings and infos).
+	/// @returns true iff there is any error (ignores warnings and infos).
 	bool hasErrors() const
 	{
 		return m_errorCount > 0;
