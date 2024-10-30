@@ -12,8 +12,6 @@ contract C {
         assert(x[1] == 0);
 
         assert(x[2] == 0);
-        // Issue 9832: the cleanup was only performed for the first packed type leaving the rest of
-        // the slot dirty.
         assert(x[3] == 0);
 
         return true;

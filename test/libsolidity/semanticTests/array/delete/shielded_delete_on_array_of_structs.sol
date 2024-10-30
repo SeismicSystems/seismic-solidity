@@ -1,4 +1,3 @@
-// Test for a bug where we did not increment the counter properly while deleting a dynamic array.
 contract C {
     struct S {
         suint256 x;
@@ -17,4 +16,4 @@ contract C {
     }
 }
 // ----
-// f() -> true # This code interprets x as an array length and thus will go out of gas. neither of the two should throw due to out-of-bounds access #
+// f() -> true
