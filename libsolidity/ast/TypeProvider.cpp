@@ -268,7 +268,6 @@ void TypeProvider::reset()
 	clearCaches(instance().m_sintM);
 	clearCaches(instance().m_bytesM);
 	clearCaches(instance().m_magics);
-
 	instance().m_generalTypes.clear();
 	instance().m_stringLiteralTypes.clear();
 	instance().m_ufixedMxN.clear();

@@ -630,12 +630,10 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 		}
 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
 		// disallowing unsigned to signed conversion of different bits
-		if (isSigned() != convertTo.isSigned()) {
+		if (isSigned() != convertTo.isSigned())
 			return false;
-		}
-		else if (convertTo.m_bits < m_bits) {
+		else if (convertTo.m_bits < m_bits)
 			return false;
-		}
 		else
 			return true;
 	}
@@ -697,7 +695,7 @@ TypeResult IntegerType::unaryOperatorResult(Token _operator) const
 
 bool IntegerType::operator==(Type const& _other) const
 {
- 	if (_other.category() != category())
+	if (_other.category() != category())
 		return false;
 	IntegerType const& other = dynamic_cast<IntegerType const&>(_other);
 	return other.m_bits == m_bits && other.m_modifier == m_modifier;

@@ -1252,7 +1252,6 @@ ASTPointer<TypeName> Parser::parseTypeName()
 
 	solAssert(type, "");
 	// Parse "[...]" postfixes for arrays.
-
 	type = parseTypeNameSuffix(type, nodeFactory);
 
 	return type;
