@@ -1299,7 +1299,7 @@ std::string YulUtilFunctions::wrappingIntExpFunction(
 	});
 }
 
-std::string YulUtilFunctions::arrayLengthFunction(const ArrayType& _type)
+std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 {
 	std::string functionName = "array_length_" + _type.identifier();
 	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
