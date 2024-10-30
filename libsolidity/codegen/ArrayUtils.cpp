@@ -766,10 +766,7 @@ void ArrayUtils::resizeDynamicArray(ArrayType const& _typeIn) const
 			if (_type.isByteArrayOrString())
 				// For a "long" byte array, store length as 2*length+1
 				_context << Instruction::DUP1 << Instruction::ADD << u256(1) << Instruction::ADD;
-			if (_type.baseType()->category() == Type::Category::ShieldedInteger)
-				_context << Instruction::DUP4 << Instruction::CSTORE;
-			else
-				_context << Instruction::DUP4 << Instruction::SSTORE;
+			_context << Instruction::DUP4 << Instruction::SSTORE;
 			// skip if size is not reduced
 			_context << Instruction::DUP2 << Instruction::DUP2
 				<< Instruction::GT << Instruction::ISZERO;
