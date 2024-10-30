@@ -129,8 +129,12 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			{
 				// store new target length
 				solAssert(!_targetType.isByteArrayOrString());
-				_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::SSTORE;
-				// TODO: investigate whether or not dynamically sized arrays with shielded objects should have a shielded length too
+				if (_targetType.containsTypeCategory(Type::Category::ShieldedInteger) || _targetType.containsTypeCategory(Type::Category::ShieldedAddress)) {
+					_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::CSTORE;
+				}
+				else {
+					_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::SSTORE;
+				}
 			}
 			if (sourceBaseType->category() == Type::Category::Mapping)
 			{
@@ -203,7 +207,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			else if (directCopy)
 			{
 				solAssert(byteOffsetSize == 0, "Byte offset for direct copy.");
-				if (sourceBaseType->category() == Type::Category::ShieldedInteger)
+				if (sourceBaseType->category() == Type::Category::ShieldedInteger || sourceBaseType->category() == Type::Category::ShieldedAddress)
 				_context
 					<< Instruction::DUP3 << Instruction::CLOAD
 					<< Instruction::DUP3 << Instruction::CSTORE;
@@ -567,15 +571,6 @@ void ArrayUtils::clearArray(ArrayType const& _typeIn) const
 				_context << Instruction::POP;
 			else if (_type.baseType()->isValueType() && _type.storageSize() <= 5)
 			{
-				if (_type.baseType()->category() == Type::Category::ShieldedInteger) {
-
-					for (unsigned i = 1; i < _type.storageSize(); ++i)
-					_context
-						<< u256(0) << Instruction::DUP2 << Instruction::CSTORE
-						<< u256(1) << Instruction::ADD;
-				_context << u256(0) << Instruction::SWAP1 << Instruction::CSTORE;
-				}
-				else {
 				// unroll loop for small arrays @todo choose a good value
 				// Note that we loop over storage slots here, not elements.
 				for (unsigned i = 1; i < _type.storageSize(); ++i)
@@ -583,7 +578,6 @@ void ArrayUtils::clearArray(ArrayType const& _typeIn) const
 						<< u256(0) << Instruction::DUP2 << Instruction::SSTORE
 						<< u256(1) << Instruction::ADD;
 				_context << u256(0) << Instruction::SWAP1 << Instruction::SSTORE;
-			}
 			}
 			else if (!_type.baseType()->isValueType() && _type.length() <= 4)
 			{
@@ -842,11 +836,20 @@ void ArrayUtils::incrementDynamicArraySize(ArrayType const& _type) const
 		m_context << Instruction::POP << Instruction::POP;
 	}
 	else
-		m_context.appendInlineAssembly(R"({
-			let new_length := add(sload(ref), 1)
-			sstore(ref, new_length)
-			ref := new_length
-		})", {"ref"});
+	{
+		if(_type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress))
+			m_context.appendInlineAssembly(R"({
+				let new_length := add(cload(ref), 1)
+				cstore(ref, new_length)
+				ref := new_length
+			})", {"ref"});
+		else
+			m_context.appendInlineAssembly(R"({
+				let new_length := add(sload(ref), 1)
+				sstore(ref, new_length)
+				ref := new_length
+			})", {"ref"});
+	}
 }
 
 void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
@@ -933,7 +936,10 @@ void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
 		}
 
 		// Stack: ArrayReference newLength
-		m_context << Instruction::SWAP1 << Instruction::SSTORE;
+		if (_type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress))
+			m_context << Instruction::SWAP1 << Instruction::CSTORE;
+		else
+			m_context << Instruction::SWAP1 << Instruction::SSTORE;
 	}
 }
 
@@ -1033,7 +1039,10 @@ void ArrayUtils::retrieveLength(ArrayType const& _arrayType, unsigned _stackDept
 			m_context << Instruction::MLOAD;
 			break;
 		case DataLocation::Storage:
-			m_context << Instruction::SLOAD;
+			if(_arrayType.containsTypeCategory(Type::Category::ShieldedInteger) || _arrayType.containsTypeCategory(Type::Category::ShieldedAddress))
+				m_context << Instruction::CLOAD;
+			else
+				m_context << Instruction::SLOAD;
 			if (_arrayType.isByteArrayOrString())
 				m_context.callYulFunction(m_context.utilFunctions().extractByteArrayLengthFunction(), 1, 1);
 			break;

@@ -1,0 +1,28 @@
+contract C {
+    suint[] storageArray;
+    function test_boundary_check(suint256 len, suint256 access) public returns (suint256)
+    {
+        while(storageArray.length < len)
+            storageArray.push();
+        while(storageArray.length > len)
+            storageArray.pop();
+        return storageArray[access];
+    }
+}
+// ----
+// test_boundary_check(suint256,suint256): 10, 11 -> FAILURE, hex"4e487b71", 0x32
+// test_boundary_check(suint256,suint256): 10, 9 -> 0
+// test_boundary_check(suint256,suint256): 1, 9 -> FAILURE, hex"4e487b71", 0x32
+// test_boundary_check(suint256,suint256): 1, 1 -> FAILURE, hex"4e487b71", 0x32
+// test_boundary_check(suint256,suint256): 10, 10 -> FAILURE, hex"4e487b71", 0x32
+// test_boundary_check(suint256,suint256): 256, 256 -> FAILURE, hex"4e487b71", 0x32
+// gas irOptimized: 147246
+// gas legacy: 133632
+// gas legacyOptimized: 114353
+// test_boundary_check(suint256,suint256): 256, 255 -> 0
+// gas irOptimized: 149422
+// gas legacy: 135948
+// gas legacyOptimized: 116532
+// test_boundary_check(suint256,suint256): 256, 0xFFFF -> FAILURE, hex"4e487b71", 0x32
+// test_boundary_check(suint256,suint256): 256, 2 -> 0
+

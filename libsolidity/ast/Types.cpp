@@ -1591,16 +1591,43 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 
 bool CompositeType::containsTypeCategory(Type::Category _category) const
 {
+    std::unordered_set<std::string> visited;
+    return containsTypeCategoryRecurse(_category, visited);
+}
+
+bool CompositeType::containsTypeCategoryRecurse(Type::Category _category, std::unordered_set<std::string>& visited) const
+{
+	std::string id = richIdentifier();
+	// Avoid infinite recursion
+    if (visited.find(id) != visited.end())
+    {
+        return false;
+    }
+    visited.insert(id);
+
     if (category() == _category)
+    {
         return true;
+    }
 
     for (Type const* subType : decomposition())
     {
         if (subType->category() == _category)
+        {
             return true;
+        }
+
+        if (auto compositeSubType = dynamic_cast<CompositeType const*>(subType))
+        {
+            if (compositeSubType->containsTypeCategoryRecurse(_category, visited))
+            {
+                return true;
+            }
+        }
     }
     return false;
 }
+
 Type const* ReferenceType::withLocation(DataLocation _location, bool _isPointer) const
 {
 	return TypeProvider::withLocation(this, _location, _isPointer);

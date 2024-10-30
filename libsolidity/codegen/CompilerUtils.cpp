@@ -865,7 +865,7 @@ void CompilerUtils::convertType(
 	case Type::Category::FixedPoint:
 		solUnimplemented("Not yet implemented - FixedPointType.");
 	case Type::Category::Address:
-	case Type::Category::ShieldedAddress:	
+	case Type::Category::ShieldedAddress:
 	case Type::Category::Integer:
 	case Type::Category::Contract:
 	case Type::Category::RationalNumber:
