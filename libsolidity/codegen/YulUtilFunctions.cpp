@@ -1310,7 +1310,7 @@ std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 				<?dynamic>
 					<?memory> length := mload(value) </memory>
 					<?storage>
-						length := <s_or_c_load>(value)
+						length := <loadOpcode>(value)
 						<?byteArray> length := <extractByteArrayLength>(length) </byteArray>
 					</storage>
 					<?calldata> length := len </calldata>
@@ -1319,7 +1319,7 @@ std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 		)");
 		w("functionName", functionName);
 		w("dynamic", _type.isDynamicallySized());
-		w("s_or_c_load", isShielded ? "cload" : "sload");
+		w("loadOpcode", isShielded ? "cload" : "sload");
 		if (!_type.isDynamicallySized()) w("length", toCompactHexWithPrefix(_type.length()));
 		w("memory", _type.location() == DataLocation::Memory);
 		w("storage", _type.location() == DataLocation::Storage);
@@ -1380,7 +1380,7 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 
 				<?isDynamic>
 					// Store new length
-					<store_instruction>(array, newLen)
+					<storeOpcode>(array, newLen)
 				</isDynamic>
 
 				<?needsClearing>
@@ -1392,7 +1392,7 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 			templ("panic", panicFunction(util::PanicCode::ResourceError));
 			templ("fetchLength", arrayLengthFunction(_type));
 			templ("isDynamic", _type.isDynamicallySized());
-			templ("store_instruction", isShielded ? "cstore" : "sstore");
+			templ("storeOpcode", isShielded ? "cstore" : "sstore");
 			bool isMappingBase = _type.baseType()->category() == Type::Category::Mapping;
 			templ("needsClearing", !isMappingBase);
 			if (!isMappingBase)
