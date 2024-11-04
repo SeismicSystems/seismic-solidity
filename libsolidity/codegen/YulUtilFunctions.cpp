@@ -1731,7 +1731,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 							// We need to copy data
 							let dataArea := <dataAreaFunction>(array)
 							data := and(data, not(0xff))
-							sload(dataArea, or(and(0xff, value), data))
+							sstore(dataArea, or(and(0xff, value), data))
 							// New length is 32, encoded as (32 * 2 + 1)
 							sstore(array, 65)
 						}
