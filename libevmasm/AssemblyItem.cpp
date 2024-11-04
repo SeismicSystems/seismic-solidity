@@ -62,7 +62,7 @@ AssemblyItem AssemblyItem::toSubAssemblyTag(size_t _subId) const
 
 std::pair<size_t, size_t> AssemblyItem::splitForeignPushTag() const
 {
-	assertThrow(m_type == PushTag || m_type == Tag, util::Exception, "");
+	assertThrow(m_type == PushTag || m_type == Tag || m_type == RelativeJump || m_type == ConditionalRelativeJump, util::Exception, "");
 	u256 combined = u256(data());
 	size_t subId = static_cast<size_t>((combined >> 64) - 1);
 	size_t tag = static_cast<size_t>(combined & 0xffffffffffffffffULL);
@@ -109,12 +109,27 @@ std::pair<std::string, std::string> AssemblyItem::nameAndData(langutil::EVMVersi
 
 void AssemblyItem::setPushTagSubIdAndTag(size_t _subId, size_t _tag)
 {
-	assertThrow(m_type == PushTag || m_type == Tag, util::Exception, "");
+	assertThrow(m_type == PushTag || m_type == Tag || m_type == RelativeJump || m_type == ConditionalRelativeJump	, util::Exception, "");
 	u256 data = _tag;
 	if (_subId != std::numeric_limits<size_t>::max())
 		data |= (u256(_subId) + 1) << 64;
 	setData(data);
 }
+
+size_t AssemblyItem::maxStackHeightDelta() const
+{
+	if (m_type == AssignImmutable)
+	{
+		assertThrow(m_immutableOccurrences.has_value(), util::Exception, "");
+		if (*m_immutableOccurrences == 0)
+			return 0;
+		else
+			return (*m_immutableOccurrences - 1) * 2 + 1;
+	}
+	else
+		return deposit();
+}
+
 
 size_t AssemblyItem::bytesRequired(size_t _addressLength, langutil::EVMVersion _evmVersion, Precision _precision) const
 {
@@ -161,6 +176,21 @@ size_t AssemblyItem::bytesRequired(size_t _addressLength, langutil::EVMVersion _
 	}
 	case VerbatimBytecode:
 		return std::get<2>(*m_verbatimBytecode).size();
+	case JumpF:
+	case CallF:
+		return 3;
+	case RetF:
+		return 1;
+	case RelativeJump:
+		return 3;
+	case ConditionalRelativeJump:
+		return 3;
+	case EofCreate:
+		return 2;
+	case ReturnContract:
+		return 2;
+	case DataLoadN:
+		return 2;
 	default:
 		break;
 	}
@@ -176,6 +206,19 @@ size_t AssemblyItem::arguments() const
 	else if (type() == VerbatimBytecode)
 		return std::get<0>(*m_verbatimBytecode);
 	else if (type() == AssignImmutable)
+		return 2;
+	else if (type() == CallF || type() == JumpF)
+	{
+		assertThrow(m_functionSignature.has_value(), AssemblyException, "");
+		return std::get<0>(*m_functionSignature);
+	}
+	else if (type() == RetF)
+		return static_cast<size_t>(data());
+	else if (type() == ConditionalRelativeJump)
+		return 1;
+	else if (type() == EofCreate)
+		return 4;
+	else if (type() == ReturnContract)
 		return 2;
 	else
 		return 0;
@@ -203,6 +246,17 @@ size_t AssemblyItem::returnValues() const
 		return 0;
 	case VerbatimBytecode:
 		return std::get<1>(*m_verbatimBytecode);
+	case CallF:
+		assertThrow(m_functionSignature.has_value(), AssemblyException, "");
+		return std::get<1>(*m_functionSignature);
+	case JumpF:
+		return 0;
+	case RetF:
+	case ReturnContract:
+		return 0;
+	case DataLoadN:
+	case EofCreate:
+		return 1;
 	default:
 		break;
 	}
@@ -327,6 +381,18 @@ std::string AssemblyItem::toAssemblyText(Assembly const& _assembly) const
 	case VerbatimBytecode:
 		text = std::string("verbatimbytecode_") + util::toHex(std::get<2>(*m_verbatimBytecode));
 		break;
+	case CallF:
+		text = "callf(" +  std::to_string(static_cast<size_t>(data())) + ")";
+		break;
+	case RetF:
+		text = "retf";
+		break;
+	case RelativeJump:
+		text = "rjump(" + std::string("tag_") + std::to_string(static_cast<size_t>(data())) + ")";
+		break;
+	case ConditionalRelativeJump:
+		text = "rjumpi(" + std::string("tag_") + std::to_string(static_cast<size_t>(data())) + ")";
+		break;
 	default:
 		assertThrow(false, InvalidOpcode, "");
 	}
@@ -354,6 +420,12 @@ std::ostream& solidity::evmasm::operator<<(std::ostream& _out, AssemblyItem cons
 	case Push:
 		_out << " PUSH " << std::hex << _item.data() <<  std::dec;
 		break;
+	case CallF:
+		_out << " CALLF " << std::dec << _item.data();
+		break;
+	case RetF:
+		_out << " RETF";
+		break;
 	case PushTag:
 	{
 		size_t subId = _item.splitForeignPushTag().first;
@@ -361,6 +433,24 @@ std::ostream& solidity::evmasm::operator<<(std::ostream& _out, AssemblyItem cons
 			_out << " PushTag " << _item.splitForeignPushTag().second;
 		else
 			_out << " PushTag " << subId << ":" << _item.splitForeignPushTag().second;
+		break;
+	}
+	case RelativeJump:
+	{
+		size_t subId = _item.splitForeignPushTag().first;
+		if (subId == std::numeric_limits<size_t>::max())
+			_out << " RelativeJump " << _item.splitForeignPushTag().second;
+		else
+			_out << " RelativeJump " << subId << ":" << _item.splitForeignPushTag().second;
+		break;
+	}
+	case ConditionalRelativeJump:
+	{
+		size_t subId = _item.splitForeignPushTag().first;
+		if (subId == std::numeric_limits<size_t>::max())
+			_out << " ConditionalRelativeJump " << _item.splitForeignPushTag().second;
+		else
+			_out << " ConditionalRelativeJump " << subId << ":" << _item.splitForeignPushTag().second;
 		break;
 	}
 	case Tag:

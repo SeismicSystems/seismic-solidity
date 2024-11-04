@@ -26,6 +26,7 @@
 #include <libyul/CompilabilityChecker.h>
 
 #include <boost/test/unit_test.hpp>
+#include <tuple>
 
 namespace solidity::yul::test
 {
@@ -42,8 +43,7 @@ std::string check(std::string const& _input)
 	std::string out;
 	for (auto const& function: functions)
 		out += function.first.str() + ": " + std::to_string(function.second) + " ";
-	return out;
-}
+	return out;}
 }
 
 BOOST_AUTO_TEST_SUITE(CompilabilityChecker)

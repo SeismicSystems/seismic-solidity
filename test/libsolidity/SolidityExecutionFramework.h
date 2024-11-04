@@ -62,7 +62,54 @@ public:
 	) override
 	{
 		bytes bytecode = multiSourceCompileContract(_sourceCode, _sourceName, _contractName, _libraryAddresses);
-		sendMessage(bytecode + _arguments, true, _value);
+
+		// Note: Temporary solution that adds arguments size in the EOF data_section_size header to validate evmone implementation.
+		// TODO: Validate header and version.
+		if (bytecode.size() > 3)
+		{
+			if (bytecode[0] == uint8_t(0xef) && bytecode[1] == uint8_t(00)) // is EOF
+			{
+				const auto firstSectionOffset = 3; // magic + version
+				bool stop = false;
+				for (size_t i = firstSectionOffset; i < bytecode.size(); ++i)
+				{
+					switch (bytecode[i])
+					{
+					case uint8_t(0x00): // terminator
+						stop = true;
+						break;
+					case uint8_t(0x01): // type section
+						i += 2;			// skip type size section
+						break;
+					case uint8_t(0x02): // code section
+					{
+						bytesRef numCodeSectionsRef(&bytecode[i + 1], 2);
+						size_t numCodeSections = fromBigEndian<size_t>(numCodeSectionsRef);
+						i += numCodeSections * 2 + 2; // skip code section header
+						break;
+					}
+					case uint8_t(0x03): // container section
+					{
+						i += 4; // skip container section header
+						break;
+					}
+					case uint8_t(0x04): // data section
+					{
+						auto dataSizeOffset = i + 1;
+						bytesRef dataSizeRef(&bytecode[dataSizeOffset], 2);
+						size_t dataSize = fromBigEndian<size_t>(dataSizeRef);
+						toBigEndian(dataSize + _arguments.size(), dataSizeRef);
+						i += 2; // skip data size section
+						break;
+					}
+					}
+					if (stop)
+						break;
+				}
+			}
+		}
+
+		sendMessage(bytecode, _arguments, true, _value);
 		return m_output;
 	}
 

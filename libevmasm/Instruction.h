@@ -104,6 +104,7 @@ enum class Instruction: uint8_t
 	MSIZE,                    ///< get the size of active memory
 	GAS,                      ///< get the amount of available gas
 	JUMPDEST,                 ///< set a potential jump destination
+
 	TLOAD = 0x5c,             ///< load word from transient storage
 	TSTORE = 0x5d,            ///< save word to transient storage
 	MCOPY = 0x5e,             ///< copy between memory areas
@@ -185,13 +186,29 @@ enum class Instruction: uint8_t
 	CLOAD = 0xb0,			  ///< loads shielded objects
 	CSTORE = 0xb1,			  ///< stores shielded objects
 
+	DATALOAD = 0xd0,
+	DATALOADN = 0xd1,
+
+	RJUMP = 0xe0,
+	RJUMPI = 0xe1,
+	RJUMPV = 0xe2,
+
+	CALLF = 0xe3,
+	RETF = 0xe4,
+	JUMPF = 0xe5,
+
+	EOFCREATE = 0xec,         ///< create a new account with associated container code.
+	RETURNCONTRACT = 0xee,    ///< create a new account with associated container code.
 	CREATE = 0xf0,            ///< create a new account with associated code
 	CALL,                     ///< message-call into an account
 	CALLCODE,                 ///< message-call with another account's code only
 	RETURN,                   ///< halt execution returning output data
 	DELEGATECALL,             ///< like CALLCODE but keeps caller's value and sender
 	CREATE2 = 0xf5,           ///< create new account with associated code at address `sha3(0xff + sender + salt + init code) % 2**160`
+	EXTCALL = 0xf8,
+	EXTDELEGATECALL = 0xf9,
 	STATICCALL = 0xfa,        ///< like CALL but disallow state modifications
+	EXTSTATICCALL = 0xfb,
 
 	REVERT = 0xfd,            ///< halt execution, revert state and return output data
 	INVALID = 0xfe,           ///< invalid instruction for expressing runtime errors (e.g., division-by-zero)
@@ -207,6 +224,9 @@ constexpr bool isCallInstruction(Instruction _inst) noexcept
 		case Instruction::CALLCODE:
 		case Instruction::DELEGATECALL:
 		case Instruction::STATICCALL:
+		case Instruction::EXTCALL:
+		case Instruction::EXTSTATICCALL:
+		case Instruction::EXTDELEGATECALL:
 			return true;
 		default:
 			return false;

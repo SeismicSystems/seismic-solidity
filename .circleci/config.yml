@@ -671,6 +671,14 @@ defaults:
         size: large
         shell: bash.exe
 
+  - base_ubuntu2204_large: &base_ubuntu2204_large
+      docker:
+        - image: cimg/base:current
+      resource_class: large
+      environment:
+        TERM: xterm
+        MAKEFLAGS: -j 5
+
   # --------------------------------------------------------------------------
   # Workflow Templates
 
@@ -1297,6 +1305,31 @@ jobs:
     parallelism: 50
     steps:
       - soltest_all
+
+  t_ubu_soltest_eof: &t_ubu_soltest_eof
+    <<: *base_ubuntu2004_large
+    environment:
+      EVM: "shanghai"
+      SOLTEST_FLAGS: "--eof-version 1 --optimize"
+      BOOST_TEST_ARGS: "-t sem*"
+    steps:
+      - run:
+          name: Build evmone based on EOF branch
+          command: |
+            ( cd /usr/src; \
+            git clone --branch="eof" --recurse-submodules https://github.com/ethereum/evmone.git; \
+            cd evmone; \
+            sed -i -e 's/GNULIKE TRUE/GNULIKE FALSE/g' cmake/cable/CableCompilerSettings.cmake; \
+            mkdir build; \
+            cd build; \
+            cmake -G Ninja -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX="/usr" -Dcable_NO_CONVERSION_WARNINGS=ON -Dcable_NO_PEDANTIC=ON ..; \
+            ninja; \
+            ninja install/strip; \
+            rm -rf /usr/src/evmone )
+      - checkout
+      - attach_workspace:
+          at: build
+      - run: *run_soltest
 
   t_ubu_soltest_deprecated_evm_versions: &t_ubu_soltest_deprecated_evm_versions
     <<: *base_ubuntu2204_large
@@ -1948,6 +1981,8 @@ workflows:
       - b_ubu_clang: *requires_nothing
       - t_ubu_clang_soltest: *requires_b_ubu_clang
       - t_ubu_lsp: *requires_b_ubu
+      - t_ubu_soltest_eof: *workflow_trigger_on_tags
+      - t_ubu_soltest_eof: *workflow_ubuntu2004
 
       # Ubuntu fake release build and tests
       - b_ubu_force_release: *requires_nothing

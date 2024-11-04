@@ -808,7 +808,9 @@ evmasm::AssemblyItems const* CompilerStack::assemblyItems(std::string const& _co
 	solAssert(m_stackState == CompilationSuccessful, "Compilation was not successful.");
 
 	Contract const& currentContract = contract(_contractName);
-	return currentContract.evmAssembly ? &currentContract.evmAssembly->items() : nullptr;
+	if (currentContract.evmAssembly)
+		solAssert(currentContract.evmAssembly->codeSections().size() == 1, "Expected a single code section in legacy codegen.");
+	return currentContract.evmAssembly ? &currentContract.evmAssembly->codeSections().front().items : nullptr;
 }
 
 evmasm::AssemblyItems const* CompilerStack::runtimeAssemblyItems(std::string const& _contractName) const
@@ -816,7 +818,9 @@ evmasm::AssemblyItems const* CompilerStack::runtimeAssemblyItems(std::string con
 	solAssert(m_stackState == CompilationSuccessful, "Compilation was not successful.");
 
 	Contract const& currentContract = contract(_contractName);
-	return currentContract.evmRuntimeAssembly ? &currentContract.evmRuntimeAssembly->items() : nullptr;
+	if (currentContract.evmRuntimeAssembly)
+		solAssert(currentContract.evmRuntimeAssembly->codeSections().size() == 1, "Expected a single code section in legacy codegen.");
+	return currentContract.evmRuntimeAssembly ? &currentContract.evmRuntimeAssembly->codeSections().front().items : nullptr;
 }
 
 Json CompilerStack::generatedSources(std::string const& _contractName, bool _runtime) const
@@ -1353,6 +1357,7 @@ void CompilerStack::assembleYul(
 	solAssert(compiledContract.evmAssembly, "");
 	try
 	{
+		// std::cout << compiledContract.yulIROptimized << std::endl;
 		// Assemble deployment (incl. runtime)  object.
 		compiledContract.object = compiledContract.evmAssembly->assemble();
 	}
@@ -1431,7 +1436,7 @@ void CompilerStack::compileContract(
 
 	Contract& compiledContract = m_contracts.at(_contract.fullyQualifiedName());
 
-	std::shared_ptr<Compiler> compiler = std::make_shared<Compiler>(m_evmVersion, m_revertStrings, m_optimiserSettings);
+	std::shared_ptr<Compiler> compiler = std::make_shared<Compiler>(m_evmVersion, m_eofVersion, m_revertStrings, m_optimiserSettings);
 	compiledContract.compiler = compiler;
 
 	solAssert(!m_viaIR, "");
@@ -1505,6 +1510,7 @@ void CompilerStack::generateIR(ContractDefinition const& _contract, bool _unopti
 			createCBORMetadata(compiledContract, /* _forIR */ true),
 			otherYulSources
 		);
+		// std::cout << compiledContract.yulIR << std::endl;
 	}
 
 	YulStack stack(
@@ -1541,6 +1547,7 @@ void CompilerStack::generateEVMFromIR(ContractDefinition const& _contract)
 		return;
 
 	Contract& compiledContract = m_contracts.at(_contract.fullyQualifiedName());
+	std::cout << "COMPILED CONTRACT: " << compiledContract.object.toHex() << std::endl;
 	solAssert(!compiledContract.yulIROptimized.empty(), "");
 	if (!compiledContract.object.bytecode.empty())
 		return;
@@ -1557,7 +1564,7 @@ void CompilerStack::generateEVMFromIR(ContractDefinition const& _contract)
 	bool analysisSuccessful = stack.parseAndAnalyze("", compiledContract.yulIROptimized);
 	solAssert(analysisSuccessful);
 
-	//cout << yul::AsmPrinter{}(*stack.parserResult()->code) << endl;
+	std::cout << yul::AsmPrinter{}(stack.parserResult()->code()->root()) << std::endl;
 
 	std::string deployedName = IRNames::deployedObject(_contract);
 	solAssert(!deployedName.empty(), "");

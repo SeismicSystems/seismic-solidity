@@ -48,7 +48,8 @@ public:
 	/// @returns tuple with true if it was successful as first element, second element is the modified AST.
 	static std::tuple<bool, Block> run(
 		Dialect const& _dialect,
-		Object const& _object,
+		std::optional<uint8_t> _eofVersion,
+		Object& _object,
 		bool _optimizeStackAllocation,
 		size_t _maxIterations
 	);

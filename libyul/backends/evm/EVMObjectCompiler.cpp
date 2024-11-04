@@ -85,6 +85,7 @@ void EVMObjectCompiler::run(Object const& _object, bool _optimize)
 			*_object.analysisInfo,
 			_object.code()->root(),
 			m_dialect,
+			m_eofVersion,
 			context,
 			OptimizedEVMCodeTransform::UseNamedLabels::ForFirstFunctionOfEachName
 		);

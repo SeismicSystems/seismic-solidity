@@ -411,15 +411,17 @@ YulOptimizerTestCommon::YulOptimizerTestCommon(
 			{
 				Object object(*m_optimizedObject);
 				object.setCode(std::make_shared<AST>(std::get<Block>(ASTCopier{}(block))));
-				block = std::get<1>(StackCompressor::run(*m_dialect, object, true, maxIterations));
+				block = std::get<1>(StackCompressor::run(*m_dialect, std::nullopt, object, true, maxIterations));
 			}
 			BlockFlattener::run(*m_context, block);
 			return block;
+
 		}},
 		{"fullSuite", [&]() {
 			GasMeter meter(dynamic_cast<EVMDialect const&>(*m_dialect), false, 200);
 			OptimiserSuite::run(
 				*m_dialect,
+				std::nullopt, // TODO
 				&meter,
 				*m_optimizedObject,
 				true,
@@ -553,6 +555,7 @@ void YulOptimizerTestCommon::updateContext(Block const& _block)
 	m_nameDispenser = std::make_unique<NameDispenser>(*m_dialect, _block, m_reservedIdentifiers);
 	m_context = std::make_unique<OptimiserStepContext>(OptimiserStepContext{
 		*m_dialect,
+		std::nullopt, // TODO
 		*m_nameDispenser,
 		m_reservedIdentifiers,
 		frontend::OptimiserSettings::standard().expectedExecutionsPerDeployment

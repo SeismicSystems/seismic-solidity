@@ -199,6 +199,9 @@ std::map<YulName, BuiltinFunctionForEVM> createBuiltins(langutil::EVMVersion _ev
 			opcode != evmasm::Instruction::JUMP &&
 			opcode != evmasm::Instruction::JUMPI &&
 			opcode != evmasm::Instruction::JUMPDEST &&
+			opcode != evmasm::Instruction::EOFCREATE &&
+			opcode != evmasm::Instruction::RETURNCONTRACT &&
+			opcode != evmasm::Instruction::DATALOADN &&
 			_evmVersion.hasOpcode(opcode) &&
 			!prevRandaoException(name)
 		)
@@ -301,6 +304,68 @@ std::map<YulName, BuiltinFunctionForEVM> createBuiltins(langutil::EVMVersion _ev
 				_assembly.appendInstruction(evmasm::Instruction::CODECOPY);
 			}
 		));
+
+		builtins.emplace(createFunction(
+			"eofcreate",
+			5,
+			1,
+			SideEffects{
+				false,               // movable
+				false,                // movableApartFromEffects
+				false,               // canBeRemoved
+				false,               // canBeRemovedIfNotMSize
+				true,                // cannotLoop
+				SideEffects::Write,   // otherState
+				SideEffects::Write,   // storage
+				SideEffects::Write,  // memory
+				SideEffects::Write    // transientStorage
+			},
+			{LiteralKind::String, std::nullopt, std::nullopt, std::nullopt, std::nullopt},
+			[](
+				FunctionCall const& _call,
+				AbstractAssembly& _assembly,
+				BuiltinContext& context
+			) {
+				yulAssert(_call.arguments.size() == 5, "");
+				const auto it = context.subIDs.find(formatLiteral(std::get<Literal>(_call.arguments.front())));
+				if (it != context.subIDs.end())
+					_assembly.appendEofCreateCall(static_cast<solidity::yul::AbstractAssembly::ContainerID>((*it).second));
+			}
+			));
+
+		{
+			auto [it, _] = builtins.emplace(createFunction(
+				"returncontract",
+				3,
+				0,
+				SideEffects{
+					false,               // movable
+					false,                // movableApartFromEffects
+					false,               // canBeRemoved
+					false,               // canBeRemovedIfNotMSize
+					true,                // cannotLoop
+					SideEffects::None,   // otherState
+					SideEffects::None,   // storage
+					SideEffects::Write,  // memory
+					SideEffects::None    // transientStorage
+				},
+				{LiteralKind::String, std::nullopt, std::nullopt},
+				[](
+					FunctionCall const& _call,
+					AbstractAssembly& _assembly,
+					BuiltinContext& context
+				) {
+					yulAssert(_call.arguments.size() == 3, "");
+					const auto it = context.subIDs.find(formatLiteral(std::get<Literal>(_call.arguments.front())));
+					if (it != context.subIDs.end())
+						_assembly.appendReturnContractCall(static_cast<solidity::yul::AbstractAssembly::ContainerID>((*it).second));
+				}
+				));
+			(*it).second.controlFlowSideEffects.canContinue = false;
+			(*it).second.controlFlowSideEffects.canTerminate = true;
+			(*it).second.controlFlowSideEffects.canRevert = false;
+		}
+
 		builtins.emplace(createFunction(
 			"setimmutable",
 			3,
@@ -342,6 +407,22 @@ std::map<YulName, BuiltinFunctionForEVM> createBuiltins(langutil::EVMVersion _ev
 				_assembly.appendImmutable(formatLiteral(std::get<Literal>(_call.arguments.front())));
 			}
 		));
+
+		builtins.emplace(createFunction(
+			"dataloadn",
+			1,
+			1,
+			SideEffects{},
+			{LiteralKind::String},
+			[](
+				FunctionCall const& _call,
+				AbstractAssembly& _assembly,
+				BuiltinContext&
+			) {
+				yulAssert(_call.arguments.size() == 1, "");
+				_assembly.appendDataLoadN(std::stoul(formatLiteral(std::get<Literal>(_call.arguments.front()))));
+			}
+			));
 	}
 	return builtins;
 }
