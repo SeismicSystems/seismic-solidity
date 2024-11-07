@@ -27,6 +27,7 @@ contract C {
 }
 // ====
 // EVMVersion: >=byzantium
+// compileToEOF: false
 // ----
 // f() -> 0, 0, 96, 13, "test message."
 // g() -> 0x87948bd7ebbe13a00bfd930c93e4828ab18e3908, 0, 96, 7, "success"

@@ -808,7 +808,9 @@ evmasm::AssemblyItems const* CompilerStack::assemblyItems(std::string const& _co
 	solAssert(m_stackState == CompilationSuccessful, "Compilation was not successful.");
 
 	Contract const& currentContract = contract(_contractName);
-	return currentContract.evmAssembly ? &currentContract.evmAssembly->items() : nullptr;
+	if (currentContract.evmAssembly)
+		solAssert(currentContract.evmAssembly->codeSections().size() == 1, "Expected a single code section in legacy codegen.");
+	return currentContract.evmAssembly ? &currentContract.evmAssembly->codeSections().front().items : nullptr;
 }
 
 evmasm::AssemblyItems const* CompilerStack::runtimeAssemblyItems(std::string const& _contractName) const
@@ -816,7 +818,9 @@ evmasm::AssemblyItems const* CompilerStack::runtimeAssemblyItems(std::string con
 	solAssert(m_stackState == CompilationSuccessful, "Compilation was not successful.");
 
 	Contract const& currentContract = contract(_contractName);
-	return currentContract.evmRuntimeAssembly ? &currentContract.evmRuntimeAssembly->items() : nullptr;
+	if (currentContract.evmRuntimeAssembly)
+		solAssert(currentContract.evmRuntimeAssembly->codeSections().size() == 1, "Expected a single code section in legacy codegen.");
+	return currentContract.evmRuntimeAssembly ? &currentContract.evmRuntimeAssembly->codeSections().front().items : nullptr;
 }
 
 Json CompilerStack::generatedSources(std::string const& _contractName, bool _runtime) const
@@ -1431,7 +1435,7 @@ void CompilerStack::compileContract(
 
 	Contract& compiledContract = m_contracts.at(_contract.fullyQualifiedName());
 
-	std::shared_ptr<Compiler> compiler = std::make_shared<Compiler>(m_evmVersion, m_revertStrings, m_optimiserSettings);
+	std::shared_ptr<Compiler> compiler = std::make_shared<Compiler>(m_evmVersion, m_eofVersion, m_revertStrings, m_optimiserSettings);
 	compiledContract.compiler = compiler;
 
 	solAssert(!m_viaIR, "");
