@@ -1,6 +1,6 @@
 contract C {
-    function f() public pure returns (sint) {
-        return (-1 / 2) ** -1;
+    function f() public pure returns (int) {
+        return int((-1 / 2) ** -1);
     }
 }
 // ----

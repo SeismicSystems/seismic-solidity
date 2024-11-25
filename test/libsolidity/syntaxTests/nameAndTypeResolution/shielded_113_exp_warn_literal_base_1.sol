@@ -1,9 +1,8 @@
 contract test {
-    function f() pure public returns(suint) {
+    function f() pure public returns(uint) {
         suint8 x = 100;
-        return 10**x;
+        return uint(10**x);
     }
 }
 // ----
-// Warning 9660: (70-84): Literals converted to shielded integers will leak during contract deployment.
-// Warning 3817: (101-106): Shielded integer exponentiation will leak the exponent value through gas cost.
+// DeclarationError 7491: (53-58): Shielded objects cannot be returned, you should cast to an unshielded type.

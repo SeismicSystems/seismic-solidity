@@ -17,16 +17,16 @@ contract C {
         return true;
     }
 
-    function get_a() public returns (suint256) {
-        return a.contents;
+    function get_a() public returns (uint256) {
+        return uint256(a.contents);
     }
 
-    function get_separator() public returns (suint256) {
-        return separator;
+    function get_separator() public returns (uint256) {
+        return uint256(separator);
     }
 
-    function get_separator2() public returns (suint256) {
-        return separator2;
+    function get_separator2() public returns (uint256) {
+        return uint256(separator2);
     }
 }
 // ----

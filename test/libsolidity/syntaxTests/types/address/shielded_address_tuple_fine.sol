@@ -1,7 +1,7 @@
 contract C {
-    function f() public view returns (saddress payable a, saddress b) {
+    function f() public view returns (address payable a, address b) {
         (saddress c, saddress payable d) = (saddress(this), payable(saddress(0)));
-        (a,b) = (d,c);
+        (a,b) = (payable(address(d)),address(c));
     }
 }
 // ----

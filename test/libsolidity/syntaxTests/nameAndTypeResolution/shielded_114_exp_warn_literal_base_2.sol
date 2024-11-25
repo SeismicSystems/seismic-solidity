@@ -1,9 +1,9 @@
 contract test {
-    function f() pure public returns(suint) {
+    function f() pure public returns(uint) {
         suint8 x = 100;
-        return suint8(10)**x;
+        return uint(suint8(10)**x);
     }
 }
 // ----
-// Warning 9660: (70-84): Literals converted to shielded integers will leak during contract deployment.
-// Warning 3817: (101-114): Shielded integer exponentiation will leak the exponent value through gas cost.
+// Warning 9660: (69-83): Literals converted to shielded integers will leak during contract deployment.
+// Warning 3817: (105-118): Shielded integer exponentiation will leak the exponent value through gas cost.
