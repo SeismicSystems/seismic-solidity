@@ -8,15 +8,15 @@ contract test {
         dynamicData[2][2] = suint(8);
     }
 
-    function get_data(suint a, uint256 b) public returns (suint) {
-        return data[a][b];
+    function get_data(suint a, uint256 b) public returns (uint) {
+        return uint(data[a][b]);
     }
 
-    function get_dynamicData(suint a, uint256 b) public returns (suint) {
-        return dynamicData[a][b];
+    function get_dynamicData(suint a, uint256 b) public returns (uint) {
+        return uint(dynamicData[a][b]);
     }
 
-    function get_data_assembly(suint a, uint256 b) public returns (suint) {
+    function get_data_assembly(suint a, uint256 b) public returns (uint) {
         assembly {
             // Get the storage slot of the `data` mapping
             let p0 := data.slot
@@ -43,7 +43,7 @@ contract test {
         }
     }
 
-    function get_dynamicData_assembly(suint a, uint256 b) public returns (suint) {
+    function get_dynamicData_assembly(suint a, uint256 b) public returns (uint) {
         assembly {
             // Get the storage slot of the `dynamicData` mapping
             let p0 := dynamicData.slot

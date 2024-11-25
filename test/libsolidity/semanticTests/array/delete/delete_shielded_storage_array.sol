@@ -1,7 +1,7 @@
 contract C {
     suint[] data;
 
-    function len() public returns (suint ret) {
+    function len() public returns (uint ret) {
         data.push(234);
         data.push(123);
         delete data;
@@ -10,7 +10,7 @@ contract C {
         }
     }
 
-    function val() public returns (suint ret) {
+    function val() public returns (uint ret) {
         assembly {
             cstore(0, 2)
             mstore(0, 0)

@@ -1,6 +1,6 @@
 contract Test {
-    function bytesToSuint(bytes4 s) public returns (suint64 h) {
-        return suint64(suint32(s));
+    function bytesToSuint(bytes4 s) public returns (uint64 h) {
+        return uint64(suint64(suint32(s)));
     }
 }
 // ----

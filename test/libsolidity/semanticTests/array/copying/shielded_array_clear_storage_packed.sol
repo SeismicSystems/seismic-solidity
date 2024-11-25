@@ -2,7 +2,7 @@ contract C {
     suint128[] x;
     suint64[] x1;
     suint120[] x2;
-    function f() public returns(suint128) {
+    function f() public returns(uint128) {
         x.push(42); x.push(42); x.push(42); x.push(42);
         suint128[] memory y = new suint128[](1);
         y[0] = 23;
@@ -11,10 +11,10 @@ contract C {
         assert(x[0] == 23);
         assert(x[2] == 0);
         assert(x[3] == 0);
-        return x[1];
+        return uint128(x[1]);
     }
 
-    function g() public returns(suint64) {
+    function g() public returns(uint64) {
         x1.push(42); x1.push(42); x1.push(42); x1.push(42);
         suint64[] memory y = new suint64[](1);
         y[0] = 23;
@@ -23,10 +23,10 @@ contract C {
         assert(x1[0] == 23);
         assert(x1[2] == 0);
         assert(x1[3] == 0);
-        return x1[1];
+        return uint64(x1[1]);
     }
 
-    function h() public returns(suint120) {
+    function h() public returns(uint120) {
         x2.push(42); x2.push(42); x2.push(42); x2.push(42);
         suint120[] memory y = new suint120[](1);
         y[0] = 23;
@@ -35,7 +35,7 @@ contract C {
         assert(x2[0] == 23);
         assert(x2[2] == 0);
         assert(x2[3] == 0);
-        return x2[1];
+        return uint120(x2[1]);
     }
 }
 // ----

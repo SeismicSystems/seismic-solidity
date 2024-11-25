@@ -1,6 +1,6 @@
 contract Test {
-    function bytesToSuint(bytes1 s) public returns (suint8 h) {
-        return suint8(s);
+    function bytesToSuint(bytes1 s) public returns (uint8 h) {
+        return uint8(suint8(s));
     }
 }
 // ----

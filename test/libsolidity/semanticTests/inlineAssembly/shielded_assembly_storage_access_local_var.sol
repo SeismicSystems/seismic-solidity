@@ -1,7 +1,7 @@
 contract C {
     suint256[] a;
 
-    function f() public returns (suint256) {
+    function f() public returns (uint256) {
         suint256[] storage x = a;
         suint256 off;
         assembly {
@@ -9,7 +9,7 @@ contract C {
             off := x.offset
         }
         assert(off == 0);
-        return a.length;
+        return uint(a.length);
     }
 }
 // ----

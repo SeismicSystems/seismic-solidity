@@ -1,14 +1,14 @@
 contract C {
     // (2**3)**4 = 4096
     // 2**(3**4) = 2417851639229258349412352
-    function test_hardcode1(suint a, suint b, suint c) public returns (suint256) {
-        return a**b**c;
+    function test_hardcode1(suint a, suint b, suint c) public returns (uint256) {
+        return uint(a**b**c);
     }
 
     // (3**2)**2)**2 = 6561
     // 3**(2**(2**2) = 43046721
-    function test_hardcode2(suint a, suint b, suint c, suint d) public returns (suint256) {
-        return a**b**c**d;
+    function test_hardcode2(suint a, suint b, suint c, suint d) public returns (uint256) {
+        return uint(a**b**c**d);
     }
 
     function test_invariant(suint a, suint b, suint c) public returns (bool) {

@@ -1,8 +1,8 @@
 contract test {
-    function f(bool cond) public returns (suint) {
+    function f(bool cond) public returns (uint) {
         suint8 x = 0xcd;
         suint16 y = 0xabab;
-        return cond ? x : y;
+        return cond ? uint(x) : uint(y);
     }
 }
 // ----

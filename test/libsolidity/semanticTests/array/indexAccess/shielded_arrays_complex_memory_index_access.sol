@@ -1,10 +1,10 @@
 contract Test {
     function set(suint24[3][] memory _data, suint256 a, suint256 b)
         public
-        returns (suint256 l, suint256 e)
+        returns (uint256 l, uint256 e)
     {
-        l = _data.length;
-        e = _data[a][b];
+        l = uint(_data.length);
+        e = uint(_data[a][b]);
     }
 }
 // ----

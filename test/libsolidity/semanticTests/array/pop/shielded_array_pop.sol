@@ -1,14 +1,14 @@
 contract c {
     suint256[] data;
 
-    function test() public returns (suint256 x, suint256 l) {
+    function test() public returns (uint256 x, uint256 l) {
         data.push(7);
         data.push(3);
-        x = data.length;
+        x = uint(data.length);
         data.pop();
-        x = data.length;
+        x = uint(data.length);
         data.pop();
-        l = data.length;
+        l = uint(data.length);
     }
 }
 // ----

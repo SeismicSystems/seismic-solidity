@@ -1,17 +1,25 @@
 contract Test {
     suint256[3][] data;
 
-    function set(suint256[3][] memory _data) public returns (suint256) {
+    function set(suint256[3][] memory _data) public returns (uint256) {
         data = _data;
-        return data.length;
+        return uint256(data.length);
     }
 
-    function get() public returns (suint256[3][] memory) {
-        return data;
+    function get() public view returns (uint256[3][] memory) {
+        uint256[3][] memory uintData = new uint256[3][](data.length);
+
+        for (uint256 i = 0; i < data.length; i++) {
+            for (uint256 j = 0; j < 3; j++) {
+                uintData[i][j] = uint256(data[i][j]);
+            }
+        }
+
+        return uintData;
     }
 
-    function get_data(uint256 index, uint256 index_2) public returns (suint256) {
-        return data[index][index_2];
+    function get_data(uint256 index, uint256 index_2) public view returns (uint256) {
+        return uint256(data[index][index_2]);
     }
 
 }

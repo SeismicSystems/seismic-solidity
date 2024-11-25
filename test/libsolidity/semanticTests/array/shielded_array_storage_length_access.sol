@@ -1,9 +1,9 @@
 contract C {
     suint[] storageArray;
-    function set_get_length(suint256 len) public returns (suint256) {
+    function set_get_length(suint256 len) public returns (uint256) {
         while(storageArray.length < len)
             storageArray.push();
-        return storageArray.length;
+        return uint(storageArray.length);
     }
 }
 // ----

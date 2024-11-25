@@ -1,7 +1,7 @@
 pragma abicoder v2;
 contract C {
-    function f(suint16 a, suint16 b) public returns (suint16) {
-        return a + b;
+    function f(suint16 a, suint16 b) public returns (uint16) {
+        return uint16(a + b);
     }
 }
 // ----

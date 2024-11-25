@@ -1,7 +1,7 @@
 contract C {
     suint120[] data;
 
-    function f() public returns (suint120, suint120, suint120) {
+    function f() public returns (uint120, uint120, uint120) {
         data.push(123);
         data.push(234);
         data.push(345);
@@ -9,7 +9,7 @@ contract C {
         assembly {
             cstore(data.slot, 3)
         }
-        return (data[0], data[1], data[2]);
+        return (uint120(data[0]), uint120(data[1]), uint120(data[2]));
     }
 }
 // ----

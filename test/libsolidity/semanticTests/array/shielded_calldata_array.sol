@@ -5,10 +5,10 @@ contract C {
     function f(suint256[2] calldata s)
         external
         pure
-        returns (suint256 a, suint256 b)
+        returns (uint256 a, uint256 b)
     {
-        a = s[0];
-        b = s[1];
+        a = uint(s[0]);
+        b = uint(s[1]);
     }
 }
 // ----
