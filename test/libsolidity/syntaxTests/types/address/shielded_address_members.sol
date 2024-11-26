@@ -6,4 +6,4 @@ contract C {
     function j() public view returns (uint) { return h().length; }
 }
 // ----
-// DeclarationError 7491: (51-59): Shielded objects cannot be returned, you should cast to an unshielded type.
+// DeclarationError 7492: (51-59): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
