@@ -539,9 +539,37 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 	if (_variable.isConstant() && (type->category()==Type::Category::ShieldedInteger || type->category()==Type::Category::ShieldedAddress))
 		m_errorReporter.declarationError(7491_error, _variable.location(), "Shielded objects cannot be set to constant.");
 
-	if (_variable.isReturnParameter() && (type->category()==Type::Category::ShieldedInteger || type->category()==Type::Category::ShieldedAddress))
-		m_errorReporter.declarationError(7492_error, _variable.location(), "Shielded objects cannot be returned, you should cast to an unshielded type.");
+    if (_variable.isReturnParameter())
+    {
+        auto const* scope = _variable.scope();
+		if (auto const* function = dynamic_cast<FunctionDefinition const*>(scope))
+            {
+				// this error will get catched in another place
+				if (!function->isConstructor())
+				{
+					Visibility functionVisibility = function->visibility();
+					if (
+						(functionVisibility == Visibility::Public || functionVisibility == Visibility::External) &&
+						(type->category() == Type::Category::ShieldedInteger || type->category() == Type::Category::ShieldedAddress)
+					)
+					{
+						std::cout << "VariableDeclaration::checkForDiagnostic: " << function->name() << std::endl;
+						m_errorReporter.declarationError(
+							7492_error,
+							_variable.location(),
+							"Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type."
+						);
+					}
+				}
+            }
+        }
 
+
+	if (_variable.isReturnParameter() && (_variable.functionType(true) != nullptr ) && (type->category()==Type::Category::ShieldedInteger || type->category()==Type::Category::ShieldedAddress))
+	{
+		std::cout << "VariableDeclaration::checkForDiagnostic: " << _variable.functionType(true)->toString(false) << std::endl;
+		m_errorReporter.declarationError(7492_error, _variable.location(), "Shielded objects cannot be returned outside of Private and Internal functions, you should cast to an unshielded type.");
+	}
 	if (_variable.isConstant() && !type->isValueType())
 	{
 		bool allowed = false;
