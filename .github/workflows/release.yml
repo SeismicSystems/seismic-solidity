@@ -14,8 +14,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         arch: [x86_64, arm64]
-        # Limit concurrency to avoid resource exhaustion
-        max-parallel: 2
 
     runs-on: ${{ matrix.os }}
 
@@ -83,7 +81,7 @@ jobs:
       - name: Create Release
         run: |
           gh release create ${{ github.sha }} \
-          --repo SeismicSystems/seismic-solidity-releases \
+          --repo your-org/seismic-solidity-releases \
           --title "Release for ${{ github.ref_name }}" \
           --notes "Automated release for commit ${{ github.sha }}" \
           build/seismic-solc-macos-${{ matrix.arch }}.tar.gz \
