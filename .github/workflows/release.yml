@@ -92,7 +92,7 @@ jobs:
         shell: bash
         run: |
           cd build
-          gh release create ${{ github.sha }} \
+          gh release create release-${{ github.run_number }} \
             --repo SeismicSystems/seismic-solidity-releases \
             --title "Release for ${{ github.ref_name }}" \
             --notes "Automated release for commit ${{ github.sha }}." \
