@@ -12,25 +12,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+        os: [ubuntu-latest, macos-latest, macos-14]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
             arch: x86_64  # Exclude x86_64 for macos-latest
-          - os: macos-14
-            arch: arm64  # Exclude arm64 for macos-14
+          - os: macos-13
+            arch: arm64  # Exclude arm64 for macos-13
 
     steps:
+      # Checkout source code
       - name: Checkout source code
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Setup cmake
+      # Setup CMake
+      - name: Setup CMake
         uses: lukka/get-cmake@latest
         with:
           cmakeVersion: "3.21.3"
 
+      # Set up dependencies
       - name: Set up dependencies
         shell: bash
         run: |
@@ -40,22 +43,9 @@ jobs:
               zlib1g-dev libboost-all-dev libssl-dev ccache
           elif [ "${{ matrix.os }}" = "macos-latest" ] || [ "${{ matrix.os }}" = "macos-14" ]; then
             brew install boost openssl ccache
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Install vcpkg
-            git clone https://github.com/Microsoft/vcpkg.git
-            cd vcpkg
-            ./bootstrap-vcpkg.bat
-            if [ "${{ matrix.arch }}" = "x86_64" ]; then
-              ./vcpkg install boost:x64-windows
-              ./vcpkg install zlib:x64-windows
-              ./vcpkg install openssl:x64-windows
-            else
-              ./vcpkg install boost:arm64-windows
-              ./vcpkg install zlib:arm64-windows
-              ./vcpkg install openssl:arm64-windows
-            fi
           fi
 
+      # Build Seismic Solidity
       - name: Build Seismic Solidity
         shell: bash
         run: |
@@ -65,17 +55,13 @@ jobs:
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF \
-              -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
           else
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
           fi
           cmake --build . --config Release -j 2
 
+      # Archive binary
       - name: Archive binary
         shell: bash
         run: |
@@ -86,28 +72,29 @@ jobs:
             tar -czvf seismic-solc-macos-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             tar -czvf "seismic-solc-linux-${{ matrix.arch }}.tar.gz" solc/solc
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            7z a "seismic-solc-windows-${{ matrix.arch }}.zip" "solc/Release/solc.exe"
+
+      # Install GitHub CLI
+      - name: Install GitHub CLI
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get install -y gh
+          elif [ "${{ matrix.os }}" = "macos-latest" ] || [ "${{ matrix.os }}" = "macos-14" ]; then
+            brew install gh
           fi
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        with:
-          tag_name: ${{ github.sha }}
-          release_name: "Release for ${{ github.ref_name }}"
-          body: "Automated release for commit ${{ github.sha }}."
-          draft: false
-          prerelease: false
+      # Authenticate GitHub CLI
+      - name: Authenticate GitHub CLI
+        shell: bash
+        run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/seismic-solc-${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'macos-arm64' || 'macos-x86_64' }}-${{ matrix.os != 'macos-latest' && matrix.os != 'macos-14' && matrix.arch || '' }}.${{ matrix.os == 'windows-latest' && 'zip' || 'tar.gz' }}
-          asset_name: seismic-solc-${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'macos-arm64' || 'macos-x86_64' }}-${{ matrix.os != 'macos-latest' && matrix.os != 'macos-14' && matrix.arch || '' }}.${{ matrix.os == 'windows-latest' && 'zip' || 'tar.gz' }}
-          asset_content_type: ${{ matrix.os == 'windows-latest' && 'application/zip' || 'application/gzip' }}
+      # Create Release and Upload Assets
+      - name: Create Release and Upload Assets
+        shell: bash
+        run: |
+          cd build
+          gh release create ${{ github.sha }} \
+            --repo SeismicSystems/seismic-solidity-releases \
+            --title "Release for ${{ github.ref_name }}" \
+            --notes "Automated release for commit ${{ github.sha }}." \
+            seismic-solc-*.*
