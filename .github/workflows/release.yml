@@ -14,6 +14,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         arch: [x86_64, arm64]
+
     steps:
       # Step 1: Check out the source code
       - name: Checkout source code
@@ -27,6 +28,7 @@ jobs:
             sudo apt-get install -y build-essential cmake python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             brew install cmake boost openssl
+          fi
 
       # Step 3: Initialize Git submodules
       - name: Update Git submodules
@@ -64,7 +66,7 @@ jobs:
 
       # Step 7: Authenticate GitHub CLI
       - name: Authenticate GitHub CLI
-        run: gh auth login --with-token <<< "${{ secrets.RELEASES_TOKEN }}"
+        run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
 
       # Step 8: Create a release in seismic-solidity-releases
       - name: Create Release
