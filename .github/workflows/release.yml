@@ -12,13 +12,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, macos-latest]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
             arch: x86_64  # Exclude x86_64 for macos-latest
-          - os: macos-13
-            arch: arm64  # Exclude arm64 for macos-13
 
     steps:
       # Checkout source code
@@ -72,6 +70,7 @@ jobs:
             tar -czvf seismic-solc-macos-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             tar -czvf "seismic-solc-linux-${{ matrix.arch }}.tar.gz" solc/solc
+          fi
 
       # Install GitHub CLI
       - name: Install GitHub CLI
