@@ -23,21 +23,32 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup cmake
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "3.21.3"
 
       - name: Set up dependencies
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update
-            sudo apt-get install -y build-essential cmake python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev ccache
+            sudo apt-get install -y build-essential python3 python3-pip \
+              zlib1g-dev libboost-all-dev libssl-dev ccache
           elif [ "${{ matrix.os }}" = "macos-latest" ] || [ "${{ matrix.os }}" = "macos-14" ]; then
-            brew install cmake boost openssl ccache
+            brew install boost openssl ccache
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            choco install cmake boost-msvc
+            # Install vcpkg
+            git clone https://github.com/Microsoft/vcpkg.git
+            cd vcpkg
+            ./bootstrap-vcpkg.bat
+            ./vcpkg install boost:${{ matrix.arch }}-windows
+            ./vcpkg install zlib:${{ matrix.arch }}-windows
+            ./vcpkg install openssl:${{ matrix.arch }}-windows
           fi
-
-      - name: Update Git submodules
-        run: git submodule update --init --recursive
 
       - name: Build Seismic Solidity
         shell: bash
@@ -45,26 +56,32 @@ jobs:
           mkdir build
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ] || [ "${{ matrix.os }}" = "macos-14" ]; then
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DUSE_Z3=OFF -DPEDANTIC=OFF
+            cmake .. -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+              -DUSE_Z3=OFF -DPEDANTIC=OFF
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.arch }} -DCMAKE_BUILD_TYPE=Release -DUSE_Z3=OFF -DPEDANTIC=OFF
+            cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DUSE_Z3=OFF -DPEDANTIC=OFF \
+              -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
           else
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_Z3=OFF -DPEDANTIC=OFF
+            cmake .. -DCMAKE_BUILD_TYPE=Release \
+              -DUSE_Z3=OFF -DPEDANTIC=OFF
           fi
-          make -j2
+          cmake --build . --config Release -j 2
 
       - name: Archive binary
         shell: bash
         run: |
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            tar -czvf seismic-solc-macos-arm64.tar.gz solc
+            tar -czvf seismic-solc-macos-arm64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "macos-14" ]; then
-            tar -czvf seismic-solc-macos-x86_64.tar.gz solc
+            tar -czvf seismic-solc-macos-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            tar -czvf seismic-solc-linux-${{ matrix.arch }}.tar.gz solc
+            tar -czvf "seismic-solc-linux-${{ matrix.arch }}.tar.gz" solc/solc
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            7z a seismic-solc-windows-${{ matrix.arch }}.zip solc.exe
+            7z a "seismic-solc-windows-${{ matrix.arch }}.zip" "solc/Release/solc.exe"
           fi
 
       - name: Create Release
