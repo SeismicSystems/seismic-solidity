@@ -28,6 +28,7 @@ jobs:
             sudo apt-get install -y build-essential cmake python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             brew install cmake boost openssl
+          fi
 
       # Step 3: Initialize Git submodules
       - name: Update Git submodules
@@ -54,28 +55,25 @@ jobs:
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             tar -czvf seismic-solc-linux-${{ matrix.arch }}.tar.gz solc
 
-      # Step 6: Create a release in seismic-solidity-releases
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+      # Step 6: Install GitHub CLI (gh)
+      - name: Install GitHub CLI
+        uses: actions/setup-node@v3
         with:
-          repository: your-org/seismic-solidity-releases
-          tag_name: ${{ github.sha }}
-          release_name: "Release for ${{ github.ref_name }}"
-          body: "Automated release for commit ${{ github.sha }}."
-          draft: false
-          prerelease: false
+          node-version: 16
+      - run: |
+          sudo apt-get install -y gh
+          gh --version
 
-      # Step 7: Upload binaries to the release
-      - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: |
-            build/seismic-solc-${{ matrix.os == 'macos-latest' && 'macos' || 'linux' }}-${{ matrix.arch }}.tar.gz
-          asset_name: seismic-solc-${{ matrix.os == 'macos-latest' && 'macos' || 'linux' }}-${{ matrix.arch }}.tar.gz
-          asset_content_type: application/gzip
+      # Step 7: Authenticate GitHub CLI
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
+
+      # Step 8: Create a release in seismic-solidity-releases
+      - name: Create Release
+        run: |
+          gh release create ${{ github.sha }} \
+          --repo SeismicSystems/seismic-solidity-releases \
+          --title "Release for ${{ github.ref_name }}" \
+          --notes "Automated release for commit ${{ github.sha }}" \
+          build/seismic-solc-macos-${{ matrix.arch }}.tar.gz \
+          build/seismic-solc-linux-${{ matrix.arch }}.tar.gz
