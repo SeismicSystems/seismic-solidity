@@ -1,0 +1,77 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - seismic
+      - feature/**
+
+jobs:
+  build-and-release:
+    name: Build and Release Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        arch: [x86_64, arm64]
+    steps:
+      # Step 1: Check out the source code
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up dependencies
+      - name: Set up dependencies
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential cmake python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew install cmake boost openssl
+
+      # Step 3: Initialize Git submodules
+      - name: Update Git submodules
+        run: git submodule update --init --recursive
+
+      # Step 4: Build binaries
+      - name: Build Seismic Solidity
+        run: |
+          mkdir build
+          cd build
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DUSE_Z3=OFF
+          else
+            cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_Z3=OFF
+          fi
+          make -j$(nproc || sysctl -n hw.logicalcpu)
+
+      # Step 5: Package binaries
+      - name: Archive binary
+        run: |
+          cd build
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            tar -czvf seismic-solc-macos-${{ matrix.arch }}.tar.gz solc
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            tar -czvf seismic-solc-linux-${{ matrix.arch }}.tar.gz solc
+
+      # Step 6: Install GitHub CLI (gh)
+      - name: Install GitHub CLI
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: |
+          sudo apt-get install -y gh
+          gh --version
+
+      # Step 7: Authenticate GitHub CLI
+      - name: Authenticate GitHub CLI
+        run: gh auth login --with-token <<< "${{ secrets.RELEASES_TOKEN }}"
+
+      # Step 8: Create a release in seismic-solidity-releases
+      - name: Create Release
+        run: |
+          gh release create ${{ github.sha }} \
+          --repo your-org/seismic-solidity-releases \
+          --title "Release for ${{ github.ref_name }}" \
+          --notes "Automated release for commit ${{ github.sha }}" \
+          build/seismic-solc-macos-${{ matrix.arch }}.tar.gz \
+          build/seismic-solc-linux-${{ matrix.arch }}.tar.gz
