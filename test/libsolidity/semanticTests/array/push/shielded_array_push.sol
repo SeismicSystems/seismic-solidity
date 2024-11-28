@@ -3,15 +3,15 @@ contract c {
 
     function test()
         public
-        returns (suint256 x, suint256 y, suint256 z, suint256 l)
+        returns (uint256 x, uint256 y, uint256 z, uint256 l)
     {
         data.push(5);
-        x = data[0];
+        x = uint(data[0]);
         data.push(4);
-        y = data[1];
+        y = uint(data[1]);
         data.push(3);
-        l = data.length;
-        z = data[2];
+        l = uint(data.length);
+        z = uint(data[2]);
     }
 }
 // ----

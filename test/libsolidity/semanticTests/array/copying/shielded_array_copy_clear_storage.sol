@@ -1,6 +1,6 @@
 contract C {
     suint256[] x;
-    function f() public returns(suint256) {
+    function f() public returns(uint256) {
         x.push(42); x.push(42); x.push(42); x.push(42);
         suint256[] memory y = new suint256[](1);
         y[0] = 23;
@@ -8,7 +8,7 @@ contract C {
         assembly { cstore(x.slot, 4) }
         assert(x[1] == 0);
         assert(x[2] == 0);
-        return x[3];
+        return uint(x[3]);
     }
 }
 // ----

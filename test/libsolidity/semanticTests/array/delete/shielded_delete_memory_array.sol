@@ -1,5 +1,5 @@
 contract C {
-    function len() public returns (suint ret) {
+    function len() public returns (uint ret) {
         suint[] memory data = new suint[](2);
         data[0] = 234;
         data[1] = 123;

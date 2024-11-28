@@ -1,5 +1,5 @@
 contract C {
-    function f() public pure returns (saddress r) {
+    function f() public pure returns (address r) {
         bytes21 x = 0x1122334455667788990011223344556677889900ff;
         bytes20 y;
         assembly {
@@ -12,7 +12,7 @@ contract C {
         require(z == payable(saddress(0x1122334455667788990011223344556677889900)));
     }
 
-    function g() public pure returns (saddress payable r) {
+    function g() public pure returns (address payable r) {
         bytes21 x = 0x1122334455667788990011223344556677889900ff;
         bytes20 y;
         assembly {

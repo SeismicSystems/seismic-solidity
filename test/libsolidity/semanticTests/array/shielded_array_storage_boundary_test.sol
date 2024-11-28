@@ -1,12 +1,12 @@
 contract C {
     suint[] storageArray;
-    function test_boundary_check(suint256 len, suint256 access) public returns (suint256)
+    function test_boundary_check(suint256 len, suint256 access) public returns (uint256)
     {
         while(storageArray.length < len)
             storageArray.push();
         while(storageArray.length > len)
             storageArray.pop();
-        return storageArray[access];
+        return uint(storageArray[access]);
     }
 }
 // ----

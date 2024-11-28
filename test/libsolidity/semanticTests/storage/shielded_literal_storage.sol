@@ -17,16 +17,22 @@ contract LiteralStorageTest {
         arrayOfLiterals.push(789012);
     }
 
-    function getSingleLiteral() public view returns (suint256) {
-        return singleLiteral;
+    function getSingleLiteral() public view returns (uint256) {
+        return uint(singleLiteral);
     }
 
-    function getLargeLiteral() public view returns (suint256) {
-        return largeLiteral;
+    function getLargeLiteral() public view returns (uint256) {
+        return uint(largeLiteral);
     }
 
-    function getLiteralFromArray() public view returns (suint256[] memory) {
-        return arrayOfLiterals;
+    function getLiteralFromArray() public view returns (uint256[] memory) {
+        uint256[] memory uintArray = new uint256[](arrayOfLiterals.length);
+
+        for (uint256 i = 0; i < arrayOfLiterals.length; i++) {
+            uintArray[i] = uint256(arrayOfLiterals[i]);
+        }
+
+        return uintArray;
     }
 }
 // ----

@@ -1,7 +1,7 @@
 contract C {
     // this is not exported
     suint a;
-    function f() public pure returns (suint x) {
+    function f() public pure returns (uint x) {
         // test2
         for (suint i = 0; i < 20; i++) {
             // not exported either
@@ -9,7 +9,7 @@ contract C {
         }
         // nor is this because they are all
         // not using the triple-slash
-        return x;
+        return uint(x);
     }
 }
 

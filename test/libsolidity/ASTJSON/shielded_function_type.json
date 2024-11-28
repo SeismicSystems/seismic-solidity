@@ -27,7 +27,7 @@
           "body": {
             "id": 15,
             "nodeType": "Block",
-            "src": "129:2:1",
+            "src": "127:2:1",
             "statements": []
           },
           "functionSelector": "d6cd4974",
@@ -47,15 +47,15 @@
                 "id": 6,
                 "mutability": "mutable",
                 "name": "x",
-                "nameLocation": "68:1:1",
+                "nameLocation": "67:1:1",
                 "nodeType": "VariableDeclaration",
                 "scope": 16,
-                "src": "24:45:1",
+                "src": "24:44:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
-                  "typeIdentifier": "t_function_external_payable$__$returns$_t_suint256_$",
-                  "typeString": "function () payable external returns (suint256)"
+                  "typeIdentifier": "t_function_external_payable$__$returns$_t_uint256_$",
+                  "typeString": "function () payable external returns (uint256)"
                 },
                 "typeName": {
                   "id": 5,
@@ -78,40 +78,40 @@
                         "nameLocation": "-1:-1:-1",
                         "nodeType": "VariableDeclaration",
                         "scope": 5,
-                        "src": "61:5:1",
+                        "src": "61:4:1",
                         "stateVariable": false,
                         "storageLocation": "default",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_suint256",
-                          "typeString": "suint256"
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
                         },
                         "typeName": {
                           "id": 2,
-                          "name": "suint",
+                          "name": "uint",
                           "nodeType": "ElementaryTypeName",
-                          "src": "61:5:1",
+                          "src": "61:4:1",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_suint256",
-                            "typeString": "suint256"
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
                           }
                         },
                         "visibility": "internal"
                       }
                     ],
-                    "src": "60:7:1"
+                    "src": "60:6:1"
                   },
-                  "src": "24:45:1",
+                  "src": "24:44:1",
                   "stateMutability": "payable",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_function_external_payable$__$returns$_t_suint256_$",
-                    "typeString": "function () payable external returns (suint256)"
+                    "typeIdentifier": "t_function_external_payable$__$returns$_t_uint256_$",
+                    "typeString": "function () payable external returns (uint256)"
                   },
                   "visibility": "external"
                 },
                 "visibility": "internal"
               }
             ],
-            "src": "23:47:1"
+            "src": "23:46:1"
           },
           "returnParameters": {
             "id": 14,
@@ -125,12 +125,12 @@
                 "nameLocation": "-1:-1:-1",
                 "nodeType": "VariableDeclaration",
                 "scope": 16,
-                "src": "87:41:1",
+                "src": "86:40:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
-                  "typeIdentifier": "t_function_external_view$__$returns$_t_suint256_$",
-                  "typeString": "function () view external returns (suint256)"
+                  "typeIdentifier": "t_function_external_view$__$returns$_t_uint256_$",
+                  "typeString": "function () view external returns (uint256)"
                 },
                 "typeName": {
                   "id": 12,
@@ -139,7 +139,7 @@
                     "id": 8,
                     "nodeType": "ParameterList",
                     "parameters": [],
-                    "src": "95:2:1"
+                    "src": "94:2:1"
                   },
                   "returnParameterTypes": {
                     "id": 11,
@@ -153,53 +153,53 @@
                         "nameLocation": "-1:-1:-1",
                         "nodeType": "VariableDeclaration",
                         "scope": 12,
-                        "src": "121:5:1",
+                        "src": "120:4:1",
                         "stateVariable": false,
                         "storageLocation": "default",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_suint256",
-                          "typeString": "suint256"
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
                         },
                         "typeName": {
                           "id": 9,
-                          "name": "suint",
+                          "name": "uint",
                           "nodeType": "ElementaryTypeName",
-                          "src": "121:5:1",
+                          "src": "120:4:1",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_suint256",
-                            "typeString": "suint256"
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
                           }
                         },
                         "visibility": "internal"
                       }
                     ],
-                    "src": "120:7:1"
+                    "src": "119:6:1"
                   },
-                  "src": "87:41:1",
+                  "src": "86:40:1",
                   "stateMutability": "view",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_function_external_view$__$returns$_t_suint256_$",
-                    "typeString": "function () view external returns (suint256)"
+                    "typeIdentifier": "t_function_external_view$__$returns$_t_uint256_$",
+                    "typeString": "function () view external returns (uint256)"
                   },
                   "visibility": "external"
                 },
                 "visibility": "internal"
               }
             ],
-            "src": "86:42:1"
+            "src": "85:41:1"
           },
           "scope": 17,
-          "src": "13:118:1",
+          "src": "13:116:1",
           "stateMutability": "nonpayable",
           "virtual": false,
           "visibility": "public"
         }
       ],
       "scope": 18,
-      "src": "0:133:1",
+      "src": "0:131:1",
       "usedErrors": [],
       "usedEvents": []
     }
   ],
-  "src": "0:134:1"
+  "src": "0:132:1"
 }

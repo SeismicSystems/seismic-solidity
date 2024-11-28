@@ -3,7 +3,7 @@ contract C {
     suint16 y;
     suint256 z;
 
-    function getZ() public returns (suint256) { return z; }
+    function getZ() public returns (uint256) { return uint(z); }
 
     function f() public returns (bool) {
         suint256 off1;

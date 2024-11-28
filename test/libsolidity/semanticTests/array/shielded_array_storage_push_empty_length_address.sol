@@ -1,12 +1,12 @@
 contract C {
     saddress[] addressArray;
-    function set_get_length(suint256 len) public returns (suint256)
+    function set_get_length(suint256 len) public returns (uint256)
     {
         while(addressArray.length < len)
             addressArray.push();
         while(addressArray.length > len)
             addressArray.pop();
-        return addressArray.length;
+        return uint(addressArray.length);
     }
 }
 // ====

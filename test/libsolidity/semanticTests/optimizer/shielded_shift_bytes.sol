@@ -6,7 +6,7 @@
 //
 // and the respective rule about shr
 contract C {
-  function f(suint a) public returns (suint, suint, suint) {
+  function f(suint a) public returns (uint, uint, uint) {
     suint x = a << (256 - 8);
     assembly {
       x := byte(0, x)
@@ -19,9 +19,9 @@ contract C {
     assembly {
       z := byte(1, z)
     }
-    return (x, y, z);
+    return (uint(x), uint(y), uint(z));
   }
-  function g(suint a) public returns (suint, suint, suint) {
+  function g(suint a) public returns (uint, uint, uint) {
     suint x = a >> (256 - 16);
     assembly {
       x := byte(31, x)
@@ -34,7 +34,7 @@ contract C {
     assembly {
       z := byte(7, z)
     }
-    return (x, y, z);
+    return (uint(x), uint(y), uint(z));
   }
 }
 // ----

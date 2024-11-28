@@ -16,12 +16,12 @@ contract C {
         n[1][1].b = 10;
     }
 
-    function get_m(suint256 x, uint256 y) public view returns (suint256, uint256) {
-        return (m[x][y].a, m[x][y].b);
+    function get_m(suint256 x, uint256 y) public view returns (uint256, uint256) {
+        return (uint(m[x][y].a), m[x][y].b);
     }
 
-    function get_n(suint256 x, uint256 y) public view returns (suint256, uint256) {
-        return (n[x][y].a, n[x][y].b);
+    function get_n(suint256 x, uint256 y) public view returns (uint256, uint256) {
+        return (uint(n[x][y].a), n[x][y].b);
     }
 }
 // ----

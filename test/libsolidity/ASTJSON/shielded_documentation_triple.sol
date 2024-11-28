@@ -1,7 +1,7 @@
 contract C {
     /// test
     suint a;
-    function f() public pure returns (suint x) {
+    function f() public pure returns (uint x) {
         /// test2
         for (suint i = 0; i < 20; i++) {
             /// tee
@@ -9,7 +9,7 @@ contract C {
             x *= 2;
         }
         /** tes "t4" */
-        return x;
+        return uint(x);
     }
 }
 

@@ -1,6 +1,6 @@
 contract test {
-    function f() pure public returns(suint) {
-        return 2**80;
+    function f() pure public returns(uint) {
+        return uint(2**80);
     }
 }
 // ----

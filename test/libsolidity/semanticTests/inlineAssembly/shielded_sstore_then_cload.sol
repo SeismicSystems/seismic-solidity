@@ -5,13 +5,12 @@ contract C {
         a = 7;
     }
 
-    function f() public returns (suint256 x) {
+    function f() public returns (uint256 x) {
        assembly {
-            x := cload(a.slot)
+            x :=cload(a.slot)
        }
     }
 }
 // ----
 // f1()
 // f() -> FAILURE
-

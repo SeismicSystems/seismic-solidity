@@ -1,7 +1,7 @@
 contract test {
     mapping(suint8 => suint8) table;
-    function get(suint8 k) public returns (suint8 v) {
-        return table[k];
+    function get(suint8 k) public returns (uint8 v) {
+        return uint8(table[k]);
     }
     function set(suint8 k, suint8 v) public {
         table[k] = v;
