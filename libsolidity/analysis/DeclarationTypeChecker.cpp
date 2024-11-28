@@ -553,7 +553,6 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 						(type->category() == Type::Category::ShieldedInteger || type->category() == Type::Category::ShieldedAddress)
 					)
 					{
-						std::cout << "VariableDeclaration::checkForDiagnostic: " << function->name() << std::endl;
 						m_errorReporter.declarationError(
 							7492_error,
 							_variable.location(),
@@ -564,12 +563,6 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
             }
         }
 
-
-	if (_variable.isReturnParameter() && (_variable.functionType(true) != nullptr ) && (type->category()==Type::Category::ShieldedInteger || type->category()==Type::Category::ShieldedAddress))
-	{
-		std::cout << "VariableDeclaration::checkForDiagnostic: " << _variable.functionType(true)->toString(false) << std::endl;
-		m_errorReporter.declarationError(7492_error, _variable.location(), "Shielded objects cannot be returned outside of Private and Internal functions, you should cast to an unshielded type.");
-	}
 	if (_variable.isConstant() && !type->isValueType())
 	{
 		bool allowed = false;
