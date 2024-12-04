@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - seismic
-      - feature/**
+        # - feature/**
 
 jobs:
   build-and-release:
@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest]  # add ubuntu-latest later
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
