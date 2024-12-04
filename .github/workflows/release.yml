@@ -1,0 +1,100 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - seismic
+        # - feature/**
+
+jobs:
+  build-and-release:
+    name: Build and Release Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]  # add ubuntu-latest later
+        arch: [x86_64, arm64]
+        exclude:
+          - os: macos-latest
+            arch: x86_64  # Exclude x86_64 for macos-latest
+
+    steps:
+      # Checkout source code
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      # Setup CMake
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: "3.21.3"
+
+      # Set up dependencies
+      - name: Set up dependencies
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential python3 python3-pip \
+              zlib1g-dev libboost-all-dev libssl-dev ccache
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            brew install boost openssl ccache
+          fi
+
+      # Build Seismic Solidity
+      - name: Build Seismic Solidity
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            cmake .. -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+              -DUSE_Z3=OFF -DPEDANTIC=OFF
+          else
+            cmake .. -DCMAKE_BUILD_TYPE=Release \
+              -DUSE_Z3=OFF -DPEDANTIC=OFF
+          fi
+          cmake --build . --config Release -j 2
+
+      # Archive binary
+      - name: Archive binary
+        shell: bash
+        run: |
+          cd build
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            tar -czvf ssolc-macos-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            tar -czvf "ssolc-linux-${{ matrix.arch }}.tar.gz" solc/solc
+          fi
+
+      # Install GitHub CLI
+      - name: Install GitHub CLI
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get install -y gh
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            brew install gh
+          fi
+
+      # Authenticate GitHub CLI
+      - name: Authenticate GitHub CLI
+        shell: bash
+        run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
+
+      # Create Release and Upload Assets
+      - name: Create Release and Upload Assets
+        shell: bash
+        run: |
+          cd build
+          gh release create release-${{ github.run_number }}-${{ matrix.os }}-${{ matrix.arch }} \
+            --repo SeismicSystems/seismic-solidity-releases \
+            --title "${{ matrix.os }} (${{
+              matrix.arch }}) Release for ${{ github.ref_name }}" \
+            --notes "Automated release for commit ${{ github.sha }} on ${{ github.ref_name }}." \
+            ssolc-*.*
+
