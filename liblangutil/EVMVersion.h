@@ -61,6 +61,7 @@ public:
 	static EVMVersion shanghai() { return {Version::Shanghai}; }
 	static EVMVersion cancun() { return {Version::Cancun}; }
 	static EVMVersion prague() { return {Version::Prague}; }
+	static EVMVersion mercury() { return {Version::Mercury}; }
 
 	static std::optional<EVMVersion> fromString(std::string const& _version)
 	{
@@ -77,7 +78,8 @@ public:
 			paris(),
 			shanghai(),
 			cancun(),
-			prague()
+			prague(),
+			mercury()
 		})
 			if (_version == v.name())
 				return v;
@@ -104,6 +106,7 @@ public:
 		case Version::Shanghai: return "shanghai";
 		case Version::Cancun: return "cancun";
 		case Version::Prague: return "prague";
+		case Version::Mercury: return "mercury";
 		}
 		return "INVALID";
 	}
@@ -123,6 +126,7 @@ public:
 	bool hasBlobHash() const { return *this >= cancun(); }
 	bool hasMcopy() const { return *this >= cancun(); }
 	bool supportsTransientStorage() const { return *this >= cancun(); }
+	bool supportShieldedStorage() const { return *this >= mercury(); }
 
 	bool hasOpcode(evmasm::Instruction _opcode) const;
 
@@ -144,12 +148,13 @@ private:
 		Paris,
 		Shanghai,
 		Cancun,
-		Prague
+		Prague,
+		Mercury
 	};
 
 	EVMVersion(Version _version): m_version(_version) {}
 
-	Version m_version = Version::Cancun;
+	Version m_version = Version::Mercury;
 };
 
 }

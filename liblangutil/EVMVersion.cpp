@@ -58,6 +58,9 @@ bool EVMVersion::hasOpcode(Instruction _opcode) const
 	case Instruction::TSTORE:
 	case Instruction::TLOAD:
 		return supportsTransientStorage();
+	case Instruction::CLOAD:
+	case Instruction::CSTORE:
+		return supportShieldedStorage();
 	default:
 		return true;
 	}

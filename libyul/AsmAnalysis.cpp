@@ -693,6 +693,8 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 		errorForVM(7755_error, "only available for Cancun-compatible");
 	else if ((_instr == evmasm::Instruction::TSTORE || _instr == evmasm::Instruction::TLOAD) && !m_evmVersion.supportsTransientStorage())
 		errorForVM(6243_error, "only available for Cancun-compatible");
+	else if ((_instr == evmasm::Instruction::CLOAD || _instr == evmasm::Instruction::CSTORE) && !m_evmVersion.supportShieldedStorage())
+		errorForVM(6245_error, "only available for Mercury-compatible");
 	else if (_instr == evmasm::Instruction::PC)
 		m_errorReporter.error(
 			2450_error,
