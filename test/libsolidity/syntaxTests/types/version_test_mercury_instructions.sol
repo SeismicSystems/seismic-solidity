@@ -10,4 +10,4 @@ contract C {
 // ====
 // EVMVersion: <mercury
 // ----
-// ParserError 7637: (31-39): Experimental solidity requires Constantinople EVM version at the minimum.
+// TypeError 6245: (187-198): The "cstore" instruction is only available for Mercury-compatible VMs (you are currently compiling for "shanghai").
