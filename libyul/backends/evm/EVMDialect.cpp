@@ -152,6 +152,14 @@ std::set<YulName> createReservedIdentifiers(langutil::EVMVersion _evmVersion)
 			(_instr == evmasm::Instruction::TSTORE || _instr == evmasm::Instruction::TLOAD);
 	};
 
+	// TODO remove this in 0.9.0. We allow creating functions or identifiers in Yul with the names
+	// tstore or tload for VMs before cancun.
+	auto shieldeStorageException = [&](evmasm::Instruction _instr) -> bool
+	{
+		return
+			_evmVersion < langutil::EVMVersion::mercury() &&
+			(_instr == evmasm::Instruction::CSTORE || _instr == evmasm::Instruction::CLOAD);
+	};
 	std::set<YulName> reserved;
 	for (auto const& instr: evmasm::c_instructions)
 	{
@@ -162,7 +170,8 @@ std::set<YulName> createReservedIdentifiers(langutil::EVMVersion _evmVersion)
 			!blobHashException(instr.second) &&
 			!blobBaseFeeException(instr.second) &&
 			!mcopyException(instr.second) &&
-			!transientStorageException(instr.second)
+			!transientStorageException(instr.second) &&
+			!shieldeStorageException(instr.second)
 		)
 			reserved.emplace(name);
 	}
