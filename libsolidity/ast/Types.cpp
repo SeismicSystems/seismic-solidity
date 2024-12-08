@@ -1527,7 +1527,13 @@ BoolResult ContractType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 		return false;
 
 	if (*this == _convertTo)
-		return true;
+	// Different bytes requirement for contract referring to shielded address
+	{
+		if (this->storageBytes() != _convertTo.storageBytes())
+		{
+			return false;
+		}
+	}
 	if (_convertTo.category() == Category::Contract)
 	{
 		auto const& targetContractType = dynamic_cast<ContractType const&>(_convertTo);

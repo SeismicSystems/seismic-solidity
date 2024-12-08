@@ -1021,8 +1021,8 @@ private:
 class ContractType: public Type
 {
 public:
-	explicit ContractType(ContractDefinition const& _contract, bool _super = false):
-		m_contract(_contract), m_super(_super) {}
+	explicit ContractType(ContractDefinition const& _contract, bool _super = false, unsigned _storageBytes = 20):
+		m_contract(_contract), m_super(_super), m_storageBytes(_storageBytes) {}
 
 	Category category() const override { return Category::Contract; }
 	/// Contracts can be implicitly converted only to base contracts.
@@ -1037,7 +1037,8 @@ public:
 		solAssert(!isSuper(), "");
 		return encodingType()->calldataEncodedSize(_padded);
 	}
-	unsigned storageBytes() const override { solAssert(!isSuper(), ""); return 20; }
+	void setStorageBytes(unsigned _storageBytes) { solAssert(_storageBytes == 20 || _storageBytes == 32, ""); m_storageBytes = _storageBytes; }
+	unsigned storageBytes() const override { solAssert(!isSuper(), ""); return m_storageBytes; }
 	bool leftAligned() const override { solAssert(!isSuper(), ""); return false; }
 	bool isValueType() const override { return !isSuper(); }
 	bool nameable() const override { return !isSuper(); }
@@ -1078,6 +1079,8 @@ private:
 	ContractDefinition const& m_contract;
 	/// If true, this is a special "super" type of m_contract containing only members that m_contract inherited
 	bool m_super = false;
+	// We use storageBytes to differentiate between shielded addresses and their unshielded counterparts for contract implementations.
+	unsigned m_storageBytes = 20;
 	/// Type of the constructor, @see constructorType. Lazily initialized.
 	mutable FunctionType const* m_constructorType = nullptr;
 };

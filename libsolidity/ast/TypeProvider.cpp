@@ -626,9 +626,9 @@ ArraySliceType const* TypeProvider::arraySlice(ArrayType const& _arrayType)
 	return createAndGet<ArraySliceType>(_arrayType);
 }
 
-ContractType const* TypeProvider::contract(ContractDefinition const& _contractDef, bool _isSuper)
+ContractType const* TypeProvider::contract(ContractDefinition const& _contractDef, bool _isSuper, unsigned _storageBytes)
 {
-	return createAndGet<ContractType>(_contractDef, _isSuper);
+	return createAndGet<ContractType>(_contractDef, _isSuper, _storageBytes);
 }
 
 EnumType const* TypeProvider::enumType(EnumDefinition const& _enumDef)

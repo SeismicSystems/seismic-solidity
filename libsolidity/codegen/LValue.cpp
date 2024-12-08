@@ -305,7 +305,9 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 	{
 		solAssert(m_dataType->storageBytes() <= 32, "Invalid storage bytes size.");
 		solAssert(m_dataType->storageBytes() > 0, "Invalid storage bytes size.");
-		if ((m_dataType->category() == Type::Category::ShieldedInteger || m_dataType->category() == Type::Category::ShieldedAddress) && m_dataType->storageBytes() == 32)
+
+		//Contract of storage length 32 bytes signal that they refer to a shielded address.
+		if ((m_dataType->category() == Type::Category::ShieldedInteger || m_dataType->category() == Type::Category::ShieldedAddress || m_dataType->category() == Type::Category::Contract) && m_dataType->storageBytes() == 32)
 		{
 			solAssert(m_dataType->sizeOnStack() == 1, "Invalid stack size.");
 			// offset should be zero

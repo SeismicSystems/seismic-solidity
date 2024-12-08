@@ -100,7 +100,7 @@ public:
 	static IntegerType const* uint256() { return uint(256); }
 	static IntegerType const* int256() { return integer(256, IntegerType::Modifier::Signed); }
 
-	static ShieldedIntegerType const* shieldedInteger(unsigned _bits, ShieldedIntegerType::Modifier _modifier) { 
+	static ShieldedIntegerType const* shieldedInteger(unsigned _bits, ShieldedIntegerType::Modifier _modifier) {
 
 		solAssert((_bits % 8) == 0, "");
 		if (_modifier == ShieldedIntegerType::Modifier::Unsigned)
@@ -188,7 +188,7 @@ public:
 		Type const* _compatibleBytesType = nullptr
 	);
 
-	static ContractType const* contract(ContractDefinition const& _contract, bool _isSuper = false);
+	static ContractType const* contract(ContractDefinition const& _contract, bool _isSuper = false, unsigned _storageBytes = 20);
 
 	static InaccessibleDynamicType const* inaccessibleDynamic() noexcept { return &m_inaccessibleDynamic; }
 
