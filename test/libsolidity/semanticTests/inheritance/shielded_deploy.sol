@@ -1,31 +1,30 @@
 pragma solidity ^0.8.0;
 
 contract SimpleContract {
-    uint256 public value;
-
-    function setValue(uint256 _value) public {
-        value = _value;
-    }
 }
 
 contract Deployer {
     saddress private storedAddress;
     SimpleContract private storedSimpleContract;
 
-    function deployContract() public returns (address) {
-        SimpleContract sc = new SimpleContract();
-        storedAddress = saddress(sc);
-        return address(storedAddress);
+    function setUp(saddress _storedAddress, saddress _simpleContract) public {
+        storedAddress = _storedAddress;
+        storedSimpleContract = SimpleContract(_simpleContract);
     }
 
-    function deployContractAndStoreAsContract() public returns (address) {
-        SimpleContract sc = new SimpleContract();
-        storedSimpleContract = SimpleContract(saddress(sc));
-        return address(storedSimpleContract);
+    function checkAddress() public returns (address loadedAddress) {
+        assembly {
+            loadedAddress := cload(storedAddress.slot)
+        }
     }
 
-    function getStoredAddress() internal returns (saddress) {
-        return storedAddress;
+    function checkAddressDeployedContract() public returns (address loadedAddress) {
+        assembly {
+            loadedAddress := cload(storedSimpleContract.slot)
+        }
     }
 }
-
+// ----
+// setUp(saddress,saddress): 0x1212121212121212121212121212120000000012, 0x1212121212121212121212121212120000000013
+// checkAddress() -> 0x1212121212121212121212121212120000000012
+// checkAddressDeployedContract() -> 0x1212121212121212121212121212120000000013
