@@ -24,6 +24,22 @@ contract Deployer {
         require(address(storedSimpleContractCopy) == privateLoad, "Couldn't switch public address to private");
     }
 
+    function storeThenLoadHighLevel() public {
+        require(saddress(storedSimpleContract) == storedSimpleContractCopy, "SimpleContract address mismatch");
+
+        storedSimpleContract = SimpleContract(storedAddress);
+
+        address publicLoad = address(storedSimpleContract);
+
+        require(storedAddress == publicLoad, "Public storage mismatch");
+
+        storedSimpleContract = SimpleContract(storedSimpleContractCopy);
+
+        saddress privateLoad = saddress(storedSimpleContract);
+
+        require(storedSimpleContractCopy == privateLoad, "Public storage mismatch");
+    }
+
     function publicWriteAndLoad() internal returns (address publicLoad) {
         assembly {
             sstore(1, sload(storedAddress.slot))
@@ -48,5 +64,4 @@ contract Deployer {
 
 // ----
 // setUp(address,saddress): 0x1212121212121212121212121212120000000012, 0x1212121212121212121212121212120000000013
-// StoreThenLoadThenCStore() -> 0x1212121212121212121212121212120000000013
-
+// storeThenLoadHighLevel() ->
