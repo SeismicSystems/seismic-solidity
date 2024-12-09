@@ -4191,6 +4191,13 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 				contractType.setStorageBytes(32);
 				return true;
 			}
+
+			else if (type(_expression)->storageBytes() == 20 && _expectedType.storageBytes() == 32)
+			{
+				auto& contractType = const_cast<ContractType&>(dynamic_cast<ContractType const&>(_expectedType));
+				contractType.setStorageBytes(20);
+				return true;
+			}
 		}
 		auto errorMsg = "Type " +
 			type(_expression)->humanReadableName() +
