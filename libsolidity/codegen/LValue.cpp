@@ -234,7 +234,7 @@ void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation con
 	}
 	if (!_remove)
 		CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
-	if ((m_dataType->category() == Type::Category::ShieldedInteger || m_dataType->category() == Type::Category::ShieldedAddress) && m_dataType->storageBytes() == 32)
+	if ((m_dataType->category() == Type::Category::ShieldedInteger || m_dataType->category() == Type::Category::ShieldedAddress || m_dataType->category() == Type::Category::Contract) && m_dataType->storageBytes() == 32)
 		m_context << Instruction::POP << Instruction::CLOAD;
 	else if (m_dataType->storageBytes() == 32)
 		m_context << Instruction::POP << s_loadInstruction;
