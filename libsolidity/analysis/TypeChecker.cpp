@@ -479,8 +479,6 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 	// type is filled either by ReferencesResolver directly from the type name or by
 	// TypeChecker at the VariableDeclarationStatement level.
 	Type const* varType = _variable.annotation().type;
-	std::cout << "varType: " << varType->toString() << std::endl;
-	std::cout << "varName: " << _variable.name() << std::endl;
 	solAssert(!!varType, "Variable type not provided.");
 
 	if (_variable.value())
@@ -1491,10 +1489,6 @@ bool TypeChecker::visit(Assignment const& _assignment)
 
 	checkExpressionAssignment(*t, _assignment.leftHandSide());
 
-	std::cerr << "=== Debug Assignment ===" << std::endl;
-	std::cerr << "LHS: " << t->toString(true) << " (" << t->storageBytes() << " bytes)" << std::endl;
-
-
 	if (TupleType const* tupleType = dynamic_cast<TupleType const*>(t))
 	{
 		if (_assignment.assignmentOperator() != Token::Assign)
@@ -1511,7 +1505,6 @@ bool TypeChecker::visit(Assignment const& _assignment)
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
 		expectType(_assignment.rightHandSide(), *t);
-		std::cerr << "RHS: " << _assignment.rightHandSide().annotation().type->toString(true) << std::endl;
 	}
 	else
 	{
@@ -1889,9 +1882,7 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 	std::vector<ASTPointer<Expression const>> const& arguments = _functionCall.arguments();
 	bool const isPositionalCall = _functionCall.names().empty();
 
-	std::cerr << "Getting in there: with expression Type: " << expressionType->toString() << std::endl;
 	Type const* resultType = dynamic_cast<TypeType const&>(*expressionType).actualType();
-	std::cerr << "Getting in there: with resultType: " << resultType->toString() << std::endl;
 	if (arguments.size() != 1)
 		m_errorReporter.typeError(
 			2558_error,
@@ -1907,7 +1898,6 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 	else
 	{
 		Type const* argType = type(*arguments.front());
-		std::cerr << "Getting in there: with argType: " << argType->toString() << std::endl;
 		// Resulting data location is memory unless we are converting from a reference
 		// type with a different data location.
 		// (data location cannot yet be specified for type conversions)
@@ -1917,7 +1907,6 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 		if (auto type = dynamic_cast<ReferenceType const*>(resultType))
 			resultType = TypeProvider::withLocation(type, dataLoc, type->isPointer());
 		BoolResult result = argType->isExplicitlyConvertibleTo(*resultType);
-		std::cerr << "Getting in there: with result: " << result << std::endl;
 		if (result)
 		{
 			if (auto argArrayType = dynamic_cast<ArrayType const*>(argType))
@@ -1943,19 +1932,14 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 			//The below is for making sure we can tell which contract implementation is specified via an saddress or an address
 			else if (auto type = dynamic_cast<ContractType const*>(resultType))
 			{
-				std::cerr << "Getting in there: with argType 2: " << argType->toString() << std::endl;
 				if (argType->category() == Type::Category::ShieldedAddress)
 				{
-					std::cerr << "Hello world" << std::endl;
 					resultType = TypeProvider::contract(type->contractDefinition(), type->isSuper(), 32);
-					std::cerr << resultType->humanReadableName() << std::endl;
-					std::cerr << resultType->storageBytes() << std::endl;
 				}
 			}
 		}
 		else
 		{
-			std::cerr << "Getting in there" << std::endl;
 			if (
 				resultType->category() == Type::Category::Contract &&
 				(argType->category() == Type::Category::Address ||
