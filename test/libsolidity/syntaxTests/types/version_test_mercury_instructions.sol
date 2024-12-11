@@ -10,4 +10,4 @@ contract C {
 // ====
 // EVMVersion: <mercury
 // ----
-// TypeError 6245: (187-198): The "cstore" instruction is only available for Mercury-compatible VMs (you are currently compiling for "shanghai").
+// TypeError 6245: (103-109): The "cstore" instruction is only available for Mercury-compatible VMs (you are currently compiling for "cancun").
