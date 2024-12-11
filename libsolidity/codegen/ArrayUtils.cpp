@@ -188,6 +188,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			// copy
 			if (sourceBaseType->category() == Type::Category::Array)
 			{
+				std::cerr << "L191" << std::endl;
 				solAssert(byteOffsetSize == 0, "Byte offset for array as base type.");
 				auto const& sourceBaseArrayType = dynamic_cast<ArrayType const&>(*sourceBaseType);
 
@@ -206,6 +207,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			}
 			else if (directCopy)
 			{
+				std::cerr << "direct copy" << std::endl;
 				solAssert(byteOffsetSize == 0, "Byte offset for direct copy.");
 				if (sourceBaseType->category() == Type::Category::ShieldedInteger || sourceBaseType->category() == Type::Category::ShieldedAddress)
 				_context
@@ -218,6 +220,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			}
 			else
 			{
+				std::cerr << "not direct copy" << std::endl;
 				// Note that we have to copy each element on its own in case conversion is involved.
 				// We might copy too much if there is padding at the last element, but this way end
 				// checking is easier.
@@ -1039,6 +1042,7 @@ void ArrayUtils::retrieveLength(ArrayType const& _arrayType, unsigned _stackDept
 			m_context << Instruction::MLOAD;
 			break;
 		case DataLocation::Storage:
+			std::cerr << "retrieveLength" << std::endl;
 			if(_arrayType.containsTypeCategory(Type::Category::ShieldedInteger) || _arrayType.containsTypeCategory(Type::Category::ShieldedAddress))
 				m_context << Instruction::CLOAD;
 			else
@@ -1057,7 +1061,6 @@ void ArrayUtils::accessIndex(ArrayType const& _arrayType, bool _doBoundsCheck, b
 {
 	/// Stack: reference [length] index
 	DataLocation location = _arrayType.location();
-
 	if (_doBoundsCheck)
 	{
 		// retrieve length

@@ -4164,6 +4164,10 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 {
 	_expression.accept(*this);
 	BoolResult result = type(_expression)->isImplicitlyConvertibleTo(_expectedType);
+	std::cerr << "RHS: " << type(_expression)->toString() << std::endl;
+	std::cerr << "RHS storage: " << type(_expression)->storageBytes() << std::endl;
+	std::cerr << "LHS: " << _expectedType.toString() << std::endl;
+	std::cerr << "LHS storage: " << _expectedType.storageBytes() << std::endl;
 	if (!result)
 	{
 		//edge case whereby two contract can have different storage bytes depending on if they're referencing a shielded or transparent address
@@ -4180,6 +4184,9 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 			{
 				auto& contractType = const_cast<ContractType&>(dynamic_cast<ContractType const&>(_expectedType));
 				contractType.setStorageBytes(20);
+				std::cerr << "Setting LHS to 20 bytes" << std::endl;
+				std::cerr << "RHS storage: " << type(_expression)->storageBytes() << std::endl;
+				std::cerr << "LHS storage: " << _expectedType.storageBytes() << std::endl;
 				return true;
 			}
 		}

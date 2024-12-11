@@ -1516,9 +1516,15 @@ Type const* ContractType::encodingType() const
 		return nullptr;
 
 	if (isPayable())
-		return TypeProvider::payableAddress();
+		if (this->storageBytes() == 32)
+			return TypeProvider::payableShieldedAddress();
+		else
+			return TypeProvider::payableAddress();
 	else
-		return TypeProvider::address();
+		if (this->storageBytes() == 32)
+			return TypeProvider::shieldedAddress();
+		else
+			return TypeProvider::address();
 }
 
 BoolResult ContractType::isImplicitlyConvertibleTo(Type const& _convertTo) const

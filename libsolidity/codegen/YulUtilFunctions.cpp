@@ -2128,6 +2128,7 @@ std::string YulUtilFunctions::copyByteArrayToStorageFunction(ArrayType const& _f
 
 std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _fromType, ArrayType const& _toType)
 {
+	std::cerr << "copyValueArrayToStorageFunction" << std::endl;
 	solAssert(_fromType.baseType()->isValueType(), "");
 	solAssert(_toType.baseType()->isValueType(), "");
 	solAssert(_fromType.baseType()->isImplicitlyConvertibleTo(*_toType.baseType()), "");
@@ -2804,7 +2805,7 @@ std::string YulUtilFunctions::readFromStorageDynamic(Type const& _type, bool _sp
 std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::optional<size_t> _offset, bool _splitFunctionTypes)
 {
 	solAssert(_type.isValueType(), "");
-
+	std::cerr << "readFromStorageValueType" << std::endl;
 	std::string functionName =
 			"read_from_storage_" +
 			std::string(_splitFunctionTypes ? "split_" : "") + (
@@ -2814,7 +2815,7 @@ std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::o
 			) +
 			"_" +
 			_type.identifier();
-
+	std::cerr << "readFromStorageValueType: " <<  std::endl;
 	return m_functionCollector.createFunction(functionName, [&] {
 		Whiskers templ(R"(
 			function <functionName>(slot<?dynamic>, offset</dynamic>) -> <?split>addr, selector<!split>value</split> {
@@ -2915,7 +2916,7 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 		_fromType.identifier() +
 		"_to_" +
 		_toType.identifier();
-
+	std::cerr << "updateStorageValue" << std::endl;
 	return m_functionCollector.createFunction(functionName, [&] {
 		if (_toType.isValueType())
 		{

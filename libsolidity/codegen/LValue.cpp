@@ -221,6 +221,8 @@ GenericStorageItem<IsTransient>::GenericStorageItem(CompilerContext& _compilerCo
 template<bool IsTransient>
 void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation const&, bool _remove) const
 {
+	std::cerr << "genericStorageItem" << std::endl;
+	std::cerr << "m_dataType: " << m_dataType->toString() << std::endl;
 	// stack: storage_key storage_offset
 	if (!m_dataType->isValueType())
 	{
@@ -552,6 +554,7 @@ StorageByteArrayElement::StorageByteArrayElement(CompilerContext& _compilerConte
 
 void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove) const
 {
+	std::cerr << "Type in retrieveValue: "<< std::endl;
 	// stack: ref byte_number
 	if (_remove)
 		m_context << Instruction::SWAP1 << Instruction::SLOAD
@@ -562,8 +565,9 @@ void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove)
 	m_context << (u256(1) << (256 - 8)) << Instruction::MUL;
 }
 
-void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, bool _move) const
+void StorageByteArrayElement::storeValue(Type const& type, SourceLocation const&, bool _move) const
 {
+	std::cerr << "Type in storeValue: " << type.toString() << std::endl;
 	// stack: value ref byte_number
 	m_context << u256(31) << Instruction::SUB << u256(0x100) << Instruction::EXP;
 	// stack: value ref (1<<(8*(31-byte_number)))
