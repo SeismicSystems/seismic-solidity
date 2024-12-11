@@ -1905,6 +1905,7 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 		if (auto type = dynamic_cast<ReferenceType const*>(resultType))
 			resultType = TypeProvider::withLocation(type, dataLoc, type->isPointer());
 		BoolResult result = argType->isExplicitlyConvertibleTo(*resultType);
+		SecondarySourceLocation ssl;
 		if (result)
 		{
 			if (auto argArrayType = dynamic_cast<ArrayType const*>(argType))
@@ -1927,6 +1928,18 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 						""
 					);
 			}
+			else if (auto type = dynamic_cast<ContractType const*>(resultType))
+			{
+				if (argType->category() == Type::Category::ShieldedAddress)
+				{
+				m_errorReporter.typeError(
+					7399_error,
+					_functionCall.location(),
+					ssl,
+					"Instantiating a contract with a saddress is not yet supported"
+				);
+				}
+			}
 		}
 		else
 		{
@@ -1942,7 +1955,6 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 						StateMutability::Payable,
 					""
 				);
-				SecondarySourceLocation ssl;
 				if (
 					auto const* identifier = dynamic_cast<Identifier const*>(arguments.front().get())
 				)
