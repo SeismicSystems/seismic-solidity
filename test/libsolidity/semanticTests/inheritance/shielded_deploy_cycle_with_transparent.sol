@@ -41,9 +41,7 @@ contract Deployer {
     }
 
     function publicWriteAndLoad() internal returns (address publicLoad) {
-        assembly {
-            sstore(1, sload(storedAddress.slot))
-        }
+        storedSimpleContract = SimpleContract(storedAddress);
 
         assembly {
             publicLoad := sload(1)
@@ -51,17 +49,13 @@ contract Deployer {
     }
 
     function privateWriteAndLoad() internal returns (address privateLoad) {
-        assembly {
-            cstore(1, cload(storedSimpleContractCopy.slot))
-        }
+        storedSimpleContract = SimpleContract(storedSimpleContractCopy);
 
         assembly {
             privateLoad := cload(1)
         }
     }
 }
-
-
 // ----
 // setUp(address,saddress): 0x1212121212121212121212121212120000000012, 0x1212121212121212121212121212120000000013
 // StoreThenLoadThenCStore() -> 0x1212121212121212121212121212120000000013
