@@ -1877,34 +1877,20 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 	{
 		if (member == "balance")
 		{
-			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					*TypeProvider::shieldedAddress(),
-					true
-				);
-			else
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					*TypeProvider::address(),
-					true
-				);
+			utils().convertType(
+				*_memberAccess.expression().annotation().type,
+				*TypeProvider::address(),
+				true
+			);
 			m_context << Instruction::BALANCE;
 		}
 		else if (member == "code")
 		{
 			// Stack: <address>
-			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					*TypeProvider::shieldedAddress(),
-					true
-				);
-			else
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					*TypeProvider::address(),
-					true
+			utils().convertType(
+				*_memberAccess.expression().annotation().type,
+				*TypeProvider::address(),
+				true
 			);
 
 			m_context << Instruction::DUP1 << Instruction::EXTCODESIZE;
@@ -1943,33 +1929,19 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		else if ((std::set<std::string>{"send", "transfer"}).count(member))
 		{
 			solAssert(dynamic_cast<AddressType const&>(*_memberAccess.expression().annotation().type).stateMutability() == StateMutability::Payable, "");
-			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					*TypeProvider::shieldedAddress(),
-					true
-				);
-			else
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					AddressType(StateMutability::Payable),
-					true
-				);
+			utils().convertType(
+				*_memberAccess.expression().annotation().type,
+				AddressType(StateMutability::Payable),
+				true
+			);
 		}
 		else if ((std::set<std::string>{"call", "callcode", "delegatecall", "staticcall"}).count(member))
 		{
-			if (_memberAccess.expression().annotation().type->category() == Type::Category::ShieldedAddress)
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					*TypeProvider::shieldedAddress(),
-					true
-				);
-			else
-				utils().convertType(
-					*_memberAccess.expression().annotation().type,
-					*TypeProvider::address(),
-					true
-				);
+			utils().convertType(
+				*_memberAccess.expression().annotation().type,
+				*TypeProvider::address(),
+				true
+			);
 		}
 		else
 			solAssert(false, "Invalid member access to address");
