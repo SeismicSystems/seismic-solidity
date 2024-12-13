@@ -17,9 +17,9 @@ jobs:
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
-            arch: x86_64  # Exclude x86_64 for macos-latest
+            arch: x86_64
           - os: macos-13
-            arch: arm64  # Exclude arm64 for macos-13
+            arch: arm64
 
     steps:
       # Checkout source code
@@ -65,7 +65,7 @@ jobs:
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
+            cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
               -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF \
               -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
@@ -122,3 +122,4 @@ jobs:
             --title "Release for ${{ github.ref_name }}" \
             --notes "Automated release for commit ${{ github.sha }}." \
             binaries-*.*
+
