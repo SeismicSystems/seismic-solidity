@@ -46,12 +46,7 @@ jobs:
             brew update
             brew install boost openssl ccache
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            git clone https://github.com/Microsoft/vcpkg.git
-            cd vcpkg
-            ./bootstrap-vcpkg.bat
-            ./vcpkg install boost --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
-            ./vcpkg install zlib --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
-            ./vcpkg install openssl --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
+            ./scripts/install_deps.ps1
           fi
 
       # Build Seismic Solidity
@@ -65,10 +60,9 @@ jobs:
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
+            cmake .. -G "Visual Studio 17 2022"  \
               -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF \
-              -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
           else
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
