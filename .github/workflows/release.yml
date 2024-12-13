@@ -60,9 +60,9 @@ jobs:
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cmake .. -G "Visual Studio 17 2022"  \
+            cmake .. -G "Visual Studio 17 2022" \
               -DCMAKE_BUILD_TYPE=Release \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF \
+              -DUSE_Z3=OFF -DPEDANTIC=OFF
           else
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
@@ -116,4 +116,3 @@ jobs:
             --title "Release for ${{ github.ref_name }}" \
             --notes "Automated release for commit ${{ github.sha }}." \
             binaries-*.*
-
