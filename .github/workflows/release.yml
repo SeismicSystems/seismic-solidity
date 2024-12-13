@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - seismic
-        # - feature/**
+      - feature/**
 
 jobs:
   build-and-release:
@@ -13,11 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]  # add ubuntu-latest later
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
             arch: x86_64  # Exclude x86_64 for macos-latest
+          - os: macos-13
+            arch: arm64  # Exclude arm64 for macos-13
 
     steps:
       # Checkout source code
@@ -40,8 +42,16 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y build-essential python3 python3-pip \
               zlib1g-dev libboost-all-dev libssl-dev ccache
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          elif [ "${{ matrix.os }}" = "macos-latest" ] || [ "${{ matrix.os }}" = "macos-13" ]; then
+            brew update
             brew install boost openssl ccache
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            git clone https://github.com/Microsoft/vcpkg.git
+            cd vcpkg
+            ./bootstrap-vcpkg.bat
+            ./vcpkg install boost:${{ matrix.arch }}-windows
+            ./vcpkg install zlib:${{ matrix.arch }}-windows
+            ./vcpkg install openssl:${{ matrix.arch }}-windows
           fi
 
       # Build Seismic Solidity
@@ -50,10 +60,15 @@ jobs:
         run: |
           mkdir build
           cd build
-          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DUSE_Z3=OFF -DPEDANTIC=OFF \
+              -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
           else
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
@@ -66,35 +81,44 @@ jobs:
         run: |
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            tar -czvf ssolc-macos-arm64.tar.gz solc/solc
+            tar -czvf seismic-solc-macos-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-13" ]; then
+            tar -czvf seismic-solc-macos-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            tar -czvf "ssolc-linux-${{ matrix.arch }}.tar.gz" solc/solc
+            tar -czvf "seismic-solc-linux-${{ matrix.arch }}.tar.gz" solc/solc
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            7z a "seismic-solc-windows-${{ matrix.arch }}.zip" "solc/Release/solc.exe"
           fi
 
-      # Install GitHub CLI
+      # Upload artifacts
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/*
+
+  release:
+    name: Create Release
+    needs: build-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts/
+
       - name: Install GitHub CLI
-        shell: bash
-        run: |
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo apt-get install -y gh
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            brew install gh
-          fi
+        run: sudo apt-get install -y gh
 
-      # Authenticate GitHub CLI
       - name: Authenticate GitHub CLI
-        shell: bash
         run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
 
-      # Create Release and Upload Assets
-      - name: Create Release and Upload Assets
-        shell: bash
+      - name: Create Single Release
         run: |
-          cd build
-          gh release create release-${{ github.run_number }}-${{ matrix.os }}-${{ matrix.arch }} \
+          cd artifacts/
+          gh release create ${{ github.sha }} \
             --repo SeismicSystems/seismic-solidity-releases \
-            --title "${{ matrix.os }} (${{
-              matrix.arch }}) Release for ${{ github.ref_name }}" \
-            --notes "Automated release for commit ${{ github.sha }} on ${{ github.ref_name }}." \
-            ssolc-*.*
-
+            --title "Release for ${{ github.ref_name }}" \
+            --notes "Automated release for commit ${{ github.sha }}." \
+            binaries-*.*
