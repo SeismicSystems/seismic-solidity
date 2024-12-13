@@ -49,9 +49,9 @@ jobs:
             git clone https://github.com/Microsoft/vcpkg.git
             cd vcpkg
             ./bootstrap-vcpkg.bat
-            ./vcpkg install boost:${{ matrix.arch }}-windows
-            ./vcpkg install zlib:${{ matrix.arch }}-windows
-            ./vcpkg install openssl:${{ matrix.arch }}-windows
+            ./vcpkg install boost --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
+            ./vcpkg install zlib --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
+            ./vcpkg install openssl --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
           fi
 
       # Build Seismic Solidity
