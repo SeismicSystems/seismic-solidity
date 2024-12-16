@@ -396,6 +396,7 @@ std::string YulUtilFunctions::leftAlignFunction(Type const& _type)
 		case Type::Category::RationalNumber:
 			solAssert(false, "Left align requested for rational number.");
 			break;
+		case Type::Category::ShieldedBool:
 		case Type::Category::Bool:
 			templ("body", "aligned := " + leftAlignFunction(IntegerType(8)) + "(value)");
 			break;
@@ -3534,9 +3535,14 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 			}
 			break;
 		}
+		case Type::Category::ShieldedBool:
 		case Type::Category::Bool:
 		{
-			solAssert(_from == _to, "Invalid conversion for bool.");
+			solAssert(_from == _to ||
+			    (toCategory == Type::Category::Bool && fromCategory == Type::Category::ShieldedBool) ||
+			    (fromCategory == Type::Category::ShieldedBool && toCategory == Type::Category::Bool),
+			    "Invalid conversion for bool.");
+
 			body =
 				Whiskers("converted := <clean>(value)")
 				("clean", cleanupFunction(_from))
@@ -3947,6 +3953,7 @@ std::string YulUtilFunctions::cleanupFunction(Type const& _type)
 			templ("body", "cleaned := value");
 			break;
 		case Type::Category::Bool:
+		case Type::Category::ShieldedBool:
 			templ("body", "cleaned := iszero(iszero(value))");
 			break;
 		case Type::Category::FixedPoint:
@@ -4034,6 +4041,7 @@ std::string YulUtilFunctions::validatorFunction(Type const& _type, bool _revertO
 		case Type::Category::ShieldedInteger:
 		case Type::Category::RationalNumber:
 		case Type::Category::Bool:
+		case Type::Category::ShieldedBool:
 		case Type::Category::FixedPoint:
 		case Type::Category::Function:
 		case Type::Category::Array:

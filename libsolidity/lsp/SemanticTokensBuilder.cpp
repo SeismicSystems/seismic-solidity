@@ -42,9 +42,11 @@ std::optional<SemanticTokenType> semanticTokenTypeForType(frontend::Type const* 
 	case frontend::Type::Category::Address: return SemanticTokenType::Class;
 	case frontend::Type::Category::ShieldedAddress: return SemanticTokenType::Class;
 	case frontend::Type::Category::Bool: return SemanticTokenType::Number;
+	case frontend::Type::Category::ShieldedBool: return SemanticTokenType::Number;
 	case frontend::Type::Category::Enum: return SemanticTokenType::Enum;
 	case frontend::Type::Category::Function: return SemanticTokenType::Function;
 	case frontend::Type::Category::Integer: return SemanticTokenType::Number;
+	case frontend::Type::Category::ShieldedInteger: return SemanticTokenType::Number;
 	case frontend::Type::Category::RationalNumber: return SemanticTokenType::Number;
 	case frontend::Type::Category::StringLiteral: return SemanticTokenType::String;
 	case frontend::Type::Category::Struct: return SemanticTokenType::Struct;
