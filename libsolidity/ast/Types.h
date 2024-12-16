@@ -784,6 +784,8 @@ class BoolType: public Type
 public:
 	Category category() const override { return Category::Bool; }
 	std::string richIdentifier() const override { return "t_bool"; }
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
 	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
@@ -806,6 +808,8 @@ class ShieldedBoolType : public BoolType
 public:
     Category category() const override { return Category::ShieldedBool; }
     std::string richIdentifier() const override { return "t_sbool"; }
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 
     unsigned storageBytes() const override { return 32; }
 
