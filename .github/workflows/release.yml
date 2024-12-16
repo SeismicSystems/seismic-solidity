@@ -72,7 +72,8 @@ jobs:
           cmake --build . --config Release -j 2
 
       # Archive binary
-      - name: Archive binary
+      - name: Archive binary (Linux & macOS)
+        if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
         run: |
           cd build
@@ -82,9 +83,14 @@ jobs:
             tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
           fi
+
+      - name: Archive binary (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell
+        run: |
+          cd build
+          Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
 
       # Upload artifacts
       - name: Upload Artifact
