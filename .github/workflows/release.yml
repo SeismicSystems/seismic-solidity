@@ -29,39 +29,39 @@ jobs:
           submodules: recursive
 
       # Set up dependencies
-      - name: Set up dependencies
+      - name: Set up dependencies (Linux & macOS)
+        if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update
             sudo apt-get install -y build-essential python3 python3-pip \
               zlib1g-dev libboost-all-dev libssl-dev ccache
-          elif [ "${{ matrix.os }}" = "macos-latest" ] || [ "${{ matrix.os }}" = "macos-13" ]; then
+          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
             brew update
             brew install boost openssl ccache
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Install Chocolatey for package management
-            Set-ExecutionPolicy Bypass -Scope Process -Force; `
-            [System.Net.ServicePointManager]::SecurityProtocol = `
-              [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
-            iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-            # Install required tools
-            choco install -y cmake --installargs '"ADD_CMAKE_TO_PATH=System"'
-            choco install -y visualstudio2019buildtools --package-parameters `
-              "--add Microsoft.VisualStudio.Workload.VCTools `
-              --includeRecommended --includeOptional"
-            choco install -y python
+      - name: Set up dependencies (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: pwsh
+        run: |
+          # Install Chocolatey for package management
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
-            # Download Boost
-            Invoke-WebRequest -Uri https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip `
-              -OutFile boost.zip
-            Expand-Archive boost.zip -DestinationPath C:\boost
+          # Install required tools
+          choco install -y cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+          choco install -y visualstudio2019buildtools --package-parameters `
+            "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional"
+          choco install -y python
 
-            # Build Boost
-            cd C:\boost\boost_1_82_0
-            ./bootstrap.bat
-            ./b2 install --prefix=C:\boost\boost-install --build-type=complete toolset=msvc link=static runtime-link=static address-model=64 architecture=x86
+          # Download and build Boost
+          Invoke-WebRequest -Uri https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip -OutFile boost.zip
+          Expand-Archive boost.zip -DestinationPath C:\boost
+          cd C:\boost\boost_1_82_0
+          ./bootstrap.bat
+          ./b2 install --prefix=C:\boost\boost-install --build-type=complete toolset=msvc link=static runtime-link=static address-model=64 architecture=x86
 
       # Build Seismic Solidity
       - name: Build Seismic Solidity
@@ -98,7 +98,6 @@ jobs:
             tar -czvf "seismic-solc-linux-${{ matrix.arch }}.tar.gz" solc/solc
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
             Compress-Archive -Path solc/Release/solc.exe -DestinationPath "seismic-solc-windows-${{ matrix.arch }}.zip"
-          fi
 
       # Upload artifacts
       - name: Upload Artifact
