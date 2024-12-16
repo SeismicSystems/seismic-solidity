@@ -1479,6 +1479,23 @@ bool FixedBytesType::operator==(Type const& _other) const
 	return other.m_bytes == m_bytes;
 }
 
+BoolResult BoolType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (*this == _convertTo)
+		return true;
+	else if (_convertTo.category() == Category::ShieldedBool)
+		return true;
+	else
+		return false;
+}
+
+BoolResult BoolType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	return false;
+}
+
 u256 BoolType::literalValue(Literal const* _literal) const
 {
 	solAssert(_literal, "");
@@ -1508,6 +1525,24 @@ TypeResult BoolType::binaryOperatorResult(Token _operator, Type const* _other) c
 		return _other;
 	else
 		return nullptr;
+}
+
+
+BoolResult ShieldedBoolType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (*this == _convertTo)
+		return true;
+	else if (_convertTo.category() == Category::Bool)
+		return true;
+	else
+		return false;
+}
+
+BoolResult ShieldedBoolType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	return false;
 }
 
 Type const* ContractType::encodingType() const
