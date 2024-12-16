@@ -205,6 +205,7 @@ public:
 	static Type const* commonType(Type const* _a, Type const* _b);
 
 	virtual Category category() const = 0;
+	virtual bool isShielded() const { return false; }
 	virtual bool containsTypeCategory(Category _category) const { return category() == _category; }
 	/// @returns a valid solidity identifier such that two types should compare equal if and
 	/// only if they have the same identifier.
@@ -494,6 +495,7 @@ public:
 
 	Category category() const override { return Category::ShieldedAddress; }
 
+	bool isShielded() const override { return true; }
 	std::string richIdentifier() const override;
 
 	virtual unsigned storageBytes() const override { return 32; }
@@ -569,6 +571,7 @@ public:
 	}
 
 	virtual unsigned storageBytes() const override { return 32; }
+	bool isShielded() const override { return true; }
 
 	Category category() const override { return Category::ShieldedInteger; }
 
@@ -811,6 +814,7 @@ public:
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 
+	bool isShielded() const override { return true; }
     unsigned storageBytes() const override { return 32; }
 
 	std::string toString(bool) const override { return "sbool"; }

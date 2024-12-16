@@ -207,7 +207,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			else if (directCopy)
 			{
 				solAssert(byteOffsetSize == 0, "Byte offset for direct copy.");
-				if (sourceBaseType->category() == Type::Category::ShieldedInteger || sourceBaseType->category() == Type::Category::ShieldedAddress)
+				if (sourceBaseType->isShielded())
 				_context
 					<< Instruction::DUP3 << Instruction::CLOAD
 					<< Instruction::DUP3 << Instruction::CSTORE;
