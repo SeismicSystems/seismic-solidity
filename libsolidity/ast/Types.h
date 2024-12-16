@@ -182,6 +182,7 @@ public:
 		RationalNumber,
 		StringLiteral,
 		Bool,
+		ShieldedBool,
 		FixedPoint,
 		Array,
 		ArraySlice,
@@ -796,6 +797,19 @@ public:
 	u256 literalValue(Literal const* _literal) const override;
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
+};
+/**
+ * The shielded boolean type.
+ */
+class ShieldedBoolType : public BoolType
+{
+public:
+    Category category() const override { return Category::ShieldedBool; }
+    std::string richIdentifier() const override { return "t_sbool"; }
+
+    unsigned storageBytes() const override { return 32; }
+
+	std::string toString(bool) const override { return "sbool"; }
 };
 
 /**
