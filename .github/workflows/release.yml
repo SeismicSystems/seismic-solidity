@@ -56,6 +56,7 @@ jobs:
 
       # Build Seismic Solidity
       - name: Build Seismic Solidity on Linux & macOS
+        if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
         run: |
           mkdir build
@@ -76,13 +77,13 @@ jobs:
         run: |
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            tar -czvf seismic-solc-macos-arm64.tar.gz solc/solc
+            tar -czvf ssolc-macos-arm64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "macos-13" ]; then
-            tar -czvf seismic-solc-macos-x86_64.tar.gz solc/solc
+            tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            tar -czvf "seismic-solc-linux-${{ matrix.arch }}.tar.gz" solc/solc
+            tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            Compress-Archive -Path solc/Release/solc.exe -DestinationPath "seismic-solc-windows-${{ matrix.arch }}.zip"
+            Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
           fi
 
       # Upload artifacts
