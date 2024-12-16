@@ -44,28 +44,18 @@ jobs:
 
       - name: Set up dependencies (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
-        shell: pwsh
+        shell: powershell.exe
         run: |
-          # Install Chocolatey for package management
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+          .\scripts\install_deps.ps1
 
-          # Install required tools
-          choco install -y cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-          choco install -y visualstudio2019buildtools --package-parameters `
-            "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional"
-          choco install -y python
-
-          # Download and build Boost
-          Invoke-WebRequest -Uri https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip -OutFile boost.zip
-          Expand-Archive boost.zip -DestinationPath C:\boost
-          cd C:\boost\boost_1_82_0
-          ./bootstrap.bat
-          ./b2 install --prefix=C:\boost\boost-install --build-type=complete toolset=msvc link=static runtime-link=static address-model=64 architecture=x86
+      - name: Build Seismic Solidity on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell.exe
+        run: |
+          .\.circleci\build_win.ps1
 
       # Build Seismic Solidity
-      - name: Build Seismic Solidity
+      - name: Build Seismic Solidity on Linux & macOS
         shell: bash
         run: |
           mkdir build
@@ -74,15 +64,9 @@ jobs:
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF \
-              -DBoost_DIR=C:/boost/boost-install/lib/cmake/Boost \
-              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
-          else
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF
+              -DUSE_Z3=OFF -DPEDANTIC=OFF            
           fi
           cmake --build . --config Release -j 2
 
