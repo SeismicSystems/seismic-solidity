@@ -123,4 +123,4 @@ jobs:
             --repo SeismicSystems/seismic-solidity-releases \
             --title "Release for ${{ github.ref_name }}" \
             --notes "Automated release for commit ${{ github.sha }}." \
-            binaries-*.*
+            binaries-*
