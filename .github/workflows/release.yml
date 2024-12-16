@@ -28,12 +28,6 @@ jobs:
         with:
           submodules: recursive
 
-      # Setup CMake
-      - name: Setup CMake
-        uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: "3.21.3"
-
       # Set up dependencies
       - name: Set up dependencies
         shell: bash
@@ -46,13 +40,28 @@ jobs:
             brew update
             brew install boost openssl ccache
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            git clone https://github.com/Microsoft/vcpkg.git
-            cd vcpkg
-            ./bootstrap-vcpkg.bat
-            ./vcpkg install boost --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
-            ./vcpkg install zlib --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
-            ./vcpkg install openssl --triplet ${{ matrix.arch == 'x86_64' && 'x64-windows' || 'arm64-windows' }}
-          fi
+            # Install Chocolatey for package management
+            Set-ExecutionPolicy Bypass -Scope Process -Force; `
+            [System.Net.ServicePointManager]::SecurityProtocol = `
+              [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; `
+            iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+            # Install required tools
+            choco install -y cmake --installargs '"ADD_CMAKE_TO_PATH=System"'
+            choco install -y visualstudio2019buildtools --package-parameters `
+              "--add Microsoft.VisualStudio.Workload.VCTools `
+              --includeRecommended --includeOptional"
+            choco install -y python
+
+            # Download Boost
+            Invoke-WebRequest -Uri https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip `
+              -OutFile boost.zip
+            Expand-Archive boost.zip -DestinationPath C:\boost
+
+            # Build Boost
+            cd C:\boost\boost_1_82_0
+            ./bootstrap.bat
+            ./b2 install --prefix=C:\boost\boost-install --build-type=complete toolset=msvc link=static runtime-link=static address-model=64 architecture=x86
 
       # Build Seismic Solidity
       - name: Build Seismic Solidity
@@ -65,10 +74,11 @@ jobs:
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cmake .. -G "Visual Studio 17 2022" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
+            cmake .. -G "Visual Studio 16 2019" -A ${{ matrix.arch == 'x86_64' && 'x64' || 'ARM64' }} \
               -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF \
-              -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake
+              -DBoost_DIR=C:/boost/boost-install/lib/cmake/Boost \
+              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
           else
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
@@ -87,7 +97,7 @@ jobs:
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             tar -czvf "seismic-solc-linux-${{ matrix.arch }}.tar.gz" solc/solc
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            7z a "seismic-solc-windows-${{ matrix.arch }}.zip" "solc/Release/solc.exe"
+            Compress-Archive -Path solc/Release/solc.exe -DestinationPath "seismic-solc-windows-${{ matrix.arch }}.zip"
           fi
 
       # Upload artifacts
