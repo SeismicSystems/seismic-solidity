@@ -26,6 +26,7 @@ using namespace solidity::frontend;
 using namespace solidity::util;
 
 BoolType const TypeProvider::m_boolean{};
+ShieldedBoolType const TypeProvider::m_shieldedBoolean{};
 InaccessibleDynamicType const TypeProvider::m_inaccessibleDynamic{};
 
 /// The string and bytes unique_ptrs are initialized when they are first used because
@@ -341,6 +342,8 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 	}
 	case Token::Bool:
 		return boolean();
+	case Token::SBool:
+		return shieldedBoolean();
 	case Token::Bytes:
 		return bytesStorage();
 	case Token::String:
