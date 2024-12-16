@@ -6,9 +6,6 @@ if ("$Env:FORCE_RELEASE" -Or "$Env:CIRCLE_TAG") {
     New-Item prerelease.txt -type file
     Write-Host "Building release version."
 } else {
-    # Use last commit date rather than build date to avoid ending up with builds for
-    # different platforms having different version strings (and therefore producing different bytecode)
-    # if the CI is triggered just before midnight.
     $last_commit_timestamp = git log -1 --date=unix --format=%cd HEAD
     $last_commit_date = (Get-Date -Date "1970-01-01 00:00:00Z").ToUniversalTime().AddSeconds($last_commit_timestamp).ToString("yyyy.M.d")
     -join("ci.", $last_commit_date) | Out-File -Encoding ascii prerelease.txt
@@ -28,11 +25,18 @@ Write-Host "Using Boost Directory: $boost_dir"
 
 if (-not $?) { throw "CMake configure failed." }
 
-# Explicitly specify msbuild path
-$msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+# Dynamically locate msbuild using vswhere
+$msbuildPath = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" `
+    -latest `
+    -products * `
+    -requires Microsoft.Component.MSBuild `
+    -find MSBuild\**\Bin\MSBuild.exe
+
 if (-not (Test-Path $msbuildPath)) {
-    throw "msbuild not found at $msbuildPath"
+    throw "msbuild not found. Ensure Visual Studio Build Tools are installed with MSBuild."
 }
+
+Write-Host "Using msbuild at: $msbuildPath"
 
 & $msbuildPath solidity.sln /p:Configuration=Release /m:10 /v:minimal
 if (-not $?) { throw "Build failed." }
