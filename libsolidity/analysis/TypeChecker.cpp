@@ -533,7 +533,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 	}
 	else if (_variable.visibility() >= Visibility::Public)
 	{
-		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
+		if (varType->containsShieldedType())
         {
 			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded Types are not supported for public state variables.");
         }
@@ -4119,7 +4119,7 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 	for (ASTPointer<VariableDeclaration> const& var: _callable.parameters())
 	{
 		Type const* varType = type(*var);
-		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
+		if (varType->containsShieldedType())
         {
             m_errorReporter.fatalTypeError(
                 4626_error,
