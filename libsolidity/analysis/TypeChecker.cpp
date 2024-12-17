@@ -1332,6 +1332,29 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 			"Literals converted to shielded integers will leak during contract deployment."
 		);
 		}
+		if (auto literal = dynamic_cast<Literal const*>(_statement.initialValue()))
+		{
+			if (var.annotation().type->category()==Type::Category::ShieldedBool)
+			{
+				std::string val = literal->value();
+				if (val == "true" || val == "false")
+					m_errorReporter.warning(
+					9661_error,
+					_statement.location(),
+					"Bool Literals converted to shielded bools will leak during contract deployment."
+					);
+			}
+			else if (literal->looksLikeAddress() && var.annotation().type->category()==Type::Category::ShieldedAddress)
+			{
+				if (literal->passesAddressChecksum()) {
+					m_errorReporter.warning(
+					9662_error,
+					_statement.location(),
+					"Address Literals converted to shielded addresses will leak during contract deployment."
+					);
+				}
+			}
+		}
 		else if (valueComponentType->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
 		{
 			m_errorReporter.warning(
