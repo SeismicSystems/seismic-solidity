@@ -1622,13 +1622,13 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 	return res;
 }
 
-bool CompositeType::containsTypeCategory(Type::Category _category) const
+bool CompositeType::containsShieldedType() const
 {
     std::unordered_set<std::string> visited;
-    return containsTypeCategoryRecurse(_category, visited);
+    return containsShieldedTypeRecurse(visited);
 }
 
-bool CompositeType::containsTypeCategoryRecurse(Type::Category _category, std::unordered_set<std::string>& visited) const
+bool CompositeType::containsShieldedTypeRecurse(std::unordered_set<std::string>& visited) const
 {
 	std::string id = richIdentifier();
 	// Avoid infinite recursion
@@ -1638,21 +1638,21 @@ bool CompositeType::containsTypeCategoryRecurse(Type::Category _category, std::u
     }
     visited.insert(id);
 
-    if (category() == _category)
+    if (isShielded())
     {
         return true;
     }
 
     for (Type const* subType : decomposition())
     {
-        if (subType->category() == _category)
+        if (subType->isShielded())
         {
             return true;
         }
 
         if (auto compositeSubType = dynamic_cast<CompositeType const*>(subType))
         {
-            if (compositeSubType->containsTypeCategoryRecurse(_category, visited))
+            if (compositeSubType->containsShieldedTypeRecurse(visited))
             {
                 return true;
             }
