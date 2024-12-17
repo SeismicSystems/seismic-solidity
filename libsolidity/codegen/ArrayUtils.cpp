@@ -129,7 +129,7 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			{
 				// store new target length
 				solAssert(!_targetType.isByteArrayOrString());
-				if (_targetType.containsTypeCategory(Type::Category::ShieldedInteger) || _targetType.containsTypeCategory(Type::Category::ShieldedAddress)) {
+				if (_targetType.containsShieldedType()) {
 					_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::CSTORE;
 				}
 				else {
@@ -837,7 +837,7 @@ void ArrayUtils::incrementDynamicArraySize(ArrayType const& _type) const
 	}
 	else
 	{
-		if(_type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress))
+		if(_type.containsShieldedType())
 			m_context.appendInlineAssembly(R"({
 				let new_length := add(cload(ref), 1)
 				cstore(ref, new_length)
@@ -936,7 +936,7 @@ void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
 		}
 
 		// Stack: ArrayReference newLength
-		if (_type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress))
+		if (_type.containsShieldedType())
 			m_context << Instruction::SWAP1 << Instruction::CSTORE;
 		else
 			m_context << Instruction::SWAP1 << Instruction::SSTORE;
@@ -1039,7 +1039,7 @@ void ArrayUtils::retrieveLength(ArrayType const& _arrayType, unsigned _stackDept
 			m_context << Instruction::MLOAD;
 			break;
 		case DataLocation::Storage:
-			if(_arrayType.containsTypeCategory(Type::Category::ShieldedInteger) || _arrayType.containsTypeCategory(Type::Category::ShieldedAddress))
+			if(_arrayType.containsShieldedType())
 				m_context << Instruction::CLOAD;
 			else
 				m_context << Instruction::SLOAD;
