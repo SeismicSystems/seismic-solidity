@@ -131,10 +131,14 @@ jobs:
           echo "Found archive files:"
           echo "$ARCHIVES"
       
+           # Use shortened SHA directly for tag and title
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "Using shortened SHA: $SHORT_SHA"
+
           # Upload the files as release assets
-          gh release create ${{ github.sha }} \
+          gh release create "$SHORT_SHA" \
             --repo SeismicSystems/seismic-solidity-releases \
-            --title "Release for ${{ github.ref_name }}" \
+            --title "Release for $SHORT_SHA" \
             --notes "Automated release for commit ${{ github.sha }}." \
             $ARCHIVES
       
