@@ -1303,7 +1303,7 @@ std::string YulUtilFunctions::wrappingIntExpFunction(
 std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 {
 	std::string functionName = "array_length_" + _type.identifier();
-	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+	bool isShielded = _type.containsShieldedType();
 
 	return m_functionCollector.createFunction(functionName, [&, isShielded]() {
 		Whiskers w(R"(
@@ -1367,7 +1367,7 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 	if (_type.isByteArrayOrString())
 		return resizeDynamicByteArrayFunction(_type);
 
-	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+	bool isShielded = _type.containsShieldedType();
 
 	std::string functionName = "resize_array_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
@@ -1709,7 +1709,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 		_fromType = _type.baseType();
 	else if (_fromType->isValueType())
 		solUnimplementedAssert(*_fromType == *_type.baseType());
-	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+	bool isShielded = _type.containsShieldedType();
 	std::string functionName =
 		std::string{"array_push_from_"} +
 		_fromType->identifier() +
@@ -1779,7 +1779,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 	solAssert(_type.location() == DataLocation::Storage, "");
 	solAssert(_type.isDynamicallySized(), "");
 	solUnimplementedAssert(_type.baseType()->storageBytes() <= 32, "Base type is not yet implemented.");
-	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+	bool isShielded = _type.containsShieldedType();
 	std::string functionName = "array_push_zero_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
@@ -1812,7 +1812,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 std::string YulUtilFunctions::partialClearStorageSlotFunction(ArrayType const& _type)
 {
 	std::string functionName = "partial_clear_storage_slot";
-	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+	bool isShielded = _type.containsShieldedType();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
 		function <functionName>(slot, offset) {
@@ -1898,7 +1898,7 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 
 	std::string functionName = "clear_struct_storage_" + _type.identifier();
 
-	bool isShielded = _type.containsTypeCategory(Type::Category::ShieldedInteger) || _type.containsTypeCategory(Type::Category::ShieldedAddress);
+	bool isShielded = _type.containsShieldedType();
 
 	return m_functionCollector.createFunction(functionName, [&] {
 		MemberList::MemberMap structMembers = _type.nativeMembers(nullptr);
@@ -2242,8 +2242,8 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 		unsigned itemsPerSlot = 32 / _toType.storageStride();
 		templ("itemsPerSlot", std::to_string(itemsPerSlot));
 		templ("multipleItemsPerSlotDst", itemsPerSlot > 1);
-		templ("storeOpcode", _toType.containsTypeCategory(Type::Category::ShieldedInteger)? "cstore" : "sstore");
-		templ("loadOpcode", _fromType.containsTypeCategory(Type::Category::ShieldedInteger)? "cload" : "sload");
+		templ("storeOpcode", "sstore");
+		templ("loadOpcode",  "sload");
 		bool sameTypeFromStorage = fromStorage && (*_fromType.baseType() == *_toType.baseType());
 		if (auto functionType = dynamic_cast<FunctionType const*>(_fromType.baseType()))
 		{
@@ -2831,7 +2831,7 @@ std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::o
 			templ("extract", extractFromStorageValue(_type, *_offset));
 		else
 			templ("extract", extractFromStorageValueDynamic(_type));
-		templ("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload");
+		templ("loadOpcode", _type.isShielded()? "cload" : "sload");
 		auto const* funType = dynamic_cast<FunctionType const*>(&_type);
 		bool split = _splitFunctionTypes && funType && funType->kind() == FunctionType::Kind::External;
 		templ("split", split);
@@ -2942,8 +2942,8 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("fromValues", suffixedVariableNameList("value_", 0, _fromType.sizeOnStack()))
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
 			("prepare", prepareStoreFunction(_toType))
-			("storeOpcode", (_toType.category() == Type::Category::ShieldedInteger || _toType.category() == Type::Category::ShieldedAddress) ? "cstore" : "sstore")
-			("loadOpcode", (_toType.category() == Type::Category::ShieldedInteger || _toType.category() == Type::Category::ShieldedAddress) ? "cload" : "sload")
+			("storeOpcode", (_toType.isShielded()) ? "cstore" : "sstore")
+			("loadOpcode", (_toType.isShielded()) ? "cload" : "sload")
 			.render();
 		}
 
