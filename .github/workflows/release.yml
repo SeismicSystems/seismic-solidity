@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - seismic
-      - feature/**
 
 jobs:
   build-and-release:
