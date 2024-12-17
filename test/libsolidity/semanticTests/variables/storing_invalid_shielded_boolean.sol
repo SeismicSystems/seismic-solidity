@@ -1,6 +1,6 @@
 contract C {
     event Ev(bool);
-    sbool public perm;
+    sbool perm;
     function set() public returns(uint) {
         sbool tmp;
         assembly {
@@ -9,7 +9,12 @@ contract C {
         perm = tmp;
         return 1;
     }
-    function ret() public returns(bool) {
+
+    function getPerm() public view returns(bool) {
+        return bool(perm);
+    }
+
+    function ret() public view returns(bool) {
         sbool tmp;
         assembly {
             tmp := 5
@@ -27,7 +32,7 @@ contract C {
 }
 // ----
 // set() -> 1
-// perm() -> true
+// getPerm() -> true
 // ret() -> true
 // ev() -> 1
 // ~ emit Ev(bool): true
