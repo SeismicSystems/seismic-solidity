@@ -119,8 +119,22 @@ jobs:
       - name: Create Single Release
         run: |
           cd artifacts/
+          # Find all tar.gz and zip files recursively
+          ARCHIVES=$(find . -type f \( -name "*.tar.gz" -o -name "*.zip" \))
+      
+          # Check if files were found
+          if [ -z "$ARCHIVES" ]; then
+            echo "Error: No archive files found in artifacts directory!"
+            exit 1
+          fi
+      
+          echo "Found archive files:"
+          echo "$ARCHIVES"
+      
+          # Upload the files as release assets
           gh release create ${{ github.sha }} \
             --repo SeismicSystems/seismic-solidity-releases \
             --title "Release for ${{ github.ref_name }}" \
             --notes "Automated release for commit ${{ github.sha }}." \
-            binaries-*
+            $ARCHIVES
+      
