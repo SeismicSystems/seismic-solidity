@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - seismic
-        # - feature/**
 
 jobs:
   build-and-release:
@@ -13,11 +12,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]  # add ubuntu-latest later
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
-            arch: x86_64  # Exclude x86_64 for macos-latest
+            arch: x86_64
+          - os: macos-13
+            arch: arm64
 
     steps:
       # Checkout source code
@@ -26,75 +27,117 @@ jobs:
         with:
           submodules: recursive
 
-      # Setup CMake
-      - name: Setup CMake
-        uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: "3.21.3"
-
       # Set up dependencies
-      - name: Set up dependencies
+      - name: Set up dependencies (Linux & macOS)
+        if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update
             sudo apt-get install -y build-essential python3 python3-pip \
               zlib1g-dev libboost-all-dev libssl-dev ccache
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+            brew update
             brew install boost openssl ccache
           fi
 
+      - name: Set up dependencies (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell
+        run: |
+          .\scripts\install_deps.ps1
+
+      - name: Build Seismic Solidity on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell
+        run: |
+          .\.circleci\build_win.ps1
+
       # Build Seismic Solidity
-      - name: Build Seismic Solidity
+      - name: Build Seismic Solidity on Linux & macOS
+        if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
         run: |
           mkdir build
           cd build
-          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
-          else
+          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF
+              -DUSE_Z3=OFF -DPEDANTIC=OFF            
           fi
           cmake --build . --config Release -j 2
 
       # Archive binary
-      - name: Archive binary
+      - name: Archive binary (Linux & macOS)
+        if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
         run: |
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
             tar -czvf ssolc-macos-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-13" ]; then
+            tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            tar -czvf "ssolc-linux-${{ matrix.arch }}.tar.gz" solc/solc
+            tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
           fi
 
-      # Install GitHub CLI
-      - name: Install GitHub CLI
-        shell: bash
-        run: |
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo apt-get install -y gh
-          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-            brew install gh
-          fi
-
-      # Authenticate GitHub CLI
-      - name: Authenticate GitHub CLI
-        shell: bash
-        run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
-
-      # Create Release and Upload Assets
-      - name: Create Release and Upload Assets
-        shell: bash
+      - name: Archive binary (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell
         run: |
           cd build
-          gh release create release-${{ github.run_number }}-${{ matrix.os }}-${{ matrix.arch }} \
-            --repo SeismicSystems/seismic-solidity-releases \
-            --title "${{ matrix.os }} (${{
-              matrix.arch }}) Release for ${{ github.ref_name }}" \
-            --notes "Automated release for commit ${{ github.sha }} on ${{ github.ref_name }}." \
-            ssolc-*.*
+          Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
 
+      # Upload artifacts
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/*
+
+  release:
+    name: Create Release
+    needs: build-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts/
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
+
+      - name: Create Single Release
+        run: |
+          cd artifacts/
+          # Find all tar.gz and zip files recursively
+          ARCHIVES=$(find . -type f \( -name "*.tar.gz" -o -name "*.zip" \))
+      
+          # Check if files were found
+          if [ -z "$ARCHIVES" ]; then
+            echo "Error: No archive files found in artifacts directory!"
+            exit 1
+          fi
+      
+          echo "Found archive files:"
+          echo "$ARCHIVES"
+      
+           # Use shortened SHA directly for tag and title
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "Using shortened SHA: $SHORT_SHA"
+
+          # Upload the files as release assets
+          gh release create "$SHORT_SHA" \
+            --repo SeismicSystems/seismic-solidity-releases \
+            --title "Release for $SHORT_SHA" \
+            --notes "Automated release for commit ${{ github.sha }}." \
+            $ARCHIVES
+      
