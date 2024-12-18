@@ -21,6 +21,7 @@
  * Type analyzer and checker.
  */
 
+#include "libsolidity/ast/Types.h"
 #include <libsolidity/analysis/TypeChecker.h>
 #include <libsolidity/ast/AST.h>
 #include <libsolidity/ast/ASTUtils.h>
@@ -1332,26 +1333,33 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 			"Literals converted to shielded integers will leak during contract deployment."
 		);
 		}
-		if (auto literal = dynamic_cast<Literal const*>(_statement.initialValue()))
+		if (auto funcCall = dynamic_cast<FunctionCall const*>(_statement.initialValue()))
 		{
-			if (var.annotation().type->category()==Type::Category::ShieldedBool)
+			auto const& args = funcCall->arguments();
+			if (!args.empty())
 			{
-				std::string val = literal->value();
-				if (val == "true" || val == "false")
-					m_errorReporter.warning(
-					9661_error,
-					_statement.location(),
-					"Bool Literals converted to shielded bools will leak during contract deployment."
-					);
-			}
-			else if (literal->looksLikeAddress() && var.annotation().type->category()==Type::Category::ShieldedAddress)
-			{
-				if (literal->passesAddressChecksum()) {
-					m_errorReporter.warning(
-					9662_error,
-					_statement.location(),
-					"Address Literals converted to shielded addresses will leak during contract deployment."
-					);
+				if (auto literal = dynamic_cast<Literal const*>(args.front().get()))
+				{
+					if (var.annotation().type->category()==Type::Category::ShieldedBool)
+					{
+						std::string val = literal->value();
+						if (val == "true" || val == "false")
+							m_errorReporter.warning(
+							9661_error,
+							_statement.location(),
+							"Bool Literals converted to shielded bools will leak during contract deployment."
+							);
+					}
+					else if (literal->looksLikeAddress() && var.annotation().type->category()==Type::Category::ShieldedAddress)
+					{
+						if (literal->passesAddressChecksum()) {
+							m_errorReporter.warning(
+							9662_error,
+							_statement.location(),
+							"Address Literals converted to shielded addresses will leak during contract deployment."
+							);
+						}
+					}
 				}
 			}
 		}
@@ -1784,10 +1792,19 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 
 	// By default use the type we'd expect from correct code. This way we can continue analysis
 	// of other expressions in a sensible way in case of a non-fatal error.
-	Type const* resultType =
-		TokenTraits::isCompareOp(_operation.getOperator()) ?
-		TypeProvider::boolean() :
-		commonType;
+
+	Type const* resultType = nullptr;
+	if (TokenTraits::isCompareOp(_operation.getOperator()))
+	{
+		if (commonType->category() == Type::Category::ShieldedBool)
+			resultType = TypeProvider::shieldedBoolean();
+		else
+			resultType = TypeProvider::boolean();
+	}
+	else
+	{
+		resultType = commonType;
+	}
 
 	if (operatorDefinition)
 	{
