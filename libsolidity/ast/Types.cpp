@@ -1087,7 +1087,6 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	switch (_convertTo.category())
 	{
 	case Category::Integer:
-	case Category::ShieldedInteger:
 	{
 		if (isFractional())
 			return false;
@@ -1129,8 +1128,15 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 			!isFractional() &&
 			integerType() &&
 			(integerType()->numBits() <= 160));
-	else if (category == Category::Integer || category == Category::ShieldedInteger)
+	else if (category == Category::Integer)
 		return false;
+	else if (category == Category::ShieldedInteger)
+	{
+		if (isFractional())
+			return false;
+		ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		return fitsIntegerType(m_value.numerator(), targetType);
+	}
 	else if (auto enumType = dynamic_cast<EnumType const*>(&_convertTo))
 		if (isNegative() || isFractional() || m_value >= enumType->numberOfMembers())
 			return false;

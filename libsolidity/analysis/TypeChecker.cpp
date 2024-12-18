@@ -1325,14 +1325,6 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
-		else if (valueComponentType->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
-		{
-			m_errorReporter.warning(
-			9660_error,
-			_statement.location(),
-			"Literals converted to shielded integers will leak during contract deployment."
-		);
-		}
 		if (auto funcCall = dynamic_cast<FunctionCall const*>(_statement.initialValue()))
 		{
 			auto const& args = funcCall->arguments();
@@ -1360,16 +1352,24 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 							);
 						}
 					}
+					else if (args.front()->annotation().type->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
+					{
+						m_errorReporter.warning(
+						9660_error,
+						_statement.location(),
+						"Literals converted to shielded integers will leak during contract deployment."
+					);
+					}
+					else if (args.front()->annotation().type->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
+					{
+						m_errorReporter.warning(
+						1457_error,
+						_statement.location(),
+						"Enums converted to shielded integers will leak during contract deployment."
+					);
+					}
 				}
 			}
-		}
-		else if (valueComponentType->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
-		{
-			m_errorReporter.warning(
-			1457_error,
-			_statement.location(),
-			"Enums converted to shielded integers will leak during contract deployment."
-		);
 		}
 	}
 
