@@ -625,9 +625,6 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (_convertTo.category() == Category::Integer)
 	{
-		if (category() == Category::ShieldedInteger) {
-			return false;
-		}
 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
 		// disallowing unsigned to signed conversion of different bits
 		if (isSigned() != convertTo.isSigned())
@@ -641,18 +638,6 @@ BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 	{
 		FixedPointType const& convertTo = dynamic_cast<FixedPointType const&>(_convertTo);
 		return maxValue() <= convertTo.maxIntegerValue() && minValue() >= convertTo.minIntegerValue();
-	}
-	else if (_convertTo.category() == Category::ShieldedInteger)
-	{
-		ShieldedIntegerType const& convertTo = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
-		// disallowing unsigned to signed conversion of different bits
-		if (isSigned() != convertTo.isSigned())
-			return false;
-		else if (convertTo.numBits() < m_bits) {
-			return false;
-		}
-		else
-			return true;
 	}
 	else
 		return false;
@@ -808,6 +793,45 @@ std::string ShieldedIntegerType::toString(bool) const
 	std::string prefix = isSigned() ? "sint" : "suint";
 	return prefix + util::toString(m_bits);
 }
+
+BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (_convertTo.category() == Category::ShieldedInteger)
+	{
+		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
+		// disallowing unsigned to signed conversion of different bits
+		if (isSigned() != convertTo.isSigned())
+			return false;
+		else if (convertTo.numBits() < m_bits)
+			return false;
+		else
+			return true;
+	}
+	else
+		return false;
+}
+
+BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
+		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
+	else if (auto addressType = dynamic_cast<ShieldedAddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			!isSigned() &&
+			(numBits() == 160);
+	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
+		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
+	else if (dynamic_cast<EnumType const*>(&_convertTo))
+		return true;
+	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
+		return (isSigned() == fixedPointType->isSigned()) && (numBits() == fixedPointType->numBits());
+
+	return false;
+}
+
 
 FixedPointType::FixedPointType(unsigned _totalBits, unsigned _fractionalDigits, FixedPointType::Modifier _modifier):
 	m_totalBits(_totalBits), m_fractionalDigits(_fractionalDigits), m_modifier(_modifier)
@@ -1483,8 +1507,6 @@ BoolResult BoolType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (*this == _convertTo)
 		return true;
-	else if (_convertTo.category() == Category::ShieldedBool)
-		return true;
 	else
 		return false;
 }
@@ -1492,6 +1514,8 @@ BoolResult BoolType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 BoolResult BoolType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	else if (_convertTo.category() == Category::ShieldedBool)
 		return true;
 	return false;
 }
@@ -1532,8 +1556,6 @@ BoolResult ShieldedBoolType::isImplicitlyConvertibleTo(Type const& _convertTo) c
 {
 	if (*this == _convertTo)
 		return true;
-	else if (_convertTo.category() == Category::Bool)
-		return true;
 	else
 		return false;
 }
@@ -1541,6 +1563,8 @@ BoolResult ShieldedBoolType::isImplicitlyConvertibleTo(Type const& _convertTo) c
 BoolResult ShieldedBoolType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	else if (_convertTo.category() == Category::Bool)
 		return true;
 	return false;
 }

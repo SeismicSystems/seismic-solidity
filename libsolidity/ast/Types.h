@@ -573,6 +573,8 @@ public:
 	virtual unsigned storageBytes() const override { return 32; }
 	bool isShielded() const override { return true; }
 
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
@@ -588,7 +590,6 @@ public:
 private:
 	unsigned const m_bits;
 	Modifier const m_modifier;
-
 };
 
 /**
