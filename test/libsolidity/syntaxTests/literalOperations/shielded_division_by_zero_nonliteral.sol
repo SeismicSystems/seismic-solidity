@@ -1,4 +1,4 @@
 contract A {
-    constructor() { suint a; a / 0; }
+    constructor() { suint a; a / suint(0); }
 }
 // ----

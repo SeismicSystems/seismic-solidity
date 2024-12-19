@@ -6,4 +6,5 @@ contract c {
     }
 }
 // ----
+// TypeError 7407: (73-152): Type int_const 1 is not implicitly convertible to expected type suint256.
 // TypeError 2826: (180-219): Invalid literal value.

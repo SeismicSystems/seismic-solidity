@@ -18,11 +18,11 @@ contract C {
         suint x;
         suint y;
         suint g = true ? x : y;
-        g += 1; // Avoid unused var warning
+        g += suint(1); // Avoid unused var warning
 
         // sinteger constants
-        suint h = true ? 1 : 3;
-        h += 1; // Avoid unused var warning
+        suint h = true ? suint(1) : suint(3);
+        h += suint(1); // Avoid unused var warning
 
         // string literal
         string memory i = true ? "hello" : "world";
@@ -30,8 +30,8 @@ contract C {
     }
     function f2() public {
         // bool
-        bool j = true ? true : false;
-        j = j && true; // Avoid unused var warning
+        sbool j = true ? sbool(true) : sbool(false);
+        j = j && sbool(true); // Avoid unused var warning
 
         // real is not there yet.
 
@@ -68,14 +68,14 @@ contract C {
         enum_x = true ? enum_x : enum_y;
 
         // tuple
-        (suint n, suint o) = true ? (1, 2) : (3, 4);
+        (suint n, suint o) = true ? (suint(1), suint(2)) : (suint(3), suint(4));
         (n, o) = (o, n); // Avoid unused var warning
         // mapping
         mapping(suint8 => suint8) storage p = true ? table1 : table2;
-        p[0] = 0; // Avoid unused var warning
+        p[suint8(0)] = suint8(0); // Avoid unused var warning
         // typetype
         suint32 q = true ? suint32(1) : suint32(2);
-        q += 1; // Avoid unused var warning
+        q += suint32(1); // Avoid unused var warning
         // modifier doesn't fit in here
 
         // magic doesn't fit in here
@@ -84,6 +84,6 @@ contract C {
     }
 }
 // ----
-// Warning 2519: (1024-1038): This declaration shadows an existing declaration.
-// Warning 2018: (262-653): Function state mutability can be restricted to pure
-// Warning 2018: (658-1248): Function state mutability can be restricted to pure
+// Warning 2519: (1074-1088): This declaration shadows an existing declaration.
+// Warning 2018: (262-681): Function state mutability can be restricted to pure
+// Warning 2018: (686-1298): Function state mutability can be restricted to pure

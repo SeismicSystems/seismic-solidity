@@ -32,23 +32,22 @@ contract C {
     }
 }
 // ----
-// TypeError 2271: (231-236): Built-in binary operator > cannot be applied to types sbool and sbool.
-// TypeError 2271: (250-255): Built-in binary operator < cannot be applied to types sbool and sbool.
-// TypeError 2271: (269-275): Built-in binary operator >= cannot be applied to types sbool and sbool.
-// TypeError 2271: (289-295): Built-in binary operator <= cannot be applied to types sbool and sbool.
-// TypeError 2271: (309-314): Built-in binary operator & cannot be applied to types sbool and sbool.
-// TypeError 2271: (328-333): Built-in binary operator | cannot be applied to types sbool and sbool.
-// TypeError 2271: (347-352): Built-in binary operator ^ cannot be applied to types sbool and sbool.
-// TypeError 4907: (366-368): Built-in unary operator ~ cannot be applied to type sbool.
-// TypeError 4907: (382-384): Built-in unary operator ~ cannot be applied to type sbool.
-// TypeError 2271: (398-403): Built-in binary operator + cannot be applied to types sbool and sbool.
-// TypeError 2271: (417-422): Built-in binary operator - cannot be applied to types sbool and sbool.
-// TypeError 4907: (436-438): Built-in unary operator - cannot be applied to type sbool.
-// TypeError 4907: (452-454): Built-in unary operator - cannot be applied to type sbool.
-// TypeError 2271: (468-473): Built-in binary operator * cannot be applied to types sbool and sbool.
-// TypeError 2271: (487-492): Built-in binary operator / cannot be applied to types sbool and sbool.
-// TypeError 2271: (506-512): Built-in binary operator ** cannot be applied to types sbool and sbool.
-// TypeError 2271: (526-531): Built-in binary operator % cannot be applied to types sbool and sbool.
-// TypeError 2271: (545-551): Built-in binary operator << cannot be applied to types sbool and sbool.
-// TypeError 2271: (565-571): Built-in binary operator >> cannot be applied to types sbool and sbool.
-
+// TypeError 2271: (234-239): Built-in binary operator > cannot be applied to types sbool and sbool.
+// TypeError 2271: (253-258): Built-in binary operator < cannot be applied to types sbool and sbool.
+// TypeError 2271: (272-278): Built-in binary operator >= cannot be applied to types sbool and sbool.
+// TypeError 2271: (292-298): Built-in binary operator <= cannot be applied to types sbool and sbool.
+// TypeError 2271: (312-317): Built-in binary operator & cannot be applied to types sbool and sbool.
+// TypeError 2271: (331-336): Built-in binary operator | cannot be applied to types sbool and sbool.
+// TypeError 2271: (350-355): Built-in binary operator ^ cannot be applied to types sbool and sbool.
+// TypeError 4907: (369-371): Built-in unary operator ~ cannot be applied to type sbool.
+// TypeError 4907: (385-387): Built-in unary operator ~ cannot be applied to type sbool.
+// TypeError 2271: (401-406): Built-in binary operator + cannot be applied to types sbool and sbool.
+// TypeError 2271: (420-425): Built-in binary operator - cannot be applied to types sbool and sbool.
+// TypeError 4907: (439-441): Built-in unary operator - cannot be applied to type sbool.
+// TypeError 4907: (455-457): Built-in unary operator - cannot be applied to type sbool.
+// TypeError 2271: (471-476): Built-in binary operator * cannot be applied to types sbool and sbool.
+// TypeError 2271: (490-495): Built-in binary operator / cannot be applied to types sbool and sbool.
+// TypeError 2271: (509-515): Built-in binary operator ** cannot be applied to types sbool and sbool.
+// TypeError 2271: (529-534): Built-in binary operator % cannot be applied to types sbool and sbool.
+// TypeError 2271: (548-554): Built-in binary operator << cannot be applied to types sbool and sbool.
+// TypeError 2271: (568-574): Built-in binary operator >> cannot be applied to types sbool and sbool.

@@ -1,3 +1,3 @@
-contract C { function f() public { suint x = 2; x++; } }
+contract C { function f() public { suint x = suint(2); x++; } }
 
 // ----

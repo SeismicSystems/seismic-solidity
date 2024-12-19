@@ -1,4 +1,4 @@
-contract test { fallback() external { suint x = 1; !x; } }
+contract test { fallback() external { suint x = suint(1); !x; } }
 // ----
-// Warning 9660: (38-49): Literals converted to shielded integers will leak during contract deployment.
-// TypeError 4907: (51-53): Built-in unary operator ! cannot be applied to type suint256.
+// Warning 9660: (38-56): Literals converted to shielded integers will leak during contract deployment.
+// TypeError 4907: (58-60): Built-in unary operator ! cannot be applied to type suint256.
