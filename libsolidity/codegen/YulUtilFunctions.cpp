@@ -3538,9 +3538,9 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 		case Type::Category::ShieldedBool:
 		case Type::Category::Bool:
 		{
-			solAssert(_from == _to ||
+			solAssert((_from == _to) ||
 			    (toCategory == Type::Category::Bool && fromCategory == Type::Category::ShieldedBool) ||
-			    (fromCategory == Type::Category::ShieldedBool && toCategory == Type::Category::Bool),
+			    (toCategory == Type::Category::ShieldedBool && fromCategory == Type::Category::Bool),
 			    "Invalid conversion for bool.");
 
 			body =
