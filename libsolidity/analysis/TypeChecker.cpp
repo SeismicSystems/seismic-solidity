@@ -4095,7 +4095,7 @@ void TypeChecker::endVisit(UsingForDirective const& _usingFor)
 				else if (*returnParameterTypes.front() != *parameterTypes.front())
 					wrongReturnParametersMessage = "a value of the same type and data location as its parameters";
 			}
-			else if (returnParameterCount != 1 || (*returnParameterTypes.front() != *TypeProvider::boolean() || (*returnParameterTypes.front() != *TypeProvider::shieldedBoolean())))
+			else if (returnParameterCount != 1 || *returnParameterTypes.front() != *TypeProvider::boolean())
 				wrongReturnParametersMessage = "exactly one value of type bool";
 
 			solAssert(functionDefinition.returnParameterList());
