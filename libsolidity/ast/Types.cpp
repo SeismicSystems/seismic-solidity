@@ -2086,7 +2086,10 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 	MemberList::MemberMap members;
 	if (!isString())
 	{
-		members.emplace_back("length", TypeProvider::uint256());
+		if (containsShieldedType())
+			members.emplace_back("length", TypeProvider::shieldedUint256());
+		else
+			members.emplace_back("length", TypeProvider::uint256());
 		if (isDynamicallySized() && location() == DataLocation::Storage)
 		{
 			Type const* thisAsPointer = TypeProvider::withLocation(this, location(), true);
@@ -2119,7 +2122,10 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 Type const* ArrayType::encodingType() const
 {
 	if (location() == DataLocation::Storage)
-		return TypeProvider::uint256();
+		if (containsShieldedType())
+			return TypeProvider::shieldedUint256();
+		else
+			return TypeProvider::uint256();
 	else
 		return TypeProvider::withLocation(this, DataLocation::Memory, true);
 }
@@ -2127,7 +2133,10 @@ Type const* ArrayType::encodingType() const
 Type const* ArrayType::decodingType() const
 {
 	if (location() == DataLocation::Storage)
-		return TypeProvider::uint256();
+		if (containsShieldedType())
+			return TypeProvider::shieldedUint256();
+		else
+			return TypeProvider::uint256();
 	else
 		return this;
 }
