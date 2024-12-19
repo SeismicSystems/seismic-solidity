@@ -958,7 +958,7 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 
 bool TypeChecker::visit(IfStatement const& _ifStatement)
 {
-	expectType(_ifStatement.condition(), *TypeProvider::boolean());
+	expectBoolOrShieldedBool(_ifStatement.condition());
 	_ifStatement.trueStatement().accept(*this);
 	if (_ifStatement.falseStatement())
 		_ifStatement.falseStatement()->accept(*this);
@@ -1122,7 +1122,7 @@ void TypeChecker::endVisit(TryStatement const& _tryStatement)
 
 bool TypeChecker::visit(WhileStatement const& _whileStatement)
 {
-	expectType(_whileStatement.condition(), *TypeProvider::boolean());
+	expectBoolOrShieldedBool(_whileStatement.condition());
 	_whileStatement.body().accept(*this);
 	return false;
 }
@@ -1132,7 +1132,7 @@ bool TypeChecker::visit(ForStatement const& _forStatement)
 	if (_forStatement.initializationExpression())
 		_forStatement.initializationExpression()->accept(*this);
 	if (_forStatement.condition())
-		expectType(*_forStatement.condition(), *TypeProvider::boolean());
+		expectBoolOrShieldedBool(*_forStatement.condition());
 	if (_forStatement.loopExpression())
 		_forStatement.loopExpression()->accept(*this);
 	_forStatement.body().accept(*this);
@@ -1410,7 +1410,7 @@ void TypeChecker::endVisit(ExpressionStatement const& _statement)
 
 bool TypeChecker::visit(Conditional const& _conditional)
 {
-	expectType(_conditional.condition(), *TypeProvider::boolean());
+	expectBoolOrShieldedBool(_conditional.condition());
 
 	_conditional.trueExpression().accept(*this);
 	_conditional.falseExpression().accept(*this);
@@ -4095,7 +4095,7 @@ void TypeChecker::endVisit(UsingForDirective const& _usingFor)
 				else if (*returnParameterTypes.front() != *parameterTypes.front())
 					wrongReturnParametersMessage = "a value of the same type and data location as its parameters";
 			}
-			else if (returnParameterCount != 1 || *returnParameterTypes.front() != *TypeProvider::boolean())
+			else if (returnParameterCount != 1 || (*returnParameterTypes.front() != *TypeProvider::boolean() || (*returnParameterTypes.front() != *TypeProvider::shieldedBoolean())))
 				wrongReturnParametersMessage = "exactly one value of type bool";
 
 			solAssert(functionDefinition.returnParameterList());
@@ -4244,6 +4244,16 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 	}
 	return true;
 }
+
+bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
+	_expression.accept(*this);
+    Type const* condType = type(_expression);
+    if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
+        return true;
+    else
+        return expectType(_expression, *TypeProvider::boolean());
+}
+
 
 void TypeChecker::requireLValue(Expression const& _expression, bool _ordinaryAssignment)
 {

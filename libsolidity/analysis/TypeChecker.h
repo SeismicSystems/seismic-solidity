@@ -173,6 +173,8 @@ private:
 	/// Runs type checks on @a _expression to infer its type and then checks that it is implicitly
 	/// convertible to @a _expectedType.
 	bool expectType(Expression const& _expression, Type const& _expectedType);
+	/// Helper function for conditionals that checks for either bool or shielded_bools.
+	bool expectBoolOrShieldedBool(Expression const& _expression);
 	/// Runs type checks on @a _expression to infer its type and then checks that it is an LValue.
 	void requireLValue(Expression const& _expression, bool _ordinaryAssignment);
 
