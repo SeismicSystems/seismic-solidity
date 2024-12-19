@@ -2750,6 +2750,7 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 
 bool TypeChecker::visit(FunctionCall const& _functionCall)
 {
+	std::cerr <<"HEYYY" << std::endl;
 	std::vector<ASTPointer<Expression const>> const& arguments = _functionCall.arguments();
 	bool argumentsArePure = true;
 
@@ -3189,7 +3190,17 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 			std::string errorMsg = "Member \"" + memberName + "\" not found or not visible "
 				"after argument-dependent lookup in " + exprType->humanReadableName() + ".";
 
-			if (auto const* funType = dynamic_cast<FunctionType const*>(exprType))
+			if (auto const* arrayType = dynamic_cast<ArrayType const*>(exprType)) {
+				if (memberName == "push") {
+					if (arrayType->containsShieldedType() && !annotation.arguments.value().types.front()->isShielded()) {
+						return { 8878_error, "Cannot push a non-shielded type to a shielded array" };
+					}
+					else if (!arrayType->containsShieldedType() && annotation.arguments.value().types.front()->isShielded()) {
+						return { 8878_error, "Cannot push a shielded type to a non-shielded array" };
+					}
+				}
+			}
+			else if (auto const* funType = dynamic_cast<FunctionType const*>(exprType))
 			{
 				TypePointers const& t = funType->returnParameterTypes();
 
@@ -3480,7 +3491,10 @@ bool TypeChecker::visit(IndexAccess const& _access)
 		}
 		else
 		{
-			expectType(*index, *TypeProvider::uint256());
+			if (actualType.containsShieldedType())
+				expectType(*index, *TypeProvider::shieldedUint256());
+			else
+				expectType(*index, *TypeProvider::uint256());
 			if (!m_errorReporter.hasErrors())
 			{
 				if (auto numberType = dynamic_cast<RationalNumberType const*>(type(*index)))
@@ -3488,16 +3502,6 @@ bool TypeChecker::visit(IndexAccess const& _access)
 					solAssert(!numberType->isFractional(), "");
 					if (!actualType.isDynamicallySized() && actualType.length() <= numberType->literalValue(nullptr))
 						m_errorReporter.typeError(3383_error, _access.location(), "Out of bounds array access.");
-				}
-			}
-			else {
-				if (m_errorReporter.hasError(7407_error) && m_errorReporter.errorCount() == 1)
-				{
-					Type const* indexType = type(*index);
-					if (indexType->category() == Type::Category::ShieldedInteger)
-					    {
-						    m_errorReporter.removeError(7407_error);
-						}
 				}
 			}
 		}
