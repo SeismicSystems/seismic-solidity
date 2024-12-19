@@ -422,12 +422,7 @@ bool IRGeneratorForStatements::visit(Conditional const& _conditional)
 
 	setLocation(_conditional);
 
-	std::string condition;
-	if (_conditional.condition().annotation().type->category() == Type::Category::ShieldedBool)
-		condition = expressionAsType(_conditional, *TypeProvider::shieldedBoolean());
-	else
-		condition = expressionAsType(_conditional, *TypeProvider::boolean());
-
+	std::string condition = expressionAsType(_conditional.condition(), *TypeProvider::boolean());
 	declare(_conditional);
 
 	appendCode() << "switch " << condition << "\n" "case 0 {\n";
@@ -2921,6 +2916,9 @@ IRVariable IRGeneratorForStatements::convertAndCleanup(IRVariable const& _from, 
 std::string IRGeneratorForStatements::expressionAsType(Expression const& _expression, Type const& _to)
 {
 	IRVariable from(_expression);
+	std::cerr << "expressionAsType" << std::endl;
+	std::cerr << "From Type: " << from.type().humanReadableName() << std::endl;
+	std::cerr << "to Type: " << _to.humanReadableName() << std::endl;
 	if (from.type() == _to)
 		return from.commaSeparatedList();
 	else
