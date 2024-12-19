@@ -422,7 +422,12 @@ bool IRGeneratorForStatements::visit(Conditional const& _conditional)
 
 	setLocation(_conditional);
 
-	std::string condition = expressionAsType(_conditional.condition(), *TypeProvider::boolean());
+	std::string condition;
+	if (_conditional.condition().annotation().type->category() == Type::Category::ShieldedBool)
+		condition = expressionAsType(_conditional, *TypeProvider::shieldedBoolean());
+	else
+		condition = expressionAsType(_conditional, *TypeProvider::boolean());
+
 	declare(_conditional);
 
 	appendCode() << "switch " << condition << "\n" "case 0 {\n";
@@ -598,7 +603,11 @@ bool IRGeneratorForStatements::visit(IfStatement const& _ifStatement)
 {
 	_ifStatement.condition().accept(*this);
 	setLocation(_ifStatement);
-	std::string condition = expressionAsType(_ifStatement.condition(), *TypeProvider::boolean());
+	std::string condition;
+	if (_ifStatement.condition().annotation().type->category() == Type::Category::ShieldedBool)
+		condition = expressionAsType(_ifStatement.condition(), *TypeProvider::shieldedBoolean());
+	else
+		condition = expressionAsType(_ifStatement.condition(), *TypeProvider::boolean());
 
 	if (_ifStatement.falseStatement())
 	{
@@ -3305,9 +3314,15 @@ void IRGeneratorForStatements::generateLoop(
 			appendCode() << "if iszero(" << firstRun << ") {\n";
 
 		_conditionExpression->accept(*this);
+		std::string condition;
+		if (_conditionExpression->annotation().type->category() == Type::Category::ShieldedBool)
+			condition = expressionAsType(*_conditionExpression, *TypeProvider::shieldedBoolean());
+		else
+			condition = expressionAsType(*_conditionExpression, *TypeProvider::boolean());
+
 		appendCode() <<
 			"if iszero(" <<
-			expressionAsType(*_conditionExpression, *TypeProvider::boolean()) <<
+			condition <<
 			") { break }\n";
 
 		if (_isDoWhile)
