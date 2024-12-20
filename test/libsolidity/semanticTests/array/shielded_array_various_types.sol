@@ -25,13 +25,13 @@ contract ShieldedArrayTest {
     }
 
     // GetShieldedUint in normal Solidity
-    function getShieldedUint(uint256 index) external view returns (uint) {
+    function getShieldedUint(suint256 index) external view returns (uint) {
         require(index < shieldedUints.length, "Index out of bounds");
         return uint(shieldedUints[index]);
     }
 
     // GetShieldedUint using assembly + CLOAD (hypothetical)
-    function getShieldedUintAssembly(uint256 index) external view returns (uint) {
+    function getShieldedUintAssembly(suint256 index) external view returns (uint) {
         assembly {
             // Storage slot of shieldedUints array is 0 (first declared variable)
             // 1. Compute the storage location of the length: keccak256(slot)
@@ -60,13 +60,13 @@ contract ShieldedArrayTest {
     }
 
     // GetShieldedAddress in normal Solidity
-    function getShieldedAddress(uint256 index) external view returns (address) {
+    function getShieldedAddress(suint256 index) external view returns (address) {
         require(index < shieldedAddresses.length, "Index out of bounds");
         return address(shieldedAddresses[index]);
     }
 
     // GetShieldedAddress using assembly + CLOAD
-    function getShieldedAddressAssembly(uint256 index) external view returns (address) {
+    function getShieldedAddressAssembly(suint256 index) external view returns (address) {
         assembly {
             // shieldedAddresses is second variable, slot = 1
             let slot := 1
@@ -88,13 +88,13 @@ contract ShieldedArrayTest {
     }
 
     // GetShieldedBool in normal Solidity
-    function getShieldedBool(uint256 index) external view returns (bool) {
+    function getShieldedBool(suint256 index) external view returns (bool) {
         require(index < shieldedBools.length, "Index out of bounds");
         return bool(shieldedBools[index]);
     }
 
     // GetShieldedBool using assembly + CLOAD
-    function getShieldedBoolAssembly(uint256 index) external view returns (bool) {
+    function getShieldedBoolAssembly(suint256 index) external view returns (bool) {
         assembly {
             // shieldedBools is third variable, slot = 2
             mstore(0x0, 2)
@@ -114,8 +114,8 @@ contract ShieldedArrayTest {
 }
 // ----
 // constructor(suint256, saddress, sbool): 10, 0x5082a85c489be6aa0f2e6693bf09cc1bbd35e988, true
-// getShieldedUintAssembly(uint256): 0 -> 10
-// getShieldedAddress(uint256): 0 -> 0x5082a85c489be6aa0f2e6693bf09cc1bbd35e988
-// getShieldedAddressAssembly(uint256): 0 -> 0x5082a85c489be6aa0f2e6693bf09cc1bbd35e988
-// getShieldedBool(uint256): 0 -> true
-// getShieldedBoolAssembly(uint256): 0 -> true
+// getShieldedUintAssembly(suint256): 0 -> 10
+// getShieldedAddress(suint256): 0 -> 0x5082a85c489be6aa0f2e6693bf09cc1bbd35e988
+// getShieldedAddressAssembly(suint256): 0 -> 0x5082a85c489be6aa0f2e6693bf09cc1bbd35e988
+// getShieldedBool(suint256): 0 -> true
+// getShieldedBoolAssembly(suint256): 0 -> true

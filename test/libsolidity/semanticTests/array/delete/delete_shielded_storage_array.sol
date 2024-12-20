@@ -2,8 +2,8 @@ contract C {
     suint[] data;
 
     function len() public returns (uint ret) {
-        data.push(234);
-        data.push(123);
+        data.push(suint(234));
+        data.push(suint(123));
         delete data;
         assembly {
             ret := cload(data.slot)
@@ -18,12 +18,12 @@ contract C {
             cstore(add(keccak256(0, 32), 1), 123)
         }
 
-        assert(data[0] == 234);
-        assert(data[1] == 123);
+        assert(data[suint(0)] == suint(234));
+        assert(data[suint(1)] == suint(123));
 
         delete data;
 
-        suint size = 999;
+        suint size = suint(999);
 
         assembly {
             size := cload(0)

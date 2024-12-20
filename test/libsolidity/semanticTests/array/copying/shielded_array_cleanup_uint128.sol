@@ -2,17 +2,17 @@
 contract C {
     suint128[] x;
     function f() public returns(bool) {
-        x.push(42); x.push(42); x.push(42); x.push(42);
-        suint128[] memory y = new suint128[](1);
-        y[0] = 23;
+        x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42));
+        suint128[] memory y = new suint128[](suint(1));
+        y[suint(0)] = suint128(23);
         x = y;
         assembly { cstore(x.slot, 4) }
 
-        assert(x[0] == 23);
-        assert(x[1] == 0);
+        assert(x[suint(0)] == suint128(23));
+        assert(x[suint(1)] == suint128(0));
 
-        assert(x[2] == 0);
-        assert(x[3] == 0);
+        assert(x[suint(2)] == suint128(0));
+        assert(x[suint(3)] == suint128(0));
 
         return true;
     }

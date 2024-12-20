@@ -6,7 +6,7 @@ contract C {
     }
 
     function g(sbool _in) public returns (bool _out) {
-        _out = _in;
+        _out = bool(_in);
     }
 }
 // ====

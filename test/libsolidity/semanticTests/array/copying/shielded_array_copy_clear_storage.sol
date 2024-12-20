@@ -1,14 +1,14 @@
 contract C {
     suint256[] x;
     function f() public returns(uint256) {
-        x.push(42); x.push(42); x.push(42); x.push(42);
-        suint256[] memory y = new suint256[](1);
-        y[0] = 23;
+        x.push(suint(42)); x.push(suint(42)); x.push(suint(42)); x.push(suint(42));
+        suint256[] memory y = new suint256[](suint(1));
+        y[suint(0)] = suint(23);
         x = y;
         assembly { cstore(x.slot, 4) }
-        assert(x[1] == 0);
-        assert(x[2] == 0);
-        return uint(x[3]);
+        assert(x[suint(1)] == suint(0));
+        assert(x[suint(2)] == suint(0));
+        return uint(x[suint(3)]);
     }
 }
 // ----

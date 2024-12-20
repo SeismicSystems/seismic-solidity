@@ -2,10 +2,10 @@ pragma abicoder               v2;
 
 contract C {
     function gggg(sbool x) external pure returns (bool) {
-        return x;
+        return bool(x);
     }
     function f(uint256 a) external view returns (bool) {
-        sbool x = false;
+        sbool x = sbool(false);
         assembly { x := a }
         return this.gggg(x);
     }

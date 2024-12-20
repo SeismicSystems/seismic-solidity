@@ -3,7 +3,7 @@ contract C {
     function set_get_length(suint256 len) public returns (uint256) {
         while(storageArray.length < len)
             storageArray.push();
-        while(storageArray.length > 0)
+        while(storageArray.length > suint(0))
             storageArray.pop();
         return uint(storageArray.length);
     }

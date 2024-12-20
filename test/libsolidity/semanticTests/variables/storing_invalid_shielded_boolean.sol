@@ -19,14 +19,14 @@ contract C {
         assembly {
             tmp := 5
         }
-        return tmp;
+        return bool(tmp);
     }
     function ev() public returns(uint) {
         sbool tmp;
         assembly {
             tmp := 5
         }
-        emit Ev(tmp);
+        emit Ev(bool(tmp));
         return 1;
     }
 }
