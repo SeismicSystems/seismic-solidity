@@ -2912,9 +2912,6 @@ IRVariable IRGeneratorForStatements::convertAndCleanup(IRVariable const& _from, 
 std::string IRGeneratorForStatements::expressionAsType(Expression const& _expression, Type const& _to)
 {
 	IRVariable from(_expression);
-	std::cerr << "expressionAsType" << std::endl;
-	std::cerr << "From Type: " << from.type().humanReadableName() << std::endl;
-	std::cerr << "to Type: " << _to.humanReadableName() << std::endl;
 	if (from.type() == _to)
 		return from.commaSeparatedList();
 	else
