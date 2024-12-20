@@ -21,7 +21,6 @@
  * Type analyzer and checker.
  */
 
-#include "libsolidity/ast/Types.h"
 #include <libsolidity/analysis/TypeChecker.h>
 #include <libsolidity/ast/AST.h>
 #include <libsolidity/ast/ASTUtils.h>
