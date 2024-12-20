@@ -215,6 +215,7 @@ namespace solidity::langutil
 	K(Address, "address", 0)                                           \
 	K(SAddress, "saddress", 0)                                  \
 	K(Bool, "bool", 0)                                                 \
+	K(SBool, "sbool", 0)                                                 \
 	K(Fixed, "fixed", 0)                                               \
 	K(UFixed, "ufixed", 0)                                             \
 	T(IntM, "intM", 0)                                                 \

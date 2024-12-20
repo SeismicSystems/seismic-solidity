@@ -1302,7 +1302,11 @@ void CompilerUtils::convertType(
 		break;
 	}
 	case Type::Category::Bool:
-		solAssert(_targetType == _typeOnStack, "Invalid conversion for bool.");
+	case Type::Category::ShieldedBool:
+		solAssert(_targetType == _typeOnStack ||
+				 (targetTypeCategory == Type::Category::Bool && stackTypeCategory == Type::Category::ShieldedBool) ||
+				 (targetTypeCategory == Type::Category::ShieldedBool && stackTypeCategory == Type::Category::Bool),
+				 "Invalid conversion for bool.");
 		if (_cleanupNeeded)
 			m_context << Instruction::ISZERO << Instruction::ISZERO;
 		break;

@@ -6,10 +6,10 @@ contract C {
             storageArray.push();
         while (storageArray.length > len)
             storageArray.pop();
-        for (uint i = 0; i < len; i++)
-            storageArray[i] = suint(i+ 1);
-        for (uint i = 0; i < len; i++)
-            require(storageArray[i] == suint(i + 1));
+        for (suint i = suint(0); i < len; i++)
+            storageArray[i] = i+ suint(1);
+        for (suint i = suint(0); i < len; i++)
+            require(storageArray[i] == i + suint(1));
     }
 }
 // ----

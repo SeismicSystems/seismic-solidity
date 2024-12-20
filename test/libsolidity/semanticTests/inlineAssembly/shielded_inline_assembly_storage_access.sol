@@ -13,8 +13,8 @@ contract C {
             off1 := z.offset
             off2 := y.offset
         }
-        require(off1 == 0);
-        require(off2 == 0);
+        require(off1 == suint(0));
+        require(off2 == suint(0));
         return true;
     }
 }

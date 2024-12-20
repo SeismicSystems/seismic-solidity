@@ -3,7 +3,7 @@ contract C {
     suint a;
     function f() public pure returns (uint x) {
         /// test2
-        for (suint i = 0; i < 20; i++) {
+        for (suint i = suint(0); i < suint(20); i++) {
             /// tee
             /// s "t" 3
             x *= 2;

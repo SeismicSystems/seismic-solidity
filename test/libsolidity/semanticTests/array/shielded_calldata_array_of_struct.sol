@@ -13,10 +13,10 @@ contract C {
         returns (uint256 l, uint256 a, uint256 b, uint256 c, uint256 d)
     {
         l = uint(s.length);
-        a = uint(s[0].a);
-        b = uint(s[0].b);
-        c = uint(s[1].a);
-        d = uint(s[1].b);
+        a = uint(s[suint(0)].a);
+        b = uint(s[suint(0)].b);
+        c = uint(s[suint(1)].a);
+        d = uint(s[suint(1)].b);
     }
 }
 // ----

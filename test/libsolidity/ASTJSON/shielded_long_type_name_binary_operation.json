@@ -2,10 +2,10 @@
   "absolutePath": "a",
   "exportedSymbols": {
     "c": [
-      11
+      14
     ]
   },
-  "id": 12,
+  "id": 15,
   "nodeType": "SourceUnit",
   "nodes": [
     {
@@ -15,9 +15,9 @@
       "contractDependencies": [],
       "contractKind": "contract",
       "fullyImplemented": true,
-      "id": 11,
+      "id": 14,
       "linearizedBaseContracts": [
-        11
+        14
       ],
       "name": "c",
       "nameLocation": "9:1:1",
@@ -25,9 +25,9 @@
       "nodes": [
         {
           "body": {
-            "id": 9,
+            "id": 12,
             "nodeType": "Block",
-            "src": "33:20:1",
+            "src": "33:27:1",
             "statements": [
               {
                 "assignments": [
@@ -41,7 +41,7 @@
                     "name": "a",
                     "nameLocation": "41:1:1",
                     "nodeType": "VariableDeclaration",
-                    "scope": 9,
+                    "scope": 12,
                     "src": "35:7:1",
                     "stateVariable": false,
                     "storageLocation": "default",
@@ -62,64 +62,109 @@
                     "visibility": "internal"
                   }
                 ],
-                "id": 8,
+                "id": 11,
                 "initialValue": {
-                  "commonType": {
-                    "typeIdentifier": "t_rational_5_by_1",
-                    "typeString": "int_const 5"
-                  },
-                  "id": 7,
-                  "isConstant": false,
-                  "isLValue": false,
-                  "isPure": true,
-                  "lValueRequested": false,
-                  "leftExpression": {
-                    "hexValue": "32",
-                    "id": 5,
-                    "isConstant": false,
-                    "isLValue": false,
-                    "isPure": true,
-                    "kind": "number",
-                    "lValueRequested": false,
-                    "nodeType": "Literal",
-                    "src": "45:1:1",
-                    "typeDescriptions": {
-                      "typeIdentifier": "t_rational_2_by_1",
-                      "typeString": "int_const 2"
-                    },
-                    "value": "2"
-                  },
-                  "nodeType": "BinaryOperation",
-                  "operator": "+",
-                  "rightExpression": {
-                    "hexValue": "33",
+                  "arguments": [
+                    {
+                      "commonType": {
+                        "typeIdentifier": "t_rational_5_by_1",
+                        "typeString": "int_const 5"
+                      },
+                      "id": 9,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "lValueRequested": false,
+                      "leftExpression": {
+                        "hexValue": "32",
+                        "id": 7,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "number",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "51:1:1",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_rational_2_by_1",
+                          "typeString": "int_const 2"
+                        },
+                        "value": "2"
+                      },
+                      "nodeType": "BinaryOperation",
+                      "operator": "+",
+                      "rightExpression": {
+                        "hexValue": "33",
+                        "id": 8,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "number",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "55:1:1",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_rational_3_by_1",
+                          "typeString": "int_const 3"
+                        },
+                        "value": "3"
+                      },
+                      "src": "51:5:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_5_by_1",
+                        "typeString": "int_const 5"
+                      }
+                    }
+                  ],
+                  "expression": {
+                    "argumentTypes": [
+                      {
+                        "typeIdentifier": "t_rational_5_by_1",
+                        "typeString": "int_const 5"
+                      }
+                    ],
                     "id": 6,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": true,
-                    "kind": "number",
                     "lValueRequested": false,
-                    "nodeType": "Literal",
-                    "src": "49:1:1",
+                    "nodeType": "ElementaryTypeNameExpression",
+                    "src": "45:5:1",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_rational_3_by_1",
-                      "typeString": "int_const 3"
+                      "typeIdentifier": "t_type$_t_suint256_$",
+                      "typeString": "type(suint256)"
                     },
-                    "value": "3"
+                    "typeName": {
+                      "id": 5,
+                      "name": "suint",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "45:5:1",
+                      "typeDescriptions": {}
+                    }
                   },
-                  "src": "45:5:1",
+                  "id": 10,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "kind": "typeConversion",
+                  "lValueRequested": false,
+                  "nameLocations": [],
+                  "names": [],
+                  "nodeType": "FunctionCall",
+                  "src": "45:12:1",
+                  "tryCall": false,
                   "typeDescriptions": {
-                    "typeIdentifier": "t_rational_5_by_1",
-                    "typeString": "int_const 5"
+                    "typeIdentifier": "t_suint256",
+                    "typeString": "suint256"
                   }
                 },
                 "nodeType": "VariableDeclarationStatement",
-                "src": "35:15:1"
+                "src": "35:22:1"
               }
             ]
           },
           "functionSelector": "26121ff0",
-          "id": 10,
+          "id": 13,
           "implemented": true,
           "kind": "function",
           "modifiers": [],
@@ -138,18 +183,18 @@
             "parameters": [],
             "src": "33:0:1"
           },
-          "scope": 11,
-          "src": "13:40:1",
+          "scope": 14,
+          "src": "13:47:1",
           "stateMutability": "nonpayable",
           "virtual": false,
           "visibility": "public"
         }
       ],
-      "scope": 12,
-      "src": "0:55:1",
+      "scope": 15,
+      "src": "0:62:1",
       "usedErrors": [],
       "usedEvents": []
     }
   ],
-  "src": "0:56:1"
+  "src": "0:63:1"
 }

@@ -1,10 +1,10 @@
 contract c {
     function f() public pure {
         sint a;
-        a = 0 ** 1E1233;
-        a = 1 ** 1E1233;
-        a = -1 ** 1E1233;
-        a = 0E123456789;
+        a = sint(0 ** 1E1233);
+        a = sint(1 ** 1E1233);
+        a = sint(-1 ** 1E1233);
+        a = sint(0E123456789);
     }
 }
 // ----

@@ -17,17 +17,17 @@ contract C {
 
     function test_literal_mix(suint a, suint b) public returns (bool) {
         return
-            (a**2**b == a**(2**b)) &&
-            (2**a**b == 2**(a**b)) &&
-            (a**b**2 == a**(b**2));
+            (a**suint(2)**b == a**(suint(2)**b)) &&
+            (suint(2)**a**b == suint(2)**(a**b)) &&
+            (a**b**suint(2) == a**(b**suint(2)));
     }
 
     function test_other_operators(suint a, suint b) public returns (bool) {
         return
-            (a**b/25 == (a**b)/25) &&
-            (a**b*3**b == (a**b)*(3**b)) &&
+            (a**b/suint(25) == (a**b)/suint(25)) &&
+            (a**b*suint(3)**b == (a**b)*(suint(3)**b)) &&
             (b**a**a/b**a**b == (b**(a**a))/(b**(a**b)));
-     }
+    }
 }
 // ----
 // test_hardcode1(suint256,suint256,suint256): 2, 3, 4 -> 2417851639229258349412352

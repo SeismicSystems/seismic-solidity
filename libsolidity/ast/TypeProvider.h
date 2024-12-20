@@ -63,6 +63,9 @@ public:
 	/// @returns boolean type.
 	static BoolType const* boolean() noexcept { return &m_boolean; }
 
+	/// @returns boolean type.
+	static ShieldedBoolType const* shieldedBoolean() noexcept { return &m_shieldedBoolean; }
+
 	static FixedBytesType const* byte() { return fixedBytes(1); }
 	static FixedBytesType const* fixedBytes(unsigned m) { return m_bytesM.at(m - 1).get(); }
 
@@ -100,7 +103,7 @@ public:
 	static IntegerType const* uint256() { return uint(256); }
 	static IntegerType const* int256() { return integer(256, IntegerType::Modifier::Signed); }
 
-	static ShieldedIntegerType const* shieldedInteger(unsigned _bits, ShieldedIntegerType::Modifier _modifier) { 
+	static ShieldedIntegerType const* shieldedInteger(unsigned _bits, ShieldedIntegerType::Modifier _modifier) {
 
 		solAssert((_bits % 8) == 0, "");
 		if (_modifier == ShieldedIntegerType::Modifier::Unsigned)
@@ -224,6 +227,7 @@ private:
 	static inline T const* createAndGet(Args&& ... _args);
 
 	static BoolType const m_boolean;
+	static ShieldedBoolType const m_shieldedBoolean;
 	static InaccessibleDynamicType const m_inaccessibleDynamic;
 
 	/// These are lazy-initialized because they depend on `byte` being available.

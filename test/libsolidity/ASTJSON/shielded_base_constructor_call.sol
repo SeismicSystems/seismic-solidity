@@ -1,4 +1,4 @@
 contract A { constructor(suint) {} }
-contract C is A { constructor() A(2) {} }
+contract C is A { constructor() A(suint(2)) {} }
 
 // ----

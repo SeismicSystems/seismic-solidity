@@ -754,6 +754,7 @@ bool ContractCompiler::visit(InlineAssembly const& _inlineAssembly)
 						switch (type->category())
 						{
 						case Type::Category::Bool:
+						case Type::Category::ShieldedBool:
 						case Type::Category::Address:
 						case Type::Category::ShieldedAddress:
 							// Either both the literal and the variable are bools, or they are both addresses.

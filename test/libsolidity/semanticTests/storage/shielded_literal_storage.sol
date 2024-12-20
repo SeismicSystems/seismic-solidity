@@ -4,17 +4,17 @@ contract LiteralStorageTest {
     suint256[] arrayOfLiterals;
 
     function storeSmallLiteral() public {
-        singleLiteral = 42; // Example of a small integer literal
+        singleLiteral = suint(42); // Example of a small integer literal
     }
 
     function storeLargeLiteral() public {
-        largeLiteral = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        largeLiteral = suint(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
     }
 
     function storeArrayOfLiterals() public {
-        arrayOfLiterals.push(1);
-        arrayOfLiterals.push(123456);
-        arrayOfLiterals.push(789012);
+        arrayOfLiterals.push(suint(1));
+        arrayOfLiterals.push(suint(123456));
+        arrayOfLiterals.push(suint(789012));
     }
 
     function getSingleLiteral() public view returns (uint256) {
@@ -26,10 +26,10 @@ contract LiteralStorageTest {
     }
 
     function getLiteralFromArray() public view returns (uint256[] memory) {
-        uint256[] memory uintArray = new uint256[](arrayOfLiterals.length);
+        uint256[] memory uintArray = new uint256[](uint(arrayOfLiterals.length));
 
-        for (uint256 i = 0; i < arrayOfLiterals.length; i++) {
-            uintArray[i] = uint256(arrayOfLiterals[i]);
+        for (uint256 i = 0; i < uint(arrayOfLiterals.length); i++) {
+            uintArray[i] = uint256(arrayOfLiterals[suint(i)]);
         }
 
         return uintArray;

@@ -533,7 +533,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 	}
 	else if (_variable.visibility() >= Visibility::Public)
 	{
-		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
+		if (varType->containsShieldedType())
         {
 			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded Types are not supported for public state variables.");
         }
@@ -957,7 +957,7 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 
 bool TypeChecker::visit(IfStatement const& _ifStatement)
 {
-	expectType(_ifStatement.condition(), *TypeProvider::boolean());
+	expectBoolOrShieldedBool(_ifStatement.condition());
 	_ifStatement.trueStatement().accept(*this);
 	if (_ifStatement.falseStatement())
 		_ifStatement.falseStatement()->accept(*this);
@@ -1121,7 +1121,7 @@ void TypeChecker::endVisit(TryStatement const& _tryStatement)
 
 bool TypeChecker::visit(WhileStatement const& _whileStatement)
 {
-	expectType(_whileStatement.condition(), *TypeProvider::boolean());
+	expectBoolOrShieldedBool(_whileStatement.condition());
 	_whileStatement.body().accept(*this);
 	return false;
 }
@@ -1131,7 +1131,7 @@ bool TypeChecker::visit(ForStatement const& _forStatement)
 	if (_forStatement.initializationExpression())
 		_forStatement.initializationExpression()->accept(*this);
 	if (_forStatement.condition())
-		expectType(*_forStatement.condition(), *TypeProvider::boolean());
+		expectBoolOrShieldedBool(*_forStatement.condition());
 	if (_forStatement.loopExpression())
 		_forStatement.loopExpression()->accept(*this);
 	_forStatement.body().accept(*this);
@@ -1324,21 +1324,51 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
-		else if (valueComponentType->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
+		if (auto funcCall = dynamic_cast<FunctionCall const*>(_statement.initialValue()))
 		{
-			m_errorReporter.warning(
-			9660_error,
-			_statement.location(),
-			"Literals converted to shielded integers will leak during contract deployment."
-		);
-		}
-		else if (valueComponentType->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
-		{
-			m_errorReporter.warning(
-			1457_error,
-			_statement.location(),
-			"Enums converted to shielded integers will leak during contract deployment."
-		);
+			auto const& args = funcCall->arguments();
+			if (!args.empty())
+			{
+				if (auto literal = dynamic_cast<Literal const*>(args.front().get()))
+				{
+					if (var.annotation().type->category()==Type::Category::ShieldedBool)
+					{
+						std::string val = literal->value();
+						if (val == "true" || val == "false")
+							m_errorReporter.warning(
+							9661_error,
+							_statement.location(),
+							"Bool Literals converted to shielded bools will leak during contract deployment."
+							);
+					}
+					else if (literal->looksLikeAddress() && var.annotation().type->category()==Type::Category::ShieldedAddress)
+					{
+						if (literal->passesAddressChecksum()) {
+							m_errorReporter.warning(
+							9662_error,
+							_statement.location(),
+							"Address Literals converted to shielded addresses will leak during contract deployment."
+							);
+						}
+					}
+					else if (args.front()->annotation().type->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
+					{
+						m_errorReporter.warning(
+						9660_error,
+						_statement.location(),
+						"Literals converted to shielded integers will leak during contract deployment."
+					);
+					}
+					else if (args.front()->annotation().type->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
+					{
+						m_errorReporter.warning(
+						1457_error,
+						_statement.location(),
+						"Enums converted to shielded integers will leak during contract deployment."
+					);
+					}
+				}
+			}
 		}
 	}
 
@@ -1379,7 +1409,7 @@ void TypeChecker::endVisit(ExpressionStatement const& _statement)
 
 bool TypeChecker::visit(Conditional const& _conditional)
 {
-	expectType(_conditional.condition(), *TypeProvider::boolean());
+	expectBoolOrShieldedBool(_conditional.condition());
 
 	_conditional.trueExpression().accept(*this);
 	_conditional.falseExpression().accept(*this);
@@ -1761,10 +1791,19 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 
 	// By default use the type we'd expect from correct code. This way we can continue analysis
 	// of other expressions in a sensible way in case of a non-fatal error.
-	Type const* resultType =
-		TokenTraits::isCompareOp(_operation.getOperator()) ?
-		TypeProvider::boolean() :
-		commonType;
+
+	Type const* resultType = nullptr;
+	if (TokenTraits::isCompareOp(_operation.getOperator()))
+	{
+		if (commonType->category() == Type::Category::ShieldedBool)
+			resultType = TypeProvider::shieldedBoolean();
+		else
+			resultType = TypeProvider::boolean();
+	}
+	else
+	{
+		resultType = commonType;
+	}
 
 	if (operatorDefinition)
 	{
@@ -3081,9 +3120,10 @@ void TypeChecker::endVisit(NewExpression const& _newExpression)
 				_newExpression.typeName().location(),
 				"Length has to be placed in parentheses after the array type for new expression."
 			);
+		auto lengthType = type->containsShieldedType() ? TypeProvider::shieldedUint256() : TypeProvider::uint256();
 		type = TypeProvider::withLocationIfReference(DataLocation::Memory, type);
 		_newExpression.annotation().type = TypeProvider::function(
-			TypePointers{TypeProvider::uint256()},
+			TypePointers{lengthType},
 			TypePointers{type},
 			strings(1, ""),
 			strings(1, ""),
@@ -3149,7 +3189,17 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 			std::string errorMsg = "Member \"" + memberName + "\" not found or not visible "
 				"after argument-dependent lookup in " + exprType->humanReadableName() + ".";
 
-			if (auto const* funType = dynamic_cast<FunctionType const*>(exprType))
+			if (auto const* arrayType = dynamic_cast<ArrayType const*>(exprType)) {
+				if (memberName == "push") {
+					if (arrayType->containsShieldedType() && !annotation.arguments.value().types.front()->isShielded()) {
+						return { 8878_error, "Cannot push a non-shielded type to a shielded array" };
+					}
+					else if (!arrayType->containsShieldedType() && annotation.arguments.value().types.front()->isShielded()) {
+						return { 8878_error, "Cannot push a shielded type to a non-shielded array" };
+					}
+				}
+			}
+			else if (auto const* funType = dynamic_cast<FunctionType const*>(exprType))
 			{
 				TypePointers const& t = funType->returnParameterTypes();
 
@@ -3440,7 +3490,10 @@ bool TypeChecker::visit(IndexAccess const& _access)
 		}
 		else
 		{
-			expectType(*index, *TypeProvider::uint256());
+			if (actualType.containsShieldedType())
+				expectType(*index, *TypeProvider::shieldedUint256());
+			else
+				expectType(*index, *TypeProvider::uint256());
 			if (!m_errorReporter.hasErrors())
 			{
 				if (auto numberType = dynamic_cast<RationalNumberType const*>(type(*index)))
@@ -3448,16 +3501,6 @@ bool TypeChecker::visit(IndexAccess const& _access)
 					solAssert(!numberType->isFractional(), "");
 					if (!actualType.isDynamicallySized() && actualType.length() <= numberType->literalValue(nullptr))
 						m_errorReporter.typeError(3383_error, _access.location(), "Out of bounds array access.");
-				}
-			}
-			else {
-				if (m_errorReporter.hasError(7407_error) && m_errorReporter.errorCount() == 1)
-				{
-					Type const* indexType = type(*index);
-					if (indexType->category() == Type::Category::ShieldedInteger)
-					    {
-						    m_errorReporter.removeError(7407_error);
-						}
 				}
 			}
 		}
@@ -4119,7 +4162,7 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 	for (ASTPointer<VariableDeclaration> const& var: _callable.parameters())
 	{
 		Type const* varType = type(*var);
-		if (varType->containsTypeCategory(Type::Category::ShieldedInteger) || varType->containsTypeCategory(Type::Category::ShieldedAddress))
+		if (varType->containsShieldedType())
         {
             m_errorReporter.fatalTypeError(
                 4626_error,
@@ -4204,6 +4247,16 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 	}
 	return true;
 }
+
+bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
+	_expression.accept(*this);
+    Type const* condType = type(_expression);
+    if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
+        return true;
+    else
+        return expectType(_expression, *TypeProvider::boolean());
+}
+
 
 void TypeChecker::requireLValue(Expression const& _expression, bool _ordinaryAssignment)
 {

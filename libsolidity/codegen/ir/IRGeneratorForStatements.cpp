@@ -141,6 +141,7 @@ private:
 				switch (type->category())
 				{
 				case Type::Category::Bool:
+				case Type::Category::ShieldedBool:
 				case Type::Category::Address:
 				case Type::Category::ShieldedAddress:
 					solAssert(type->category() == variable->annotation().type->category());
@@ -1727,7 +1728,7 @@ bool IRGeneratorForStatements::visit(MemberAccess const& _memberAccess)
 		_memberAccess.memberName() == "length" &&
 		innerExpression &&
 		innerExpression->memberName() == "code" &&
-		(innerExpression->expression().annotation().type->category() == Type::Category::Address || innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)	
+		(innerExpression->expression().annotation().type->category() == Type::Category::Address || innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)
 	)
 	{
 		solAssert(innerExpression->annotation().type->category() == Type::Category::Array);
@@ -1845,7 +1846,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 			define(_memberAccess) <<
 				"balance(" <<
 				expressionAsType(_memberAccess.expression(), *TypeProvider::shieldedAddress()) <<
-				")\n";		
+				")\n";
 		else if (member == "code")
 		{
 			std::string externalCodeFunction = m_utils.externalCodeFunction();
@@ -2115,7 +2116,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 				innerExpression &&
 				innerExpression->memberName() == "code" &&
 				(innerExpression->expression().annotation().type->category() == Type::Category::Address || innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)
-			)	
+			)
 			{
 				if (innerExpression->expression().annotation().type->category() == Type::Category::Address)
 					define(_memberAccess) <<
@@ -2571,6 +2572,7 @@ bool IRGeneratorForStatements::visit(Literal const& _literal)
 	{
 	case Type::Category::RationalNumber:
 	case Type::Category::Bool:
+	case Type::Category::ShieldedBool:
 	case Type::Category::Address:
 	case Type::Category::ShieldedAddress:
 		define(_literal) << toCompactHexWithPrefix(literalType.literalValue(&_literal)) << "\n";
@@ -3303,9 +3305,11 @@ void IRGeneratorForStatements::generateLoop(
 			appendCode() << "if iszero(" << firstRun << ") {\n";
 
 		_conditionExpression->accept(*this);
+		std::string condition = expressionAsType(*_conditionExpression, *TypeProvider::boolean());
+
 		appendCode() <<
 			"if iszero(" <<
-			expressionAsType(*_conditionExpression, *TypeProvider::boolean()) <<
+			condition <<
 			") { break }\n";
 
 		if (_isDoWhile)

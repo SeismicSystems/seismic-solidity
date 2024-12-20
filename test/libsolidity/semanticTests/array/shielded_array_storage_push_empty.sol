@@ -4,8 +4,8 @@ contract C {
         while(storageArray.length < len)
             storageArray.push();
 
-        for (uint i = 0; i < len; i++)
-            require(storageArray[i] == 0);
+        for (suint i = suint(0); i < len; i++)
+            require(storageArray[i] == suint(0));
     }
 }
 // ====

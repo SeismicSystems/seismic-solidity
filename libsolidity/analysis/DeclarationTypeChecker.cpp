@@ -536,7 +536,7 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 		bool isPointer = !_variable.isStateVariable();
 		type = TypeProvider::withLocation(ref, typeLoc, isPointer);
 	}
-	if (_variable.isConstant() && (type->category()==Type::Category::ShieldedInteger || type->category()==Type::Category::ShieldedAddress))
+	if (_variable.isConstant() && (type->isShielded()))
 		m_errorReporter.declarationError(7491_error, _variable.location(), "Shielded objects cannot be set to constant.");
 
     if (_variable.isReturnParameter())

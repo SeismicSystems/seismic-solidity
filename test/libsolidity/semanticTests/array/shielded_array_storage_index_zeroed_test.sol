@@ -7,17 +7,17 @@ contract C {
         while(storageArray.length > len)
             storageArray.pop();
 
-        for (uint i = 0; i < len; i++)
-            storageArray[i] = i + 1;
+        for (suint i = suint(0); i < len; i++)
+            storageArray[i] = i + suint(1);
 
-        if (len > 3)
+        if (len > suint(3))
         {
-            while(storageArray.length > 0)
+            while(storageArray.length > suint(0))
                 storageArray.pop();
-            while(storageArray.length < 3)
+            while(storageArray.length < suint(3))
                 storageArray.push();
 
-            for (uint i = 3; i < len; i++)
+            for (uint i = 3; suint(i) < len; i++)
             {
                 assembly {
                     mstore(0, storageArray.slot)
@@ -31,21 +31,21 @@ contract C {
 
         }
 
-        while(storageArray.length > 0)
+        while(storageArray.length > suint(0))
             storageArray.pop();
         while(storageArray.length < len)
             storageArray.push();
 
-        for (uint i = 0; i < len; i++)
+        for (suint i = suint(0); i < len; i++)
         {
-            require(storageArray[i] == 0);
+            require(storageArray[i] == suint(0));
 
             suint256 val = storageArray[i];
             suint256 check;
 
             assembly { check := iszero(val) }
 
-            require(check == 1);
+            require(check == suint(1));
         }
     }
 }

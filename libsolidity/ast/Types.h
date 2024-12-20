@@ -182,6 +182,7 @@ public:
 		RationalNumber,
 		StringLiteral,
 		Bool,
+		ShieldedBool,
 		FixedPoint,
 		Array,
 		ArraySlice,
@@ -204,7 +205,8 @@ public:
 	static Type const* commonType(Type const* _a, Type const* _b);
 
 	virtual Category category() const = 0;
-	virtual bool containsTypeCategory(Category _category) const { return category() == _category; }
+	virtual bool isShielded() const { return false; }
+	virtual bool containsShieldedType() const { return isShielded(); }
 	/// @returns a valid solidity identifier such that two types should compare equal if and
 	/// only if they have the same identifier.
 	/// The identifier should start with "t_".
@@ -436,9 +438,9 @@ protected:
 	mutable std::map<ASTNode const*, std::unique_ptr<MemberList>> m_members;
 	mutable std::optional<std::vector<std::tuple<std::string, Type const*>>> m_stackItems;
 	mutable std::optional<size_t> m_stackSize;
-	virtual bool containsTypeCategoryRecurse(Category _category, std::unordered_set<std::string>& visited) const {
+	virtual bool containsShieldedTypeRecurse(std::unordered_set<std::string>& visited) const {
 		(void)visited;
-		return category() == _category; }
+		return containsShieldedType(); }
 };
 
 /**
@@ -493,6 +495,7 @@ public:
 
 	Category category() const override { return Category::ShieldedAddress; }
 
+	bool isShielded() const override { return true; }
 	std::string richIdentifier() const override;
 
 	virtual unsigned storageBytes() const override { return 32; }
@@ -568,7 +571,10 @@ public:
 	}
 
 	virtual unsigned storageBytes() const override { return 32; }
+	bool isShielded() const override { return true; }
 
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
@@ -584,7 +590,6 @@ public:
 private:
 	unsigned const m_bits;
 	Modifier const m_modifier;
-
 };
 
 /**
@@ -783,6 +788,8 @@ class BoolType: public Type
 public:
 	Category category() const override { return Category::Bool; }
 	std::string richIdentifier() const override { return "t_bool"; }
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
 	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
@@ -796,6 +803,22 @@ public:
 	u256 literalValue(Literal const* _literal) const override;
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
+};
+/**
+ * The shielded boolean type.
+ */
+class ShieldedBoolType : public BoolType
+{
+public:
+    Category category() const override { return Category::ShieldedBool; }
+    std::string richIdentifier() const override { return "t_sbool"; }
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+
+	bool isShielded() const override { return true; }
+    unsigned storageBytes() const override { return 32; }
+
+	std::string toString(bool) const override { return "sbool"; }
 };
 
 /**
@@ -814,7 +837,7 @@ public:
 	/// elements of decomposition of these elements and so on, up to non-composite types.
 	/// Each type is included only once.
 	std::vector<Type const*> fullDecomposition() const;
-    virtual bool containsTypeCategory(Type::Category _category) const;
+    virtual bool containsShieldedType() const;
 
 protected:
 	/// @returns a list of types that together make up the data part of this type.
@@ -823,7 +846,7 @@ protected:
 	/// the component types for tuples and the value type for mappings
 	/// (note that the key type of a mapping is *not* part of the list).
 	virtual std::vector<Type const*> decomposition() const = 0;
-	virtual bool containsTypeCategoryRecurse(Category _category, std::unordered_set<std::string>& visited) const;
+	virtual bool containsShieldedTypeRecurse(std::unordered_set<std::string>& visited) const;
 };
 
 /**

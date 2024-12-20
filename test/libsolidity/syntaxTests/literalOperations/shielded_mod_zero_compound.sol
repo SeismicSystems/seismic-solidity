@@ -1,5 +1,5 @@
 contract A {
     suint a;
-    constructor() { a = 5; a %= 0; }
+    constructor() { a = suint(5); a %= suint(0); }
 }
 // ----
