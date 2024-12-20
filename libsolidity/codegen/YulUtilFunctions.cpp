@@ -3513,8 +3513,6 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 				std::string convert;
 
 				solAssert(_to.category() != Type::Category::UserDefinedValueType, "");
-				std::cerr << "To category : " << _to.toString() << std::endl;
-				std::cerr << "from category : " << _from.toString() << std::endl;
 				if (auto const* toFixedBytes = dynamic_cast<FixedBytesType const*>(&_to))
 					convert = shiftLeftFunction(256 - toFixedBytes->numBytes() * 8);
 				else if (dynamic_cast<FixedPointType const*>(&_to))
