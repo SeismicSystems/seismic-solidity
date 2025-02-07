@@ -6,6 +6,8 @@ Welcome to the documentation for our confidential storage extension to the Ether
 
 This documentation highlights the differences from Cancun's Ethereum version to focus on the new features introduced by Seismic's Mercury version. We recommend familiarizing yourself with the standard Ethereum documentation alongside this guide.
 
+Indeed, this work wouldn’t have been possible without an incredible, nearly decade-long effort to build Solidity. As such, we strongly encourage the reader to explore their [work](https://github.com/ethereum/solidity/tree/develop) and [documentation](https://docs.soliditylang.org/en/latest/).
+
 - - -
 
 ### Table of Contents
