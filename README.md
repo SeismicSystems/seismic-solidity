@@ -8,6 +8,8 @@ This documentation highlights the differences from Cancun's Ethereum version to 
 
 Indeed, this work wouldn’t have been possible without an incredible, nearly decade-long effort to build Solidity. As such, we strongly encourage the reader to explore their [work](https://github.com/ethereum/solidity/tree/develop) and [documentation](https://docs.soliditylang.org/en/latest/).
 
+This is **experimental** software, thread with caution.
+
 - - -
 
 ### Table of Contents
