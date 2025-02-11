@@ -259,6 +259,8 @@ This extension enhances the EVM by introducing confidential storage capabilities
 
 We encourage you to refer to the standard Ethereum documentation for foundational concepts and use this guide to understand the differences and new functionalities introduced.
 
+We also welcome external contributions to this repository.
+
 ## 9\. Upstream
 
 The upstream repository lives [here](https://github.com/ethereum/solidity/tree/develop). This fork is up-to-date with it through commit `322d656`. You can see this by viewing the [develop](https://github.com/SeismicSystems/seismic-solidity/tree/develop) branch on this repository.
