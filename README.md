@@ -91,9 +91,9 @@ contract ConfidentialWallet {
 ## 2\. Storage Behavior
 
 *   **Whole Slot Consumption**: Shielded types consume an entire storage slot. This design choice ensures that a storage slot is entirely private or public, avoiding mixed storage types within a single slot.
-    
+
 *   **Future Improvements**: We plan to support slot packing for shielded types in future updates. Until then, developers can use inline assembly to achieve slot packing manually if necessary.
-    
+
 
 #### Assembly Slot Packing Example
 
@@ -107,7 +107,7 @@ contract RegularStorage {
 
     RegularStruct regularData;
 
-    /* 
+    /*
        Storage Layout:
        - Slot 0: [a | b | c]
     */
@@ -136,15 +136,15 @@ contract ShieldedStorage {
 ### 3.1 No `public` Keyword for Shielded Variables
 
 *   Shielded variables **cannot** be declared as `public`. This restriction prevents accidental exposure of confidential data.
-    
+
     `suint256 public confidentialNumber; // This will cause a compilation error`
 
 ### 3.2 No Shielded Constants
 
 *   Shielded types **cannot** be used as constants. Constants are embedded in the contract bytecode, which is publicly accessible.
-    
+
     `suint256 constant CONFIDENTIAL_CONSTANT = 42; // Not allowed`
-    
+
 
 ### 3.3 Literals and Enums
 
@@ -153,7 +153,7 @@ contract ShieldedStorage {
 ### 3.4 Exponentiation and Gas Costs
 
 *   Using shielded integers as exponents in exponentiation operations can leak information through gas usage, as gas cost scales with the exponent value.
-    
+
 ### 3.5 `.min()` and `.max()` Functions
 
 *   Calling `.min()` and `.max()` on shielded integers can reveal information about their values.
@@ -166,23 +166,23 @@ contract ShieldedStorage {
 
 *   Shielded types **cannot** be emitted in events, as this would expose confidential data.
 
-*   **Currently**: Although native event encryption isn'y supported, developers may use the encrypt and decrypt precompiles at addresses 102/103 (see [example](https://github.com/SeismicSystems/early-builds/blob/main/encrypted_logs/src/end-to-end-mvp/EncryptedLogs.sol)) to secure event data.
+*   **Currently**: Although native event encryption isn'y supported, developers may use the encrypt and decrypt precompiles at addresses 102/103 (see [example](https://github.com/SeismicSystems/seismic-solidity/blob/seismic/test/seismic_example/encrypted_logs.sol)) to secure event data.
 
-*   **Future Improvements**: We plan to support encrypted events, enabling the emission of shielded types without compromising confidentiality.
+*   **Future Improvements**: We plan to support encrypted events, enabling the emission of shielded types without compromising confidentiality or developer experience.
 
     `event ConfidentialEvent(suint256 confidentialData); // Not allowed`
-    
-    
+
+
 ## 4\. Casting and Type Conversion
 
 ### 4.1 Explicit Casting Required
 
 *   Shielded types and their unshielded counterparts do **not** support implicit casting.
-    
+
 ```
 uint256 publicNumber = 100;
 suint256 confidentialNumber = suint256(publicNumber); // Explicit casting required`
-``` 
+```
 
 ### 4.2 Casting Addresses to `payable`
 
@@ -190,7 +190,7 @@ suint256 confidentialNumber = suint256(publicNumber); // Explicit casting requir
 
 ```
 address payable pay = payable(saddress(SomethingCastableToAnSaddress));`
-```    
+```
 
 
 ## 5\. New Instructions
@@ -210,20 +210,20 @@ We introduce two new EVM instructions to handle confidential storage:
 ### 5.3 Storage Rights Management
 
 *   **Flagged Storage**: We introduce `FlaggedStorage` to tag storage slots as public or private based on the store instructions (`SSTORE` for public, `CSTORE` for confidential).
-    
+
 *   **Access Control**:
-    
+
     *   **Public Storage**: Can be stored and loaded using `SSTORE` and `SLOAD`.
     *   **Confidential Storage**: Must be stored using `CSTORE` and loaded using `CLOAD`.
 *   **Flexibility**: Storage slots are not permanently fixed as public or private. Developers can manage access rights using inline assembly if needed. Otherwise, the compiler will take care of it.
-    
+
 
 ## 6\. Arrays and Collections
 
 ### 6.1 Shielded Arrays
 
-*   Arrays of shielded types are supported, and their metadata (e.g., length of a dynamic array) are also stored in confidential storage. 
-    
+*   Arrays of shielded types are supported, and their metadata (e.g., length of a dynamic array) are also stored in confidential storage.
+
 `suint256[] private confidentialDynamicArray;`
 
 *   As such, when interfacing with shielded arrays, we've conserved Solidity rules and just transposed them by using shielded types:
@@ -242,7 +242,7 @@ We introduce two new EVM instructions to handle confidential storage:
 ### 6.3 Mappings
 
 *	 Mappings using shielded types for keys and/or values are supported. In such cases, the storage operations will employ the confidential instructions (CLOAD/CSTORE) accordingly.
- 
+
 
 ## 7\. Best Practices
 
