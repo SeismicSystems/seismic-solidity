@@ -823,7 +823,7 @@ void CommandLineInterface::processInput()
 
 void CommandLineInterface::printVersion()
 {
-	sout() << "solc, the solidity compiler commandline interface" << std::endl;
+	sout() << "ssolc, the seismic solidity compiler commandline interface" << std::endl;
 	sout() << "Version: " << solidity::frontend::VersionString << std::endl;
 }
 
