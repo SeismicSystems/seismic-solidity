@@ -96,12 +96,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.os }}-${{ matrix.arch }}
-          path: build/*
+          path: build/*ssolc-*
 
   release:
     name: Create Release
     needs: build-and-release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for creating releases in the same repo
 
     steps:
       - name: Download All Artifacts
@@ -109,13 +111,10 @@ jobs:
         with:
           path: artifacts/
 
-      - name: Install GitHub CLI
-        run: sudo apt-get install -y gh
-
-      - name: Authenticate GitHub CLI
-        run: echo "${{ secrets.RELEASES_TOKEN }}" | gh auth login --with-token
-
-      - name: Create Single Release
+      # Create release using built-in GITHUB_TOKEN
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           cd artifacts/
           # Find all tar.gz and zip files recursively
@@ -130,14 +129,12 @@ jobs:
           echo "Found archive files:"
           echo "$ARCHIVES"
       
-           # Use shortened SHA directly for tag and title
+          # Use shortened SHA directly for tag and title
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "Using shortened SHA: $SHORT_SHA"
 
-          # Upload the files as release assets
+          # Upload the files as release assets in the same repository
           gh release create "$SHORT_SHA" \
-            --repo SeismicSystems/seismic-solidity-releases \
             --title "Release for $SHORT_SHA" \
             --notes "Automated release for commit ${{ github.sha }}." \
             $ARCHIVES
-      
