@@ -1,140 +1,140 @@
 name: Build and Release
 
 on:
-  push:
-    branches:
-      - seismic
+    push:
+        branches:
+            - seismic
 
 jobs:
-  build-and-release:
-    name: Build and Release Binaries
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
-        arch: [x86_64, arm64]
-        exclude:
-          - os: macos-latest
-            arch: x86_64
-          - os: macos-13
-            arch: arm64
+    build-and-release:
+        name: Build and Release Binaries
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+                arch: [x86_64, arm64]
+                exclude:
+                    - os: macos-latest
+                      arch: x86_64
+                    - os: macos-13
+                      arch: arm64
 
-    steps:
-      # Checkout source code
-      - name: Checkout source code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
+        steps:
+            # Checkout source code
+            - name: Checkout source code
+              uses: actions/checkout@v4
+              with:
+                  submodules: recursive
 
-      # Set up dependencies
-      - name: Set up dependencies (Linux & macOS)
-        if: ${{ matrix.os != 'windows-latest' }}
-        shell: bash
-        run: |
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            sudo apt-get update
-            sudo apt-get install -y build-essential python3 python3-pip \
-              zlib1g-dev libboost-all-dev libssl-dev ccache
-          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
-            brew update
-            brew install boost openssl ccache
-          fi
+            # Set up dependencies
+            - name: Set up dependencies (Linux & macOS)
+              if: ${{ matrix.os != 'windows-latest' }}
+              shell: bash
+              run: |
+                  if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+                    sudo apt-get update
+                    sudo apt-get install -y build-essential python3 python3-pip \
+                      zlib1g-dev libboost-all-dev libssl-dev ccache
+                  elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+                    brew update
+                    brew install boost openssl ccache
+                  fi
 
-      - name: Set up dependencies (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        shell: powershell
-        run: |
-          .\scripts\install_deps.ps1
+            - name: Set up dependencies (Windows)
+              if: ${{ matrix.os == 'windows-latest' }}
+              shell: powershell
+              run: |
+                  .\scripts\install_deps.ps1
 
-      - name: Build Seismic Solidity on Windows
-        if: ${{ matrix.os == 'windows-latest' }}
-        shell: powershell
-        run: |
-          .\.circleci\build_win.ps1
+            - name: Build Seismic Solidity on Windows
+              if: ${{ matrix.os == 'windows-latest' }}
+              shell: powershell
+              run: |
+                  .\.circleci\build_win.ps1
 
-      # Build Seismic Solidity
-      - name: Build Seismic Solidity on Linux & macOS
-        if: ${{ matrix.os != 'windows-latest' }}
-        shell: bash
-        run: |
-          mkdir build
-          cd build
-          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
-            cmake .. -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF
-          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            cmake .. -DCMAKE_BUILD_TYPE=Release \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF            
-          fi
-          cmake --build . --config Release -j 2
+            # Build Seismic Solidity
+            - name: Build Seismic Solidity on Linux & macOS
+              if: ${{ matrix.os != 'windows-latest' }}
+              shell: bash
+              run: |
+                  mkdir build
+                  cd build
+                  if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+                    cmake .. -DCMAKE_BUILD_TYPE=Release \
+                      -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+                      -DUSE_Z3=OFF -DPEDANTIC=OFF
+                  elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+                    cmake .. -DCMAKE_BUILD_TYPE=Release \
+                      -DUSE_Z3=OFF -DPEDANTIC=OFF            
+                  fi
+                  cmake --build . --config Release -j 2
 
-      # Archive binary
-      - name: Archive binary (Linux & macOS)
-        if: ${{ matrix.os != 'windows-latest' }}
-        shell: bash
-        run: |
-          cd build
-          if [ "${{ matrix.os }}" = "macos-latest" ]; then
-            tar -czvf ssolc-macos-arm64.tar.gz solc/solc
-          elif [ "${{ matrix.os }}" = "macos-13" ]; then
-            tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
-          elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
-          fi
+            # Archive binary
+            - name: Archive binary (Linux & macOS)
+              if: ${{ matrix.os != 'windows-latest' }}
+              shell: bash
+              run: |
+                  cd build
+                  if [ "${{ matrix.os }}" = "macos-latest" ]; then
+                    tar -czvf ssolc-macos-arm64.tar.gz solc/solc
+                  elif [ "${{ matrix.os }}" = "macos-13" ]; then
+                    tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
+                  elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+                    tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
+                  fi
 
-      - name: Archive binary (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        shell: powershell
-        run: |
-          cd build
-          Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
+            - name: Archive binary (Windows)
+              if: ${{ matrix.os == 'windows-latest' }}
+              shell: powershell
+              run: |
+                  cd build
+                  Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
 
-      # Upload artifacts
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: binaries-${{ matrix.os }}-${{ matrix.arch }}
-          path: build/*ssolc-*
+            # Upload artifacts
+            - name: Upload Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: binaries-${{ matrix.os }}-${{ matrix.arch }}
+                  path: build/*ssolc-*
 
-  release:
-    name: Create Release
-    needs: build-and-release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # Needed for creating releases in the same repo
+    release:
+        name: Create Release
+        needs: build-and-release
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write # Needed for creating releases in the same repo
 
-    steps:
-      - name: Download All Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts/
+        steps:
+            - name: Download All Artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: artifacts/
 
-      # Create release using built-in GITHUB_TOKEN
-      - name: Create Release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          cd artifacts/
-          # Find all tar.gz and zip files recursively
-          ARCHIVES=$(find . -type f \( -name "*.tar.gz" -o -name "*.zip" \))
-      
-          # Check if files were found
-          if [ -z "$ARCHIVES" ]; then
-            echo "Error: No archive files found in artifacts directory!"
-            exit 1
-          fi
-      
-          echo "Found archive files:"
-          echo "$ARCHIVES"
-      
-          # Use shortened SHA directly for tag and title
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          echo "Using shortened SHA: $SHORT_SHA"
+            # Create release using built-in GITHUB_TOKEN
+            - name: Create Release
+              env:
+                  GITHUB_TOKEN: ${{ github.token }}
+              run: |
+                  cd artifacts/
+                  # Find all tar.gz and zip files recursively
+                  ARCHIVES=$(find . -type f \( -name "*.tar.gz" -o -name "*.zip" \))
 
-          # Upload the files as release assets in the same repository
-          gh release create "$SHORT_SHA" \
-            --title "Release for $SHORT_SHA" \
-            --notes "Automated release for commit ${{ github.sha }}." \
-            $ARCHIVES
+                  # Check if files were found
+                  if [ -z "$ARCHIVES" ]; then
+                    echo "Error: No archive files found in artifacts directory!"
+                    exit 1
+                  fi
+
+                  echo "Found archive files:"
+                  echo "$ARCHIVES"
+
+                  # Use shortened SHA directly for tag and title
+                  SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+                  echo "Using shortened SHA: $SHORT_SHA"
+
+                  # Upload the files as release assets in the same repository
+                  gh release create "$SHORT_SHA" \
+                    --title "Release for $SHORT_SHA" \
+                    --notes "Automated release for commit ${{ github.sha }}." \
+                    $ARCHIVES
