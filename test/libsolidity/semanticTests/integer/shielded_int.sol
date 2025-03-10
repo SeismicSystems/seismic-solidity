@@ -1,7 +1,5 @@
 contract test {
-
     function intMinA() public pure returns (bool) {
-
         sint8 int8_min = type(sint8).min;
         require(int8_min == sint8(-2**7));
 
@@ -30,7 +28,6 @@ contract test {
     }
 
     function intMinB() public pure returns (bool) {
-
         sint72 int72_min = type(sint72).min;
         require(int72_min == sint72(-2**71));
 
@@ -235,11 +232,11 @@ contract test {
 
 
 // ----
-// sintMinA() -> true
-// sintMinB() -> true
-// sintMinC() -> true
-// sintMinD() -> true
-// sintMaxA() -> true
-// sintMaxB() -> true
-// sintMaxC() -> true
-// sintMaxD() -> true
+// intMinA() -> true
+// intMinB() -> true
+// intMinC() -> true
+// intMinD() -> true
+// intMaxA() -> true
+// intMaxB() -> true
+// intMaxC() -> true
+// intMaxD() -> true
