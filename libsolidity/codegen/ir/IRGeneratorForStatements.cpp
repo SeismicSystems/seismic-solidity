@@ -794,7 +794,7 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		solAssert(resultType == type(_unaryOperation.subExpression()), "Result type doesn't match!");
 		appendSimpleUnaryOperation(_unaryOperation, _unaryOperation.subExpression());
 	}
-	else if (resultType.category() == Type::Category::Bool)
+	else if (resultType.category() == Type::Category::Bool || resultType.category() == Type::Category::ShieldedBool)
 	{
 		solAssert(
 			op != Token::BitNot,
