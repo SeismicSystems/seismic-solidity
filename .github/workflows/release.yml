@@ -103,15 +103,17 @@ jobs:
         needs: build-and-release
         runs-on: ubuntu-latest
         permissions:
-            contents: write # Needed for creating releases in the same repo
+            contents: write
 
         steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
             - name: Download All Artifacts
               uses: actions/download-artifact@v4
               with:
                   path: artifacts/
 
-            # Create release using built-in GITHUB_TOKEN
             - name: Create Release
               env:
                   GITHUB_TOKEN: ${{ github.token }}
