@@ -4,7 +4,6 @@ on:
     push:
         branches:
             - seismic
-            - ameya/fix-release
 
 jobs:
     build-and-release:
