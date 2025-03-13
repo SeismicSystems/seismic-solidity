@@ -119,24 +119,34 @@ jobs:
                   GITHUB_TOKEN: ${{ github.token }}
               run: |
                   cd artifacts/
-                  # Find all tar.gz and zip files recursively
-                  ARCHIVES=$(find . -type f \( -name "*.tar.gz" -o -name "*.zip" \))
+
+                  # Move all archives to a flat directory structure
+                  mkdir -p release_files
+                  find . -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release_files/ \;
+
+                  cd release_files
 
                   # Check if files were found
+                  ARCHIVES=$(ls *.tar.gz *.zip 2>/dev/null || echo "")
                   if [ -z "$ARCHIVES" ]; then
-                    echo "Error: No archive files found in artifacts directory!"
+                    echo "Error: No archive files found in release_files directory!"
                     exit 1
                   fi
 
                   echo "Found archive files:"
-                  echo "$ARCHIVES"
+                  ls -la
 
                   # Use shortened SHA directly for tag and title
                   SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
                   echo "Using shortened SHA: $SHORT_SHA"
 
-                  # Upload the files as release assets in the same repository
+                  # Create release first
                   gh release create "$SHORT_SHA" \
                     --title "Release for $SHORT_SHA" \
-                    --notes "Automated release for commit ${{ github.sha }}." \
-                    $ARCHIVES
+                    --notes "Automated release for commit ${{ github.sha }}."
+
+                  # Then upload each asset separately
+                  for file in *.tar.gz *.zip; do
+                    echo "Uploading $file..."
+                    gh release upload "$SHORT_SHA" "$file" --clobber
+                  done
