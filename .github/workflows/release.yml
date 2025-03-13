@@ -12,7 +12,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest, macos-13]
+                os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest, macos-13]
                 arch: [x86_64, arm64]
                 exclude:
                     - os: macos-latest
@@ -66,7 +66,7 @@ jobs:
                       -DUSE_Z3=OFF -DPEDANTIC=OFF
                   elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
                     cmake .. -DCMAKE_BUILD_TYPE=Release \
-                      -DUSE_Z3=OFF -DPEDANTIC=OFF            
+                      -DUSE_Z3=OFF -DPEDANTIC=OFF
                   fi
                   cmake --build . --config Release -j 2
 
