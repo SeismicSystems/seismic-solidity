@@ -18,12 +18,11 @@ This is **experimental** software, thread with caution.
 2.  [Storage Behavior](#2-storage-behavior)
 3.  [Restrictions and Caveats](#3-restrictions-and-caveats)
     *   [3.1 No `public` Keyword for Shielded Variables](#31-no-public-keyword-for-shielded-variables)
-    *   [3.2 No Shielded Constants](#32-no-shielded-constants)
+    *   [3.2 No Shielded Constants or Immutables](#32-no-shielded-constants-or-immutables)
     *   [3.3 Literals and Enums](#33-literals-and-enums)
     *   [3.4 Exponentiation and Gas Costs](#34-exponentiation-and-gas-costs)
     *   [3.5 `.min()` and `.max()` Functions](#35-min-and-max-functions)
-    *   [3.6 `immutable` Variables](#36-immutable-variables)
-    *   [3.7 Events](#37-events)
+    *   [3.6 Events](#37-events)
 4.  [Casting and Type Conversion](#4-casting-and-type-conversion)
     *   [4.1 Explicit Casting Required](#41-explicit-casting-required)
     *   [4.2 Casting Addresses to `payable`](#42-casting-addresses-to-payable)
@@ -141,7 +140,7 @@ contract ShieldedStorage {
 
 ### 3.2 No Shielded Constants
 
-*   Shielded types **cannot** be used as constants. Constants are embedded in the contract bytecode, which is publicly accessible.
+*   Shielded types **cannot** be used as constants or immutables. Constants and Immutables are embedded in the contract bytecode, which is publicly accessible.
 
     `suint256 constant CONFIDENTIAL_CONSTANT = 42; // Not allowed`
 
@@ -158,11 +157,7 @@ contract ShieldedStorage {
 
 *   Calling `.min()` and `.max()` on shielded integers can reveal information about their values.
 
-### 3.6 `immutable` Variables
-
-*   Shielded `immutable` variables are only truly confidential if the transaction calldata used during their instantiation is encrypted.
-
-### 3.7 Events
+### 3.6 Events
 
 *   Shielded types **cannot** be emitted in events, as this would expose confidential data.
 
