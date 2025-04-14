@@ -27,6 +27,8 @@ contract C {
 }
 saddress view constant f_a;
 saddress pure constant f_b;
+saddress view immutable f_c;
+saddress pure immutable f_d;
 // ----
 // TypeError 2311: (17-30): Shielded address types can only be payable or non-payable.
 // TypeError 2311: (40-53): Shielded address types can only be payable or non-payable.
@@ -47,6 +49,7 @@ saddress pure constant f_b;
 // TypeError 2311: (707-719): Address types can only be payable or non-payable.
 // TypeError 2311: (833-845): Address types can only be payable or non-payable.
 // TypeError 2311: (871-884): Shielded address types can only be payable or non-payable.
-// DeclarationError 7491: (871-897): Shielded objects cannot be set to constant.
+// DeclarationError 7491: (871-897): Shielded objects cannot be set to constant or immutable.
 // TypeError 2311: (899-912): Shielded address types can only be payable or non-payable.
-// DeclarationError 7491: (899-925): Shielded objects cannot be set to constant.
+// DeclarationError 7491: (899-925): Shielded objects cannot be set to constant or immutable.
+
