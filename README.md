@@ -22,7 +22,7 @@ This is **experimental** software, thread with caution.
     *   [3.3 Literals and Enums](#33-literals-and-enums)
     *   [3.4 Exponentiation and Gas Costs](#34-exponentiation-and-gas-costs)
     *   [3.5 `.min()` and `.max()` Functions](#35-min-and-max-functions)
-    *   [3.6 Events](#37-events)
+    *   [3.6 Events](#36-events)
 4.  [Casting and Type Conversion](#4-casting-and-type-conversion)
     *   [4.1 Explicit Casting Required](#41-explicit-casting-required)
     *   [4.2 Casting Addresses to `payable`](#42-casting-addresses-to-payable)
