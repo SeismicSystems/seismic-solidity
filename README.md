@@ -138,7 +138,7 @@ contract ShieldedStorage {
 
     `suint256 public confidentialNumber; // This will cause a compilation error`
 
-### 3.2 No Shielded Constants
+### 3.2 No Shielded Constants or Immutables
 
 *   Shielded types **cannot** be used as constants or immutables. Constants and Immutables are embedded in the contract bytecode, which is publicly accessible.
 
