@@ -52,4 +52,11 @@ saddress pure immutable f_d;
 // DeclarationError 7491: (871-897): Shielded objects cannot be set to constant or immutable.
 // TypeError 2311: (899-912): Shielded address types can only be payable or non-payable.
 // DeclarationError 7491: (899-925): Shielded objects cannot be set to constant or immutable.
-
+// TypeError 2311: (927-940): Shielded address types can only be payable or non-payable.
+// DeclarationError 8342: (927-954): Only constant variables are allowed at file level.
+// DeclarationError 8297: (927-954): The "immutable" keyword can only be used for state variables.
+// DeclarationError 7491: (927-954): Shielded objects cannot be set to constant or immutable.
+// TypeError 2311: (956-969): Shielded address types can only be payable or non-payable.
+// DeclarationError 8342: (956-983): Only constant variables are allowed at file level.
+// DeclarationError 8297: (956-983): The "immutable" keyword can only be used for state variables.
+// DeclarationError 7491: (956-983): Shielded objects cannot be set to constant or immutable.

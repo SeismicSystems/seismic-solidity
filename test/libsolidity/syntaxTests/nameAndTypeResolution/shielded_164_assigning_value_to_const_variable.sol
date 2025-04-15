@@ -5,4 +5,4 @@ contract Foo {
 }
 // ----
 // DeclarationError 7491: (61-82): Shielded objects cannot be set to constant or immutable.
-// DeclarationError 7491: (61-82): Shielded objects cannot be set to constant or immutable.
+// DeclarationError 7491: (88-110): Shielded objects cannot be set to constant or immutable.

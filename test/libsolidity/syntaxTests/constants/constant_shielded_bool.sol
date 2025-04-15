@@ -4,4 +4,4 @@ contract C {
 }
 // ----
 // DeclarationError 7491: (17-40): Shielded objects cannot be set to constant or immutable.
-// DeclarationError 7491: (17-40): Shielded objects cannot be set to constant or immutable.
+// DeclarationError 7491: (46-71): Shielded objects cannot be set to constant or immutable.
