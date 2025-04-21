@@ -9,7 +9,7 @@ contract C {
     }
 }
 // ====
-// EVMVersion: >=petersburg
+// EVMVersion: >=Mercury
 // ----
 // pushEmpty(suint256): 128
 // gas irOptimized: 410745

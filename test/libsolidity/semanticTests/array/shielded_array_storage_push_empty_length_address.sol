@@ -10,7 +10,7 @@ contract C {
     }
 }
 // ====
-// EVMVersion: >=petersburg
+// EVMVersion: >=Mercury
 // ----
 // set_get_length(suint256): 0 -> 0
 // set_get_length(suint256): 1 -> 1
