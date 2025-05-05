@@ -15,7 +15,7 @@
 	along with solidity.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
- * Optimisation stage that aggressively rematerializes certain variables ina a function to free
+ * Optimisation stage that aggressively rematerializes certain variables in a function to free
  * space on the stack until it is compilable.
  */
 
@@ -237,32 +237,41 @@ void eliminateVariablesOptimizedCodegen(
 }
 
 std::tuple<bool, Block> StackCompressor::run(
-	Dialect const& _dialect,
 	Object const& _object,
 	bool _optimizeStackAllocation,
 	size_t _maxIterations)
 {
 	yulAssert(_object.hasCode());
+	yulAssert(_object.dialect(), "No dialect");
 	yulAssert(
 		!_object.code()->root().statements.empty() && std::holds_alternative<Block>(_object.code()->root().statements.at(0)),
 		"Need to run the function grouper before the stack compressor."
 	);
 	bool usesOptimizedCodeGenerator = false;
-	if (auto evmDialect = dynamic_cast<EVMDialect const*>(&_dialect))
+	auto evmDialect = dynamic_cast<EVMDialect const*>(_object.dialect());
+	if (evmDialect)
+	{
+		yulAssert(!evmDialect->eofVersion().has_value(), "StackCompressor does not support EOF.");
 		usesOptimizedCodeGenerator =
 			_optimizeStackAllocation &&
 			evmDialect->evmVersion().canOverchargeGasForCall() &&
 			evmDialect->providesObjectAccess();
-	bool allowMSizeOptimization = !MSizeFinder::containsMSize(_dialect, _object.code()->root());
+	}
+	bool allowMSizeOptimization = !MSizeFinder::containsMSize(*_object.dialect(), _object.code()->root());
 	Block astRoot = std::get<Block>(ASTCopier{}(_object.code()->root()));
 	if (usesOptimizedCodeGenerator)
 	{
-		yul::AsmAnalysisInfo analysisInfo = yul::AsmAnalyzer::analyzeStrictAssertCorrect(_dialect, astRoot, _object.qualifiedDataNames());
-		std::unique_ptr<CFG> cfg = ControlFlowGraphBuilder::build(analysisInfo, _dialect, astRoot);
-		eliminateVariablesOptimizedCodegen(
-			_dialect,
+		yul::AsmAnalysisInfo analysisInfo = yul::AsmAnalyzer::analyzeStrictAssertCorrect(
+			*_object.dialect(),
 			astRoot,
-			StackLayoutGenerator::reportStackTooDeep(*cfg),
+			_object.summarizeStructure()
+		);
+		std::unique_ptr<CFG> cfg = ControlFlowGraphBuilder::build(analysisInfo, *_object.dialect(), astRoot);
+		yulAssert(evmDialect);
+		eliminateVariablesOptimizedCodegen(
+			*_object.dialect(),
+			astRoot,
+			StackLayoutGenerator::reportStackTooDeep(*cfg, *evmDialect),
 			allowMSizeOptimization
 		);
 	}
@@ -271,12 +280,12 @@ std::tuple<bool, Block> StackCompressor::run(
 		for (size_t iterations = 0; iterations < _maxIterations; iterations++)
 		{
 			Object object(_object);
-			object.setCode(std::make_shared<AST>(std::get<Block>(ASTCopier{}(astRoot))));
-			std::map<YulName, int> stackSurplus = CompilabilityChecker(_dialect, object, _optimizeStackAllocation).stackDeficit;
+			object.setCode(std::make_shared<AST>(*_object.dialect(), std::get<Block>(ASTCopier{}(astRoot))));
+			std::map<YulName, int> stackSurplus = CompilabilityChecker(object, _optimizeStackAllocation).stackDeficit;
 			if (stackSurplus.empty())
 				return std::make_tuple(true, std::move(astRoot));
 			eliminateVariables(
-				_dialect,
+				*object.dialect(),
 				astRoot,
 				stackSurplus,
 				allowMSizeOptimization

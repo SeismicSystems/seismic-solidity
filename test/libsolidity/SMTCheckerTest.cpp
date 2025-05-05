@@ -131,11 +131,19 @@ SMTCheckerTest::SMTCheckerTest(std::string const& _filename):
 #elif __linux__
 		if (os == "linux")
 			m_shouldRun = false;
+#else
+		// On other operating systems this setting is ignored (as we don't test other operating systems in CI),
+		// but we need to prevent an unused-variable warning.
+		(void)os;
 #endif
 	}
 
 	auto const& bmcLoopIterations = m_reader.sizetSetting("BMCLoopIterations", 1);
 	m_modelCheckerSettings.bmcLoopIterations = std::optional<unsigned>{bmcLoopIterations};
+
+	// TODO: Enable EOF testing when EOF gets stable and smtCheckerTest starts using IR.
+	if (CommonOptions::get().eofVersion().has_value())
+		m_shouldRun = false;
 }
 
 void SMTCheckerTest::setupCompiler(CompilerStack& _compiler)

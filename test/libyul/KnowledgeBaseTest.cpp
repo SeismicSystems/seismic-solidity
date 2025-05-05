@@ -20,17 +20,18 @@
 
 #include <test/Common.h>
 
+#include <test/libsolidity/util/SoltestErrors.h>
+
 #include <test/libyul/Common.h>
 
 #include <libyul/Object.h>
+#include <libyul/YulStack.h>
 #include <libyul/optimiser/ASTCopier.h>
 #include <libyul/optimiser/KnowledgeBase.h>
 #include <libyul/optimiser/SSAValueTracker.h>
 #include <libyul/optimiser/NameDispenser.h>
 #include <libyul/optimiser/CommonSubexpressionEliminator.h>
 #include <libyul/backends/evm/EVMDialect.h>
-
-#include <liblangutil/ErrorReporter.h>
 
 #include <boost/test/unit_test.hpp>
 
@@ -44,26 +45,28 @@ class KnowledgeBaseTest
 protected:
 	KnowledgeBase constructKnowledgeBase(std::string const& _source)
 	{
-		ErrorList errorList;
-		std::shared_ptr<AsmAnalysisInfo> analysisInfo;
-		std::tie(m_object, analysisInfo) = yul::test::parse(_source, m_dialect, errorList);
-		BOOST_REQUIRE(m_object && errorList.empty() && m_object->hasCode());
+		YulStack yulStack = parseYul(_source);
+		solUnimplementedAssert(yulStack.parserResult()->subObjects.empty(), "Tests with subobjects not supported.");
+		soltestAssert(!yulStack.hasErrors());
+		m_object = yulStack.parserResult();
 
 		auto astRoot = std::get<Block>(yul::ASTCopier{}(m_object->code()->root()));
-		NameDispenser dispenser(m_dialect, astRoot);
+		NameDispenser dispenser(*m_object->dialect(), astRoot);
 		std::set<YulName> reserved;
-		OptimiserStepContext context{m_dialect, dispenser, reserved, 0};
+		OptimiserStepContext context{*m_object->dialect(), dispenser, reserved, 0};
 		CommonSubexpressionEliminator::run(context, astRoot);
 
 		m_ssaValues(astRoot);
 		for (auto const& [name, expression]: m_ssaValues.values())
 			m_values[name].value = expression;
 
-		m_object->setCode(std::make_shared<AST>(std::move(astRoot)));
-		return KnowledgeBase([this](YulName _var) { return util::valueOrNullptr(m_values, _var); });
+		m_object->setCode(std::make_shared<AST>(*m_object->dialect(), std::move(astRoot)));
+		return KnowledgeBase(
+			[this](YulName _var) { return util::valueOrNullptr(m_values, _var); },
+			*m_object->dialect()
+		);
 	}
 
-	EVMDialect m_dialect{EVMVersion{}, true};
 	std::shared_ptr<Object> m_object;
 	SSAValueTracker m_ssaValues;
 	std::map<YulName, AssignedValue> m_values;

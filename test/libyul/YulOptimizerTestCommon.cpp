@@ -18,6 +18,8 @@
 
 #include <test/libyul/YulOptimizerTestCommon.h>
 
+#include <test/libsolidity/util/SoltestErrors.h>
+
 #include <libyul/optimiser/BlockFlattener.h>
 #include <libyul/optimiser/VarDeclInitializer.h>
 #include <libyul/optimiser/VarNameCleaner.h>
@@ -73,11 +75,12 @@ using namespace solidity::yul;
 using namespace solidity::yul::test;
 using namespace solidity::frontend;
 
-YulOptimizerTestCommon::YulOptimizerTestCommon(
-	std::shared_ptr<Object const> _obj,
-	Dialect const& _dialect
-): m_dialect(&_dialect), m_object(_obj), m_optimizedObject(std::make_shared<Object>(*_obj))
+YulOptimizerTestCommon::YulOptimizerTestCommon(std::shared_ptr<Object const> _obj):
+	m_object(_obj),
+	m_optimizedObject(std::make_shared<Object>(*_obj))
 {
+	soltestAssert(m_object && m_optimizedObject);
+
 	if (
 		std::any_of(
 			m_object->subObjects.begin(),
@@ -85,7 +88,7 @@ YulOptimizerTestCommon::YulOptimizerTestCommon(
 			[](auto const& subObject) { return dynamic_cast<Data*>(subObject.get()) == nullptr;}
 		)
 	)
-		solUnimplementedAssert(false, "The current implementation of YulOptimizerTests ignores subobjects that are not Data.");
+		solUnimplemented("The current implementation of YulOptimizerTests ignores subobjects that are not Data.");
 
 	m_namedSteps = {
 		{"disambiguator", [&]() { return disambiguate(); }},
@@ -108,8 +111,8 @@ YulOptimizerTestCommon::YulOptimizerTestCommon(
 		{"constantOptimiser", [&]() {
 			auto block = std::get<Block>(ASTCopier{}(m_object->code()->root()));
 			updateContext(block);
-			GasMeter meter(dynamic_cast<EVMDialect const&>(*m_dialect), false, 200);
-			ConstantOptimiser{dynamic_cast<EVMDialect const&>(*m_dialect), meter}(block);
+			GasMeter meter(dynamic_cast<EVMDialect const&>(*m_object->dialect()), false, 200);
+			ConstantOptimiser{dynamic_cast<EVMDialect const&>(*m_object->dialect()), meter}(block);
 			return block;
 		}},
 		{"varDeclInitializer", [&]() {
@@ -410,16 +413,15 @@ YulOptimizerTestCommon::YulOptimizerTestCommon(
 			size_t maxIterations = 16;
 			{
 				Object object(*m_optimizedObject);
-				object.setCode(std::make_shared<AST>(std::get<Block>(ASTCopier{}(block))));
-				block = std::get<1>(StackCompressor::run(*m_dialect, object, true, maxIterations));
+				object.setCode(std::make_shared<AST>(*m_object->dialect(), std::get<Block>(ASTCopier{}(block))));
+				block = std::get<1>(StackCompressor::run(object, true, maxIterations));
 			}
 			BlockFlattener::run(*m_context, block);
 			return block;
 		}},
 		{"fullSuite", [&]() {
-			GasMeter meter(dynamic_cast<EVMDialect const&>(*m_dialect), false, 200);
+			GasMeter meter(dynamic_cast<EVMDialect const&>(*m_object->dialect()), false, 200);
 			OptimiserSuite::run(
-				*m_dialect,
 				&meter,
 				*m_optimizedObject,
 				true,
@@ -433,9 +435,8 @@ YulOptimizerTestCommon::YulOptimizerTestCommon(
 			auto block = disambiguate();
 			updateContext(block);
 			Object object(*m_optimizedObject);
-			object.setCode(std::make_shared<AST>(std::get<Block>(ASTCopier{}(block))));
+			object.setCode(std::make_shared<AST>(*m_object->dialect(), std::get<Block>(ASTCopier{}(block))));
 			auto const unreachables = CompilabilityChecker{
-				*m_dialect,
 				object,
 				true
 			}.unreachableVariables;
@@ -495,12 +496,10 @@ void YulOptimizerTestCommon::setStep(std::string const& _optimizerStep)
 
 bool YulOptimizerTestCommon::runStep()
 {
-	yulAssert(m_dialect, "Dialect not set.");
-
 	if (m_namedSteps.count(m_optimizerStep))
 	{
 		auto block = m_namedSteps[m_optimizerStep]();
-		m_optimizedObject->setCode(std::make_shared<AST>(std::move(block)));
+		m_optimizedObject->setCode(std::make_shared<AST>(*m_object->dialect(), std::move(block)));
 	}
 	else
 		return false;
@@ -544,15 +543,15 @@ Block const* YulOptimizerTestCommon::run()
 
 Block YulOptimizerTestCommon::disambiguate()
 {
-	auto block = std::get<Block>(Disambiguator(*m_dialect, *m_object->analysisInfo)(m_object->code()->root()));
+	auto block = std::get<Block>(Disambiguator(*m_object->dialect(), *m_object->analysisInfo)(m_object->code()->root()));
 	return block;
 }
 
 void YulOptimizerTestCommon::updateContext(Block const& _block)
 {
-	m_nameDispenser = std::make_unique<NameDispenser>(*m_dialect, _block, m_reservedIdentifiers);
+	m_nameDispenser = std::make_unique<NameDispenser>(*m_object->dialect(), _block, m_reservedIdentifiers);
 	m_context = std::make_unique<OptimiserStepContext>(OptimiserStepContext{
-		*m_dialect,
+		*m_object->dialect(),
 		*m_nameDispenser,
 		m_reservedIdentifiers,
 		frontend::OptimiserSettings::standard().expectedExecutionsPerDeployment

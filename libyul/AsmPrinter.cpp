@@ -23,6 +23,7 @@
 
 #include <libyul/AsmPrinter.h>
 #include <libyul/AST.h>
+#include <libyul/Dialect.h>
 #include <libyul/Exceptions.h>
 #include <libyul/Utilities.h>
 
@@ -41,6 +42,16 @@ using namespace solidity;
 using namespace solidity::langutil;
 using namespace solidity::util;
 using namespace solidity::yul;
+
+std::string AsmPrinter::format(
+	AST const& _ast,
+	std::optional<std::map<unsigned, std::shared_ptr<std::string const>>> const& _sourceIndexToName,
+	DebugInfoSelection const& _debugInfoSelection,
+	CharStreamProvider const* _soliditySourceProvider)
+{
+	return AsmPrinter{_ast.dialect(), _sourceIndexToName, _debugInfoSelection, _soliditySourceProvider}(_ast.root());
+}
+
 
 std::string AsmPrinter::operator()(Literal const& _literal)
 {
@@ -65,6 +76,11 @@ std::string AsmPrinter::operator()(Identifier const& _identifier)
 {
 	yulAssert(!_identifier.name.empty(), "Invalid identifier.");
 	return formatDebugData(_identifier) + _identifier.name.str();
+}
+
+std::string AsmPrinter::operator()(BuiltinName const& _builtin)
+{
+	return formatDebugData(_builtin) + m_dialect.builtin(_builtin.handle).name;
 }
 
 std::string AsmPrinter::operator()(ExpressionStatement const& _statement)
@@ -135,7 +151,7 @@ std::string AsmPrinter::operator()(FunctionDefinition const& _functionDefinition
 std::string AsmPrinter::operator()(FunctionCall const& _functionCall)
 {
 	std::string const locationComment = formatDebugData(_functionCall);
-	std::string const functionName = (*this)(_functionCall.functionName);
+	std::string const functionName = std::visit(*this, _functionCall.functionName);
 	return
 		locationComment +
 		functionName + "(" +

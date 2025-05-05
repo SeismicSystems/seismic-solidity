@@ -1069,7 +1069,7 @@ by two, without the optimizer touching the constant two, you can use
     let double := verbatim_1i_1o(hex"600202", x)
 
 This code will result in a ``dup1`` opcode to retrieve ``x``
-(the optimizer might directly re-use result of the
+(the optimizer might directly reuse result of the
 ``calldataload`` opcode, though)
 directly followed by ``600202``. The code is assumed to
 consume the copied value of ``x`` and produce the result
@@ -1094,7 +1094,8 @@ the compiler. Violations of these restrictions can result in
 undefined behavior.
 
 - Control-flow should not jump into or out of verbatim blocks,
-  but it can jump within the same verbatim block.
+  but it can jump within the same verbatim block. In particular,
+  reverting or returning from the block is *not* allowed.
 - Stack contents apart from the input and output parameters
   should not be accessed.
 - The stack height difference should be exactly ``m - n``

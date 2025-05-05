@@ -35,7 +35,7 @@
 
 namespace solidity::yul
 {
-struct Dialect;
+class Dialect;
 }
 
 namespace solidity::yul::test

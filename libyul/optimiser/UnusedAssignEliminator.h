@@ -33,7 +33,7 @@
 
 namespace solidity::yul
 {
-struct Dialect;
+class Dialect;
 
 /**
  * Optimiser component that removes assignments to variables that are not used
@@ -113,7 +113,7 @@ struct Dialect;
  *
  * Prerequisite: Disambiguator, ForLoopInitRewriter.
  */
-class UnusedAssignEliminator: public UnusedStoreBase
+class UnusedAssignEliminator: public UnusedStoreBase<YulName>
 {
 public:
 	static constexpr char const* name{"UnusedAssignEliminator"};

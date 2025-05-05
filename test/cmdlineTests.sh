@@ -220,6 +220,27 @@ json = re.sub(r"\n\s*\n", "\n", json)                                           
 json = re.sub(r"},(\n{0,1})\n*(\s*(]|}))", r"}\1\2", json)                          # Remove trailing comma
 open("$stdout_path", "w").write(json)
 EOF
+        # Only do this to files that actually contain ethdebug output, because jq will reformat
+        # the whole file and its formatting differs from `solc --pretty-json`
+        if jq 'has("ethdebug")' "$stdout_path" --exit-status > /dev/null; then
+            local temporary_file
+            temporary_file=$(mktemp -t cmdline-ethdebug-XXXXXX.tmp)
+            if [[ -e ${tdir}/strip-ethdebug ]]; then
+                jq --indent 4 '
+                    (. | .. | objects | select(has("ethdebug"))) |= (.ethdebug = "<ETHDEBUG DEBUG DATA REMOVED>")
+                ' "$stdout_path" > "$temporary_file"
+            else
+                jq --indent 4 '
+                    if .ethdebug.compilation.compiler.version? != null then
+                        .ethdebug.compilation.compiler.version = "<VERSION REMOVED>"
+                    else
+                        .
+                    end
+                ' "$stdout_path" > "$temporary_file"
+            fi
+            mv "$temporary_file" "$stdout_path"
+        fi
+
         sed -i.bak -E -e 's/ Consider adding \\"pragma solidity \^[0-9.]*;\\"//g' "$stdout_path"
         sed -i.bak -E -e 's/\"opcodes\":[[:space:]]*\"[^"]+\"/\"opcodes\":\"<OPCODES REMOVED>\"/g' "$stdout_path"
         sed -i.bak -E -e 's/\"sourceMap\":[[:space:]]*\"[0-9:;-]+\"/\"sourceMap\":\"<SOURCEMAP REMOVED>\"/g' "$stdout_path"
@@ -275,12 +296,18 @@ EOF
     sed -i.bak -e 's/^\(Dynamic exception type:\).*/\1/' "$stderr_path"
     rm "$stderr_path.bak"
 
-    if [[ $exitCode -ne "$exit_code_expected" ]]
+    if [[ "$(cat "$stderr_path")" != "${stderr_expected}" ]]
     then
-        printError "Incorrect exit code. Expected $exit_code_expected but got $exitCode."
+        printError "Incorrect output on stderr received. Expected:"
+        echo -e "${stderr_expected}"
 
-        [[ $exit_code_expectation_file != "" ]] && ask_expectation_update "$exitCode" "$exit_code_expectation_file"
-        [[ $exit_code_expectation_file == "" ]] && fail
+        printError "But got:"
+        echo -e "$(cat "$stderr_path")"
+
+        printError "When running $solc_command"
+
+        [[ $stderr_expectation_file != "" ]] && ask_expectation_update "$(cat "$stderr_path")" "$stderr_expectation_file"
+        [[ $stderr_expectation_file == "" ]] && fail
     fi
 
     if [[ "$(cat "$stdout_path")" != "${stdout_expected}" ]]
@@ -297,18 +324,12 @@ EOF
         [[ $stdout_expectation_file == "" ]] && fail
     fi
 
-    if [[ "$(cat "$stderr_path")" != "${stderr_expected}" ]]
+    if [[ $exitCode -ne "$exit_code_expected" ]]
     then
-        printError "Incorrect output on stderr received. Expected:"
-        echo -e "${stderr_expected}"
+        printError "Incorrect exit code. Expected $exit_code_expected but got $exitCode."
 
-        printError "But got:"
-        echo -e "$(cat "$stderr_path")"
-
-        printError "When running $solc_command"
-
-        [[ $stderr_expectation_file != "" ]] && ask_expectation_update "$(cat "$stderr_path")" "$stderr_expectation_file"
-        [[ $stderr_expectation_file == "" ]] && fail
+        [[ $exit_code_expectation_file != "" ]] && ask_expectation_update "$exitCode" "$exit_code_expectation_file"
+        [[ $exit_code_expectation_file == "" ]] && fail
     fi
 
     rm "$stdout_path" "$stderr_path"

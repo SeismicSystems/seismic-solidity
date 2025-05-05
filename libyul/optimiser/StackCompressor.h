@@ -16,7 +16,7 @@
 */
 // SPDX-License-Identifier: GPL-3.0
 /**
- * Optimisation stage that aggressively rematerializes certain variables ina a function to free
+ * Optimisation stage that aggressively rematerializes certain variables in a function to free
  * space on the stack until it is compilable.
  */
 
@@ -29,8 +29,8 @@
 namespace solidity::yul
 {
 
-struct Dialect;
-struct Object;
+class Dialect;
+class Object;
 struct FunctionDefinition;
 
 /**
@@ -47,7 +47,6 @@ public:
 	/// Try to remove local variables until the AST is compilable.
 	/// @returns tuple with true if it was successful as first element, second element is the modified AST.
 	static std::tuple<bool, Block> run(
-		Dialect const& _dialect,
 		Object const& _object,
 		bool _optimizeStackAllocation,
 		size_t _maxIterations

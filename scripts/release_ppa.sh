@@ -66,9 +66,9 @@ sourcePPAConfig
 packagename=solc
 
 # This needs to be a still active release
-static_build_distribution=focal
+static_build_distribution=noble
 
-DISTRIBUTIONS="focal jammy noble oracular"
+DISTRIBUTIONS="jammy noble oracular"
 
 if is_release
 then

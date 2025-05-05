@@ -239,6 +239,8 @@ to limit the amount of gas.
 If the creation fails (due to out-of-stack, not enough balance or other problems),
 an exception is thrown.
 
+.. _salted-contract-creations:
+
 Salted contract creations / create2
 -----------------------------------
 

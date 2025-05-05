@@ -43,13 +43,13 @@ using namespace solidity::util;
 using namespace solidity::yul;
 
 
-Dialect const& yul::languageToDialect(Language _language, EVMVersion _version)
+Dialect const& yul::languageToDialect(Language _language, EVMVersion _version, std::optional<uint8_t> _eofVersion)
 {
 	switch (_language)
 	{
 	case Language::Assembly:
 	case Language::StrictAssembly:
-		return EVMDialect::strictAssemblyForEVMObjects(_version);
+		return EVMDialect::strictAssemblyForEVMObjects(_version, _eofVersion);
 	}
 	util::unreachable();
 }
@@ -77,7 +77,7 @@ void ObjectOptimizer::optimize(Object& _object, Settings const& _settings, bool 
 			);
 		}
 
-	Dialect const& dialect = languageToDialect(_settings.language, _settings.evmVersion);
+	Dialect const& dialect = languageToDialect(_settings.language, _settings.evmVersion, _settings.eofVersion);
 	std::unique_ptr<GasMeter> meter;
 	if (EVMDialect const* evmDialect = dynamic_cast<EVMDialect const*>(&dialect))
 		meter = std::make_unique<GasMeter>(*evmDialect, _isCreation, _settings.expectedExecutionsPerDeployment);
@@ -90,7 +90,6 @@ void ObjectOptimizer::optimize(Object& _object, Settings const& _settings, bool 
 	}
 
 	OptimiserSuite::run(
-		dialect,
 		meter.get(),
 		_object,
 		_settings.optimizeStackAllocation,
@@ -118,15 +117,15 @@ void ObjectOptimizer::overwriteWithOptimizedObject(util::h256 _cacheKey, Object&
 	CachedObject const& cachedObject = m_cachedObjects.at(_cacheKey);
 
 	yulAssert(cachedObject.optimizedAST);
-	_object.setCode(std::make_shared<AST>(ASTCopier{}.translate(*cachedObject.optimizedAST)));
+	yulAssert(cachedObject.dialect);
+	_object.setCode(std::make_shared<AST>(*cachedObject.dialect, ASTCopier{}.translate(*cachedObject.optimizedAST)));
 	yulAssert(_object.code());
+	yulAssert(_object.dialect());
 
 	// There's no point in caching AnalysisInfo because it references AST nodes. It can't be shared
 	// by multiple ASTs and it's easier to recalculate it than properly clone it.
-	yulAssert(cachedObject.dialect);
 	_object.analysisInfo = std::make_shared<AsmAnalysisInfo>(
 		AsmAnalyzer::analyzeStrictAssertCorrect(
-			*cachedObject.dialect,
 			_object
 		)
 	);
@@ -142,6 +141,7 @@ std::optional<h256> ObjectOptimizer::calculateCacheKey(
 )
 {
 	AsmPrinter asmPrinter(
+		languageToDialect(_settings.language, _settings.evmVersion, _settings.eofVersion),
 		_debugData.sourceNames,
 		DebugInfoSelection::All()
 	);
@@ -154,10 +154,13 @@ std::optional<h256> ObjectOptimizer::calculateCacheKey(
 	rawKey += keccak256(asmPrinter(_ast)).asBytes();
 	rawKey += keccak256(_debugData.formatUseSrcComment()).asBytes();
 	rawKey += h256(u256(_settings.language)).asBytes();
-	rawKey += FixedHash<1>(uint8_t(_settings.optimizeStackAllocation ? 0 : 1)).asBytes();
+	static_assert(static_cast<uint8_t>(static_cast<bool>(2)) == 1);
+	rawKey += FixedHash<1>(static_cast<uint8_t>(_settings.optimizeStackAllocation)).asBytes();
 	rawKey += h256(u256(_settings.expectedExecutionsPerDeployment)).asBytes();
-	rawKey += FixedHash<1>(uint8_t(_isCreation ? 0 : 1)).asBytes();
+	rawKey += FixedHash<1>(static_cast<uint8_t>(_isCreation)).asBytes();
 	rawKey += keccak256(_settings.evmVersion.name()).asBytes();
+	yulAssert(!_settings.eofVersion.has_value() || *_settings.eofVersion > 0);
+	rawKey += FixedHash<1>(static_cast<uint8_t>(_settings.eofVersion ? *_settings.eofVersion : 0)).asBytes();
 	rawKey += keccak256(_settings.yulOptimiserSteps).asBytes();
 	rawKey += keccak256(_settings.yulOptimiserCleanupSteps).asBytes();
 

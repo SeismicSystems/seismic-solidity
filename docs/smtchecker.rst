@@ -831,11 +831,7 @@ option ``--model-checker-solvers {all,cvc5,eld,smtlib2,z3}`` or the JSON option
   These can be used together with the compiler's `callback mechanism <https://github.com/ethereum/solc-js>`_ so that
   any solver binary from the system can be employed to synchronously return the results of the queries to the compiler.
   This can be used by both BMC and CHC depending on which solvers are called.
-- ``z3`` is available
-
-  - if ``solc`` is compiled with it;
-  - if a dynamic ``z3`` library of version >=4.8.x is installed in a Linux system (from Solidity 0.7.6);
-  - statically in ``soljson.js`` (from Solidity 0.6.9), that is, the JavaScript binary of the compiler.
+- ``z3`` is available statically in ``soljson.js`` (from Solidity 0.6.9), that is, the JavaScript binary of the compiler. Otherwise it is used via its binary which must be installed in the system.
 
 .. note::
   z3 version 4.8.16 broke ABI compatibility with previous versions and cannot
@@ -935,9 +931,9 @@ the arguments.
 +-----------------------------------+--------------------------------------+
 |``addmod``, ``mulmod``             |Supported precisely.                  |
 +-----------------------------------+--------------------------------------+
-|``gasleft``, ``blockhash``,        |Abstracted with UF.                   |
-|``keccak256``, ``ecrecover``       |                                      |
-|``ripemd160``                      |                                      |
+|``gasleft``, ``blobhash``,         |Abstracted with UF.                   |
+|``blockhash``, ``keccak256``,      |                                      |
+|``ecrecover``, ``ripemd160``       |                                      |
 +-----------------------------------+--------------------------------------+
 |pure functions without             |Abstracted with UF                    |
 |implementation (external or        |                                      |

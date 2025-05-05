@@ -7,6 +7,8 @@ add_library(yul
 	AST.h
 	AST.cpp
 	ASTForward.h
+	ASTLabelRegistry.cpp
+	ASTLabelRegistry.h
 	AsmJsonConverter.h
 	AsmJsonConverter.cpp
 	AsmJsonImporter.h
@@ -15,6 +17,7 @@ add_library(yul
 	AsmParser.h
 	AsmPrinter.cpp
 	AsmPrinter.h
+	Builtins.h
 	YulStack.h
 	YulStack.cpp
 	CompilabilityChecker.cpp
@@ -48,6 +51,8 @@ add_library(yul
 	backends/evm/AsmCodeGen.h
 	backends/evm/ConstantOptimiser.cpp
 	backends/evm/ConstantOptimiser.h
+	backends/evm/ControlFlow.cpp
+	backends/evm/ControlFlow.h
 	backends/evm/ControlFlowGraph.h
 	backends/evm/ControlFlowGraphBuilder.cpp
 	backends/evm/ControlFlowGraphBuilder.h
@@ -65,6 +70,13 @@ add_library(yul
 	backends/evm/NoOutputAssembly.cpp
 	backends/evm/OptimizedEVMCodeTransform.cpp
 	backends/evm/OptimizedEVMCodeTransform.h
+	backends/evm/SSACFGLiveness.cpp
+	backends/evm/SSACFGLiveness.h
+	backends/evm/SSACFGLoopNestingForest.cpp
+	backends/evm/SSACFGLoopNestingForest.h
+	backends/evm/SSACFGTopologicalSort.cpp
+	backends/evm/SSACFGTopologicalSort.h
+	backends/evm/SSAControlFlowGraph.cpp
 	backends/evm/SSAControlFlowGraph.h
 	backends/evm/SSAControlFlowGraphBuilder.cpp
 	backends/evm/SSAControlFlowGraphBuilder.h

@@ -53,11 +53,7 @@ public:
 	void operator()(FunctionDefinition const& _function) override;
 
 private:
-	void checkAllowed(YulName _name)
-	{
-		if (m_disallowedIdentifiers.count(_name))
-			m_foundDisallowedIdentifier = true;
-	}
+	void checkAllowed(FunctionName const& _name);
 
 	bool m_foundDisallowedIdentifier = false;
 	std::set<YulName> m_disallowedIdentifiers;

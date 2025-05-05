@@ -25,9 +25,9 @@
 
 #include <libsolidity/experimental/ast/TypeSystemHelper.h>
 
-#include <libyul/YulStack.h>
 #include <libyul/AsmPrinter.h>
 #include <libyul/AST.h>
+#include <libyul/backends/evm/EVMDialect.h>
 #include <libyul/optimiser/ASTCopier.h>
 
 #include <libsolidity/experimental/codegen/Common.h>
@@ -72,7 +72,7 @@ struct CopyTranslate: public yul::ASTCopier
 
 	yul::YulName translateIdentifier(yul::YulName _name) override
 	{
-		if (m_dialect.builtin(_name))
+		if (m_dialect.findBuiltin(_name.str()))
 			return _name;
 		else
 			return yul::YulName{"usr$" + _name.str()};
@@ -132,7 +132,7 @@ bool IRGeneratorForStatements::visit(InlineAssembly const& _assembly)
 	CopyTranslate bodyCopier{m_context, _assembly.dialect(), _assembly.annotation().externalReferences};
 	yul::Statement modified = bodyCopier(_assembly.operations().root());
 	solAssert(std::holds_alternative<yul::Block>(modified));
-	m_code << yul::AsmPrinter()(std::get<yul::Block>(modified)) << "\n";
+	m_code << yul::AsmPrinter(_assembly.dialect())(std::get<yul::Block>(modified)) << "\n";
 	return false;
 }
 

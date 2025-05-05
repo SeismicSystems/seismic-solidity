@@ -25,6 +25,7 @@
 #include <libyul/Exceptions.h>
 
 #include <libsolutil/CommonData.h>
+#include <libsolutil/Visitor.h>
 
 using namespace solidity;
 using namespace solidity::yul;
@@ -54,6 +55,14 @@ bool SyntacticallyEqual::expressionEqual(FunctionCall const& _lhs, FunctionCall 
 		});
 }
 
+bool SyntacticallyEqual::expressionEqual(FunctionName const& _lhs, FunctionName const& _rhs)
+{
+	return std::visit(util::GenericVisitor{
+		[&](BuiltinName const& _builtin) { return std::holds_alternative<BuiltinName>(_rhs) && _builtin.handle == std::get<BuiltinName>(_rhs).handle; },
+		[&](Identifier const& _identifier) { return std::holds_alternative<Identifier>(_rhs) && expressionEqual(_identifier, std::get<Identifier>(_rhs)); },
+	}, _lhs);
+}
+
 bool SyntacticallyEqual::expressionEqual(Identifier const& _lhs, Identifier const& _rhs)
 {
 	auto lhsIt = m_identifiersLHS.find(_lhs.name);
@@ -64,9 +73,8 @@ bool SyntacticallyEqual::expressionEqual(Identifier const& _lhs, Identifier cons
 }
 bool SyntacticallyEqual::expressionEqual(Literal const& _lhs, Literal const& _rhs)
 {
-	yulAssert(validLiteral(_lhs), "Invalid lhs literal during syntactical equality check");
-	yulAssert(validLiteral(_rhs), "Invalid rhs literal during syntactical equality check");
-
+	assert(validLiteral(_lhs));
+	assert(validLiteral(_rhs));
 	return _lhs.value == _rhs.value;
 }
 

@@ -571,7 +571,7 @@ void ContractCompiler::appendReturnValuePacker(TypePointers const& _typeParamete
 void ContractCompiler::registerStateVariables(ContractDefinition const& _contract)
 {
 	for (auto const location: {DataLocation::Storage, DataLocation::Transient})
-		for (auto const& var: ContractType(_contract).stateVariables(location))
+		for (auto const& var: ContractType(_contract).linearizedStateVariables(location))
 			m_context.addStateVariable(*std::get<0>(var), std::get<1>(var), std::get<2>(var));
 }
 
@@ -934,7 +934,7 @@ bool ContractCompiler::visit(InlineAssembly const& _inlineAssembly)
 
 	// Only used in the scope below, but required to live outside to keep the
 	// std::shared_ptr's alive
-	yul::Object object = {};
+	yul::Object object;
 
 	// The optimiser cannot handle external references
 	if (
@@ -946,10 +946,10 @@ bool ContractCompiler::visit(InlineAssembly const& _inlineAssembly)
 		solAssert(dialect, "");
 
 		// Create a modifiable copy of the code and analysis
-		object.setCode(std::make_shared<yul::AST>(yul::ASTCopier().translate(code->root())));
-		object.analysisInfo = std::make_shared<yul::AsmAnalysisInfo>(yul::AsmAnalyzer::analyzeStrictAssertCorrect(*dialect, object));
+		object.setCode(std::make_shared<yul::AST>(_inlineAssembly.dialect(), yul::ASTCopier().translate(code->root())));
+		object.analysisInfo = std::make_shared<yul::AsmAnalysisInfo>(yul::AsmAnalyzer::analyzeStrictAssertCorrect(object));
 
-		m_context.optimizeYul(object, *dialect, m_optimiserSettings);
+		m_context.optimizeYul(object, m_optimiserSettings);
 
 		code = object.code().get();
 		analysisInfo = object.analysisInfo.get();
@@ -960,6 +960,7 @@ bool ContractCompiler::visit(InlineAssembly const& _inlineAssembly)
 		*analysisInfo,
 		*m_context.assemblyPtr(),
 		m_context.evmVersion(),
+		std::nullopt,
 		identifierAccessCodeGen,
 		false,
 		m_optimiserSettings.optimizeStackAllocation

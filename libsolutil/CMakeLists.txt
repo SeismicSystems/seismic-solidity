@@ -7,7 +7,6 @@ set(sources
 	CommonData.h
 	CommonIO.cpp
 	CommonIO.h
-	cxx20.h
 	DisjointSet.cpp
 	DisjointSet.h
 	DominatorFinder.h
@@ -27,6 +26,8 @@ set(sources
 	Numeric.cpp
 	Numeric.h
 	picosha2.h
+	Profiler.cpp
+	Profiler.h
 	Result.h
 	SetOnce.h
 	StackTooDeepString.h

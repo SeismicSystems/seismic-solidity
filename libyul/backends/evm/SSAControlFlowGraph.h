@@ -37,6 +37,7 @@
 
 namespace solidity::yul
 {
+class SSACFGLiveness;
 
 class SSACFG
 {
@@ -75,7 +76,7 @@ public:
 		langutil::DebugData::ConstPtr debugData;
 		std::reference_wrapper<Scope::Function const> function;
 		std::reference_wrapper<FunctionCall const> call;
-		bool const canContinue = true;
+		bool canContinue;
 	};
 
 	struct Operation {
@@ -161,6 +162,10 @@ public:
 	};
 	struct UnreachableValue {};
 	using ValueInfo = std::variant<UnreachableValue, VariableValue, LiteralValue, PhiValue>;
+	bool isLiteralValue(ValueId const _var) const
+	{
+		return std::holds_alternative<LiteralValue>(valueInfo(_var));
+	}
 	ValueInfo& valueInfo(ValueId const _var)
 	{
 		return m_valueInfos.at(_var.value);
@@ -206,6 +211,20 @@ public:
 		yulAssert(it->second.value < m_valueInfos.size());
 		return it->second;
 	}
+
+	size_t phiArgumentIndex(BlockId const _source, BlockId const _target) const
+	{
+		auto const& targetBlock = block(_target);
+		auto idx = util::findOffset(targetBlock.entries, _source);
+		yulAssert(idx, fmt::format("Target block {} not found as entry in one of the exits of the current block {}.", _target.value, _source.value));
+		return *idx;
+	}
+
+	std::string toDot(
+		bool _includeDiGraphDefinition=true,
+		std::optional<size_t> _functionIndex=std::nullopt,
+		SSACFGLiveness const* _liveness=nullptr
+	) const;
 private:
 	std::deque<ValueInfo> m_valueInfos;
 	std::map<u256, ValueId> m_literals;

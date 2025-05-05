@@ -63,9 +63,14 @@ std::shared_ptr<Object> ObjectParser::parse(std::shared_ptr<Scanner> const& _sca
 			expectToken(Token::EOS);
 		return object;
 	}
-	catch (FatalError const& error)
+	catch (FatalError const&)
 	{
-		yulAssert(m_errorReporter.hasErrors(), "Unreported fatal error: "s + error.what());
+		if (!m_errorReporter.hasErrors())
+		{
+			std::cerr << "Unreported fatal error:" << std::endl;
+			std::cerr << boost::current_exception_diagnostic_information() << std::endl;
+			yulAssert(false, "Unreported fatal error.");
+		}
 	}
 	return nullptr;
 }
@@ -198,7 +203,7 @@ void ObjectParser::parseData(Object& _containingObject)
 std::string ObjectParser::parseUniqueName(Object const* _containingObject)
 {
 	expectToken(Token::StringLiteral, false);
-	auto const name = currentLiteral();
+	std::string const name{currentLiteral()};
 	if (name.empty())
 		parserError(3287_error, "Object name cannot be empty.");
 	else if (_containingObject && _containingObject->name == name)

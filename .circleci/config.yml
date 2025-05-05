@@ -9,33 +9,29 @@ version: 2.1
 parameters:
   ubuntu-2004-docker-image:
     type: string
-    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2004-24
-    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:b8b645fa7ab40d55f2d16eac295d16ca01ec51d32be7d668ae6eaecd47dbd763"
+    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2004-26
+    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:1f387a77be889f65a2a25986a5c5eccc88cec23fabe6aeaf351790751145c81e"
   ubuntu-2204-docker-image:
     type: string
-    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2204-9
-    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:80247de9655b1f39afd4ac22b14266bc9b9a0d64b283ae8fb9cb5b8250e4e77d"
-  ubuntu-2204-clang-docker-image:
-    type: string
-    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2204.clang-8
-    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:2662376fe0e1ec2d346495a19a6d64508c1048d5a7325d8600c33c343fa64a0f"
+    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2204-2
+    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:877fcc2589779f8245770711d10db92eda97d338dae76b6a9f27dde1a41b3aa0"
   ubuntu-2404-docker-image:
     type: string
-    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2404-1
-    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:5d6d27551104321a30326d6024bd4e96d9d899a97a78eb9feea364996f1d18b5"
+    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2404-3
+    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:ef6a91d7f1434c67fb9e05c6136d80f71c0ad9198479e1a88e3437680993cda4"
   ubuntu-2404-clang-docker-image:
     type: string
-    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2404.clang-1
-    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:8df0086907cc1e57068ad48841f2284a87bfbd0a95006286a19a7132d84bb861"
+    # solbuildpackpusher/solidity-buildpack-deps:ubuntu2404.clang-4
+    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:97fb2d1bc002b3624161f539a1d29543c0e6c6f4d9a61f611b9b60e99e18f377"
   ubuntu-clang-ossfuzz-docker-image:
     type: string
-    # solbuildpackpusher/solidity-buildpack-deps:ubuntu.clang.ossfuzz-6
-    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:8883fa2845bbc1e0922af60439313666e4ba325f67a117e17d78cca3ea6589b3"
+    # solbuildpackpusher/solidity-buildpack-deps:ubuntu.clang.ossfuzz-10
+    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:bd55d9a3b13c88608709ec442188c414d30f4c49f23dc2ce8b76bf8c90603fc7"
   emscripten-docker-image:
     type: string
     # NOTE: Please remember to update the `scripts/build_emscripten.sh` whenever the hash of this image changes.
-    # solbuildpackpusher/solidity-buildpack-deps:emscripten-17
-    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:c57f2bfb8c15d70fe290629358dd1c73dc126e3760f443b54764797556b887d4"
+    # solbuildpackpusher/solidity-buildpack-deps:emscripten-20
+    default: "solbuildpackpusher/solidity-buildpack-deps@sha256:98f963ed799a0d206ef8e7b5475f847e0dea53b7fdea9618bbc6106a62730bd2"
   evm-version:
     type: string
     default: cancun
@@ -511,15 +507,6 @@ defaults:
         MAKEFLAGS: -j5
         CPUs: 5
 
-  - base_python_small: &base_python_small
-      docker:
-        - image: cimg/python:3.6
-      resource_class: small
-      environment: &base_python_small_env
-        TERM: xterm
-        MAKEFLAGS: -j 2
-        CPUs: 2
-
   - base_ubuntu_clang: &base_ubuntu_clang
       docker:
         - image: << pipeline.parameters.ubuntu-clang-ossfuzz-docker-image >>
@@ -535,6 +522,14 @@ defaults:
         <<: *base_ubuntu_clang_env
         MAKEFLAGS: -j 2
         CPUs: 2
+
+  - base_ubuntu_clang_large: &base_ubuntu_clang_large
+      <<: *base_ubuntu_clang
+      resource_class: large
+      environment: &base_ubuntu_clang_small_env
+        <<: *base_ubuntu_clang_env
+        MAKEFLAGS: -j 5
+        CPUs: 5
 
   - base_ubuntu2004: &base_ubuntu2004
       docker:
@@ -565,12 +560,22 @@ defaults:
         - image: << pipeline.parameters.ubuntu-2204-docker-image >>
       environment: &base_ubuntu2204_env
         TERM: xterm
+        CC: gcc
+        CXX: g++
         MAKEFLAGS: -j 3
         CPUs: 3
 
+  - base_ubuntu2204_large: &base_ubuntu2204_large
+      <<: *base_ubuntu2204
+      resource_class: large
+      environment: &base_ubuntu2204_large_env
+        <<: *base_ubuntu2204_env
+        MAKEFLAGS: -j 5
+        CPUs: 5
+
   - base_ubuntu2204_clang: &base_ubuntu2204_clang
       docker:
-        - image: << pipeline.parameters.ubuntu-2204-clang-docker-image >>
+        - image: << pipeline.parameters.ubuntu-2204-docker-image >>
       environment: &base_ubuntu2204_clang_env
         TERM: xterm
         CC: clang
@@ -585,30 +590,6 @@ defaults:
         <<: *base_ubuntu2204_clang_env
         MAKEFLAGS: -j 5
         CPUs: 5
-
-  - base_ubuntu2204_small: &base_ubuntu2204_small
-      <<: *base_ubuntu2204
-      resource_class: small
-      environment: &base_ubuntu2204_small_env
-        <<: *base_ubuntu2204_env
-        MAKEFLAGS: -j 2
-        CPUs: 2
-
-  - base_ubuntu2204_large: &base_ubuntu2204_large
-      <<: *base_ubuntu2204
-      resource_class: large
-      environment: &base_ubuntu2204_large_env
-        <<: *base_ubuntu2204_env
-        MAKEFLAGS: -j 5
-        CPUs: 5
-
-  - base_ubuntu2204_xlarge: &base_ubuntu2204_xlarge
-      <<: *base_ubuntu2204
-      resource_class: xlarge
-      environment: &base_ubuntu2204_xlarge_env
-        <<: *base_ubuntu2204_env
-        MAKEFLAGS: -j 10
-        CPUs: 10
 
   - base_ubuntu2404: &base_ubuntu2404
       docker:
@@ -720,11 +701,6 @@ defaults:
       requires:
         - b_archlinux
 
-  - requires_b_ubu_codecov: &requires_b_ubu_codecov
-      <<: *on_all_tags_and_branches
-      requires:
-        - b_ubu_codecov
-
   - requires_b_osx: &requires_b_osx
       <<: *on_all_tags_and_branches
       requires:
@@ -815,9 +791,6 @@ defaults:
       name: t_native_compile_ext_euler
       project: euler
       binary_type: native
-      # NOTE: test suite disabled due to dependence on a specific version of Hardhat
-      # which does not support shanghai EVM.
-      compile_only: 1
       resource_class: medium
 
   - job_native_test_ext_yield_liquidator: &job_native_test_ext_yield_liquidator
@@ -861,6 +834,8 @@ defaults:
       binary_type: native
       image: cimg/rust:1.74.0-node
       resource_class: medium
+      # TODO: Use nightly Foundry builds after https://github.com/PaulRBerg/prb-math/issues/248 is fixed
+      foundry_version: "v0.3.0"
 
   - job_native_test_ext_elementfi: &job_native_test_ext_elementfi
       <<: *requires_b_ubu_static
@@ -911,7 +886,7 @@ defaults:
 jobs:
 
   chk_spelling:
-    <<: *base_python_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - attach_workspace:
@@ -922,11 +897,7 @@ jobs:
             pip install --user codespell
       - run:
           name: Check spelling
-          command: |
-            ~/.local/bin/codespell \
-              --skip "*.enc,.git,Dockerfile*,LICENSE,codespell_whitelist.txt,codespell_ignored_lines.txt,deps" \
-              --ignore-words scripts/codespell_whitelist.txt \
-              --exclude-file scripts/codespell_ignored_lines.txt
+          command: ~/.local/bin/codespell
       - matrix_notify_failure_unless_pr
 
   chk_docs_examples:
@@ -964,7 +935,7 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   chk_errorcodes:
-    <<: *base_python_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - run:
@@ -973,7 +944,7 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   chk_pylint:
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - run: pylint --version
@@ -1012,21 +983,21 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   chk_proofs:
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - run_proofs
       - matrix_notify_failure_unless_pr
 
   chk_docs_pragma_min_version:
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - run_docs_pragma_min_version
       - matrix_notify_failure_unless_pr
 
   t_ubu_pyscripts:
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - run:
@@ -1053,25 +1024,31 @@ jobs:
   b_ubu: &b_ubu
     # this runs 2x faster on xlarge but takes 4x more resources (compared to medium).
     # Enough other jobs depend on it that it's worth it though.
-    <<: *base_ubuntu2204_xlarge
+    <<: *base_ubuntu2404_xlarge
     steps:
       - build
 
   # x64 ASAN build, for testing for memory related bugs
   b_ubu_asan: &b_ubu_asan
     # Runs slightly faster on large and xlarge but we only run it nightly so efficiency matters more.
-    <<: *base_ubuntu2204
+    <<: *base_ubuntu2404
     environment:
-      <<: *base_ubuntu2204_env
-      CMAKE_OPTIONS: -DSANITIZE=address
+      <<: *base_ubuntu2404_env
+      # NOTE: Sanitizers may alter the intermediate code, potentially causing false warnings.
+      # As a result, treating warnings as errors in instrumented builds can lead to build failures due to these false positives.
+      # Therefore, we disable pedantic builds in such cases.
+      # See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562#c27
+      CMAKE_OPTIONS: -DSANITIZE=address -DPEDANTIC=OFF
       CMAKE_BUILD_TYPE: Release
+      # Set the number of jobs to two instead of the default three, so that we do not run out of memory
+      MAKEFLAGS: -j 2
     steps:
       - build
 
   b_ubu_clang: &b_ubu_clang
-    <<: *base_ubuntu2204_clang_large
+    <<: *base_ubuntu2404_clang_large
     environment:
-      <<: *base_ubuntu2204_clang_large_env
+      <<: *base_ubuntu2404_clang_large_env
       MAKEFLAGS: -j 10
     steps:
       - build
@@ -1081,17 +1058,18 @@ jobs:
     parameters:
       cmake_options:
         type: string
-    <<: *base_ubuntu2204_clang
+    <<: *base_ubuntu2404_clang
     environment:
-      <<: *base_ubuntu2204_clang_env
-      CMAKE_OPTIONS: << parameters.cmake_options >>
+      <<: *base_ubuntu2404_clang_env
+      # NOTE: Disabled pedantic builds to avoid false positives, see b_ubu_asan for a more detailed explanation.
+      CMAKE_OPTIONS: -DPEDANTIC=OFF << parameters.cmake_options >>
     steps:
       - build
 
   b_ubu_force_release: &b_ubu_force_release
     <<: *b_ubu
     environment:
-      <<: *base_ubuntu2204_xlarge_env
+      <<: *base_ubuntu2404_xlarge_env
       FORCE_RELEASE: ON
 
   b_ubu_static:
@@ -1099,10 +1077,10 @@ jobs:
     # to avoid glibc incompatibilities.
     # See: https://github.com/ethereum/solidity/issues/13954
     # On large runs 2x faster than on medium. 3x on xlarge.
-    <<: *base_ubuntu2004_xlarge
+    <<: *base_ubuntu2404_xlarge
     environment:
-      <<: *base_ubuntu2204_xlarge_env
-      CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -DUSE_Z3_DLOPEN=ON -DSOLC_STATIC_STDLIBS=ON
+      <<: *base_ubuntu2404_xlarge_env
+      CMAKE_OPTIONS: -DCMAKE_BUILD_TYPE=Release -DSOLC_LINK_STATIC=ON
     steps:
       - checkout
       - run_build
@@ -1119,50 +1097,17 @@ jobs:
             - solc/solc-static-linux
       - matrix_notify_failure_unless_pr
 
-  b_ubu_codecov:
-    # Runs ~30% faster on large but we only run it nightly so efficiency matters more.
-    <<: *base_ubuntu2204
-    environment:
-      <<: *base_ubuntu2204_env
-      COVERAGE: ON
-      CMAKE_BUILD_TYPE: Debug
+  b_ubu_2204:
+    <<: *base_ubuntu2204_large
     steps:
       - checkout
       - run_build
-      - persist_executables_to_workspace
       - matrix_notify_failure_unless_pr
 
-  t_ubu_codecov:
-    <<: *base_ubuntu2204_large
+  b_ubu_2204_clang:
+    <<: *base_ubuntu2204_clang_large
     environment:
-      <<: *base_ubuntu2204_large_env
-      EVM: << pipeline.parameters.evm-version >>
-      OPTIMIZE: 1
-    steps:
-      - checkout
-      - attach_workspace:
-          at: build
-      - run:
-          name: "soltest: Syntax Tests"
-          command: build/test/soltest -t 'syntaxTest*' -- --testpath test
-      - run:
-          name: "Code Coverage: Syntax Tests"
-          command: codecov --flags syntax --gcov-root build
-      - run_soltest
-      - run:
-          name: "Coverage: All"
-          command: codecov --flags all --gcov-root build
-      - store_artifacts_test_results
-      - matrix_notify_failure_unless_pr
-
-  # Builds in C++20 mode and uses debug build in order to speed up.
-  # Do *NOT* store any artifacts or workspace as we don't run tests on this build.
-  b_ubu_cxx20:
-    <<: *base_ubuntu2204_large
-    environment:
-      <<: *base_ubuntu2204_large_env
-      CMAKE_BUILD_TYPE: Debug
-      CMAKE_OPTIONS: -DCMAKE_CXX_STANDARD=20
+      <<: *base_ubuntu2204_clang_large_env
       MAKEFLAGS: -j 10
     steps:
       - checkout
@@ -1170,7 +1115,7 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   b_ubu_ossfuzz: &b_ubu_ossfuzz
-    <<: *base_ubuntu_clang
+    <<: *base_ubuntu_clang_large
     steps:
       - checkout
       - setup_prerelease_commit_hash
@@ -1198,8 +1143,6 @@ jobs:
     <<: *base_archlinux_large
     environment:
       <<: *base_archlinux_large_env
-      # This can be switched off if we run out of sync with Arch.
-      USE_Z3: ON
     steps:
       - run:
           name: Install build dependencies
@@ -1231,6 +1174,7 @@ jobs:
     environment:
       <<: *base_osx_env
       EVM: << pipeline.parameters.evm-version >>
+      EOF_VERSION: 0
       OPTIMIZE: 0
     steps:
       - checkout
@@ -1280,7 +1224,7 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   b_docs:
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - setup_prerelease_commit_hash
@@ -1293,13 +1237,13 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   t_ubu_soltest_all: &t_ubu_soltest_all
-    <<: *base_ubuntu2204_large
+    <<: *base_ubuntu2404_large
     parallelism: 50
     steps:
       - soltest_all
 
   t_ubu_soltest_deprecated_evm_versions: &t_ubu_soltest_deprecated_evm_versions
-    <<: *base_ubuntu2204_large
+    <<: *base_ubuntu2404_large
     parallelism: 50
     steps:
       - checkout
@@ -1313,7 +1257,7 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   t_ubu_lsp: &t_ubu_lsp
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     steps:
       - test_lsp
 
@@ -1323,6 +1267,7 @@ jobs:
     environment:
       <<: *base_archlinux_env
       EVM: << pipeline.parameters.evm-version >>
+      EOF_VERSION: 0
       OPTIMIZE: 0
       # For Archlinux we do not have prebuilt docker images and we would need to build evmone from source,
       # thus we forgo semantics tests to speed things up.
@@ -1335,11 +1280,12 @@ jobs:
       - soltest
 
   t_ubu_clang_soltest: &t_ubu_clang_soltest
-    <<: *base_ubuntu2204_clang
+    <<: *base_ubuntu2404_clang
     parallelism: 20
     environment:
-      <<: *base_ubuntu2204_clang_env
+      <<: *base_ubuntu2404_clang_env
       EVM: << pipeline.parameters.evm-version >>
+      EOF_VERSION: 0
       OPTIMIZE: 0
       # The high parallelism in this job is causing the SMT tests to run out of memory,
       # so disabling for now.
@@ -1353,7 +1299,7 @@ jobs:
     <<: *t_ubu_soltest_all
 
   t_ubu_cli: &t_ubu_cli
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     parallelism: 8 # Should match number of tests in .circleci/parallel_cli_tests.py
     steps:
       - cmdline_tests
@@ -1362,7 +1308,7 @@ jobs:
     <<: *t_ubu_cli
 
   t_ubu_locale:
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     steps:
       - checkout
       - attach_workspace:
@@ -1372,10 +1318,10 @@ jobs:
 
   t_ubu_asan_cli:
     # Runs slightly faster on medium but we only run it nightly so efficiency matters more.
-    <<: *base_ubuntu2204
+    <<: *base_ubuntu2404
     parallelism: 8 # Should match number of tests in .circleci/parallel_cli_tests.py
     environment:
-      <<: *base_ubuntu2204_env
+      <<: *base_ubuntu2404_env
       ASAN_OPTIONS: check_initialization_order=true:detect_stack_use_after_return=true:strict_init_order=true:strict_string_checks=true:detect_invalid_pointer_pairs=2
       # Suppress CLN memory leak.
       # See: https://github.com/ethereum/solidity/issues/13891 for details.
@@ -1384,11 +1330,12 @@ jobs:
       - cmdline_tests
 
   t_ubu_asan_soltest:
-    <<: *base_ubuntu2204
+    <<: *base_ubuntu2404
     parallelism: 20
     environment:
-      <<: *base_ubuntu2204_env
+      <<: *base_ubuntu2404_env
       EVM: << pipeline.parameters.evm-version >>
+      EOF_VERSION: 0
       OPTIMIZE: 0
       SOLTEST_FLAGS: --no-smt
       ASAN_OPTIONS: check_initialization_order=true:detect_stack_use_after_return=true:strict_init_order=true:strict_string_checks=true:detect_invalid_pointer_pairs=2
@@ -1399,11 +1346,12 @@ jobs:
       - soltest
 
   t_ubu_asan_clang_soltest:
-    <<: *base_ubuntu2204_clang
+    <<: *base_ubuntu2404_clang
     parallelism: 20
     environment:
-      <<: *base_ubuntu2204_clang_env
+      <<: *base_ubuntu2404_clang_env
       EVM: << pipeline.parameters.evm-version >>
+      EOF_VERSION: 0
       OPTIMIZE: 0
       SOLTEST_FLAGS: --no-smt
       ASAN_OPTIONS: check_initialization_order=true:detect_stack_use_after_return=true:strict_init_order=true:strict_string_checks=true:detect_invalid_pointer_pairs=2
@@ -1411,24 +1359,25 @@ jobs:
       - soltest
 
   t_ubu_ubsan_clang_soltest:
-    <<: *base_ubuntu2204_clang
+    <<: *base_ubuntu2404_clang
     parallelism: 20
     environment:
-      <<: *base_ubuntu2204_clang_env
+      <<: *base_ubuntu2404_clang_env
       EVM: << pipeline.parameters.evm-version >>
+      EOF_VERSION: 0
       SOLTEST_FLAGS: --no-smt
     steps:
       - soltest
 
   t_ubu_ubsan_clang_cli:
-    <<: *base_ubuntu2204_clang
+    <<: *base_ubuntu2404_clang
     parallelism: 8 # Should match number of tests in .circleci/parallel_cli_tests.py
     steps:
       - cmdline_tests
 
   t_ems_solcjs:
     # Unlike other t_ems jobs this one actually runs 2x faster on medium (compared to small).
-    <<: *base_ubuntu2204
+    <<: *base_ubuntu2404
     steps:
       - checkout
       - attach_workspace:
@@ -1447,13 +1396,14 @@ jobs:
             test/externalTests/solc-js/solc-js.sh /tmp/workspace/soljson.js $(cat /tmp/workspace/version.txt)
       - matrix_notify_failure_unless_pr
 
-  t_ems_ext_hardhat:
-    <<: *base_node_small
+  t_ems_ext_edr:
+    # Runs out of memory on the small instance
+    <<: *base_ubuntu2404
     docker:
-      - image: cimg/rust:1.74.0-node
+      - image: cimg/rust:1.79.0-node
     environment:
-      <<: *base_node_small_env
-      HARDHAT_TESTS_SOLC_PATH: /tmp/workspace/soljson.js
+      <<: *base_ubuntu2404_env
+      EDR_TESTS_SOLC_PATH: /tmp/workspace/soljson.js
     steps:
       - checkout
       - attach_workspace:
@@ -1462,48 +1412,36 @@ jobs:
           name: Ensure pnpm is installed if npm is present
           command: sudo npm install -g pnpm
       - run:
-          name: Retrieve Hardhat latest release tag
+          name: Retrieve EDR latest release tag
           command: |
             # Make authenticated requests when the Github token is available
             if [[ -n "$GITHUB_ACCESS_TOKEN" ]]; then
               EXTRA_HEADERS=(--header "Authorization: Bearer ${GITHUB_ACCESS_TOKEN}")
             fi
-            HARDHAT_LATEST_RELEASE_TAG=$(
+            EDR_LATEST_RELEASE_TAG=$(
               curl \
                 --silent \
                 --location \
                 --fail \
                 --show-error \
                 "${EXTRA_HEADERS[@]}" \
-                https://api.github.com/repos/nomiclabs/hardhat/releases/latest \
+                https://api.github.com/repos/nomicfoundation/edr/releases/latest \
                 | jq --raw-output .tag_name \
             )
-            echo "export HARDHAT_LATEST_RELEASE_TAG='${HARDHAT_LATEST_RELEASE_TAG}'" >> "$BASH_ENV"
-      - run: git clone --depth 1 https://github.com/nomiclabs/hardhat.git --branch "$HARDHAT_LATEST_RELEASE_TAG"
+            echo "export EDR_LATEST_RELEASE_TAG='${EDR_LATEST_RELEASE_TAG}'" >> "$BASH_ENV"
+      - run: git clone --depth 1 https://github.com/nomicfoundation/edr.git --branch "$EDR_LATEST_RELEASE_TAG"
       - run:
           name: Install dependencies
           command: |
-            cd hardhat
+            cd edr
             pnpm install --no-frozen-lockfile
       - run:
-          name: Run hardhat-core test suite
+          name: Run hardhat-tests in EDR repo
           command: |
-            HARDHAT_TESTS_SOLC_VERSION=$(scripts/get_version.sh)
-            export HARDHAT_TESTS_SOLC_VERSION
+            EDR_TESTS_SOLC_VERSION=$(scripts/get_version.sh)
+            export EDR_TESTS_SOLC_VERSION
 
-            # NOTE: This is expected to work without running `pnpm build` first.
-            cd hardhat/packages/hardhat-core
-            # TODO: temporarily set hardhat stack traces tests to use cancun hardfork
-            # Remove this when hardhat switch to cancun by default: https://github.com/NomicFoundation/hardhat/issues/4851
-            sed -i 's/hardfork: "shanghai",/hardfork: "cancun",/' test/internal/hardhat-network/stack-traces/execution.ts
-            # TODO: Remove these tests because they rely on specific stack sequence which has changed since
-            # Remove when hardhat properly fix a specific version for the tests: https://github.com/NomicFoundation/hardhat/issues/5443
-            rm -rf test/internal/hardhat-network/stack-traces/test-files/0_8/revert-without-message/modifiers/call-message/multiple-modifiers-require/
-            rm -rf test/internal/hardhat-network/stack-traces/test-files/0_8/revert-without-message/modifiers/create-message/multiple-modifiers-require/
-            rm -rf test/internal/hardhat-network/stack-traces/test-files/0_8/revert-without-message/revert-without-message/within-receive/between-statements/
-            rm -rf test/internal/hardhat-network/stack-traces/test-files/0_8/revert-without-message/revert-without-message/within-receive/no-other-statements/
-            rm -rf test/internal/hardhat-network/stack-traces/test-files/0_8/revert-without-message/revert-without-message/within-receive/statement-after/
-            rm -rf test/internal/hardhat-network/stack-traces/test-files/0_8/revert-without-message/revert-without-message/within-receive/statement-before/
+            cd edr/hardhat-tests
             pnpm test
       - matrix_notify_failure_unless_pr
 
@@ -1528,6 +1466,9 @@ jobs:
       python2:
         type: boolean
         default: false
+      foundry_version:
+        type:  string
+        default: "nightly"
     docker:
       - image: << parameters.image >>
     resource_class: << parameters.resource_class >>
@@ -1541,7 +1482,8 @@ jobs:
       - checkout
       - attach_workspace:
           at: /tmp/workspace
-      - install_foundry
+      - install_foundry:
+          version: << parameters.foundry_version >>
       - run:
           name: Ensure pnpm is installed if npm is present
           command: |
@@ -1554,6 +1496,7 @@ jobs:
             - run:
                 name: Install Python 2 and make it the default
                 command: |
+                  sudo apt update
                   # python is used by node-gyp to build native modules (needed for Colony).
                   # In the 14.x image node-gyp still requires Python 2.
                   sudo apt install python2 --assume-yes --no-install-recommends
@@ -1747,7 +1690,7 @@ jobs:
     parameters:
       preset:
         type: string
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     parallelism: 2 # For prepare_bytecode_report
     steps:
       - checkout
@@ -1832,9 +1775,9 @@ jobs:
           preset: "<< parameters.preset >>"
 
   t_bytecode_compare:
-    <<: *base_ubuntu2204_small
+    <<: *base_ubuntu2404_small
     environment:
-      <<: *base_ubuntu2204_small_env
+      <<: *base_ubuntu2404_small_env
       <<: *bytecode_compare_env_presets
     steps:
       - checkout
@@ -1848,7 +1791,7 @@ jobs:
       - matrix_notify_failure_unless_pr
 
   c_release_binaries:
-    <<: *base_ubuntu2204
+    <<: *base_ubuntu2404
     steps:
       - checkout
       - attach_workspace:
@@ -1924,9 +1867,9 @@ workflows:
 
       # build-only
       - b_docs: *requires_nothing
-      # DISABLED FOR 0.8.18 - b_ubu_cxx20: *requires_nothing
-      # Issue: https://github.com/ethereum/solidity/issues/13868
       - b_ubu_ossfuzz: *requires_nothing
+      - b_ubu_2204: *requires_nothing
+      - b_ubu_2204_clang: *requires_nothing
 
       # OS/X build and tests
       - b_osx: *requires_nothing
@@ -1957,7 +1900,7 @@ workflows:
       # Emscripten build and tests that take 15 minutes or less
       - b_ems: *requires_nothing
       - t_ems_solcjs: *requires_b_ems
-      - t_ems_ext_hardhat: *requires_b_ems
+      - t_ems_ext_edr: *requires_b_ems
 
       - t_ext: *job_ems_compile_ext_colony
 
@@ -2063,10 +2006,6 @@ workflows:
           <<: *on_develop
 
     jobs:
-      # Code Coverage enabled build and tests
-      - b_ubu_codecov: *requires_nothing
-      - t_ubu_codecov: *requires_b_ubu_codecov
-
       # ASan build and tests
       - b_ubu_asan: *requires_nothing
       - b_ubu_san_clang: *job_b_ubu_asan_clang

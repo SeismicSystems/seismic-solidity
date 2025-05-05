@@ -40,7 +40,7 @@
 
 using namespace solidity::langutil;
 using namespace solidity::evmasm;
-using namespace solidity::frontend;
+using namespace solidity::test;
 
 namespace solidity::frontend::test
 {
@@ -1574,13 +1574,14 @@ BOOST_AUTO_TEST_CASE(jumpdest_removal)
 	);
 }
 
-BOOST_AUTO_TEST_CASE(jumpdest_removal_subassemblies)
+BOOST_AUTO_TEST_CASE(jumpdest_removal_subassemblies, *boost::unit_test::precondition(nonEOF()))
 {
 	// This tests that tags from subassemblies are not removed
 	// if they are referenced by a super-assembly. Furthermore,
 	// tag unifications (due to block deduplication) is also
 	// visible at the super-assembly.
 
+	solAssert(!solidity::test::CommonOptions::get().eofVersion().has_value());
 	Assembly::OptimiserSettings settings;
 	settings.runInliner = false;
 	settings.runJumpdestRemover = true;
@@ -1588,11 +1589,11 @@ BOOST_AUTO_TEST_CASE(jumpdest_removal_subassemblies)
 	settings.runDeduplicate = true;
 	settings.runCSE = true;
 	settings.runConstantOptimiser = true;
-	settings.evmVersion = solidity::test::CommonOptions::get().evmVersion();
 	settings.expectedExecutionsPerDeployment = OptimiserSettings{}.expectedExecutionsPerDeployment;
 
-	Assembly main{settings.evmVersion, false, solidity::test::CommonOptions::get().eofVersion(), {}};
-	AssemblyPointer sub = std::make_shared<Assembly>(settings.evmVersion, true, solidity::test::CommonOptions::get().eofVersion(), std::string{});
+	auto const evmVersion = CommonOptions::get().evmVersion();
+	Assembly main{evmVersion, false, std::nullopt, {}};
+	AssemblyPointer sub = std::make_shared<Assembly>(evmVersion, true, std::nullopt, std::string{});
 
 	sub->append(u256(1));
 	auto t1 = sub->newTag();
@@ -1626,16 +1627,18 @@ BOOST_AUTO_TEST_CASE(jumpdest_removal_subassemblies)
 		t1.toSubAssemblyTag(subId).pushTag(),
 		u256(8)
 	};
+	BOOST_REQUIRE(main.codeSections().size() == 1);
 	BOOST_CHECK_EQUAL_COLLECTIONS(
-		main.items().begin(), main.items().end(),
+		main.codeSections().at(0).items.begin(),main.codeSections().at(0).items.end(),
 		expectationMain.begin(), expectationMain.end()
 	);
 
 	AssemblyItems expectationSub{
 		u256(1), t1.tag(), u256(2), Instruction::JUMP, t4.tag(), u256(7), t4.pushTag(), Instruction::JUMP
 	};
+	BOOST_REQUIRE(sub->codeSections().size() == 1);
 	BOOST_CHECK_EQUAL_COLLECTIONS(
-		sub->items().begin(), sub->items().end(),
+		sub->codeSections().at(0).items.begin(), sub->codeSections().at(0).items.end(),
 		expectationSub.begin(), expectationSub.end()
 	);
 }
@@ -1800,7 +1803,7 @@ BOOST_AUTO_TEST_CASE(shielded_cse_verbatim_eq)
 	};
 
 	checkFullCSE(input, input);
-}	
+}
 
 BOOST_AUTO_TEST_CASE(verbatim_knownstate)
 {

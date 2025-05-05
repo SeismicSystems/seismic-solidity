@@ -31,7 +31,7 @@
 namespace solidity::yul
 {
 
-struct Dialect;
+class Dialect;
 struct OptimiserStepContext;
 
 /**
@@ -68,13 +68,11 @@ public:
 	void operator()(Block& _block) override;
 
 private:
-	explicit ExpressionSplitter(
+	ExpressionSplitter(
 		Dialect const& _dialect,
 		NameDispenser& _nameDispenser
-	):
-		m_dialect(_dialect),
-		m_nameDispenser(_nameDispenser)
-	{ }
+	);
+	~ExpressionSplitter() override;
 
 	/// Replaces the expression by a variable if it is a function call or functional
 	/// instruction. The declaration of the variable is appended to m_statementsToPrefix.
