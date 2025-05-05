@@ -31,7 +31,7 @@
 
 namespace solidity::yul
 {
-struct Dialect;
+class Dialect;
 
 /**
  * Creates a copy of a Yul AST replacing all identifiers by unique names.

@@ -28,6 +28,9 @@ object "a" {
     data "data1" "Hello, World!"
   }
 }
+// ====
+// EVMVersion: >=shanghai
+// bytecodeFormat: legacy
 // ----
 // Assembly:
 //     /* "abc.sol":0:2   */

@@ -32,7 +32,6 @@
 #include <libyul/Utilities.h>
 
 #include <libsolutil/CommonData.h>
-#include <libsolutil/cxx20.h>
 
 #include <variant>
 
@@ -45,23 +44,19 @@ using namespace solidity::yul;
 DataFlowAnalyzer::DataFlowAnalyzer(
 	Dialect const& _dialect,
 	MemoryAndStorage _analyzeStores,
-	std::map<YulName, SideEffects> _functionSideEffects
+	std::map<FunctionHandle, SideEffects> _functionSideEffects
 ):
 	m_dialect(_dialect),
 	m_functionSideEffects(std::move(_functionSideEffects)),
-	m_knowledgeBase([this](YulName _var) { return variableValue(_var); }),
+	m_knowledgeBase([this](YulName _var) { return variableValue(_var); }, _dialect),
 	m_analyzeStores(_analyzeStores == MemoryAndStorage::Analyze)
 {
 	if (m_analyzeStores)
 	{
-		if (auto const* builtin = _dialect.memoryStoreFunction())
-			m_storeFunctionName[static_cast<unsigned>(StoreLoadLocation::Memory)] = builtin->name;
-		if (auto const* builtin = _dialect.memoryLoadFunction())
-			m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::Memory)] = builtin->name;
-		if (auto const* builtin = _dialect.storageStoreFunction())
-			m_storeFunctionName[static_cast<unsigned>(StoreLoadLocation::Storage)] = builtin->name;
-		if (auto const* builtin = _dialect.storageLoadFunction())
-			m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::Storage)] = builtin->name;
+		m_storeFunctionName[static_cast<unsigned>(StoreLoadLocation::Memory)] = _dialect.memoryStoreFunctionHandle();
+		m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::Memory)] = _dialect.memoryLoadFunctionHandle();
+		m_storeFunctionName[static_cast<unsigned>(StoreLoadLocation::Storage)] = _dialect.storageStoreFunctionHandle();
+		m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::Storage)] = _dialect.storageLoadFunctionHandle();
 	}
 }
 
@@ -72,7 +67,7 @@ void DataFlowAnalyzer::operator()(ExpressionStatement& _statement)
 		if (auto vars = isSimpleStore(StoreLoadLocation::Storage, _statement))
 		{
 			ASTModifier::operator()(_statement);
-			cxx20::erase_if(m_state.environment.storage, mapTuple([&](auto&& key, auto&& value) {
+			std::erase_if(m_state.environment.storage, mapTuple([&](auto&& key, auto&& value) {
 				return
 					!m_knowledgeBase.knownToBeDifferent(vars->first, key) &&
 					vars->second != value;
@@ -83,7 +78,7 @@ void DataFlowAnalyzer::operator()(ExpressionStatement& _statement)
 		else if (auto vars = isSimpleStore(StoreLoadLocation::Memory, _statement))
 		{
 			ASTModifier::operator()(_statement);
-			cxx20::erase_if(m_state.environment.memory, mapTuple([&](auto&& key, auto&& /* value */) {
+			std::erase_if(m_state.environment.memory, mapTuple([&](auto&& key, auto&& /* value */) {
 				return !m_knowledgeBase.knownToBeDifferentByAtLeast32(vars->first, key);
 			}));
 			// TODO erase keccak knowledge, but in a more clever way
@@ -268,22 +263,23 @@ void DataFlowAnalyzer::handleAssignment(std::set<YulName> const& _variables, Exp
 	}
 
 	auto const& referencedVariables = movableChecker.referencedVariables();
+	std::vector const referencedVariablesSorted(referencedVariables.begin(), referencedVariables.end());
 	for (auto const& name: _variables)
 	{
-		m_state.references[name] = referencedVariables;
+		m_state.sortedReferences[name] = referencedVariablesSorted;
 		if (!_isDeclaration)
 		{
 			// assignment to slot denoted by "name"
 			m_state.environment.storage.erase(name);
 			// assignment to slot contents denoted by "name"
-			cxx20::erase_if(m_state.environment.storage, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
+			std::erase_if(m_state.environment.storage, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
 			// assignment to slot denoted by "name"
 			m_state.environment.memory.erase(name);
 			// assignment to slot contents denoted by "name"
-			cxx20::erase_if(m_state.environment.keccak, [&name](auto&& _item) {
+			std::erase_if(m_state.environment.keccak, [&name](auto&& _item) {
 				return _item.first.first == name || _item.first.second == name || _item.second == name;
 			});
-			cxx20::erase_if(m_state.environment.memory, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
+			std::erase_if(m_state.environment.memory, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
 		}
 	}
 
@@ -315,12 +311,12 @@ void DataFlowAnalyzer::popScope()
 	for (auto const& name: m_variableScopes.back().variables)
 	{
 		m_state.value.erase(name);
-		m_state.references.erase(name);
+		m_state.sortedReferences.erase(name);
 	}
 	m_variableScopes.pop_back();
 }
 
-void DataFlowAnalyzer::clearValues(std::set<YulName> _variables)
+void DataFlowAnalyzer::clearValues(std::set<YulName> const& _variablesToClear)
 {
 	// All variables that reference variables to be cleared also have to be
 	// cleared, but not recursively, since only the value of the original
@@ -338,30 +334,32 @@ void DataFlowAnalyzer::clearValues(std::set<YulName> _variables)
 	// First clear storage knowledge, because we do not have to clear
 	// storage knowledge of variables whose expression has changed,
 	// since the value is still unchanged.
-	auto eraseCondition = mapTuple([&_variables](auto&& key, auto&& value) {
-		return _variables.count(key) || _variables.count(value);
+	auto eraseCondition = mapTuple([&_variablesToClear](auto&& key, auto&& value) {
+		return _variablesToClear.count(key) || _variablesToClear.count(value);
 	});
-	cxx20::erase_if(m_state.environment.storage, eraseCondition);
-	cxx20::erase_if(m_state.environment.memory, eraseCondition);
-	cxx20::erase_if(m_state.environment.keccak, [&_variables](auto&& _item) {
+	std::erase_if(m_state.environment.storage, eraseCondition);
+	std::erase_if(m_state.environment.memory, eraseCondition);
+	std::erase_if(m_state.environment.keccak, [&_variablesToClear](auto&& _item) {
 		return
-			_variables.count(_item.first.first) ||
-			_variables.count(_item.first.second) ||
-			_variables.count(_item.second);
+			_variablesToClear.count(_item.first.first) ||
+			_variablesToClear.count(_item.first.second) ||
+			_variablesToClear.count(_item.second);
 	});
 
 	// Also clear variables that reference variables to be cleared.
-	std::set<YulName> referencingVariables;
-	for (auto const& variableToClear: _variables)
-		for (auto const& [ref, names]: m_state.references)
-			if (names.count(variableToClear))
-				referencingVariables.emplace(ref);
+	std::set<YulName> referencingVariablesToClear;
+	std::vector const sortedVariablesToClear(_variablesToClear.begin(), _variablesToClear.end());
+	for (auto const& [referencingVariable, referencedVariables]: m_state.sortedReferences)
+		// instead of checking each variable in `referencedVariables`, we check if there is any intersection making use of the
+		// sortedness of the vectors, which can increase performance by up to 50% in pathological cases
+		if (hasNonemptyIntersectionSorted(referencedVariables, sortedVariablesToClear))
+			referencingVariablesToClear.emplace(referencingVariable);
 
 	// Clear the value and update the reference relation.
-	for (auto const& name: _variables + referencingVariables)
+	for (auto const& name: _variablesToClear + referencingVariablesToClear)
 	{
 		m_state.value.erase(name);
-		m_state.references.erase(name);
+		m_state.sortedReferences.erase(name);
 	}
 }
 
@@ -424,7 +422,10 @@ std::optional<std::pair<YulName, YulName>> DataFlowAnalyzer::isSimpleStore(
 ) const
 {
 	if (FunctionCall const* funCall = std::get_if<FunctionCall>(&_statement.expression))
-		if (funCall->functionName.name == m_storeFunctionName[static_cast<unsigned>(_location)])
+		if (
+			std::holds_alternative<BuiltinName>(funCall->functionName) &&
+			std::get<BuiltinName>(funCall->functionName).handle == m_storeFunctionName[static_cast<unsigned>(_location)]
+		)
 			if (Identifier const* key = std::get_if<Identifier>(&funCall->arguments.front()))
 				if (Identifier const* value = std::get_if<Identifier>(&funCall->arguments.back()))
 					return std::make_pair(key->name, value->name);
@@ -437,7 +438,10 @@ std::optional<YulName> DataFlowAnalyzer::isSimpleLoad(
 ) const
 {
 	if (FunctionCall const* funCall = std::get_if<FunctionCall>(&_expression))
-		if (funCall->functionName.name == m_loadFunctionName[static_cast<unsigned>(_location)])
+		if (
+			std::holds_alternative<BuiltinName>(funCall->functionName) &&
+			std::get<BuiltinName>(funCall->functionName).handle == m_loadFunctionName[static_cast<unsigned>(_location)]
+		)
 			if (Identifier const* key = std::get_if<Identifier>(&funCall->arguments.front()))
 				return key->name;
 	return {};
@@ -446,7 +450,10 @@ std::optional<YulName> DataFlowAnalyzer::isSimpleLoad(
 std::optional<std::pair<YulName, YulName>> DataFlowAnalyzer::isKeccak(Expression const& _expression) const
 {
 	if (FunctionCall const* funCall = std::get_if<FunctionCall>(&_expression))
-		if (funCall->functionName.name == m_dialect.hashFunction())
+		if (
+			std::holds_alternative<BuiltinName>(funCall->functionName) &&
+			std::get<BuiltinName>(funCall->functionName).handle == m_dialect.hashFunctionHandle()
+		)
 			if (Identifier const* start = std::get_if<Identifier>(&funCall->arguments.at(0)))
 				if (Identifier const* length = std::get_if<Identifier>(&funCall->arguments.at(1)))
 					return std::make_pair(start->name, length->name);
@@ -459,7 +466,7 @@ void DataFlowAnalyzer::joinKnowledge(Environment const& _olderEnvironment)
 		return;
 	joinKnowledgeHelper(m_state.environment.storage, _olderEnvironment.storage);
 	joinKnowledgeHelper(m_state.environment.memory, _olderEnvironment.memory);
-	cxx20::erase_if(m_state.environment.keccak, mapTuple([&_olderEnvironment](auto&& key, auto&& currentValue) {
+	std::erase_if(m_state.environment.keccak, mapTuple([&_olderEnvironment](auto&& key, auto&& currentValue) {
 		YulName const* oldValue = valueOrNullptr(_olderEnvironment.keccak, key);
 		return !oldValue || *oldValue != currentValue;
 	}));
@@ -474,7 +481,7 @@ void DataFlowAnalyzer::joinKnowledgeHelper(
 	// This also works for memory because _older is an "older version"
 	// of m_state.environment.memory and thus any overlapping write would have cleared the keys
 	// that are not known to be different inside m_state.environment.memory already.
-	cxx20::erase_if(_this, mapTuple([&_older](auto&& key, auto&& currentValue){
+	std::erase_if(_this, mapTuple([&_older](auto&& key, auto&& currentValue){
 		YulName const* oldValue = valueOrNullptr(_older, key);
 		return !oldValue || *oldValue != currentValue;
 	}));

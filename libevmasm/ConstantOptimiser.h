@@ -108,7 +108,7 @@ public:
 	explicit LiteralMethod(Params const& _params, u256 const& _value):
 		ConstantOptimisationMethod(_params, _value) {}
 	bigint gasNeeded() const override;
-	AssemblyItems execute(Assembly&) const override { return AssemblyItems{}; }
+	AssemblyItems execute(Assembly&) const override;
 };
 
 /**
@@ -132,22 +132,11 @@ protected:
 class ComputeMethod: public ConstantOptimisationMethod
 {
 public:
-	explicit ComputeMethod(Params const& _params, u256 const& _value):
-		ConstantOptimisationMethod(_params, _value)
-	{
-		m_routine = findRepresentation(m_value);
-		assertThrow(
-			checkRepresentation(m_value, m_routine),
-			OptimizerException,
-			"Invalid constant expression created."
-		);
-	}
+	ComputeMethod(Params const& _params, u256 const& _value);
+	~ComputeMethod() override;
 
 	bigint gasNeeded() const override { return gasNeeded(m_routine); }
-	AssemblyItems execute(Assembly&) const override
-	{
-		return m_routine;
-	}
+	AssemblyItems execute(Assembly&) const override;
 
 protected:
 	/// Tries to recursively find a way to compute @a _value.

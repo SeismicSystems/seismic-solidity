@@ -4,7 +4,7 @@ The `buildpack-deps` docker images are used to compile and test solidity within 
 
 ## GitHub Workflow
 
-The creation of the images are triggered by a single workflow, defined in `.github/workflows/buildpack-deps.yml`.
+The creation of the images is triggered by a single workflow, defined in `.github/workflows/buildpack-deps.yml`.
 For each resulting `buildpack-deps` docker image a strategy is defined in the workflow file - the image variant.
 The workflow gets triggered, if any Dockerfile defined in `scripts/docker/buildpack-deps/Dockerfile.*` were changed
 within the PR.

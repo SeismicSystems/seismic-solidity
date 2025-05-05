@@ -71,6 +71,11 @@ class AssemblyItem;
 using AssemblyItems = std::vector<AssemblyItem>;
 }
 
+namespace solidity::yul
+{
+class YulStack;
+}
+
 namespace solidity::frontend
 {
 
@@ -128,11 +133,53 @@ public:
 		SolidityAST,
 	};
 
-	enum class IROutputSelection {
-		None,
-		UnoptimizedOnly,
-		UnoptimizedAndOptimized,
+	/// Indicates which stages of the compilation pipeline were explicitly requested and provides
+	/// logic to determine which ones are effectively needed to accomplish that.
+	/// Note that parsing and analysis are not selectable, since they cannot be skipped.
+	struct PipelineConfig
+	{
+		bool irCodegen = false;      ///< Want IR output straight from code generator.
+		bool irOptimization = false; ///< Want reparsed IR that went through YulStack. May be optimized or not, depending on settings.
+		bool bytecode = false;       ///< Want EVM-level outputs, especially EVM assembly and bytecode. May be optimized or not, depending on settings.
+
+		bool needIR(bool _viaIR) const
+		{
+			return
+				irCodegen ||
+				irOptimization ||
+				(bytecode && _viaIR);
+		}
+
+		bool needIRCodegenOnly(bool _viaIR) const
+		{
+			return !(bytecode && _viaIR) && !irOptimization;
+		}
+
+		bool needBytecode() const
+		{
+			return bytecode;
+		}
+
+		PipelineConfig operator|(PipelineConfig const& _other) const
+		{
+			return {
+				irCodegen || _other.irCodegen,
+				irOptimization || _other.irOptimization,
+				bytecode || _other.bytecode,
+			};
+		}
+
+		bool operator!=(PipelineConfig const& _other) const { return !(*this == _other); }
+		bool operator==(PipelineConfig const& _other) const
+		{
+			return
+				irCodegen == _other.irCodegen &&
+				irOptimization == _other.irOptimization &&
+				bytecode == _other.bytecode;
+		}
 	};
+
+	using ContractSelection = std::map<std::string, std::map<std::string, CompilerStack::PipelineConfig>>;
 
 	/// Creates a new compiler stack.
 	/// @param _readFile callback used to read files for import statements. Must return
@@ -188,26 +235,13 @@ public:
 	/// Set model checker settings.
 	void setModelCheckerSettings(ModelCheckerSettings _settings);
 
-	/// Sets the requested contract names by source.
-	/// If empty, no filtering is performed and every contract
-	/// found in the supplied sources is compiled.
-	/// Names are cleared iff @a _contractNames is missing.
-	void setRequestedContractNames(std::map<std::string, std::set<std::string>> const& _contractNames = std::map<std::string, std::set<std::string>>{})
-	{
-		m_requestedContractNames = _contractNames;
-	}
-
-	/// Enable EVM Bytecode generation. This is enabled by default.
-	void enableEvmBytecodeGeneration(bool _enable = true) { m_generateEvmBytecode = _enable; }
-
-	/// Enable generation of Yul IR code so that IR output can be safely requested for all contracts.
-	/// Note that IR may also be implicitly generated when not requested. In particular
-	/// @a setViaIR(true) requires access to the IR outputs for bytecode generation.
-	void requestIROutputs(IROutputSelection _selection = IROutputSelection::UnoptimizedAndOptimized)
-	{
-		solAssert(m_stackState < ParsedAndImported);
-		m_irOutputSelection = _selection;
-	}
+	/// Sets names of the contracts from each source that should be compiled.
+	/// If empty, no filtering is performed and every contract found in the supplied sources goes
+	/// through the default pipeline stages (bytecode-only, no IR).
+	/// Source/contract names are not validated - ones that do not exist are ignored.
+	/// The empty source/contract name can be used as a wildcard that matches all sources/contracts.
+	/// If a contract matches more than one entry, the pipeline selection from all matches is combined.
+	void selectContracts(ContractSelection const& _selectedContracts);
 
 	/// @arg _metadataLiteralSources When true, store sources as literals in the contract metadata.
 	/// Must be set before parsing.
@@ -287,18 +321,18 @@ public:
 	virtual std::string const filesystemFriendlyName(std::string const& _contractName) const override;
 
 	/// @returns the IR representation of a contract.
-	std::string const& yulIR(std::string const& _contractName) const;
+	std::optional<std::string> const& yulIR(std::string const& _contractName) const;
 
 	/// @returns the IR representation of a contract AST in format.
-	Json const& yulIRAst(std::string const& _contractName) const;
+	std::optional<Json> yulIRAst(std::string const& _contractName) const;
 
 	/// @returns the optimized IR representation of a contract.
-	std::string const& yulIROptimized(std::string const& _contractName) const;
+	std::optional<std::string> const& yulIROptimized(std::string const& _contractName) const;
 
 	/// @returns the optimized IR representation of a contract AST in JSON format.
-	Json const& yulIROptimizedAst(std::string const& _contractName) const;
+	std::optional<Json> yulIROptimizedAst(std::string const& _contractName) const;
 
-	Json const& yulCFGJson(std::string const& _contractName) const;
+	std::optional<Json> yulCFGJson(std::string const& _contractName) const;
 
 	/// @returns the assembled object for a contract.
 	virtual evmasm::LinkerObject const& object(std::string const& _contractName) const override;
@@ -357,6 +391,18 @@ public:
 	/// @returns a JSON object with the three members ``methods``, ``events``, ``errors``. Each is a map, mapping identifiers (hashes) to function names.
 	Json interfaceSymbols(std::string const& _contractName) const;
 
+	/// @returns a JSON representing the ethdebug data of the specified contract.
+	/// Prerequisite: Successful call to parse or compile.
+	Json ethdebug(std::string const& _contractName) const override;
+
+	/// @returns a JSON representing the ethdebug data of the specified contract.
+	/// Prerequisite: Successful call to parse or compile.
+	Json ethdebugRuntime(std::string const& _contractName) const override;
+
+	/// @returns a JSON representing the top-level ethdebug data (types, etc.).
+	/// Prerequisite: Successful call to parse or compile.
+	Json ethdebug() const override;
+
 	/// @returns the Contract Metadata matching the pipeline selected using the viaIR setting.
 	std::string const& metadata(std::string const& _contractName) const { return metadata(contract(_contractName)); }
 
@@ -404,24 +450,21 @@ private:
 	struct Contract
 	{
 		ContractDefinition const* contract = nullptr;
-		std::shared_ptr<Compiler> compiler;
+
 		std::shared_ptr<evmasm::Assembly> evmAssembly;
 		std::shared_ptr<evmasm::Assembly> evmRuntimeAssembly;
+		std::optional<std::string> generatedYulUtilityCode; ///< Extra Yul utility code that was used when compiling the creation assembly
+		std::optional<std::string> runtimeGeneratedYulUtilityCode; ///< Extra Yul utility code that was used when compiling the deployed assembly
 		evmasm::LinkerObject object; ///< Deployment object (includes the runtime sub-object).
 		evmasm::LinkerObject runtimeObject; ///< Runtime object.
-		std::string yulIR; ///< Yul IR code straight from the code generator.
-		std::string yulIROptimized; ///< Reparsed and possibly optimized Yul IR code.
-		Json yulIRAst; ///< JSON AST of Yul IR code.
-		Json yulIROptimizedAst; ///< JSON AST of optimized Yul IR code.
-		Json yulCFGJson; ///< JSON CFG of Yul IR code.
+		std::optional<std::string> yulIR; ///< Yul IR code straight from the code generator.
+		std::optional<std::string> yulIROptimized; ///< Reparsed and possibly optimized Yul IR code.
 		util::LazyInit<std::string const> metadata; ///< The metadata json that will be hashed into the chain.
 		util::LazyInit<Json const> abi;
 		util::LazyInit<Json const> storageLayout;
 		util::LazyInit<Json const> transientStorageLayout;
 		util::LazyInit<Json const> userDocumentation;
 		util::LazyInit<Json const> devDocumentation;
-		util::LazyInit<Json const> generatedSources;
-		util::LazyInit<Json const> runtimeGeneratedSources;
 		mutable std::optional<std::string const> sourceMapping;
 		mutable std::optional<std::string const> runtimeSourceMapping;
 	};
@@ -447,6 +490,11 @@ private:
 
 	/// @returns true if the contract is requested to be compiled.
 	bool isRequestedContract(ContractDefinition const& _contract) const;
+
+	/// @returns The effective pipeline configuration for a given contract.
+	///     Applies defaults for contracts that were not explicitly selected and combines
+	///     multiple entries if the contact is matched by wildcards.
+	PipelineConfig requestedPipelineConfig(ContractDefinition const& _contract) const;
 
 	/// Perform the analysis steps of legacy language mode.
 	/// @returns false on error.
@@ -490,6 +538,11 @@ private:
 	/// library will still be kept as an unlinked placeholder in the objects.
 	void link();
 
+	/// Parses and analyzes specified Yul source and returns the YulStack that can be used to manipulate it.
+	/// Assumes that the IR was generated from sources loaded currently into CompilerStack, which
+	/// means that it is error-free and uses the same settings.
+	yul::YulStack loadGeneratedIR(std::string const& _ir) const;
+
 	/// @returns the contract object for the given @a _contractName.
 	/// Can only be called after state is CompilationSuccessful.
 	Contract const& contract(std::string const& _contractName) const;
@@ -530,6 +583,11 @@ private:
 	/// This will generate the metadata and store it in the Contract object if it is not present yet.
 	std::string const& metadata(Contract const& _contract) const;
 
+	/// @returns the Contract ethdebug data.
+	/// This will generate the JSON object and store it in the Contract object if it is not present yet.
+	/// Prerequisite: Successful call to parse or compile.
+	Json ethdebug(Contract const& _contract, bool _runtime) const;
+
 	/// @returns the offset of the entry point of the given function into the list of assembly items
 	/// or zero if it is not found or does not exist.
 	size_t functionEntryPoint(
@@ -537,7 +595,12 @@ private:
 		FunctionDefinition const& _function
 	) const;
 
-	void reportUnimplementedFeatureError(langutil::UnimplementedFeatureError const& _error);
+	void reportUnimplementedFeatureError(
+		langutil::UnimplementedFeatureError const& _error,
+		ContractDefinition const* _contractDefinition = nullptr
+	);
+	void reportCodeGenerationError(langutil::Error const& _error, ContractDefinition const* _contractDefinition);
+	void reportIRPostAnalysisError(langutil::Error const* _error, ContractDefinition const* _contractDefinition);
 
 	ReadCallback::Callback m_readFile;
 	OptimiserSettings m_optimiserSettings;
@@ -547,9 +610,7 @@ private:
 	langutil::EVMVersion m_evmVersion;
 	std::optional<uint8_t> m_eofVersion;
 	ModelCheckerSettings m_modelCheckerSettings;
-	std::map<std::string, std::set<std::string>> m_requestedContractNames;
-	bool m_generateEvmBytecode = true;
-	IROutputSelection m_irOutputSelection = IROutputSelection::None;
+	ContractSelection m_selectedContracts;
 	std::map<std::string, util::h160> m_libraries;
 	ImportRemapper m_importRemapper;
 	std::map<std::string const, Source> m_sources;

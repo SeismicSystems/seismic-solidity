@@ -66,7 +66,7 @@ then
   boost_version="1.84.0"
   boost_package="boost_${boost_version//./_}.tar.bz2"
   boost_dir="boost_${boost_version//./_}"
-  wget "https://boostorg.jfrog.io/artifactory/main/release/$boost_version/source/$boost_package"
+  wget "https://archives.boost.io/release/$boost_version/source/$boost_package"
   tar xf "$boost_package"
   rm "$boost_package"
   cd "$boost_dir"
@@ -85,53 +85,35 @@ then
   rm -rf /tmp/{eldarica,eld_binaries.zip}
 
   #cvc5
-  cvc5_version="1.1.2"
-  wget "https://github.com/cvc5/cvc5/releases/download/cvc5-${cvc5_version}/cvc5-macOS-arm64-static.zip" -O /tmp/cvc5.zip
-  validate_checksum /tmp/cvc5.zip 2017d683d924676cb713865c6d4fcf70115c65b7ec2848f242ab938902f115b5
-  unzip /tmp/cvc5.zip -x "cvc5-macOS-arm64-static/lib/cmake/*" -d /tmp
-  sudo mv /tmp/cvc5-macOS-arm64-static/bin/* /usr/local/bin
-  sudo mv /tmp/cvc5-macOS-arm64-static/include/* /usr/local/include
-  sudo mv /tmp/cvc5-macOS-arm64-static/lib/* /usr/local/lib
-  rm -rf /tmp/{cvc5-macOS-arm64-static,cvc5.zip}
+  cvc5_version="1.2.0"
+  cvc5_archive_name="cvc5-macOS-arm64-static"
+  wget "https://github.com/cvc5/cvc5/releases/download/cvc5-${cvc5_version}/${cvc5_archive_name}.zip" -O /tmp/cvc5.zip
+  validate_checksum /tmp/cvc5.zip 57d2d4855af3f3865110a254e415098b4e150a655f297010e27eb292f48f7da7
+  sudo unzip -j /tmp/cvc5.zip "${cvc5_archive_name}/bin/cvc5" -d /usr/local/bin
+  rm -f /tmp/cvc5.zip
 
   # z3
-  z3_version="4.12.1"
+  z3_version="4.13.3"
   z3_dir="z3-z3-$z3_version"
   z3_package="z3-$z3_version.tar.gz"
   wget "https://github.com/Z3Prover/z3/archive/refs/tags/$z3_package"
-  validate_checksum "$z3_package" a3735fabf00e1341adcc70394993c05fd3e2ae167a3e9bb46045e33084eb64a3
+  validate_checksum "$z3_package" f59c9cf600ea57fb64ffeffbffd0f2d2b896854f339e846f48f069d23bc14ba0
   tar xf "$z3_package"
   rm "$z3_package"
   cd "$z3_dir"
   mkdir build
   cd build
   cmake -DCMAKE_OSX_ARCHITECTURES:STRING="x86_64;arm64" -DZ3_BUILD_LIBZ3_SHARED=false ..
-  make -j
+  make -j "$(nproc)"
   sudo make install
   cd ../..
   rm -rf "$z3_dir"
 
   # evmone
-  evmone_version="0.11.0"
-  if [[ $(uname -m) == 'arm64' ]]
-  then
-    # evmone does not provide any builds for apple silicon yet. so lets just build it locally.
-    # be aware that we are only building the arm version here, we don't build a universal binary.
-    git clone https://github.com/ethereum/evmone.git
-    cd evmone
-    git checkout "v${evmone_version}"
-    git submodule update --init
-    cmake -S . -B build
-    cmake --build build
-    cd build
-    sudo make install
-    cd ../..
-    rm -rf evmone
-  else
-    evmone_package="evmone-${evmone_version}-darwin-x86_64.tar.gz"
-    wget "https://github.com/ethereum/evmone/releases/download/v${evmone_version}/${evmone_package}"
-    validate_checksum "$evmone_package" 83ed20676681d9a31bd30cac399ab7c615ccab8adb8087cc2c7e9cd22b4d2efc
-    tar xzpf "$evmone_package" -C /usr/local
-    rm "$evmone_package"
-  fi
+  evmone_version="0.13.0"
+  evmone_package="evmone-${evmone_version}-darwin-arm64.tar.gz"
+  wget "https://github.com/ethereum/evmone/releases/download/v${evmone_version}/${evmone_package}"
+  validate_checksum "$evmone_package" 49fe6cc35e0e13c48ca2f29a6b85a47f7b25dcd427e14254000d3bc29cddf2a6
+  sudo tar xzpf "$evmone_package" -C /usr/local
+  rm "$evmone_package"
 fi

@@ -76,10 +76,10 @@ std::pair<bigint, bigint> GasMeterVisitor::instructionCosts(
 void GasMeterVisitor::operator()(FunctionCall const& _funCall)
 {
 	ASTWalker::operator()(_funCall);
-	if (BuiltinFunctionForEVM const* f = m_dialect.builtin(_funCall.functionName.name))
-		if (f->instruction)
+	if (BuiltinFunctionForEVM const* builtin = resolveBuiltinFunctionForEVM(_funCall.functionName, m_dialect))
+		if (builtin->instruction)
 		{
-			instructionCostsInternal(*f->instruction);
+			instructionCostsInternal(*builtin->instruction);
 			return;
 		}
 	yulAssert(false, "Functions not implemented.");

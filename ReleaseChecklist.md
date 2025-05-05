@@ -76,7 +76,7 @@ At least a day before the release:
  - [ ] Create a pull request in solc-bin and merge.
 
 ### Homebrew and MacOS
- - [ ] Update the version and the hash (``sha256sum solidity_$VERSION.tar.gz``) in the [``solidity`` formula in Homebrew core repository](https://github.com/Homebrew/homebrew-core/blob/master/Formula/solidity.rb).
+ - [ ] Update the version and the hash (``sha256sum solidity_$VERSION.tar.gz``) in the [``solidity`` formula in Homebrew core repository](https://github.com/Homebrew/homebrew-core/blob/master/Formula/s/solidity.rb).
 
 ### Docker
  - [ ] Run ``./scripts/docker_deploy_manual.sh v$VERSION``.
@@ -94,7 +94,8 @@ At least a day before the release:
        **SERIOUSLY: DO NOT PROCEED EARLIER!!!**
  - [ ] *After* the package with the static build is *published*, use it to create packages for older Ubuntu versions.
        Copy the static package to the [``~ethereum/ethereum`` PPA](https://launchpad.net/~ethereum/+archive/ubuntu/ethereum)
-       for the destination series ``Trusty``, ``Xenial`` and ``Bionic`` while selecting ``Copy existing binaries``.
+       for the destination series ``Trusty``, ``Xenial``, ``Bionic``, and ``Focal``
+       while selecting ``Copy existing binaries``.
 
 ### Release solc-js
  - [ ] Wait until solc-bin was properly deployed. You can test this via remix - a test run through remix is advisable anyway.
@@ -120,4 +121,5 @@ At least a day before the release:
  - [ ] Share the announcement on [`#solidity` channel on Matrix](https://matrix.to/#/#ethereum_solidity:gitter.im)
  - [ ] Share the announcement on [`#solc-tooling`](https://matrix.to/#/#solc-tooling:matrix.org)
  - [ ] If anything went wrong this time, mention it in [Learning from Past Releases](https://notes.ethereum.org/@solidity/release-mistakes).
+ - [ ] Bump vendored dependencies.
  - [ ] Lean back, wait for bug reports and repeat from step 1 :).

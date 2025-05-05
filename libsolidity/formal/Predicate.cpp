@@ -247,24 +247,17 @@ std::string Predicate::formatSummaryCall(
 		{
 			bool visit(MemberAccess const& _memberAccess)
 			{
-				Expression const* memberExpr = SMTEncoder::innermostTuple(_memberAccess.expression());
+				if (auto magicType = dynamic_cast<MagicType const*>(_memberAccess.expression().annotation().type))
+				{
+					auto memberName = _memberAccess.memberName();
+					auto magicKind = magicType->kind();
+					// TODO remove this for 0.9.0
+					if (magicKind == MagicType::Kind::Block && memberName == "difficulty")
+						memberName = "prevrandao";
 
-				Type const* exprType = memberExpr->annotation().type;
-				solAssert(exprType, "");
-				if (exprType->category() == Type::Category::Magic)
-					if (auto const* identifier = dynamic_cast<Identifier const*>(memberExpr))
-					{
-						ASTString const& name = identifier->name();
-						auto memberName = _memberAccess.memberName();
-
-						// TODO remove this for 0.9.0
-						if (name == "block" && memberName == "difficulty")
-							memberName = "prevrandao";
-
-						if (name == "block" || name == "msg" || name == "tx")
-							txVars.insert(name + "." + memberName);
-					}
-
+					if (magicKind == MagicType::Kind::Block || magicKind == MagicType::Kind::Message || magicKind == MagicType::Kind::Transaction)
+						txVars.insert(magicType->toString(true) + "." + memberName);
+				}
 				return true;
 			}
 
@@ -489,22 +482,7 @@ std::map<std::string, std::string> Predicate::expressionSubstitution(smtutil::Ex
 
 std::map<std::string, std::optional<std::string>> Predicate::readTxVars(smtutil::Expression const& _tx) const
 {
-	std::map<std::string, Type const*> const txVars{
-		{"block.basefee", TypeProvider::uint256()},
-		{"block.chainid", TypeProvider::uint256()},
-		{"block.coinbase", TypeProvider::address()},
-		{"block.prevrandao", TypeProvider::uint256()},
-		{"block.gaslimit", TypeProvider::uint256()},
-		{"block.number", TypeProvider::uint256()},
-		{"block.timestamp", TypeProvider::uint256()},
-		{"blockhash", TypeProvider::array(DataLocation::Memory, TypeProvider::uint256())},
-		{"msg.data", TypeProvider::array(DataLocation::CallData)},
-		{"msg.sender", TypeProvider::address()},
-		{"msg.sig", TypeProvider::fixedBytes(4)},
-		{"msg.value", TypeProvider::uint256()},
-		{"tx.gasprice", TypeProvider::uint256()},
-		{"tx.origin", TypeProvider::address()}
-	};
+	std::map<std::string, Type const*> const txVars = transactionMemberTypes();
 	std::map<std::string, std::optional<std::string>> vars;
 	for (auto&& [i, v]: txVars | ranges::views::enumerate)
 		vars.emplace(v.first, expressionToString(_tx.arguments.at(i), v.second));

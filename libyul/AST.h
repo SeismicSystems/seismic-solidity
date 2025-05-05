@@ -24,6 +24,7 @@
 #pragma once
 
 #include <libyul/ASTForward.h>
+#include <libyul/Builtins.h>
 #include <libyul/YulName.h>
 
 #include <liblangutil/DebugData.h>
@@ -35,6 +36,8 @@
 
 namespace solidity::yul
 {
+
+class Dialect;
 
 struct NameWithDebugData { langutil::DebugData::ConstPtr debugData; YulName name; };
 using NameWithDebugDataList = std::vector<NameWithDebugData>;
@@ -69,6 +72,9 @@ private:
 struct Literal { langutil::DebugData::ConstPtr debugData; LiteralKind kind; LiteralValue value; };
 /// External / internal identifier or label reference
 struct Identifier { langutil::DebugData::ConstPtr debugData; YulName name; };
+/// AST Node representing a reference to one of the built-in functions (as defined by the dialect).
+/// In the source it's an actual name, while in the AST we only store a handle that can be used to find the function in the Dialect
+struct BuiltinName { langutil::DebugData::ConstPtr debugData; BuiltinHandle handle; };
 /// Assignment ("x := mload(20:u256)", expects push-1-expression on the right hand
 /// side and requires x to occupy exactly one stack slot.
 ///
@@ -76,7 +82,7 @@ struct Identifier { langutil::DebugData::ConstPtr debugData; YulName name; };
 /// a single stack slot and expects a single expression on the right hand returning
 /// the same amount of items as the number of variables.
 struct Assignment { langutil::DebugData::ConstPtr debugData; std::vector<Identifier> variableNames; std::unique_ptr<Expression> value; };
-struct FunctionCall { langutil::DebugData::ConstPtr debugData; Identifier functionName; std::vector<Expression> arguments; };
+struct FunctionCall { langutil::DebugData::ConstPtr debugData; FunctionName functionName; std::vector<Expression> arguments; };
 /// Statement that contains only a single expression
 struct ExpressionStatement { langutil::DebugData::ConstPtr debugData; Expression expression; };
 /// Block-scope variable declaration ("let x:u256 := mload(20:u256)"), non-hoisted
@@ -103,12 +109,19 @@ struct Leave { langutil::DebugData::ConstPtr debugData; };
 class AST
 {
 public:
-	explicit AST(Block _root): m_root(std::move(_root)) {}
+	AST(Dialect const& _dialect, Block _root): m_dialect(_dialect), m_root(std::move(_root)) {}
 
-	[[nodiscard]] Block const& root() const { return m_root; }
+	Dialect const& dialect() const { return m_dialect; }
+	Block const& root() const { return m_root; }
 private:
+	Dialect const& m_dialect;
 	Block m_root;
 };
+
+bool constexpr isBuiltinFunctionCall(FunctionCall const& _functionCall) noexcept
+{
+	return std::holds_alternative<BuiltinName>(_functionCall.functionName);
+}
 
 
 /// Extracts the IR source location from a Yul node.

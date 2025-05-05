@@ -43,7 +43,7 @@ namespace solidity::yul
 {
 
 struct AsmAnalysisInfo;
-struct Dialect;
+class Dialect;
 struct CodeWeights;
 
 }

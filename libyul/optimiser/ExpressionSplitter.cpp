@@ -26,6 +26,7 @@
 
 #include <libyul/AST.h>
 #include <libyul/Dialect.h>
+#include <libyul/Utilities.h>
 
 #include <libsolutil/CommonData.h>
 
@@ -34,6 +35,13 @@ using namespace solidity::yul;
 using namespace solidity::util;
 using namespace solidity::langutil;
 
+ExpressionSplitter::ExpressionSplitter(Dialect const& _dialect, NameDispenser& _nameDispenser):
+	m_dialect(_dialect),
+	m_nameDispenser(_nameDispenser)
+{}
+
+ExpressionSplitter::~ExpressionSplitter() = default;
+
 void ExpressionSplitter::run(OptimiserStepContext& _context, Block& _ast)
 {
 	ExpressionSplitter{_context.dialect, _context.dispenser}(_ast);
@@ -41,7 +49,7 @@ void ExpressionSplitter::run(OptimiserStepContext& _context, Block& _ast)
 
 void ExpressionSplitter::operator()(FunctionCall& _funCall)
 {
-	BuiltinFunction const* builtin = m_dialect.builtin(_funCall.functionName.name);
+	BuiltinFunction const* builtin = resolveBuiltinFunction(_funCall.functionName, m_dialect);
 
 	for (size_t i = _funCall.arguments.size(); i > 0; i--)
 		if (!builtin || !builtin->literalArgument(i - 1))

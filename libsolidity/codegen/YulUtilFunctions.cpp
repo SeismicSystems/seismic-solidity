@@ -285,7 +285,7 @@ std::string YulUtilFunctions::revertWithError(
 		errorArgumentTypes.push_back(arg->annotation().type);
 	}
 	templ("argumentVars", joinHumanReadablePrefixed(errorArgumentVars));
-	templ("encode", ABIFunctions(m_evmVersion, m_revertStrings, m_functionCollector).tupleEncoder(errorArgumentTypes, _parameterTypes));
+	templ("encode", ABIFunctions(m_evmVersion, m_eofVersion, m_revertStrings, m_functionCollector).tupleEncoder(errorArgumentTypes, _parameterTypes));
 
 	return templ.render();
 }
@@ -1650,7 +1650,7 @@ std::string YulUtilFunctions::storageArrayPopFunction(ArrayType const& _type)
 			("indexAccess", storageArrayIndexAccessFunction(_type))
 			(
 				"setToZero",
-				_type.baseType()->category() != Type::Category::Mapping ? storageSetToZeroFunction(*_type.baseType()) : ""
+				_type.baseType()->category() != Type::Category::Mapping ? storageSetToZeroFunction(*_type.baseType(), VariableDeclaration::Location::Unspecified) : ""
 			)
 			.render();
 	});
@@ -1695,8 +1695,8 @@ std::string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("indexAccessNoChecks", longByteArrayStorageIndexAccessNoCheckFunction())
-			("setToZero", storageSetToZeroFunction(*_type.baseType()))
 			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("setToZero", storageSetToZeroFunction(*_type.baseType(), VariableDeclaration::Location::Unspecified))
 			.render();
 	});
 }
@@ -1767,7 +1767,7 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 			("loadOpcode", isShielded ? "cload" : "sload")
 			("isByteArrayOrString", _type.isByteArrayOrString())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
-			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType()))
+			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType(), VariableDeclaration::Location::Unspecified))
 			("maxArrayLength", (u256(1) << 64).str())
 			("shl", shiftLeftFunctionDynamic())
 			.render();
@@ -1846,7 +1846,7 @@ std::string YulUtilFunctions::clearStorageRangeFunction(Type const& _type)
 			}
 		)")
 		("functionName", functionName)
-		("setToZero", storageSetToZeroFunction(_type.storageBytes() < 32 ? *TypeProvider::uint256() : _type))
+		("setToZero", storageSetToZeroFunction(_type.storageBytes() < 32 ? *TypeProvider::uint256() : _type, VariableDeclaration::Location::Unspecified))
 		("increment", _type.storageSize().str())
 		.render();
 	});
@@ -1932,7 +1932,7 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 				memberSetValues.emplace_back().emplace("clearMember", Whiskers(R"(
 						<setZero>(add(slot, <memberSlotDiff>), <memberStorageOffset>)
 					)")
-					("setZero", storageSetToZeroFunction(*member.type))
+					("setZero", storageSetToZeroFunction(*member.type, VariableDeclaration::Location::Unspecified))
 					("memberSlotDiff",  memberSlotDiff.str())
 					("memberStorageOffset", std::to_string(memberStorageOffset))
 					.render()
@@ -2035,7 +2035,7 @@ std::string YulUtilFunctions::copyArrayToStorageFunction(ArrayType const& _fromT
 			0,
 			_fromType.baseType()->stackItems().size()
 		));
-		templ("updateStorageValue", updateStorageValueFunction(*_fromType.baseType(), *_toType.baseType(), 0));
+		templ("updateStorageValue", updateStorageValueFunction(*_fromType.baseType(), *_toType.baseType(), VariableDeclaration::Location::Unspecified, 0));
 		templ("srcStride",
 			fromCalldata ?
 			std::to_string(_fromType.calldataStride()) :
@@ -2614,7 +2614,7 @@ std::string YulUtilFunctions::copyArrayFromStorageToMemoryFunction(ArrayType con
 		if (_from.baseType()->isValueType())
 		{
 			solAssert(*_from.baseType() == *_to.baseType(), "");
-			ABIFunctions abi(m_evmVersion, m_revertStrings, m_functionCollector);
+			ABIFunctions abi(m_evmVersion, m_eofVersion, m_revertStrings, m_functionCollector);
 			return Whiskers(R"(
 				function <functionName>(slot) -> memPtr {
 					memPtr := <allocateUnbounded>()
@@ -2719,7 +2719,7 @@ std::string YulUtilFunctions::bytesOrStringConcatFunction(
 		templ("finalizeAllocation", finalizeAllocationFunction());
 		templ(
 			"encodePacked",
-			ABIFunctions{m_evmVersion, m_revertStrings, m_functionCollector}.tupleEncoderPacked(
+			ABIFunctions{m_evmVersion, m_eofVersion, m_revertStrings, m_functionCollector}.tupleEncoderPacked(
 				_argumentTypes,
 				targetTypes
 			)
@@ -2768,21 +2768,33 @@ std::string YulUtilFunctions::mappingIndexAccessFunction(MappingType const& _map
 	});
 }
 
-std::string YulUtilFunctions::readFromStorage(Type const& _type, size_t _offset, bool _splitFunctionTypes)
+std::string YulUtilFunctions::readFromStorage(
+	Type const& _type,
+	size_t _offset,
+	bool _splitFunctionTypes,
+	VariableDeclaration::Location _location
+)
 {
 	if (_type.isValueType())
-		return readFromStorageValueType(_type, _offset, _splitFunctionTypes);
+		return readFromStorageValueType(_type, _offset, _splitFunctionTypes, _location);
 	else
 	{
+		solAssert(_location != VariableDeclaration::Location::Transient);
 		solAssert(_offset == 0, "");
 		return readFromStorageReferenceType(_type);
 	}
 }
 
-std::string YulUtilFunctions::readFromStorageDynamic(Type const& _type, bool _splitFunctionTypes)
+std::string YulUtilFunctions::readFromStorageDynamic(
+	Type const& _type,
+	bool _splitFunctionTypes,
+	VariableDeclaration::Location _location
+)
 {
 	if (_type.isValueType())
-		return readFromStorageValueType(_type, {}, _splitFunctionTypes);
+		return readFromStorageValueType(_type, {}, _splitFunctionTypes, _location);
+
+	solAssert(_location != VariableDeclaration::Location::Transient);
 	std::string functionName =
 		"read_from_storage__dynamic_" +
 		std::string(_splitFunctionTypes ? "split_" : "") +
@@ -2802,19 +2814,31 @@ std::string YulUtilFunctions::readFromStorageDynamic(Type const& _type, bool _sp
 	});
 }
 
-std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::optional<size_t> _offset, bool _splitFunctionTypes)
+std::string YulUtilFunctions::readFromStorageValueType(
+	Type const& _type,
+	std::optional<size_t> _offset,
+	bool _splitFunctionTypes,
+	VariableDeclaration::Location _location
+)
 {
 	solAssert(_type.isValueType(), "");
+	solAssert(
+		_location == VariableDeclaration::Location::Transient ||
+		_location == VariableDeclaration::Location::Unspecified,
+		"Variable location can only be transient or plain storage"
+	);
 
 	std::string functionName =
-			"read_from_storage_" +
-			std::string(_splitFunctionTypes ? "split_" : "") + (
-				_offset.has_value() ?
-				"offset_" + std::to_string(*_offset) :
-				"dynamic"
-			) +
-			"_" +
-			_type.identifier();
+		"read_from_" +
+		(_location == VariableDeclaration::Location::Transient ? "transient_"s : "") +
+		"storage_" +
+		std::string(_splitFunctionTypes ? "split_" : "") + (
+			_offset.has_value() ?
+			"offset_" + std::to_string(*_offset) :
+			"dynamic"
+		) +
+		"_" +
+		_type.identifier();
 
 	return m_functionCollector.createFunction(functionName, [&] {
 		Whiskers templ(R"(
@@ -2827,6 +2851,7 @@ std::string YulUtilFunctions::readFromStorageValueType(Type const& _type, std::o
 		)");
 		templ("functionName", functionName);
 		templ("dynamic", !_offset.has_value());
+		templ("loadOpcode", _location == VariableDeclaration::Location::Transient ? "tload" : "sload");
 		if (_offset.has_value())
 			templ("extract", extractFromStorageValue(_type, *_offset));
 		else
@@ -2873,7 +2898,7 @@ std::string YulUtilFunctions::readFromStorageReferenceType(Type const& _type)
 		("memberValues", suffixedVariableNameList("memberValue_", 0, structMembers[i].type->stackItems().size()))
 		("memberMemoryOffset", structType.memoryOffsetOfMember(structMembers[i].name).str())
 		("memberSlotDiff",  memberSlotDiff.str())
-		("readFromStorage", readFromStorage(*structMembers[i].type, memberStorageOffset, true))
+		("readFromStorage", readFromStorage(*structMembers[i].type, memberStorageOffset, true, VariableDeclaration::Location::Unspecified))
 		("writeToMemory", writeToMemoryFunction(*structMembers[i].type))
 		.render();
 	}
@@ -2907,12 +2932,21 @@ std::string YulUtilFunctions::readFromCalldata(Type const& _type)
 std::string YulUtilFunctions::updateStorageValueFunction(
 	Type const& _fromType,
 	Type const& _toType,
+	VariableDeclaration::Location _location,
 	std::optional<unsigned> const& _offset
 )
 {
+	solAssert(
+		_location == VariableDeclaration::Location::Transient ||
+		_location == VariableDeclaration::Location::Unspecified,
+		"Variable location can only be transient or plain storage"
+	);
+
 	std::string const functionName =
-		"update_storage_value_" +
-		(_offset.has_value() ? ("offset_" + std::to_string(*_offset)) : "") +
+		"update_" +
+		(_location == VariableDeclaration::Location::Transient ? "transient_"s : "") +
+		"storage_value_" +
+		(_offset.has_value() ? ("offset_" + std::to_string(*_offset)) + "_" : "") +
 		_fromType.identifier() +
 		"_to_" +
 		_toType.identifier();
@@ -2941,12 +2975,15 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("convert", conversionFunction(_fromType, _toType))
 			("fromValues", suffixedVariableNameList("value_", 0, _fromType.sizeOnStack()))
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
+			("storeOpcode", _location == VariableDeclaration::Location::Transient ? "tstore" : "sstore")
+			("loadOpcode", _location == VariableDeclaration::Location::Transient ? "tload" : "sload")
 			("prepare", prepareStoreFunction(_toType))
 			("storeOpcode", (_toType.isShielded()) ? "cstore" : "sstore")
 			("loadOpcode", (_toType.isShielded()) ? "cload" : "sload")
 			.render();
 		}
 
+		solAssert(_location != VariableDeclaration::Location::Transient);
 		auto const* toReferenceType = dynamic_cast<ReferenceType const*>(&_toType);
 		auto const* fromReferenceType = dynamic_cast<ReferenceType const*>(&_fromType);
 		solAssert(toReferenceType, "");
@@ -3093,7 +3130,7 @@ std::string YulUtilFunctions::extractFromStorageValueDynamic(Type const& _type)
 
 std::string YulUtilFunctions::extractFromStorageValue(Type const& _type, size_t _offset)
 {
-	std::string functionName = "extract_from_storage_value_offset_" + std::to_string(_offset) + _type.identifier();
+	std::string functionName = "extract_from_storage_value_offset_" + std::to_string(_offset) + "_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&] {
 		return Whiskers(R"(
 			function <functionName>(slot_value) -> value {
@@ -3572,7 +3609,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 					)")
 					(
 						"abiDecode",
-						ABIFunctions(m_evmVersion, m_revertStrings, m_functionCollector).abiDecodingFunctionStruct(
+						ABIFunctions(m_evmVersion, m_eofVersion, m_revertStrings, m_functionCollector).abiDecodingFunctionStruct(
 							toStructType,
 							false
 						)
@@ -3584,7 +3621,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 					body = Whiskers(R"(
 						converted := <readFromStorage>(value)
 					)")
-					("readFromStorage", readFromStorage(toStructType, 0, true))
+					("readFromStorage", readFromStorage(toStructType, 0, true, VariableDeclaration::Location::Unspecified))
 					.render();
 				}
 			}
@@ -3714,7 +3751,7 @@ std::string YulUtilFunctions::bytesToFixedBytesConversionFunction(ArrayType cons
 			templ(
 				"extractValue",
 				_from.dataStoredIn(DataLocation::Storage) ?
-				readFromStorage(_to, 32 - _to.numBytes(), false) :
+				readFromStorage(_to, 32 - _to.numBytes(), false, VariableDeclaration::Location::Unspecified) :
 				readFromMemory(_to)
 			);
 		templ("shl", shiftLeftFunctionDynamic());
@@ -3818,7 +3855,7 @@ std::string YulUtilFunctions::copyStructToStorageFunction(StructType const& _fro
 				auto const& [srcSlotOffset, srcOffset] = _from.storageOffsetsOfMember(structMembers[i].name);
 				t("memberOffset", formatNumber(srcSlotOffset));
 				if (memberType.isValueType())
-					t("read", readFromStorageValueType(memberType, srcOffset, true));
+					t("read", readFromStorageValueType(memberType, srcOffset, true, VariableDeclaration::Location::Unspecified));
 				else
 					solAssert(srcOffset == 0, "");
 
@@ -3826,6 +3863,7 @@ std::string YulUtilFunctions::copyStructToStorageFunction(StructType const& _fro
 			t("updateStorageValue", updateStorageValueFunction(
 				memberType,
 				*toStructMembers[i].type,
+				VariableDeclaration::Location::Unspecified,
 				std::optional<unsigned>{offset}
 			));
 			memberParams[i]["updateMemberCall"] = t.render();
@@ -3900,6 +3938,7 @@ std::string YulUtilFunctions::arrayConversionFunction(ArrayType const& _from, Ar
 					_from.dataStoredIn(DataLocation::CallData) ?
 					ABIFunctions(
 						m_evmVersion,
+						m_eofVersion,
 						m_revertStrings,
 						m_functionCollector
 					).abiDecodingFunctionArrayAvailableLength(_to, false) :
@@ -4104,7 +4143,10 @@ std::string YulUtilFunctions::packedHashFunction(
 		templ("variables", suffixedVariableNameList("var_", 1, 1 + sizeOnStack));
 		templ("comma", sizeOnStack > 0 ? "," : "");
 		templ("allocateUnbounded", allocateUnboundedFunction());
-		templ("packedEncode", ABIFunctions(m_evmVersion, m_revertStrings, m_functionCollector).tupleEncoderPacked(_givenTypes, _targetTypes));
+		templ(
+			"packedEncode",
+			ABIFunctions(m_evmVersion, m_eofVersion, m_revertStrings, m_functionCollector).tupleEncoderPacked(_givenTypes, _targetTypes)
+		);
 		return templ.render();
 	});
 }
@@ -4337,7 +4379,7 @@ std::string YulUtilFunctions::zeroValueFunction(Type const& _type, bool _splitFu
 	});
 }
 
-std::string YulUtilFunctions::storageSetToZeroFunction(Type const& _type)
+std::string YulUtilFunctions::storageSetToZeroFunction(Type const& _type, VariableDeclaration::Location _location)
 {
 	std::string const functionName = "storage_set_to_zero_" + _type.identifier();
 
@@ -4350,7 +4392,7 @@ std::string YulUtilFunctions::storageSetToZeroFunction(Type const& _type)
 				}
 			)")
 			("functionName", functionName)
-			("store", updateStorageValueFunction(_type, _type))
+			("store", updateStorageValueFunction(_type, _type, _location))
 			("values", suffixedVariableNameList("zero_", 0, _type.sizeOnStack()))
 			("zeroValue", zeroValueFunction(_type))
 			.render();
@@ -4725,15 +4767,21 @@ std::string YulUtilFunctions::copyConstructorArgumentsToMemoryFunction(
 
 	return m_functionCollector.createFunction(functionName, [&]() {
 		std::string returnParams = suffixedVariableNameList("ret_param_",0, CompilerUtils::sizeOnStack(_contract.constructor()->parameters()));
-		ABIFunctions abiFunctions(m_evmVersion, m_revertStrings, m_functionCollector);
+		ABIFunctions abiFunctions(m_evmVersion, m_eofVersion, m_revertStrings, m_functionCollector);
 
 		return util::Whiskers(R"(
 			function <functionName>() -> <retParams> {
-				let programSize := datasize("<object>")
-				let argSize := sub(codesize(), programSize)
+				<?eof>
+					let argSize := calldatasize()
+					let memoryDataOffset := <allocate>(argSize)
+					calldatacopy(memoryDataOffset, 0, argSize)
+				<!eof>
+					let programSize := datasize("<object>")
+					let argSize := sub(codesize(), programSize)
 
-				let memoryDataOffset := <allocate>(argSize)
-				codecopy(memoryDataOffset, programSize, argSize)
+					let memoryDataOffset := <allocate>(argSize)
+					codecopy(memoryDataOffset, programSize, argSize)
+				</eof>
 
 				<retParams> := <abiDecode>(memoryDataOffset, add(memoryDataOffset, argSize))
 			}
@@ -4743,6 +4791,7 @@ std::string YulUtilFunctions::copyConstructorArgumentsToMemoryFunction(
 		("object", _creationObjectName)
 		("allocate", allocationFunction())
 		("abiDecode", abiFunctions.tupleDecoder(FunctionType(*_contract.constructor()).parameterTypes(), true))
+		("eof", m_eofVersion.has_value())
 		.render();
 	});
 }

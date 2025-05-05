@@ -22,7 +22,7 @@
 # (c) 2016-2024 solidity contributors.
 #------------------------------------------------------------------------------
 FROM buildpack-deps:noble AS base
-LABEL version="1"
+LABEL version="4"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -40,18 +40,17 @@ RUN set -ex; \
 		clang \
 		cmake \
 		jq \
-		lsof \
 		libboost-filesystem-dev \
 		libboost-program-options-dev \
 		libboost-system-dev \
 		libboost-test-dev \
+		libclang-rt-dev \
 		libcln-dev \
-		libz3-static-dev \
+		lsof \
 		ninja-build \
 		python3-pip \
 		software-properties-common \
-		sudo \
-		z3-static; \
+		sudo; \
 	pip3 install \
 		codecov \
 		colorama \
@@ -77,14 +76,21 @@ RUN set -ex; \
 
 # CVC5
 RUN set -ex; \
-	cvc5_version="1.1.2"; \
-	wget "https://github.com/cvc5/cvc5/releases/download/cvc5-${cvc5_version}/cvc5-Linux-static.zip" -O /opt/cvc5.zip; \
-	test "$(sha256sum /opt/cvc5.zip)" = "cf291aef67da8eaa8d425a51f67f3f72f36db8b1040655dc799b64e3d69e6086  /opt/cvc5.zip"; \
-	unzip /opt/cvc5.zip -x "cvc5-Linux-static/lib/cmake/*" -d /opt; \
-	mv /opt/cvc5-Linux-static/bin/* /usr/bin; \
-	mv /opt/cvc5-Linux-static/lib/* /usr/lib; \
-	mv /opt/cvc5-Linux-static/include/* /usr/include; \
-	rm -rf /opt/cvc5-Linux-static /opt/cvc5.zip;
+	cvc5_version="1.2.0"; \
+	cvc5_archive_name="cvc5-Linux-x86_64-static"; \
+	wget "https://github.com/cvc5/cvc5/releases/download/cvc5-${cvc5_version}/${cvc5_archive_name}.zip" -O /opt/cvc5.zip; \
+	test "$(sha256sum /opt/cvc5.zip)" = "d18f174ff9a11923c32c3f871f844ed16bd77a28f51050b8e7c8d821c98a1c2e  /opt/cvc5.zip"; \
+	unzip -j /opt/cvc5.zip "${cvc5_archive_name}/bin/cvc5" -d /usr/bin; \
+	rm -f /opt/cvc5.zip;
+
+# Z3
+RUN set -ex; \
+	z3_version="4.13.3"; \
+	z3_archive_name="z3-${z3_version}-x64-glibc-2.35"; \
+	wget "https://github.com/Z3Prover/z3/releases/download/z3-${z3_version}/${z3_archive_name}.zip" -O /opt/z3.zip; \
+	test "$(sha256sum /opt/z3.zip)" = "32c7377026733c9d7b33c21cd77a68f50ba682367207b031a6bfd80140a8722f  /opt/z3.zip"; \
+	unzip -j /opt/z3.zip "${z3_archive_name}/bin/z3" -d /usr/bin; \
+	rm -f /opt/z3.zip;
 
 FROM base AS libraries
 
@@ -93,8 +99,8 @@ ENV CXX clang++
 
 # EVMONE
 RUN set -ex; \
-	wget -O /usr/src/evmone.tar.gz https://github.com/ethereum/evmone/releases/download/v0.12.0/evmone-0.12.0-linux-x86_64.tar.gz; \
-	test "$(sha256sum /usr/src/evmone.tar.gz)" = "1c7b5eba0c8c3b3b2a7a05101e2d01a13a2f84b323989a29be66285dba4136ce  /usr/src/evmone.tar.gz"; \
+	wget -O /usr/src/evmone.tar.gz https://github.com/ethereum/evmone/releases/download/v0.13.0/evmone-0.13.0-linux-x86_64.tar.gz; \
+	test "$(sha256sum /usr/src/evmone.tar.gz)" = "94efc7fa27ff94018003ad95a62c20b17a45f027d434eb642c8e345e8d4d3cad  /usr/src/evmone.tar.gz"; \
 	cd /usr; \
 	tar -xf /usr/src/evmone.tar.gz; \
 	rm -rf /usr/src/evmone.tar.gz

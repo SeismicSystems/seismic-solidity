@@ -28,15 +28,16 @@ using namespace yul;
 class YulControlFlowGraphExporter
 {
 public:
-	YulControlFlowGraphExporter(ControlFlow const& _controlFlow);
+	YulControlFlowGraphExporter(ControlFlow const& _controlFlow, ControlFlowLiveness const* _liveness=nullptr);
 	Json run();
-	Json exportBlock(SSACFG const& _cfg, SSACFG::BlockId _blockId);
-	Json exportFunction(SSACFG const& _cfg);
+	Json exportBlock(SSACFG const& _cfg, SSACFG::BlockId _blockId, SSACFGLiveness const* _liveness);
+	Json exportFunction(SSACFG const& _cfg, SSACFGLiveness const* _liveness);
 	std::string varToString(SSACFG const& _cfg, SSACFG::ValueId _var);
 
 private:
 	ControlFlow const& m_controlFlow;
-	Json toJson(SSACFG const& _cfg, SSACFG::BlockId _blockId);
+	ControlFlowLiveness const* m_liveness;
+	Json toJson(SSACFG const& _cfg, SSACFG::BlockId _blockId, SSACFGLiveness const* _liveness);
 	Json toJson(Json& _ret, SSACFG const& _cfg, SSACFG::Operation const& _operation);
 	Json toJson(SSACFG const& _cfg, std::vector<SSACFG::ValueId> const& _values);
 };

@@ -78,11 +78,9 @@ DEFINE_PROTO_FUZZER(Program const& _input)
 	)
 		yulAssert(false, "Proto fuzzer generated malformed program");
 
+	// TODO: Add EOF support
 	// Optimize
-	YulOptimizerTestCommon optimizerTest(
-		stack.parserResult(),
-		EVMDialect::strictAssemblyForEVMObjects(version)
-	);
+	YulOptimizerTestCommon optimizerTest(stack.parserResult());
 	optimizerTest.setStep(optimizerTest.randomOptimiserStep(_input.step()));
 	auto const* astRoot = optimizerTest.run();
 	yulAssert(astRoot != nullptr, "Optimiser error.");

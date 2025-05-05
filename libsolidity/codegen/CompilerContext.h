@@ -62,6 +62,7 @@ class CompilerContext
 public:
 	explicit CompilerContext(
 		langutil::EVMVersion _evmVersion,
+		std::optional<uint8_t> _eofVersion,
 		RevertStrings _revertStrings,
 		CompilerContext* _runtimeContext = nullptr
 	):
@@ -70,8 +71,8 @@ public:
 		m_revertStrings(_revertStrings),
 		m_reservedMemory{0},
 		m_runtimeContext(_runtimeContext),
-		m_abiFunctions(m_evmVersion, m_revertStrings, m_yulFunctionCollector),
-		m_yulUtilFunctions(m_evmVersion, m_revertStrings, m_yulFunctionCollector)
+		m_abiFunctions(m_evmVersion, _eofVersion, m_revertStrings, m_yulFunctionCollector),
+		m_yulUtilFunctions(m_evmVersion, _eofVersion, m_revertStrings, m_yulFunctionCollector)
 	{
 		if (m_runtimeContext)
 			m_runtimeSub = size_t(m_asm->newSub(m_runtimeContext->m_asm).data());
@@ -277,13 +278,13 @@ public:
 	/// Otherwise returns "revert(0, 0)".
 	std::string revertReasonIfDebug(std::string const& _message = "");
 
-	void optimizeYul(yul::Object& _object, yul::EVMDialect const& _dialect, OptimiserSettings const& _optimiserSetting, std::set<yul::YulName> const& _externalIdentifiers = {});
+	void optimizeYul(yul::Object& _object, OptimiserSettings const& _optimiserSetting, std::set<yul::YulName> const& _externalIdentifiers = {});
 
 	/// Appends arbitrary data to the end of the bytecode.
 	void appendToAuxiliaryData(bytes const& _data) { m_asm->appendToAuxiliaryData(_data); }
 
 	/// Run optimisation step.
-	void optimise(OptimiserSettings const& _settings) { m_asm->optimise(evmasm::Assembly::OptimiserSettings::translateSettings(_settings, m_evmVersion)); }
+	void optimise(OptimiserSettings const& _settings) { m_asm->optimise(evmasm::Assembly::OptimiserSettings::translateSettings(_settings)); }
 
 	/// @returns the runtime context if in creation mode and runtime context is set, nullptr otherwise.
 	CompilerContext* runtimeContext() const { return m_runtimeContext; }
@@ -366,7 +367,7 @@ private:
 	/// modifier is applied twice, the position of the variable needs to be restored
 	/// after the nested modifier is left.
 	std::map<Declaration const*, std::vector<unsigned>> m_localVariables;
-	/// The contract currently being compiled. Virtual function lookup starts from this contarct.
+	/// The contract currently being compiled. Virtual function lookup starts from this contract.
 	ContractDefinition const* m_mostDerivedContract = nullptr;
 	/// Whether to use checked arithmetic.
 	Arithmetic m_arithmetic = Arithmetic::Checked;

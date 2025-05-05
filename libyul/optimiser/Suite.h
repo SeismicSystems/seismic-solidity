@@ -36,9 +36,9 @@ namespace solidity::yul
 {
 
 struct AsmAnalysisInfo;
-struct Dialect;
+class Dialect;
 class GasMeter;
-struct Object;
+class Object;
 
 /**
  * Optimiser suite that combines all steps and also provides the settings for the heuristics.
@@ -63,7 +63,6 @@ public:
 
 	/// The value nullopt for `_expectedExecutionsPerDeployment` represents creation code.
 	static void run(
-		Dialect const& _dialect,
 		GasMeter const* _meter,
 		Object& _object,
 		bool _optimizeStackAllocation,
@@ -91,9 +90,6 @@ public:
 private:
 	OptimiserStepContext& m_context;
 	Debug m_debug;
-#ifdef PROFILE_OPTIMIZER_STEPS
-	std::map<std::string, int64_t> m_durationPerStepInMicroseconds;
-#endif
 };
 
 }

@@ -30,7 +30,7 @@
 namespace solidity::yul
 {
 
-struct Dialect;
+class Dialect;
 
 /**
  * Pass to "simplify" all identifier names.

@@ -31,7 +31,7 @@ using namespace solidity::langutil;
 using namespace solidity::util;
 using namespace solidity::yul;
 
-YulControlFlowGraphExporter::YulControlFlowGraphExporter(ControlFlow const& _controlFlow): m_controlFlow(_controlFlow)
+YulControlFlowGraphExporter::YulControlFlowGraphExporter(ControlFlow const& _controlFlow, ControlFlowLiveness const* _liveness): m_controlFlow(_controlFlow), m_liveness(_liveness)
 {
 }
 
@@ -58,45 +58,45 @@ std::string YulControlFlowGraphExporter::varToString(SSACFG const& _cfg, SSACFG:
 
 Json YulControlFlowGraphExporter::run()
 {
+	if (m_liveness)
+		yulAssert(&m_liveness->controlFlow.get() == &m_controlFlow);
+
 	Json yulObjectJson = Json::object();
-	yulObjectJson["blocks"] = exportBlock(*m_controlFlow.mainGraph, SSACFG::BlockId{0});
+	yulObjectJson["blocks"] = exportBlock(*m_controlFlow.mainGraph, SSACFG::BlockId{0}, m_liveness ? m_liveness->mainLiveness.get() : nullptr);
 
 	Json functionsJson = Json::object();
+	size_t index = 0;
 	for (auto const& [function, functionGraph]: m_controlFlow.functionGraphMapping)
-		functionsJson[function->name.str()] = exportFunction(*functionGraph);
+		functionsJson[function->name.str()] = exportFunction(*functionGraph, m_liveness ? m_liveness->functionLiveness[index++].get() : nullptr);
 	yulObjectJson["functions"] = functionsJson;
 
 	return yulObjectJson;
 }
 
-Json YulControlFlowGraphExporter::exportFunction(SSACFG const& _cfg)
+Json YulControlFlowGraphExporter::exportFunction(SSACFG const& _cfg, SSACFGLiveness const* _liveness)
 {
 	Json functionJson = Json::object();
 	functionJson["type"] = "Function";
 	functionJson["entry"] = "Block" + std::to_string(_cfg.entry.value);
-	functionJson["arguments"] = Json::array();
-	for (auto const& [arg, valueId]: _cfg.arguments)
-		functionJson["arguments"].emplace_back(arg.get().name.str());
-	functionJson["returns"] = Json::array();
-	for (auto const& ret: _cfg.returns)
-		functionJson["returns"].emplace_back(ret.get().name.str());
-	functionJson["blocks"] = exportBlock(_cfg, _cfg.entry);
+	static auto constexpr argsTransform = [](auto const& _arg) { return fmt::format("v{}", std::get<1>(_arg).value); };
+	functionJson["arguments"] = _cfg.arguments | ranges::views::transform(argsTransform) | ranges::to<std::vector>;
+	functionJson["numReturns"] = _cfg.returns.size();
+	functionJson["blocks"] = exportBlock(_cfg, _cfg.entry, _liveness);
 	return functionJson;
 }
 
-Json YulControlFlowGraphExporter::exportBlock(SSACFG const& _cfg, SSACFG::BlockId _entryId)
+Json YulControlFlowGraphExporter::exportBlock(SSACFG const& _cfg, SSACFG::BlockId _entryId, SSACFGLiveness const* _liveness)
 {
 	Json blocksJson = Json::array();
 	util::BreadthFirstSearch<SSACFG::BlockId> bfs{{{_entryId}}};
 	bfs.run([&](SSACFG::BlockId _blockId, auto _addChild) {
 		auto const& block = _cfg.block(_blockId);
 		// Convert current block to JSON
-		Json blockJson = toJson(_cfg, _blockId);
+		Json blockJson = toJson(_cfg, _blockId, _liveness);
 
 		Json exitBlockJson = Json::object();
 		std::visit(util::GenericVisitor{
 			[&](SSACFG::BasicBlock::MainExit const&) {
-				exitBlockJson["targets"] = { "Block" + std::to_string(_blockId.value) };
 				exitBlockJson["type"] = "MainExit";
 			},
 			[&](SSACFG::BasicBlock::Jump const& _jump)
@@ -115,12 +115,10 @@ Json YulControlFlowGraphExporter::exportBlock(SSACFG const& _cfg, SSACFG::BlockI
 				_addChild(_conditionalJump.nonZero);
 			},
 			[&](SSACFG::BasicBlock::FunctionReturn const& _return) {
-				exitBlockJson["instructions"] = toJson(_cfg, _return.returnValues);
-				exitBlockJson["targets"] = { "Block" + std::to_string(_blockId.value) };
+				exitBlockJson["returnValues"] = toJson(_cfg, _return.returnValues);
 				exitBlockJson["type"] = "FunctionReturn";
 			},
 			[&](SSACFG::BasicBlock::Terminated const&) {
-				exitBlockJson["targets"] = { "Block" + std::to_string(_blockId.value) };
 				exitBlockJson["type"] = "Terminated";
 			},
 			[&](SSACFG::BasicBlock::JumpTable const&) {
@@ -134,12 +132,25 @@ Json YulControlFlowGraphExporter::exportBlock(SSACFG const& _cfg, SSACFG::BlockI
 	return blocksJson;
 }
 
-Json YulControlFlowGraphExporter::toJson(SSACFG const& _cfg, SSACFG::BlockId _blockId)
+Json YulControlFlowGraphExporter::toJson(SSACFG const& _cfg, SSACFG::BlockId _blockId, SSACFGLiveness const* _liveness)
 {
+	auto const valueToString = [&](SSACFG::ValueId const& valueId) { return varToString(_cfg, valueId); };
+
 	Json blockJson = Json::object();
 	auto const& block = _cfg.block(_blockId);
 
 	blockJson["id"] = "Block" + std::to_string(_blockId.value);
+	if (_liveness)
+	{
+		Json livenessJson = Json::object();
+		livenessJson["in"] = _liveness->liveIn(_blockId)
+			| ranges::views::transform(valueToString)
+			| ranges::to<Json::array_t>();
+		livenessJson["out"] = _liveness->liveOut(_blockId)
+			| ranges::views::transform(valueToString)
+			| ranges::to<Json::array_t>();
+		blockJson["liveness"] = livenessJson;
+	}
 	blockJson["instructions"] = Json::array();
 	if (!block.phis.empty())
 	{
@@ -193,7 +204,7 @@ Json YulControlFlowGraphExporter::toJson(Json& _ret, SSACFG const& _cfg, SSACFG:
 			if (!builtinArgsJson.empty())
 				opJson["builtinArgs"] = builtinArgsJson;
 
-			opJson["op"] = _call.builtin.get().name.str();
+			opJson["op"] = _call.builtin.get().name;
 		},
 	}, _operation.kind);
 
