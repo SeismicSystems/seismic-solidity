@@ -2851,12 +2851,12 @@ std::string YulUtilFunctions::readFromStorageValueType(
 		)");
 		templ("functionName", functionName);
 		templ("dynamic", !_offset.has_value());
-		templ("loadOpcode", _location == VariableDeclaration::Location::Transient ? "tload" : "sload");
+		templ("loadOpcode",
+ 			_location == VariableDeclaration::Location::Transient ? "tload"  : (_type.isShielded() ? "cload" : "sload"));
 		if (_offset.has_value())
 			templ("extract", extractFromStorageValue(_type, *_offset));
 		else
 			templ("extract", extractFromStorageValueDynamic(_type));
-		templ("loadOpcode", _type.isShielded()? "cload" : "sload");
 		auto const* funType = dynamic_cast<FunctionType const*>(&_type);
 		bool split = _splitFunctionTypes && funType && funType->kind() == FunctionType::Kind::External;
 		templ("split", split);
