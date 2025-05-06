@@ -2975,11 +2975,11 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("convert", conversionFunction(_fromType, _toType))
 			("fromValues", suffixedVariableNameList("value_", 0, _fromType.sizeOnStack()))
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
-			("storeOpcode", _location == VariableDeclaration::Location::Transient ? "tstore" : "sstore")
-			("loadOpcode", _location == VariableDeclaration::Location::Transient ? "tload" : "sload")
+			("storeOpcode",
+			_location == VariableDeclaration::Location::Transient ? "tstore" : (_toType.isShielded() ? "cstore" : "sstore"))
+			("loadOpcode",
+			_location == VariableDeclaration::Location::Transient ? "tload"  : (_toType.isShielded() ? "cload" : "sload"))
 			("prepare", prepareStoreFunction(_toType))
-			("storeOpcode", (_toType.isShielded()) ? "cstore" : "sstore")
-			("loadOpcode", (_toType.isShielded()) ? "cload" : "sload")
 			.render();
 		}
 

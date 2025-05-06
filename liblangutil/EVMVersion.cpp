@@ -94,7 +94,6 @@ bool EVMVersion::hasOpcode(Instruction _opcode, std::optional<uint8_t> _eofVersi
 	case Instruction::EXTSTATICCALL:
 	case Instruction::EXTDELEGATECALL:
 		return _eofVersion.has_value();
->>>>>>> origin/develop
 	default:
 		return true;
 	}

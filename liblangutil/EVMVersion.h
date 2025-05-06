@@ -82,6 +82,7 @@ public:
 			shanghai(),
 			cancun(),
 			prague(),
+			mercury(),
 			osaka(),
 		};
 	}
