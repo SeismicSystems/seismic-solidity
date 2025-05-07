@@ -29,8 +29,7 @@
 namespace solidity::yul
 {
 struct AsmAnalysisInfo;
-struct Object;
-struct Dialect;
+class Object;
 class AST;
 }
 
@@ -39,10 +38,7 @@ namespace solidity::yul::test
 class YulOptimizerTestCommon
 {
 public:
-	explicit YulOptimizerTestCommon(
-		std::shared_ptr<Object const> _obj,
-		Dialect const& _dialect
-	);
+	explicit YulOptimizerTestCommon(std::shared_ptr<Object const> _obj);
 	/// Sets optimiser step to be run to @param
 	/// _optimiserStep.
 	void setStep(std::string const& _optimizerStep);
@@ -65,7 +61,6 @@ private:
 
 	std::string m_optimizerStep;
 
-	Dialect const* m_dialect = nullptr;
 	std::set<YulName> m_reservedIdentifiers;
 	std::unique_ptr<NameDispenser> m_nameDispenser;
 	std::unique_ptr<OptimiserStepContext> m_context;

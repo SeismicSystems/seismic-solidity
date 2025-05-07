@@ -28,7 +28,7 @@
 
 namespace solidity::yul
 {
-struct Dialect;
+class Dialect;
 
 /**
  * Optimizer component that can be used to generate new names that

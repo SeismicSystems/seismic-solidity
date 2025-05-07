@@ -31,20 +31,19 @@ using namespace solidity::yul;
 using namespace solidity::util;
 
 CompilabilityChecker::CompilabilityChecker(
-	Dialect const& _dialect,
 	Object const& _object,
 	bool _optimizeStackAllocation
 )
 {
 	yulAssert(_object.hasCode());
-	if (auto const* evmDialect = dynamic_cast<EVMDialect const*>(&_dialect))
+	if (auto const* evmDialect = dynamic_cast<EVMDialect const*>(_object.dialect()))
 	{
 		NoOutputEVMDialect noOutputDialect(*evmDialect);
 
 		yul::AsmAnalysisInfo analysisInfo = yul::AsmAnalyzer::analyzeStrictAssertCorrect(
 			noOutputDialect,
 			_object.code()->root(),
-			_object.qualifiedDataNames()
+			_object.summarizeStructure()
 		);
 
 		BuiltinContext builtinContext;

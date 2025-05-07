@@ -43,11 +43,7 @@ public:
 class PeepholeOptimiser
 {
 public:
-	explicit PeepholeOptimiser(AssemblyItems& _items, langutil::EVMVersion const _evmVersion):
-	m_items(_items),
-	m_evmVersion(_evmVersion)
-	{
-	}
+	explicit PeepholeOptimiser(AssemblyItems& _items, langutil::EVMVersion _evmVersion);
 	virtual ~PeepholeOptimiser() = default;
 
 	bool optimise();

@@ -309,14 +309,14 @@ void ExpressionEvaluator::operator()(Identifier const& _identifier)
 void ExpressionEvaluator::operator()(FunctionCall const& _funCall)
 {
 	std::vector<std::optional<LiteralKind>> const* literalArguments = nullptr;
-	if (BuiltinFunction const* builtin = m_dialect.builtin(_funCall.functionName.name))
+	if (BuiltinFunction const* builtin = resolveBuiltinFunction(_funCall.functionName, m_dialect))
 		if (!builtin->literalArguments.empty())
 			literalArguments = &builtin->literalArguments;
 	evaluateArgs(_funCall.arguments, literalArguments);
 
 	if (EVMDialect const* dialect = dynamic_cast<EVMDialect const*>(&m_dialect))
 	{
-		if (BuiltinFunctionForEVM const* fun = dialect->builtin(_funCall.functionName.name))
+		if (BuiltinFunctionForEVM const* fun = resolveBuiltinFunctionForEVM(_funCall.functionName, *dialect))
 		{
 			EVMInstructionInterpreter interpreter(dialect->evmVersion(), m_state, m_disableMemoryTrace);
 
@@ -334,13 +334,14 @@ void ExpressionEvaluator::operator()(FunctionCall const& _funCall)
 		}
 	}
 
+	yulAssert(!isBuiltinFunctionCall(_funCall));
 	Scope* scope = &m_scope;
 	for (; scope; scope = scope->parent)
-		if (scope->names.count(_funCall.functionName.name))
+		if (scope->names.count(std::get<Identifier>(_funCall.functionName).name))
 			break;
 	yulAssert(scope, "");
 
-	FunctionDefinition const* fun = scope->names.at(_funCall.functionName.name);
+	FunctionDefinition const* fun = scope->names.at(std::get<Identifier>(_funCall.functionName).name);
 	yulAssert(fun, "Function not found.");
 	yulAssert(m_values.size() == fun->parameters.size(), "");
 	std::map<YulName, u256> variables;

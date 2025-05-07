@@ -5,6 +5,9 @@ object "a" {
     data "data1" "Hello, World!"
   }
 }
+// ====
+// EVMVersion: >=shanghai
+// bytecodeFormat: legacy
 // ----
 // Assembly:
 //     /* "source":44:61   */

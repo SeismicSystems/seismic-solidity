@@ -22,7 +22,7 @@
 
 namespace solidity::yul
 {
-struct Dialect;
+class Dialect;
 struct OptimiserStepContext;
 
 /**

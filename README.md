@@ -258,7 +258,7 @@ We also welcome external contributions to this repository.
 
 ## 9\. Upstream
 
-The upstream repository lives [here](https://github.com/ethereum/solidity/tree/develop). This fork is up-to-date with it through commit `322d656`. You can see this by viewing the [develop](https://github.com/SeismicSystems/seismic-solidity/tree/develop) branch on this repository.
+The upstream repository lives [here](https://github.com/ethereum/solidity/tree/develop). This fork is up-to-date with it through commit `ab55807`. You can see this by viewing the [develop](https://github.com/SeismicSystems/seismic-solidity/tree/develop) branch on this repository.
 
 You can view all of our changes vs. upstream on this [pull request](https://github.com/SeismicSystems/seismic-solidity/pull/27). The sole purpose of this PR is display our diff; it will never be merged in to the main branch of this repo.
 

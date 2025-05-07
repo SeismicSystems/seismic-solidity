@@ -59,7 +59,7 @@ std::ostream& operator<<(std::ostream& _stream, Program const& _program);
 }
 
 Program::Program(Program const& program):
-	m_ast(std::make_unique<AST>(std::get<Block>(ASTCopier{}(program.m_ast->root())))),
+	m_ast(std::make_unique<AST>(program.m_dialect, std::get<Block>(ASTCopier{}(program.m_ast->root())))),
 	m_dialect{program.m_dialect},
 	m_nameDispenser(program.m_nameDispenser)
 {
@@ -68,7 +68,8 @@ Program::Program(Program const& program):
 std::variant<Program, ErrorList> Program::load(CharStream& _sourceCode)
 {
 	// ASSUMPTION: parseSource() rewinds the stream on its own
-	Dialect const& dialect = EVMDialect::strictAssemblyForEVMObjects(EVMVersion{});
+	// TODO: Add support for EOF
+	Dialect const& dialect = EVMDialect::strictAssemblyForEVMObjects(EVMVersion{}, std::nullopt);
 
 	std::variant<std::unique_ptr<AST>, ErrorList> astOrErrors = parseObject(dialect, _sourceCode);
 	if (std::holds_alternative<ErrorList>(astOrErrors))
@@ -105,12 +106,12 @@ void Program::optimise(std::vector<std::string> const& _optimisationSteps)
 
 std::ostream& phaser::operator<<(std::ostream& _stream, Program const& _program)
 {
-	return _stream << AsmPrinter()(_program.m_ast->root());
+	return _stream << AsmPrinter::format(*_program.m_ast);
 }
 
 std::string Program::toJson() const
 {
-	Json serializedAst = AsmJsonConverter(0)(m_ast->root());
+	Json serializedAst = AsmJsonConverter(m_dialect, 0)(m_ast->root());
 	return jsonPrettyPrint(removeNullMembers(std::move(serializedAst)));
 }
 
@@ -149,7 +150,7 @@ std::variant<std::unique_ptr<AST>, ErrorList> Program::parseObject(Dialect const
 	// The public API of the class does not provide access to the smart pointer so it won't be hard
 	// to switch to shared_ptr if the copying turns out to be an issue (though it would be better
 	// to refactor ObjectParser and Object to use unique_ptr instead).
-	auto astCopy = std::make_unique<AST>(std::get<Block>(ASTCopier{}(selectedObject->code()->root())));
+	auto astCopy = std::make_unique<AST>(_dialect, std::get<Block>(ASTCopier{}(selectedObject->code()->root())));
 
 	return std::variant<std::unique_ptr<AST>, ErrorList>(std::move(astCopy));
 }
@@ -178,7 +179,7 @@ std::unique_ptr<AST> Program::disambiguateAST(
 	std::set<YulName> const externallyUsedIdentifiers = {};
 	Disambiguator disambiguator(_dialect, _analysisInfo, externallyUsedIdentifiers);
 
-	return std::make_unique<AST>(std::get<Block>(disambiguator(_ast.root())));
+	return std::make_unique<AST>(_dialect, std::get<Block>(disambiguator(_ast.root())));
 }
 
 std::unique_ptr<AST> Program::applyOptimisationSteps(
@@ -202,7 +203,7 @@ std::unique_ptr<AST> Program::applyOptimisationSteps(
 	for (std::string const& step: _optimisationSteps)
 		OptimiserSuite::allSteps().at(step)->run(context, astRoot);
 
-	return std::make_unique<AST>(std::move(astRoot));
+	return std::make_unique<AST>(_dialect, std::move(astRoot));
 }
 
 size_t Program::computeCodeSize(Block const& _ast, CodeWeights const& _weights)

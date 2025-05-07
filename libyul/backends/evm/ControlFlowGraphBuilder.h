@@ -90,6 +90,8 @@ private:
 	};
 	std::optional<ForLoopInfo> m_forLoopInfo;
 	std::optional<CFG::FunctionInfo*> m_currentFunction;
+	/// True if control flow graph simulates functions with jumps. False otherwise. True for legacy bytecode
+	bool m_simulateFunctionsWithJumps = true;
 };
 
 }

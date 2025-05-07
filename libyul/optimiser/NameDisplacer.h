@@ -29,7 +29,7 @@
 
 namespace solidity::yul
 {
-struct Dialect;
+class Dialect;
 
 /**
  * Optimiser component that renames identifiers to free up certain names.

@@ -52,11 +52,10 @@ static evmc::VM evmone = evmc::VM{evmc_create_evmone()};
 namespace
 {
 /// @returns true if there are recursive functions, false otherwise.
-bool recursiveFunctionExists(Dialect const& _dialect, yul::Object& _object)
+bool recursiveFunctionExists(Dialect const& /*_dialect*/, yul::Object& _object)
 {
 	auto recursiveFunctions = CallGraphGenerator::callGraph(_object.code()->root()).recursiveFunctions();
 	for(auto&& [function, variables]: CompilabilityChecker{
-			_dialect,
 			_object,
 			true
 		}.unreachableVariables
@@ -105,8 +104,9 @@ DEFINE_PROTO_FUZZER(Program const& _input)
 		YulAssembler assembler{version, std::nullopt, settings, yul_source};
 		unoptimisedByteCode = assembler.assemble();
 		auto yulObject = assembler.object();
+		// TODO: Add EOF support
 		recursiveFunction = recursiveFunctionExists(
-			EVMDialect::strictAssemblyForEVMObjects(version),
+			EVMDialect::strictAssemblyForEVMObjects(version, std::nullopt),
 			*yulObject
 		);
 	}

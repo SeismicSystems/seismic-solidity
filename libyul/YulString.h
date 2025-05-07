@@ -27,6 +27,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <string_view>
 #include <functional>
 
 namespace solidity::yul
@@ -51,7 +52,7 @@ public:
 		return inst;
 	}
 
-	Handle stringToHandle(std::string const& _string)
+	Handle stringToHandle(std::string_view const _string)
 	{
 		if (_string.empty())
 			return { 0, emptyHash() };
@@ -68,7 +69,7 @@ public:
 	}
 	std::string const& idToString(size_t _id) const { return *m_strings.at(_id); }
 
-	static std::uint64_t hash(std::string const& v)
+	static std::uint64_t hash(std::string_view const v)
 	{
 		// FNV hash - can be replaced by a better one, e.g. xxhash64
 		std::uint64_t hash = emptyHash();
@@ -126,7 +127,7 @@ class YulString
 {
 public:
 	YulString() = default;
-	explicit YulString(std::string const& _s): m_handle(YulStringRepository::instance().stringToHandle(_s)) {}
+	explicit YulString(std::string_view const _s): m_handle(YulStringRepository::instance().stringToHandle(_s)) {}
 	YulString(YulString const&) = default;
 	YulString(YulString&&) = default;
 	YulString& operator=(YulString const&) = default;

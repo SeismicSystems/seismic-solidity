@@ -68,31 +68,39 @@ bool AsmAnalyzer::analyze(Block const& _block)
 	auto watcher = m_errorReporter.errorWatcher();
 	try
 	{
+		// FIXME: Pass location of the object name. Now it's a location of first code section in yul
+		validateObjectStructure(nativeLocationOf(_block));
 		if (!(ScopeFiller(m_info, m_errorReporter))(_block))
 			return false;
 
 		(*this)(_block);
 	}
-	catch (FatalError const& error)
+	catch (FatalError const&)
 	{
 		// NOTE: There's a cap on the number of reported errors, but watcher.ok() will work fine even if
 		// we exceed it because the reporter keeps counting (it just stops adding errors to the list).
 		// Note also that fact of exceeding the cap triggers a FatalError so one can get thrown even
 		// if we don't make any of our errors fatal.
-		yulAssert(!watcher.ok(), "Unreported fatal error: "s + error.what());
+		if (watcher.ok())
+		{
+			std::cerr << "Unreported fatal error:" << std::endl;
+			std::cerr << boost::current_exception_diagnostic_information() << std::endl;
+			yulAssert(false, "Unreported fatal error.");
+		}
 	}
 	return watcher.ok();
 }
 
-AsmAnalysisInfo AsmAnalyzer::analyzeStrictAssertCorrect(Dialect const& _dialect, Object const& _object)
+AsmAnalysisInfo AsmAnalyzer::analyzeStrictAssertCorrect(Object const& _object)
 {
-	return analyzeStrictAssertCorrect(_dialect, _object.code()->root(), _object.qualifiedDataNames());
+	yulAssert(_object.dialect());
+	return analyzeStrictAssertCorrect(*_object.dialect(), _object.code()->root(), _object.summarizeStructure());
 }
 
 AsmAnalysisInfo AsmAnalyzer::analyzeStrictAssertCorrect(
 	Dialect const& _dialect,
 	Block const& _astRoot,
-	std::set<std::string> const& _qualifiedDataNames
+	Object::Structure const _objectStructure
 )
 {
 	ErrorList errorList;
@@ -103,9 +111,38 @@ AsmAnalysisInfo AsmAnalyzer::analyzeStrictAssertCorrect(
 		errors,
 		_dialect,
 		{},
-		_qualifiedDataNames
+		std::move(_objectStructure)
 	).analyze(_astRoot);
-	yulAssert(success && !errors.hasErrors(), "Invalid assembly/yul code.");
+
+	if (!success)
+	{
+		auto formatErrors = [](ErrorList const& _errorList) {
+			std::vector<std::string> formattedErrors;
+			for (std::shared_ptr<Error const> const& error: _errorList)
+			{
+				yulAssert(error->comment());
+				formattedErrors.push_back(fmt::format(
+					// Intentionally not showing source locations because we don't have the original
+					// source here and it's unlikely they match the pretty-printed version.
+					// They may not even match the original source if the AST was modified by the optimizer.
+					"- {} {}: {}",
+					Error::formatErrorType(error->type()),
+					error->errorId().error,
+					*error->comment()
+				));
+			}
+			return joinHumanReadable(formattedErrors, "\n");
+		};
+
+		yulAssert(errors.hasErrors(), "Yul analysis failed but did not report any errors.");
+		yulAssert(false, fmt::format(
+			"{}\n\nExpected valid Yul, but errors were reported during analysis:\n{}",
+			AsmPrinter{_dialect}(_astRoot),
+			formatErrors(errorList)
+		));
+	}
+
+	yulAssert(!errors.hasErrors());
 	return analysisInfo;
 }
 
@@ -288,20 +325,36 @@ void AsmAnalyzer::operator()(FunctionDefinition const& _funDef)
 		m_activeVariables.insert(&std::get<Scope::Variable>(varScope.identifiers.at(var.name)));
 	}
 
+	if (m_eofVersion.has_value())
+	{
+		if (_funDef.parameters.size() >= 0x80)
+			m_errorReporter.typeError(
+				8534_error,
+				nativeLocationOf(_funDef),
+				"Too many function parameters. At most 127 parameters allowed for EOF"
+			);
+
+		if (_funDef.returnVariables.size() >= 0x80)
+			m_errorReporter.typeError(
+				2101_error,
+				nativeLocationOf(_funDef),
+				"Too many function return variables. At most 127 return variables allowed for EOF"
+			);
+	}
+
 	(*this)(_funDef.body);
 }
 
 size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 {
-	yulAssert(!_funCall.functionName.name.empty(), "");
 	auto watcher = m_errorReporter.errorWatcher();
 	std::optional<size_t> numParameters;
 	std::optional<size_t> numReturns;
 	std::vector<std::optional<LiteralKind>> const* literalArguments = nullptr;
 
-	if (BuiltinFunction const* f = m_dialect.builtin(_funCall.functionName.name))
+	if (BuiltinFunction const* builtin = resolveBuiltinFunction(_funCall.functionName, m_dialect))
 	{
-		if (_funCall.functionName.name == "selfdestruct"_yulname)
+		if (builtin->name == "selfdestruct")
 			m_errorReporter.warning(
 				1699_error,
 				nativeLocationOf(_funCall.functionName),
@@ -314,7 +367,7 @@ size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 			);
 		else if (
 			m_evmVersion.supportsTransientStorage() &&
-			_funCall.functionName.name == "tstore"_yulname &&
+			builtin->name == "tstore" &&
 			!m_errorReporter.hasError({2394})
 		)
 			m_errorReporter.warning(
@@ -327,15 +380,15 @@ size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 				"The use of transient storage for reentrancy guards that are cleared at the end of the call is safe."
 			);
 
-		numParameters = f->numParameters;
-		numReturns = f->numReturns;
-		if (!f->literalArguments.empty())
-			literalArguments = &f->literalArguments;
+		numParameters = builtin->numParameters;
+		numReturns = builtin->numReturns;
+		if (!builtin->literalArguments.empty())
+			literalArguments = &builtin->literalArguments;
 
 		validateInstructions(_funCall);
-		m_sideEffects += f->sideEffects;
+		m_sideEffects += builtin->sideEffects;
 	}
-	else if (m_currentScope->lookup(_funCall.functionName.name, GenericVisitor{
+	else if (m_currentScope->lookup(YulName{resolveFunctionName(_funCall.functionName, m_dialect)}, GenericVisitor{
 		[&](Scope::Variable const&)
 		{
 			m_errorReporter.typeError(
@@ -351,10 +404,11 @@ size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 		}
 	}))
 	{
+		yulAssert(std::holds_alternative<Identifier>(_funCall.functionName));
 		if (m_resolver)
 			// We found a local reference, make sure there is no external reference.
 			m_resolver(
-				_funCall.functionName,
+				std::get<Identifier>(_funCall.functionName),
 				yul::IdentifierContext::NonExternal,
 				m_currentScope->insideFunction()
 			);
@@ -365,7 +419,7 @@ size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 			m_errorReporter.declarationError(
 				4619_error,
 				nativeLocationOf(_funCall.functionName),
-				"Function \"" + _funCall.functionName.name.str() + "\" not found."
+				fmt::format("Function \"{}\" not found.", resolveFunctionName(_funCall.functionName, m_dialect))
 			);
 		yulAssert(!watcher.ok(), "Expected a reported error.");
 	}
@@ -374,10 +428,12 @@ size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 		m_errorReporter.typeError(
 			7000_error,
 			nativeLocationOf(_funCall.functionName),
-			"Function \"" + _funCall.functionName.name.str() + "\" expects " +
-			std::to_string(*numParameters) +
-			" arguments but got " +
-			std::to_string(_funCall.arguments.size()) + "."
+			fmt::format(
+				"Function \"{}\" expects {} arguments but got {}.",
+				resolveFunctionName(_funCall.functionName, m_dialect),
+				*numParameters,
+				_funCall.arguments.size()
+			)
 		);
 
 	for (size_t i = _funCall.arguments.size(); i > 0; i--)
@@ -403,11 +459,11 @@ size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 				);
 			else if (*literalArgumentKind == LiteralKind::String)
 			{
-				std::string functionName = _funCall.functionName.name.str();
+				std::string_view functionName = resolveFunctionName(_funCall.functionName, m_dialect);
 				if (functionName == "datasize" || functionName == "dataoffset")
 				{
 					auto const& argumentAsLiteral = std::get<Literal>(arg);
-					if (!m_dataNames.count(formatLiteral(argumentAsLiteral)))
+					if (!m_objectStructure.contains(formatLiteral(argumentAsLiteral)))
 						m_errorReporter.typeError(
 							3517_error,
 							nativeLocationOf(arg),
@@ -425,8 +481,51 @@ size_t AsmAnalyzer::operator()(FunctionCall const& _funCall)
 							"The \"verbatim_*\" builtins cannot be used with empty bytecode."
 						);
 				}
+				else if (functionName == "eofcreate" || functionName == "returncontract")
+				{
+					auto const& argumentAsLiteral = std::get<Literal>(arg);
+					auto const formattedLiteral = formatLiteral(argumentAsLiteral);
+
+					if (util::contains(formattedLiteral, '.'))
+						m_errorReporter.typeError(
+							2186_error,
+							nativeLocationOf(arg),
+							fmt::format("Name required but path given as \"{}\" argument.", functionName)
+						);
+
+					if (!m_objectStructure.topLevelSubObjectNames().count(formattedLiteral))
+					{
+						if (m_objectStructure.containsData(formattedLiteral))
+							m_errorReporter.typeError(
+								7575_error,
+								nativeLocationOf(arg),
+								"Data name \"" + formattedLiteral + "\" cannot be used as an argument of eofcreate/returncontract. " +
+								"An object name is only acceptable."
+							);
+						else
+							m_errorReporter.typeError(
+								8970_error,
+								nativeLocationOf(arg),
+								"Unknown object \"" + formattedLiteral + "\"."
+							);
+					}
+				}
 				expectUnlimitedStringLiteral(std::get<Literal>(arg));
 				continue;
+			}
+			else if (*literalArgumentKind == LiteralKind::Number)
+			{
+				std::string_view functionName = resolveFunctionName(_funCall.functionName, m_dialect);
+				if (functionName == "auxdataloadn")
+				{
+					auto const& argumentAsLiteral = std::get<Literal>(arg);
+					if (argumentAsLiteral.value.value() > std::numeric_limits<uint16_t>::max())
+						m_errorReporter.typeError(
+							5202_error,
+							nativeLocationOf(arg),
+							"Invalid auxdataloadn argument value. Offset must be in range 0...0xFFFF"
+						);
+				}
 			}
 		}
 		expectExpression(arg);
@@ -614,7 +713,7 @@ void AsmAnalyzer::expectValidIdentifier(YulName _identifier, SourceLocation cons
 			"\"" + _identifier.str() + "\" is not a valid identifier (contains consecutive dots)."
 		);
 
-	if (m_dialect.reservedIdentifier(_identifier))
+	if (m_dialect.reservedIdentifier(_identifier.str()))
 		m_errorReporter.declarationError(
 			5017_error,
 			_location,
@@ -622,14 +721,38 @@ void AsmAnalyzer::expectValidIdentifier(YulName _identifier, SourceLocation cons
 		);
 }
 
-bool AsmAnalyzer::validateInstructions(std::string const& _instructionIdentifier, langutil::SourceLocation const& _location)
+bool AsmAnalyzer::validateInstructions(std::string_view _instructionIdentifier, langutil::SourceLocation const& _location)
 {
 	// NOTE: This function uses the default EVM version instead of the currently selected one.
-	auto const builtin = EVMDialect::strictAssemblyForEVM(EVMVersion{}).builtin(YulName(_instructionIdentifier));
-	if (builtin && builtin->instruction.has_value())
-		return validateInstructions(builtin->instruction.value(), _location);
-	else
-		return false;
+	auto const& defaultEVMDialect = EVMDialect::strictAssemblyForEVMObjects(EVMVersion{}, std::nullopt);
+	auto const builtinHandle = defaultEVMDialect.findBuiltin(_instructionIdentifier);
+	if (builtinHandle && defaultEVMDialect.builtin(*builtinHandle).instruction.has_value())
+		return validateInstructions(*defaultEVMDialect.builtin(*builtinHandle).instruction, _location);
+
+	solAssert(!m_eofVersion.has_value() || *m_eofVersion == 1);
+	auto const& eofDialect = EVMDialect::strictAssemblyForEVMObjects(EVMVersion::firstWithEOF(), 1);
+	auto const eofBuiltinHandle = eofDialect.findBuiltin(_instructionIdentifier);
+	if (eofBuiltinHandle)
+	{
+		auto const builtin = eofDialect.builtin(*eofBuiltinHandle);
+		if (builtin.instruction.has_value())
+			return validateInstructions(*builtin.instruction, _location);
+		// If builtin is available in EOF but not available in legacy (and we build to legacy) generate custom error.
+		else if (!m_eofVersion.has_value() && !builtinHandle)
+		{
+			m_errorReporter.declarationError(
+				7223_error,
+				_location,
+				fmt::format(
+					"Builtin function \"{}\" is only available in EOF.",
+					fmt::arg("function", _instructionIdentifier)
+				)
+			);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocation const& _location)
@@ -644,8 +767,18 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 	yulAssert(
 		_instr != evmasm::Instruction::JUMP &&
 		_instr != evmasm::Instruction::JUMPI &&
-		_instr != evmasm::Instruction::JUMPDEST,
-	"");
+		_instr != evmasm::Instruction::JUMPDEST &&
+		_instr != evmasm::Instruction::DATALOADN &&
+		_instr != evmasm::Instruction::EOFCREATE &&
+		_instr != evmasm::Instruction::RETURNCONTRACT &&
+		_instr != evmasm::Instruction::RJUMP &&
+		_instr != evmasm::Instruction::RJUMPI &&
+		_instr != evmasm::Instruction::CALLF &&
+		_instr != evmasm::Instruction::JUMPF &&
+		_instr != evmasm::Instruction::RETF &&
+		_instr != evmasm::Instruction::DUPN &&
+		_instr != evmasm::Instruction::SWAPN
+	);
 
 	auto errorForVM = [&](ErrorId _errorId, std::string const& vmKindMessage) {
 		m_errorReporter.typeError(
@@ -703,13 +836,109 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 			"PC instruction is a low-level EVM feature. "
 			"Because of that PC is disallowed in strict assembly."
 		);
+	else if (!m_eofVersion.has_value() && (
+		_instr == evmasm::Instruction::EXTCALL ||
+		_instr == evmasm::Instruction::EXTDELEGATECALL ||
+		_instr == evmasm::Instruction::EXTSTATICCALL
+	))
+	{
+		m_errorReporter.typeError(
+			4328_error,
+			_location,
+			fmt::format(
+				"The \"{}\" instruction is only available in EOF.",
+				fmt::arg("instruction", boost::to_lower_copy(instructionInfo(_instr, m_evmVersion).name))
+			)
+		);
+	}
+	else if (m_eofVersion.has_value() && (
+		_instr == evmasm::Instruction::CALL ||
+		_instr == evmasm::Instruction::CALLCODE ||
+		_instr == evmasm::Instruction::DELEGATECALL ||
+		_instr == evmasm::Instruction::STATICCALL ||
+		_instr == evmasm::Instruction::SELFDESTRUCT ||
+		_instr == evmasm::Instruction::JUMP ||
+		_instr == evmasm::Instruction::JUMPI ||
+		_instr == evmasm::Instruction::PC ||
+		_instr == evmasm::Instruction::CREATE ||
+		_instr == evmasm::Instruction::CREATE2 ||
+		_instr == evmasm::Instruction::CODESIZE ||
+		_instr == evmasm::Instruction::CODECOPY ||
+		_instr == evmasm::Instruction::EXTCODESIZE ||
+		_instr == evmasm::Instruction::EXTCODECOPY ||
+		_instr == evmasm::Instruction::EXTCODEHASH ||
+		_instr == evmasm::Instruction::GAS
+	))
+	{
+		m_errorReporter.typeError(
+			9132_error,
+			_location,
+			fmt::format(
+				"The \"{instruction}\" instruction is {kind} VMs (you are currently compiling to EOF).",
+				fmt::arg("instruction", boost::to_lower_copy(instructionInfo(_instr, m_evmVersion).name)),
+				fmt::arg("kind", "only available in legacy bytecode")
+			)
+		);
+	}
+	else if (m_eofVersion.has_value() && (
+		_instr == evmasm::Instruction::CSTORE ||
+		_instr == evmasm::Instruction::CLOAD
+	))
+	{
+		m_errorReporter.typeError(
+			9132_error,
+			_location,
+			fmt::format(
+				"The \"{instruction}\" instruction is only available in Seismic legacy bytecode VM (you are currently compiling to EOF).",
+				fmt::arg("instruction", boost::to_lower_copy(instructionInfo(_instr, m_evmVersion).name)),
+				fmt::arg("kind", "only available in legacy bytecode")
+			)
+		);
+	}
 	else
+	{
+		// Sanity check
+		solAssert(m_evmVersion.hasOpcode(_instr, m_eofVersion));
 		return false;
+	}
 
+	// Sanity check
+	// PC is not available in strict assembly but it is always valid opcode in legacy evm.
+	solAssert(_instr == evmasm::Instruction::PC || !m_evmVersion.hasOpcode(_instr, m_eofVersion));
 	return true;
 }
 
 bool AsmAnalyzer::validateInstructions(FunctionCall const& _functionCall)
 {
-	return validateInstructions(_functionCall.functionName.name.str(), nativeLocationOf(_functionCall.functionName));
+	return validateInstructions(
+		resolveFunctionName(_functionCall.functionName, m_dialect),
+		nativeLocationOf(_functionCall.functionName)
+	);
+}
+
+void AsmAnalyzer::validateObjectStructure(langutil::SourceLocation _astRootLocation)
+{
+	if (m_eofVersion.has_value())
+	{
+		if (util::contains(m_objectStructure.objectName, '.')) // No dots in object name for EOF
+			m_errorReporter.syntaxError(
+				9822_error,
+				_astRootLocation,
+				fmt::format(
+					"The object name \"{objectName}\" is invalid in EOF context. Object names must not contain 'dot' character.",
+					fmt::arg("objectName", m_objectStructure.objectName)
+				)
+			);
+		else if (m_objectStructure.topLevelSubObjectNames().size() > 256)
+		{
+			m_errorReporter.syntaxError(
+				1305_error,
+				_astRootLocation,
+				fmt::format(
+					"Too many subobjects in \"{objectName}\". At most 256 subobjects allowed when compiling to EOF",
+					fmt::arg("objectName", m_objectStructure.objectName)
+				)
+			);
+		}
+	}
 }
