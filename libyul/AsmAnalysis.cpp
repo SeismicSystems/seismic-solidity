@@ -880,6 +880,21 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 			)
 		);
 	}
+	else if (m_eofVersion.has_value() && (
+		_instr == evmasm::Instruction::CSTORE ||
+		_instr == evmasm::Instruction::CLOAD
+	))
+	{
+		m_errorReporter.typeError(
+			9132_error,
+			_location,
+			fmt::format(
+				"The \"{instruction}\" instruction is only available in Seismic legacy bytecode VM (you are currently compiling to EOF).",
+				fmt::arg("instruction", boost::to_lower_copy(instructionInfo(_instr, m_evmVersion).name)),
+				fmt::arg("kind", "only available in legacy bytecode")
+			)
+		);
+	}
 	else
 	{
 		// Sanity check

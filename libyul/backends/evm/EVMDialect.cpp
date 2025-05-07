@@ -153,8 +153,6 @@ std::set<std::string, std::less<>> createReservedIdentifiers(langutil::EVMVersio
 			(_instr == evmasm::Instruction::TSTORE || _instr == evmasm::Instruction::TLOAD);
 	};
 
-	// TODO remove this in 0.9.0. We allow creating functions or identifiers in Yul with the names
-	// tstore or tload for VMs before cancun.
 	auto shieldeStorageException = [&](evmasm::Instruction _instr) -> bool
 	{
 		return
