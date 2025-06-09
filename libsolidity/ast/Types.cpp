@@ -1209,7 +1209,7 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 	if (TokenTraits::isCompareOp(_operator))
 	{
 		// Since we do not have a "BoolConstantType", we have to do the actual comparison
-		// at runtime and convert to mobile typse first. Such a comparison is not a very common
+		// at runtime and convert to mobile type first. Such a comparison is not a very common
 		// use-case and will be optimized away.
 		Type const* thisMobile = mobileType();
 		Type const* otherMobile = other.mobileType();
