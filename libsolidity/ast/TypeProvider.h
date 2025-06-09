@@ -119,7 +119,7 @@ public:
 
 	static StringLiteralType const* stringLiteral(std::string const& literal);
 
-	/// @param members the member types the tuple type must contain. This is passed by value on purspose.
+	/// @param members the member types the tuple type must contain. This is passed by value on purpose.
 	/// @returns a tuple type with the given members.
 	static TupleType const* tuple(std::vector<Type const*> members);
 
