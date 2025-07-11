@@ -19,7 +19,6 @@
 #include <libsolidity/formal/ModelChecker.h>
 
 #include <boost/process.hpp>
-#include <boost/process/search_path.hpp> 
 #include <range/v3/algorithm/any_of.hpp>
 #include <range/v3/view.hpp>
 
