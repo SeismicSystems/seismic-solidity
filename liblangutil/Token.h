@@ -212,6 +212,8 @@ namespace solidity::langutil
 	K(SInt, "sint", 0)                                                 \
 	K(Bytes, "bytes", 0)                                               \
 	K(String, "string", 0)                                             \
+	K(SBytes, "sbytes", 0)                                             \
+	K(SString, "sstring", 0)                                           \
 	K(Address, "address", 0)                                           \
 	K(SAddress, "saddress", 0)                                  \
 	K(Bool, "bool", 0)                                                 \

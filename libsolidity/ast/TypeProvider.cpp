@@ -354,6 +354,10 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		return bytesStorage();
 	case Token::String:
 		return stringStorage();
+	case Token::SBytes:
+		return shieldedBytesStorage();
+	case Token::SString:
+		return shieldedStringStorage();
 	default:
 		solAssert(
 			false,

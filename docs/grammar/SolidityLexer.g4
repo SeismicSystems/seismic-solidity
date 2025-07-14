@@ -76,6 +76,9 @@ Return: 'return';
 Returns: 'returns';
 Revert: 'revert'; // not a real keyword
 ShieldedAddress: 'saddress';
+ShieldedBytes: 'sbytes';
+ShieldedString: 'sstring';
+ShieldedBool: 'sbool';
 /**
  * Sized shieled unsigned integer types.
  * suint is an alias of suint256.

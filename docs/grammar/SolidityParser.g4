@@ -356,7 +356,7 @@ usingAliases: identifierPath (As userDefinableOperator)?;
  * (e.g. a contract or struct) or an array type.
  */
 typeName: elementaryTypeName[true] | functionTypeName | mappingType | identifierPath | typeName LBrack expression? RBrack;
-elementaryTypeName[boolean allowAddressPayable]: Address | {$allowAddressPayable}? Address Payable | Bool | String | Bytes | SignedIntegerType | UnsignedIntegerType | FixedBytes | Fixed | Ufixed;
+elementaryTypeName[boolean allowAddressPayable]: Address | {$allowAddressPayable}? Address Payable | Bool | String | Bytes | SignedIntegerType | UnsignedIntegerType | FixedBytes | Fixed | Ufixed | ShieldedString | ShieldedBytes;
 functionTypeName
 locals [boolean visibilitySet = false, boolean mutabilitySet = false]
 :
