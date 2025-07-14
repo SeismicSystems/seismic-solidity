@@ -188,6 +188,7 @@ public:
 		ShieldedBool,
 		FixedPoint,
 		Array,
+		ShieldedArray,
 		ArraySlice,
 		FixedBytes,
 		Contract,
@@ -1830,4 +1831,57 @@ public:
 	Type const* decodingType() const override;
 };
 
+
+/**
+ * The type of a shielded array. Extends ArrayType to inherit all array functionality
+ * but uses confidential storage with no packing (each element gets its own 32-byte slot).
+ * The flavours are shielded byte array (sbytes), statically-sized (<type>[<length>])
+ * and dynamically-sized shielded array (<type>[]).
+ */
+class ShieldedArrayType: public ArrayType
+{
+public:
+	/// Constructor for a shielded byte array ("sbytes")
+	explicit ShieldedArrayType(DataLocation _location, bool _isString = false):
+		ArrayType(_location, _isString)
+	{}
+
+	/// Constructor for a dynamically sized shielded array type ("suint256[]")
+	ShieldedArrayType(DataLocation _location, Type const* _baseType):
+		ArrayType(_location, _baseType)
+	{}
+
+	/// Constructor for a fixed-size shielded array type ("suint256[5]")
+	ShieldedArrayType(DataLocation _location, Type const* _baseType, u256 _length):
+		ArrayType(_location, _baseType, _length)
+	{}
+
+	Category category() const override { return Category::ShieldedArray; }
+	bool isShielded() const override { return true; }
+
+	// Override storage behavior for shielded arrays - no packing
+	unsigned storageBytes() const override { return 32; }
+
+	// Shielded arrays don't pack - each element gets its own 32-byte slot
+	unsigned storageStride() const { return 32; }
+
+
+	/// @returns the total number of slots occupied by all members.
+	// Override storage size calculation for shielded behavior
+	u256 storageSize() const override
+	{
+		// Dynamic shielded arrays: 1 slot for length + n slots for elements
+		// Fixed shielded arrays: n slots for elements
+		// Each element takes a full 32-byte slot (no packing)
+		return isDynamicallySized() ? 1 : length();
+	}
+
+	std::string richIdentifier() const override;
+	std::string toString(bool _withoutDataLocation) const override;
+	std::string canonicalName() const override;
+
+	std::unique_ptr<ReferenceType> copyForLocation(DataLocation _location, bool _isPointer) const override;
+};
+
 }
+
