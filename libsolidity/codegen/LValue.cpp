@@ -395,10 +395,22 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 	{
 		solUnimplementedAssert(!IsTransient, "Transient storage reference types are not supported yet.");
 		solAssert(
-			_sourceType.category() == m_dataType->category(),
+			_sourceType.category() == m_dataType->category() ||
+			(_sourceType.category() == Type::Category::StringLiteral && m_dataType->category() == Type::Category::ShieldedArray) ||
+			(_sourceType.category() == Type::Category::Array && m_dataType->category() == Type::Category::ShieldedArray),
 			"Wrong type conversation for assignment."
 		);
 		if (m_dataType->category() == Type::Category::Array)
+		{
+			m_context << Instruction::POP; // remove byte offset
+			ArrayUtils(m_context).copyArrayToStorage(
+				dynamic_cast<ArrayType const&>(*m_dataType),
+				dynamic_cast<ArrayType const&>(_sourceType)
+			);
+			if (_move)
+				m_context << Instruction::POP;
+		}
+		else if (m_dataType->category() == Type::Category::ShieldedArray)
 		{
 			m_context << Instruction::POP; // remove byte offset
 			ArrayUtils(m_context).copyArrayToStorage(

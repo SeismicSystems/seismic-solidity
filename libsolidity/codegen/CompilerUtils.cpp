@@ -973,7 +973,7 @@ void CompilerUtils::convertType(
 			solAssert(data.size() <= 32);
 			m_context << (u256(h256(data, h256::AlignLeft)) & (~(u256(-1) >> (8 * numBytes))));
 		}
-		else if (targetTypeCategory == Type::Category::Array)
+		else if (targetTypeCategory == Type::Category::Array || targetTypeCategory == Type::Category::ShieldedArray)
 		{
 			auto const& arrayType = dynamic_cast<ArrayType const&>(_targetType);
 			solAssert(arrayType.isByteArrayOrString());
@@ -1117,6 +1117,108 @@ void CompilerUtils::convertType(
 				((targetType.isByteArrayOrString() && typeOnStack.isByteArrayOrString()) || _typeOnStack == _targetType) &&
 				typeOnStack.location() == DataLocation::CallData,
 				"Invalid conversion to calldata type."
+			);
+			break;
+		}
+		break;
+	}
+	case Type::Category::ShieldedArray:
+	{
+		auto const& typeOnStack = dynamic_cast<ArrayType const&>(_typeOnStack);
+		if (_targetType.category() == Type::Category::FixedBytes)
+		{
+			solAssert(
+				typeOnStack.isByteArray(),
+				"Array types other than bytes not convertible to bytesNN."
+			);
+			solAssert(typeOnStack.isDynamicallySized());
+
+			bool fromCalldata = typeOnStack.dataStoredIn(DataLocation::CallData);
+			solAssert(typeOnStack.sizeOnStack() == (fromCalldata ? 2 : 1));
+			if (fromCalldata)
+				m_context << Instruction::SWAP1;
+
+			m_context.callYulFunction(
+				m_context.utilFunctions().bytesToFixedBytesConversionFunction(
+					typeOnStack,
+					dynamic_cast<FixedBytesType const &>(_targetType)
+				),
+				typeOnStack.sizeOnStack(),
+				1
+			);
+			break;
+		}
+		solAssert(targetTypeCategory == stackTypeCategory);
+		auto const& targetType = dynamic_cast<ArrayType const&>(_targetType);
+		switch (targetType.location())
+		{
+		case DataLocation::Storage:
+			// Other cases are done explicitly in LValue::storeValue, and only possible by assignment.
+			solAssert(
+				(targetType.isPointer() || (typeOnStack.isByteArrayOrString() && targetType.isByteArrayOrString())) &&
+				typeOnStack.location() == DataLocation::Storage,
+				"Invalid conversion to storage type."
+			);
+			break;
+		case DataLocation::Transient:
+			solUnimplemented("Transient data location is only supported for value types.");
+			break;
+		case DataLocation::Memory:
+		{
+			// Copy the array to a free position in memory, unless it is already in memory.
+			if (typeOnStack.location() != DataLocation::Memory)
+			{
+				if (
+					typeOnStack.dataStoredIn(DataLocation::CallData) &&
+					typeOnStack.baseType()->isDynamicallyEncoded()
+				)
+				{
+					solAssert(m_context.useABICoderV2());
+					// stack: offset length(optional in case of dynamically sized array)
+					solAssert(typeOnStack.sizeOnStack() == (typeOnStack.isDynamicallySized() ? 2 : 1));
+					if (typeOnStack.isDynamicallySized())
+						m_context << Instruction::SWAP1;
+
+					m_context.callYulFunction(
+						m_context.utilFunctions().conversionFunction(typeOnStack, targetType),
+						typeOnStack.isDynamicallySized() ? 2 : 1,
+						1
+					);
+				}
+				else
+				{
+					// stack: <source ref> (variably sized)
+					unsigned stackSize = typeOnStack.sizeOnStack();
+					ArrayUtils(m_context).retrieveLength(typeOnStack);
+
+					// allocate memory
+					// stack: <source ref> (variably sized) <length>
+					m_context << Instruction::DUP1;
+					ArrayUtils(m_context).convertLengthToSize(targetType, true);
+					// stack: <source ref> (variably sized) <length> <size>
+					if (targetType.isDynamicallySized())
+						allocateMemory();
+					else
+						m_context << Instruction::SWAP1;
+					// stack: <source ref> (variably sized) <length> <mem start>
+					m_context << Instruction::DUP1;
+					if (targetType.isDynamicallySized())
+						storeInMemoryDynamic(*TypeProvider::uint256());
+					else
+						m_context << Instruction::POP;
+					// stack: <source ref> (variably sized) <length> <mem start>
+					// We need to reverse the order of target and source on the stack.
+					CompilerUtils(m_context).moveIntoStack(stackSize, 1);
+					// stack: <mem start> <source ref> (variably sized) <length>
+					ArrayUtils(m_context).copyArrayToMemory(typeOnStack);
+				}
+			}
+			break;
+		}
+		case DataLocation::CallData:
+			solAssert(
+				typeOnStack.dataStoredIn(DataLocation::CallData),
+				"Can only convert calldata types to calldata types."
 			);
 			break;
 		}
