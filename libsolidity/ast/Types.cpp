@@ -4518,3 +4518,80 @@ Type const* InaccessibleDynamicType::decodingType() const
 {
 	return TypeProvider::integer(256, IntegerType::Modifier::Unsigned);
 }
+
+// ShieldedArrayType implementations
+std::string ShieldedArrayType::richIdentifier() const
+{
+	std::string id;
+	if (isString())
+		id = "t_sstring";
+	else if (isByteArrayOrString())
+		id = "t_sbytes";
+	else
+	{
+		id = "t_sarray";
+		id += identifierList(baseType());
+		if (isDynamicallySized())
+			id += "dyn";
+		else
+			id += length().str();
+	}
+	id += identifierLocationSuffix();
+	return id;
+}
+
+std::string ShieldedArrayType::toString(bool _withoutDataLocation) const
+{
+	std::string ret;
+	if (isString())
+		ret = "sstring";
+	else if (isByteArrayOrString())
+		ret = "sbytes";
+	else
+	{
+		ret = baseType()->toString(_withoutDataLocation) + "[";
+		if (!isDynamicallySized())
+			ret += length().str();
+		ret += "]";
+	}
+	if (!_withoutDataLocation)
+		ret += " " + stringForReferencePart();
+	return ret;
+}
+
+std::string ShieldedArrayType::canonicalName() const
+{
+	std::string ret;
+	if (isString())
+		ret = "sstring";
+	else if (isByteArrayOrString())
+		ret = "sbytes";
+	else
+	{
+		ret = baseType()->canonicalName() + "[";
+		if (!isDynamicallySized())
+			ret += length().str();
+		ret += "]";
+	}
+	return ret;
+}
+
+std::unique_ptr<ReferenceType> ShieldedArrayType::copyForLocation(DataLocation _location, bool _isPointer) const
+{
+	std::unique_ptr<ShieldedArrayType> copy;
+
+	if (isString())
+		copy = std::make_unique<ShieldedArrayType>(_location, true);
+	else if (isByteArrayOrString())
+		copy = std::make_unique<ShieldedArrayType>(_location, false);
+	else if (isDynamicallySized())
+		copy = std::make_unique<ShieldedArrayType>(_location, copyForLocationIfReference(baseType()));
+	else
+		copy = std::make_unique<ShieldedArrayType>(_location, copyForLocationIfReference(baseType()), length());
+
+	if (_location == DataLocation::Storage)
+		copy->m_isPointer = _isPointer;
+
+	return copy;
+}
+
