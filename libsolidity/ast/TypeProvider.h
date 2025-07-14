@@ -86,6 +86,22 @@ public:
 
 	static ArraySliceType const* arraySlice(ArrayType const& _arrayType);
 
+	// ShieldedArrayType factory functions
+	static ShieldedArrayType const* shieldedBytesStorage();
+	static ShieldedArrayType const* shieldedBytesMemory();
+	static ShieldedArrayType const* shieldedBytesCalldata();
+	static ShieldedArrayType const* shieldedStringStorage();
+	static ShieldedArrayType const* shieldedStringMemory();
+
+	/// Constructor for a shielded byte array ("sbytes") and shielded string ("sstring")
+	static ShieldedArrayType const* shieldedArray(DataLocation _location, bool _isString = false);
+
+	/// Constructor for a dynamically sized shielded array type ("stype[]")
+	static ShieldedArrayType const* shieldedArray(DataLocation _location, Type const* _baseType);
+
+	/// Constructor for a fixed-size shielded array type ("stype[20]")
+	static ShieldedArrayType const* shieldedArray(DataLocation _location, Type const* _baseType, u256 const& _length);
+
 	static AddressType const* payableAddress() noexcept { return &m_payableAddress; }
 	static AddressType const* address() noexcept { return &m_address; }
 	static ShieldedAddressType const* payableShieldedAddress() noexcept { return &m_payableShieldedAddress; }
@@ -236,6 +252,13 @@ private:
 	static std::unique_ptr<ArrayType> m_bytesCalldata;
 	static std::unique_ptr<ArrayType> m_stringStorage;
 	static std::unique_ptr<ArrayType> m_stringMemory;
+
+	/// Shielded array types - lazy-initialized
+	static std::unique_ptr<ShieldedArrayType> m_shieldedBytesStorage;
+	static std::unique_ptr<ShieldedArrayType> m_shieldedBytesMemory;
+	static std::unique_ptr<ShieldedArrayType> m_shieldedBytesCalldata;
+	static std::unique_ptr<ShieldedArrayType> m_shieldedStringStorage;
+	static std::unique_ptr<ShieldedArrayType> m_shieldedStringMemory;
 
 	static TupleType const m_emptyTuple;
 	static AddressType const m_payableAddress;

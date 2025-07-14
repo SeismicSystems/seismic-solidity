@@ -37,6 +37,12 @@ std::unique_ptr<ArrayType> TypeProvider::m_bytesCalldata;
 std::unique_ptr<ArrayType> TypeProvider::m_stringStorage;
 std::unique_ptr<ArrayType> TypeProvider::m_stringMemory;
 
+std::unique_ptr<ShieldedArrayType> TypeProvider::m_shieldedBytesStorage;
+std::unique_ptr<ShieldedArrayType> TypeProvider::m_shieldedBytesMemory;
+std::unique_ptr<ShieldedArrayType> TypeProvider::m_shieldedBytesCalldata;
+std::unique_ptr<ShieldedArrayType> TypeProvider::m_shieldedStringStorage;
+std::unique_ptr<ShieldedArrayType> TypeProvider::m_shieldedStringMemory;
+
 TupleType const TypeProvider::m_emptyTuple{};
 AddressType const TypeProvider::m_payableAddress{StateMutability::Payable};
 AddressType const TypeProvider::m_address{StateMutability::NonPayable};
@@ -444,6 +450,72 @@ ArrayType const* TypeProvider::stringMemory()
 	if (!m_stringMemory)
 		m_stringMemory = std::make_unique<ArrayType>(DataLocation::Memory, true);
 	return m_stringMemory.get();
+}
+
+ShieldedArrayType const* TypeProvider::shieldedBytesStorage()
+{
+	if (!m_shieldedBytesStorage)
+		m_shieldedBytesStorage = std::make_unique<ShieldedArrayType>(DataLocation::Storage, false);
+	return m_shieldedBytesStorage.get();
+}
+
+ShieldedArrayType const* TypeProvider::shieldedBytesMemory()
+{
+	if (!m_shieldedBytesMemory)
+		m_shieldedBytesMemory = std::make_unique<ShieldedArrayType>(DataLocation::Memory, false);
+	return m_shieldedBytesMemory.get();
+}
+
+ShieldedArrayType const* TypeProvider::shieldedBytesCalldata()
+{
+	if (!m_shieldedBytesCalldata)
+		m_shieldedBytesCalldata = std::make_unique<ShieldedArrayType>(DataLocation::CallData, false);
+	return m_shieldedBytesCalldata.get();
+}
+
+ShieldedArrayType const* TypeProvider::shieldedStringStorage()
+{
+	if (!m_shieldedStringStorage)
+		m_shieldedStringStorage = std::make_unique<ShieldedArrayType>(DataLocation::Storage, true);
+	return m_shieldedStringStorage.get();
+}
+
+ShieldedArrayType const* TypeProvider::shieldedStringMemory()
+{
+	if (!m_shieldedStringMemory)
+		m_shieldedStringMemory = std::make_unique<ShieldedArrayType>(DataLocation::Memory, true);
+	return m_shieldedStringMemory.get();
+}
+
+ShieldedArrayType const* TypeProvider::shieldedArray(DataLocation _location, bool _isString)
+{
+	if (_isString)
+	{
+		if (_location == DataLocation::Storage)
+			return shieldedStringStorage();
+		if (_location == DataLocation::Memory)
+			return shieldedStringMemory();
+	}
+	else
+	{
+		if (_location == DataLocation::Storage)
+			return shieldedBytesStorage();
+		if (_location == DataLocation::Memory)
+			return shieldedBytesMemory();
+		if (_location == DataLocation::CallData)
+			return shieldedBytesCalldata();
+	}
+	return createAndGet<ShieldedArrayType>(_location, _isString);
+}
+
+ShieldedArrayType const* TypeProvider::shieldedArray(DataLocation _location, Type const* _baseType)
+{
+	return createAndGet<ShieldedArrayType>(_location, _baseType);
+}
+
+ShieldedArrayType const* TypeProvider::shieldedArray(DataLocation _location, Type const* _baseType, u256 const& _length)
+{
+	return createAndGet<ShieldedArrayType>(_location, _baseType, _length);
 }
 
 Type const* TypeProvider::forLiteral(Literal const& _literal)
