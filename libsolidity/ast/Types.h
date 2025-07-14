@@ -1878,6 +1878,7 @@ public:
 
 	std::string richIdentifier() const override;
 	std::string toString(bool _withoutDataLocation) const override;
+	std::string humanReadableName() const override;
 	std::string canonicalName() const override;
 
 	std::unique_ptr<ReferenceType> copyForLocation(DataLocation _location, bool _isPointer) const override;

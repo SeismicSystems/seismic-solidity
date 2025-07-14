@@ -4559,6 +4559,24 @@ std::string ShieldedArrayType::toString(bool _withoutDataLocation) const
 	return ret;
 }
 
+std::string ShieldedArrayType::humanReadableName() const
+{
+	std::string ret;
+	if (isString())
+		ret = "sstring";
+	else if (isByteArrayOrString())
+		ret = "sbytes";
+	else
+	{
+		ret = baseType()->toString(true) + "[";
+		if (!isDynamicallySized())
+			ret += length().str();
+		ret += "]";
+	}
+	ret += " " + stringForReferencePart();
+	return ret;
+}
+
 std::string ShieldedArrayType::canonicalName() const
 {
 	std::string ret;
