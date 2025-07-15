@@ -1882,6 +1882,10 @@ public:
 	std::string canonicalName() const override;
 
 	std::unique_ptr<ReferenceType> copyForLocation(DataLocation _location, bool _isPointer) const override;
+	
+	// Conversion methods for shielded arrays
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 };
 
 }

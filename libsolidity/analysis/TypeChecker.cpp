@@ -1958,9 +1958,53 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 						),
 						"Invalid explicit conversion to storage type."
 					);
+				else if (auto resultShieldedArrayType = dynamic_cast<ShieldedArrayType const*>(resultType))
+					solAssert(
+						argArrayType->location() != DataLocation::Storage ||
+						(
+							(
+								resultShieldedArrayType->isPointer() ||
+								(argArrayType->isByteArrayOrString() && resultShieldedArrayType->isByteArrayOrString())
+							) &&
+							resultShieldedArrayType->location() == DataLocation::Storage
+						),
+						"Invalid explicit conversion to storage type."
+					);
 				else
 					solAssert(
 						argArrayType->isByteArray() && resultType->category() == Type::Category::FixedBytes,
+						""
+					);
+			}
+			else if (auto argShieldedArrayType = dynamic_cast<ShieldedArrayType const*>(argType))
+			{
+				if (auto resultArrayType = dynamic_cast<ArrayType const*>(resultType))
+					solAssert(
+						argShieldedArrayType->location() != DataLocation::Storage ||
+						(
+							(
+								resultArrayType->isPointer() ||
+								(argShieldedArrayType->isByteArrayOrString() && resultArrayType->isByteArrayOrString())
+							) &&
+							resultArrayType->location() == DataLocation::Storage
+						),
+						"Invalid explicit conversion to storage type."
+					);
+				else if (auto resultShieldedArrayType = dynamic_cast<ShieldedArrayType const*>(resultType))
+					solAssert(
+						argShieldedArrayType->location() != DataLocation::Storage ||
+						(
+							(
+								resultShieldedArrayType->isPointer() ||
+								(argShieldedArrayType->isByteArrayOrString() && resultShieldedArrayType->isByteArrayOrString())
+							) &&
+							resultShieldedArrayType->location() == DataLocation::Storage
+						),
+						"Invalid explicit conversion to storage type."
+					);
+				else
+					solAssert(
+						argShieldedArrayType->isByteArray() && resultType->category() == Type::Category::FixedBytes,
 						""
 					);
 			}

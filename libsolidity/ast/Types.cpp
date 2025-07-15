@@ -1837,7 +1837,30 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 		return true;
 	// allow conversion bytes <-> std::string and bytes -> bytesNN
 	if (_convertTo.category() != category())
+	{
+		// Allow conversion to ShieldedArray
+		if (_convertTo.category() == Type::Category::ShieldedArray)
+		{
+			auto const& convertTo = dynamic_cast<ShieldedArrayType const&>(_convertTo);
+			
+			// Check if locations are compatible
+			if (convertTo.location() != location())
+				return false;
+			
+			// For byte arrays/strings, allow conversion if both are byte arrays or both are strings
+			if (isByteArrayOrString() && convertTo.isByteArrayOrString())
+			{
+				// bytes <-> sbytes and string <-> sstring
+				return (isByteArray() && convertTo.isByteArray()) || (isString() && convertTo.isString());
+			}
+			
+			// For other arrays, require same base type (after considering shielding)
+			// This would need more complex logic for general array conversions
+			return false;
+		}
+		
 		return isByteArray() && _convertTo.category() == Type::Category::FixedBytes;
+	}
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);
 	if (convertTo.location() != location())
 		return false;
@@ -4611,5 +4634,59 @@ std::unique_ptr<ReferenceType> ShieldedArrayType::copyForLocation(DataLocation _
 		copy->m_isPointer = _isPointer;
 
 	return copy;
+}
+
+BoolResult ShieldedArrayType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	// Shielded arrays are not implicitly convertible to regular arrays
+	if (_convertTo.category() == Type::Category::Array)
+		return false;
+	
+	// Delegate to parent for other shielded array conversions
+	return ArrayType::isImplicitlyConvertibleTo(_convertTo);
+}
+
+BoolResult ShieldedArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	// Allow explicit conversion between shielded arrays and regular arrays
+	if (_convertTo.category() == Type::Category::Array)
+	{
+		auto const& convertTo = dynamic_cast<ArrayType const&>(_convertTo);
+		
+		// Check if locations are compatible
+		if (convertTo.location() != location())
+			return false;
+		
+		// For byte arrays/strings, allow conversion if both are byte arrays or both are strings
+		if (isByteArrayOrString() && convertTo.isByteArrayOrString())
+		{
+			// sbytes <-> bytes and sstring <-> string
+			return (isByteArray() && convertTo.isByteArray()) || (isString() && convertTo.isString());
+		}
+		
+		// For other arrays, require same base type (after considering shielding)
+		// This would need more complex logic for general array conversions
+		return false;
+	}
+	
+	// Allow explicit conversion between shielded arrays
+	if (_convertTo.category() == Type::Category::ShieldedArray)
+	{
+		auto const& convertTo = dynamic_cast<ShieldedArrayType const&>(_convertTo);
+		
+		// Check if locations are compatible
+		if (convertTo.location() != location())
+			return false;
+		
+		// For byte arrays/strings, allow conversion between sbytes and sstring
+		if (isByteArrayOrString() && convertTo.isByteArrayOrString())
+			return true;
+		
+		// For other arrays, delegate to parent
+		return ArrayType::isExplicitlyConvertibleTo(_convertTo);
+	}
+	
+	// Delegate to parent for other conversions
+	return ArrayType::isExplicitlyConvertibleTo(_convertTo);
 }
 
