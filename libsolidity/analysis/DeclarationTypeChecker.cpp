@@ -550,7 +550,7 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 					Visibility functionVisibility = function->visibility();
 					if (
 						(functionVisibility == Visibility::Public || functionVisibility == Visibility::External) &&
-						(type->category() == Type::Category::ShieldedInteger || type->category() == Type::Category::ShieldedAddress)
+						(type->category() == Type::Category::ShieldedInteger || type->category() == Type::Category::ShieldedAddress || type->category() == Type::Category::ShieldedArray)
 					)
 					{
 						m_errorReporter.declarationError(
