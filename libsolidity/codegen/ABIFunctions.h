@@ -39,6 +39,7 @@ namespace solidity::frontend
 
 class Type;
 class ArrayType;
+class ShieldedArrayType;
 class StructType;
 class FunctionType;
 using TypePointers = std::vector<Type const*>;

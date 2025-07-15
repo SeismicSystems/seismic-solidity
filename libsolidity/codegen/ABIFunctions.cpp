@@ -293,6 +293,9 @@ std::string ABIFunctions::abiEncodingFunction(
 			case Type::Category::Array:
 				fromArray = dynamic_cast<ArrayType const*>(&_from);
 				break;
+			case Type::Category::ShieldedArray:
+				fromArray = dynamic_cast<ShieldedArrayType const*>(&_from);
+				break;
 			case Type::Category::ArraySlice:
 				fromArray = &dynamic_cast<ArraySliceType const*>(&_from)->arrayType();
 				solAssert(
