@@ -165,7 +165,7 @@ void ErrorReporter::removeError(ErrorId _errorId)
     );
     if (it != errors.end())
     {
-		m_errorCount -= static_cast<size_t>(std::distance(it, errors.end()));
+		m_errorCount -= static_cast<unsigned int>(std::distance(it, errors.end()));
 		errors.erase(it, errors.end());
     }
 }
