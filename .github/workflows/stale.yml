@@ -3,7 +3,7 @@ name: Check stale pull requests
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 12 * * *'
+    - cron: "0 12 * * *"
 
 permissions:
   pull-requests: write
@@ -34,7 +34,7 @@ jobs:
           close-pr-label: closed-due-inactivity
           days-before-pr-stale: ${{ env.BEFORE_PR_STALE }}
           days-before-pr-close: ${{ env.BEFORE_PR_CLOSE }}
-          exempt-pr-labels: 'external contribution :star:,roadmap,epic, upstream diff'
+          exempt-pr-labels: "external contribution :star:,roadmap,epic, upstream diff"
           exempt-draft-pr: false
           exempt-all-milestones: true
           remove-stale-when-updated: true
