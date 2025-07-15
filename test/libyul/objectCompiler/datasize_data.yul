@@ -2,6 +2,9 @@ object "a" {
   code { sstore(0, datasize("data1")) }
   data "data1" "Hello, World!"
 }
+// ====
+// EVMVersion: >=shanghai
+// bytecodeFormat: legacy
 // ----
 // Assembly:
 //     /* "source":44:61   */

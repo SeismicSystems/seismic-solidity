@@ -163,7 +163,7 @@ their calldata offset (in bytes) and length (number of elements) using ``x.offse
 Both expressions can also be assigned to, but as for the static case, no validation will be performed
 to ensure that the resulting data area is within the bounds of ``calldatasize()``.
 
-For local storage variables or state variables, a single Yul identifier
+For local storage variables or state variables (including transient storage) a single Yul identifier
 is not sufficient, since they do not necessarily occupy a single full storage slot.
 Therefore, their "address" is composed of a slot and a byte-offset
 inside that slot. To retrieve the slot pointed to by the variable ``x``, you
@@ -181,15 +181,18 @@ Local Solidity variables are available for assignments, for example:
     :force:
 
     // SPDX-License-Identifier: GPL-3.0
-    pragma solidity >=0.7.0 <0.9.0;
+    pragma solidity >=0.8.28 <0.9.0;
 
+    // This will report a warning
     contract C {
+        bool transient a;
         uint b;
-        function f(uint x) public view returns (uint r) {
+        function f(uint x) public returns (uint r) {
             assembly {
                 // We ignore the storage slot offset, we know it is zero
                 // in this special case.
                 r := mul(x, sload(b.slot))
+                tstore(a.slot, true)
             }
         }
     }
@@ -206,7 +209,7 @@ Local Solidity variables are available for assignments, for example:
     ``assembly { signextend(<num_bytes_of_x_minus_one>, x) }``
 
 
-Since Solidity 0.6.0, the name of a inline assembly variable may not
+Since Solidity 0.6.0, the name of an inline assembly variable may not
 shadow any declaration visible in the scope of the inline assembly block
 (including variable, contract and function declarations).
 
@@ -254,6 +257,8 @@ starting from where this pointer points at and update it.
 There is no guarantee that the memory has not been used before and thus
 you cannot assume that its contents are zero bytes.
 There is no built-in mechanism to release or free allocated memory.
+Solidity does not guarantee and does not require that the values in memory
+are placed at positions aligned to a multiple of any value.
 Here is an assembly snippet you can use for allocating memory that follows the process outlined above:
 
 .. code-block:: yul

@@ -31,7 +31,7 @@
 namespace solidity::yul
 {
 
-struct Dialect;
+class Dialect;
 
 /**
  * Pass to normalize identifier suffixes.

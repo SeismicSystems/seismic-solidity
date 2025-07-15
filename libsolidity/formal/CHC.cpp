@@ -18,18 +18,14 @@
 
 #include <libsolidity/formal/CHC.h>
 
-#include <libsolidity/formal/ModelChecker.h>
-
-#ifdef HAVE_Z3
-#include <libsmtutil/Z3CHCInterface.h>
-#endif
-
 #include <libsolidity/formal/ArraySlicePredicate.h>
 #include <libsolidity/formal/EldaricaCHCSmtLib2Interface.h>
 #include <libsolidity/formal/Invariants.h>
+#include <libsolidity/formal/ModelChecker.h>
 #include <libsolidity/formal/PredicateInstance.h>
 #include <libsolidity/formal/PredicateSort.h>
 #include <libsolidity/formal/SymbolicTypes.h>
+#include <libsolidity/formal/Z3CHCSmtLib2Interface.h>
 
 #include <libsolidity/ast/TypeProvider.h>
 
@@ -37,10 +33,6 @@
 #include <liblangutil/CharStreamProvider.h>
 #include <libsolutil/Algorithms.h>
 #include <libsolutil/StringUtils.h>
-
-#ifdef HAVE_Z3_DLOPEN
-#include <z3_version.h>
-#endif
 
 #include <boost/algorithm/string.hpp>
 
@@ -72,9 +64,7 @@ CHC::CHC(
 	SMTEncoder(_context, _settings, _errorReporter, _unsupportedErrorReporter, _provedSafeReporter, _charStreamProvider),
 	m_smtlib2Responses(_smtlib2Responses),
 	m_smtCallback(_smtCallback)
-{
-	solAssert(!_settings.printQuery || _settings.solvers == smtutil::SMTSolverChoice::SMTLIB2(), "Only SMTLib2 solver can be enabled to print queries");
-}
+{}
 
 void CHC::analyze(SourceUnit const& _source)
 {
@@ -649,6 +639,7 @@ void CHC::endVisit(FunctionCall const& _funCall)
 	case FunctionType::Kind::ECRecover:
 	case FunctionType::Kind::SHA256:
 	case FunctionType::Kind::RIPEMD160:
+	case FunctionType::Kind::BlobHash:
 	case FunctionType::Kind::BlockHash:
 	case FunctionType::Kind::AddMod:
 	case FunctionType::Kind::MulMod:
@@ -861,7 +852,7 @@ void CHC::visitDeployment(FunctionCall const& _funCall)
 		auto const& params = constructor->parameters();
 		solAssert(args.size() == params.size(), "");
 		for (auto [arg, param]: ranges::zip_view(args, params))
-			m_context.addAssertion(expr(*arg) == m_context.variable(*param)->currentValue());
+			m_context.addAssertion(expr(*arg, param->type()) == m_context.variable(*param)->currentValue());
 	}
 	for (auto var: stateVariablesIncludingInheritedAndPrivate(*contract))
 		m_context.variable(*var)->increaseIndex();
@@ -933,17 +924,6 @@ void CHC::internalFunctionCall(FunctionCall const& _funCall)
 
 	Expression const* calledExpr = &_funCall.expression();
 	auto funType = dynamic_cast<FunctionType const*>(calledExpr->annotation().type);
-
-	auto contractAddressValue = [this](FunctionCall const& _f) {
-		auto [callExpr, callOptions] = functionCallExpression(_f);
-
-		FunctionType const& funType = dynamic_cast<FunctionType const&>(*callExpr->annotation().type);
-		if (funType.kind() == FunctionType::Kind::Internal)
-			return state().thisAddress();
-		if (MemberAccess const* callBase = dynamic_cast<MemberAccess const*>(callExpr))
-			return expr(callBase->expression());
-		solAssert(false, "Unreachable!");
-	};
 
 	std::vector<Expression const*> arguments;
 	for (auto& arg: _funCall.sortedArguments())
@@ -1279,41 +1259,29 @@ void CHC::resetSourceAnalysis()
 	ArraySlicePredicate::reset();
 	m_blockCounter = 0;
 
-	// At this point every enabled solver is available.
-	// If more than one Horn solver is selected we go with z3.
-	// We still need the ifdef because of Z3CHCInterface.
-	if (m_settings.solvers.z3)
+	solAssert(m_settings.solvers.smtlib2 || m_settings.solvers.eld || m_settings.solvers.z3);
+	if (!m_interface)
 	{
-#ifdef HAVE_Z3
-		// z3::fixedpoint does not have a reset mechanism, so we need to create another.
-		m_interface = std::make_unique<Z3CHCInterface>(m_settings.timeout);
-		auto z3Interface = dynamic_cast<Z3CHCInterface const*>(m_interface.get());
-		solAssert(z3Interface, "");
-		m_context.setSolver(z3Interface->z3Interface());
-#else
-		solAssert(false);
-#endif
+		if (m_settings.solvers.z3)
+			m_interface = std::make_unique<Z3CHCSmtLib2Interface>(
+				m_smtCallback,
+				m_settings.timeout,
+				m_settings.invariants != ModelCheckerInvariants::None()
+			);
+		else if (m_settings.solvers.eld)
+			m_interface = std::make_unique<EldaricaCHCSmtLib2Interface>(
+				m_smtCallback,
+				m_settings.timeout,
+				m_settings.invariants != ModelCheckerInvariants::None()
+			);
+		else
+			m_interface = std::make_unique<CHCSmtLib2Interface>(m_smtlib2Responses, m_smtCallback, m_settings.timeout);
 	}
-	else
-	{
-		solAssert(m_settings.solvers.smtlib2 || m_settings.solvers.eld);
-		if (!m_interface)
-		{
-			if (m_settings.solvers.eld)
-				m_interface = std::make_unique<EldaricaCHCSmtLib2Interface>(
-					m_smtCallback,
-					m_settings.timeout,
-					m_settings.invariants != ModelCheckerInvariants::None()
-				);
-			else
-				m_interface = std::make_unique<CHCSmtLib2Interface>(m_smtlib2Responses, m_smtCallback, m_settings.timeout);
-		}
 
-		auto smtlib2Interface = dynamic_cast<CHCSmtLib2Interface*>(m_interface.get());
-		solAssert(smtlib2Interface);
-		smtlib2Interface->reset();
-		m_context.setSolver(smtlib2Interface);
-	}
+	auto smtlib2Interface = dynamic_cast<CHCSmtLib2Interface*>(m_interface.get());
+	solAssert(smtlib2Interface);
+	smtlib2Interface->reset();
+	m_context.setSolver(smtlib2Interface);
 
 	m_context.reset();
 	m_context.resetUniqueId();
@@ -1356,7 +1324,7 @@ void CHC::clearIndices(ContractDefinition const* _contract, FunctionDefinition c
 
 void CHC::setCurrentBlock(Predicate const& _block)
 {
-	if (m_context.solverStackHeigh() > 0)
+	if (m_context.solverStackHeight() > 0)
 		m_context.popSolver();
 	solAssert(m_currentContract, "");
 	clearIndices(m_currentContract, m_currentFunction);
@@ -1929,34 +1897,12 @@ CHCSolverInterface::QueryResult CHC::query(smtutil::Expression const& _query, la
 			2339_error,
 			"CHC: Requested query:\n" + smtLibCode
 		);
+		return {.answer = CheckResult::UNKNOWN, .invariant = smtutil::Expression(true), .cex = {}};
 	}
 	auto result = m_interface->query(_query);
 	switch (result.answer)
 	{
 	case CheckResult::SATISFIABLE:
-	{
-	// We still need the ifdef because of Z3CHCInterface.
-		if (m_settings.solvers.z3)
-		{
-#ifdef HAVE_Z3
-			// Even though the problem is SAT, Spacer's pre processing makes counterexamples incomplete.
-			// We now disable those optimizations and check whether we can still solve the problem.
-			auto* spacer = dynamic_cast<Z3CHCInterface*>(m_interface.get());
-			solAssert(spacer, "");
-			spacer->setSpacerOptions(false);
-
-			auto resultNoOpt = m_interface->query(_query);
-
-			if (resultNoOpt.answer == CheckResult::SATISFIABLE)
-				result.cex = std::move(resultNoOpt.cex);
-
-			spacer->setSpacerOptions(true);
-#else
-			solAssert(false);
-#endif
-		}
-		break;
-	}
 	case CheckResult::UNSATISFIABLE:
 	case CheckResult::UNKNOWN:
 		break;
@@ -1964,7 +1910,7 @@ CHCSolverInterface::QueryResult CHC::query(smtutil::Expression const& _query, la
 		m_errorReporter.warning(1988_error, _location, "CHC: At least two SMT solvers provided conflicting answers. Results might not be sound.");
 		break;
 	case CheckResult::ERROR:
-		m_errorReporter.warning(1218_error, _location, "CHC: Error trying to invoke SMT solver.");
+		m_errorReporter.warning(1218_error, _location, "CHC: Error during interaction with the solver.");
 		break;
 	}
 	return result;
@@ -2224,7 +2170,13 @@ void CHC::checkAndReportTarget(
 	}
 	else if (result == CheckResult::SATISFIABLE)
 	{
-		solAssert(!_satMsg.empty(), "");
+		solAssert(!_satMsg.empty());
+		if (auto it = m_safeTargets.find(_target.errorNode); it != m_safeTargets.end())
+		{
+			std::erase_if(it->second, [&](auto const& target) { return target.type == _target.type; });
+			if (it->second.empty())
+				m_safeTargets.erase(it);
+		}
 		auto cex = generateCounterexample(model, error().name);
 		if (cex)
 			m_unsafeTargets[_target.errorNode][_target.type] = {

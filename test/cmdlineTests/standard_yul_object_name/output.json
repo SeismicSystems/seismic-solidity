@@ -27,7 +27,6 @@ sub_0: assembly {
 ",
                     "bytecode": {
                         "functionDebugData": {},
-                        "generatedSources": [],
                         "linkReferences": {},
                         "object": "<BYTECODE REMOVED>",
                         "opcodes":"<OPCODES REMOVED>",
@@ -35,7 +34,6 @@ sub_0: assembly {
                     },
                     "deployedBytecode": {
                         "functionDebugData": {},
-                        "generatedSources": [],
                         "immutableReferences": {},
                         "linkReferences": {},
                         "object": "<BYTECODE REMOVED>",

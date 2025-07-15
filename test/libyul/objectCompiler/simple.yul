@@ -1,6 +1,9 @@
 {
   sstore(0, 1)
 }
+// ====
+// EVMVersion: >=shanghai
+// bytecodeFormat: legacy
 // ----
 // Assembly:
 //     /* "source":41:42   */

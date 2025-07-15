@@ -22,6 +22,7 @@
 #pragma once
 
 #include <libyul/Dialect.h>
+#include <libyul/Scope.h>
 
 #include <libyul/backends/evm/AbstractAssembly.h>
 #include <libyul/ASTForward.h>
@@ -34,7 +35,7 @@ namespace solidity::yul
 {
 
 struct FunctionCall;
-struct Object;
+class Object;
 
 /**
  * Context used during code generation.
@@ -44,6 +45,8 @@ struct BuiltinContext
 	Object const* currentObject = nullptr;
 	/// Mapping from named objects to abstract assembly sub IDs.
 	std::map<std::string, AbstractAssembly::SubID> subIDs;
+
+	std::map<Scope::Function const*, AbstractAssembly::FunctionID> functionIDs;
 };
 
 struct BuiltinFunctionForEVM: public BuiltinFunction
@@ -62,43 +65,79 @@ struct BuiltinFunctionForEVM: public BuiltinFunction
  * The main difference is that the builtin functions take an AbstractAssembly for the
  * code generation.
  */
-struct EVMDialect: public Dialect
+class EVMDialect: public Dialect
 {
+public:
+	/// Handles to (depending on dialect, potentially existing) builtins, which are not accessible via the
+	/// `...FunctionHandle` functions of `Dialect` and of which it is statically known, that they are needed in,
+	/// e.g., certain optimization steps.
+	struct AuxiliaryBuiltinHandles
+	{
+		std::optional<BuiltinHandle> add;
+		std::optional<BuiltinHandle> exp;
+		std::optional<BuiltinHandle> mul;
+		std::optional<BuiltinHandle> not_;
+		std::optional<BuiltinHandle> shl;
+		std::optional<BuiltinHandle> sub;
+	};
 	/// Constructor, should only be used internally. Use the factory functions below.
-	EVMDialect(langutil::EVMVersion _evmVersion, bool _objectAccess);
+	EVMDialect(langutil::EVMVersion _evmVersion, std::optional<uint8_t> _eofVersion, bool _objectAccess);
 
-	/// @returns the builtin function of the given name or a nullptr if it is not a builtin function.
-	BuiltinFunctionForEVM const* builtin(YulName _name) const override;
+	std::optional<BuiltinHandle> findBuiltin(std::string_view _name) const override;
 
-	/// @returns true if the identifier is reserved. This includes the builtins too.
-	bool reservedIdentifier(YulName _name) const override;
+	BuiltinFunctionForEVM const& builtin(BuiltinHandle const& _handle) const override;
 
-	BuiltinFunctionForEVM const* discardFunction() const override { return builtin("pop"_yulname); }
-	BuiltinFunctionForEVM const* equalityFunction() const override { return builtin("eq"_yulname); }
-	BuiltinFunctionForEVM const* booleanNegationFunction() const override { return builtin("iszero"_yulname); }
-	BuiltinFunctionForEVM const* memoryStoreFunction() const override { return builtin("mstore"_yulname); }
-	BuiltinFunctionForEVM const* memoryLoadFunction() const override { return builtin("mload"_yulname); }
-	BuiltinFunctionForEVM const* storageStoreFunction() const override { return builtin("sstore"_yulname); }
-	BuiltinFunctionForEVM const* storageLoadFunction() const override { return builtin("sload"_yulname); }
-	YulName hashFunction() const override { return "keccak256"_yulname; }
+	bool reservedIdentifier(std::string_view _name) const override;
 
-	static EVMDialect const& strictAssemblyForEVM(langutil::EVMVersion _version);
-	static EVMDialect const& strictAssemblyForEVMObjects(langutil::EVMVersion _version);
+	std::optional<BuiltinHandle> discardFunctionHandle() const override { return m_discardFunction; }
+	std::optional<BuiltinHandle> equalityFunctionHandle() const override { return m_equalityFunction; }
+	std::optional<BuiltinHandle> booleanNegationFunctionHandle() const override { return m_booleanNegationFunction; }
+	std::optional<BuiltinHandle> memoryStoreFunctionHandle() const override { return m_memoryStoreFunction; }
+	std::optional<BuiltinHandle> memoryLoadFunctionHandle() const override { return m_memoryLoadFunction; }
+	std::optional<BuiltinHandle> storageStoreFunctionHandle() const override { return m_storageStoreFunction; }
+	std::optional<BuiltinHandle> storageLoadFunctionHandle() const override { return m_storageLoadFunction; }
+	std::optional<BuiltinHandle> hashFunctionHandle() const override { return m_hashFunction; }
+	AuxiliaryBuiltinHandles const& auxiliaryBuiltinHandles() const { return m_auxiliaryBuiltinHandles; }
+
+	static EVMDialect const& strictAssemblyForEVM(langutil::EVMVersion _evmVersion, std::optional<uint8_t> _eofVersion);
+	static EVMDialect const& strictAssemblyForEVMObjects(langutil::EVMVersion _evmVersion, std::optional<uint8_t> _eofVersion);
 
 	langutil::EVMVersion evmVersion() const { return m_evmVersion; }
+	std::optional<uint8_t> eofVersion() const { return m_eofVersion; }
+	size_t reachableStackDepth() const { return m_eofVersion.has_value() ? 256 : 16; }
 
 	bool providesObjectAccess() const { return m_objectAccess; }
 
 	static SideEffects sideEffectsOfInstruction(evmasm::Instruction _instruction);
 
+	static size_t constexpr verbatimMaxInputSlots = 100;
+	static size_t constexpr verbatimMaxOutputSlots = 100;
+
 protected:
-	BuiltinFunctionForEVM const* verbatimFunction(size_t _arguments, size_t _returnVariables) const;
+	static bool constexpr isVerbatimHandle(BuiltinHandle const& _handle) { return _handle.id < verbatimIDOffset; }
+	static BuiltinFunctionForEVM createVerbatimFunctionFromHandle(BuiltinHandle const& _handle);
+	static BuiltinFunctionForEVM createVerbatimFunction(size_t _arguments, size_t _returnVariables);
+	BuiltinHandle verbatimFunction(size_t _arguments, size_t _returnVariables) const;
+
+	static size_t constexpr verbatimIDOffset = verbatimMaxInputSlots * verbatimMaxOutputSlots;
 
 	bool const m_objectAccess;
 	langutil::EVMVersion const m_evmVersion;
-	std::map<YulName, BuiltinFunctionForEVM> m_functions;
-	std::map<std::pair<size_t, size_t>, std::shared_ptr<BuiltinFunctionForEVM const>> mutable m_verbatimFunctions;
-	std::set<YulName> m_reserved;
+	std::optional<uint8_t> m_eofVersion;
+	std::unordered_map<std::string_view, BuiltinHandle> m_builtinFunctionsByName;
+	std::vector<std::optional<BuiltinFunctionForEVM>> m_functions;
+	std::array<std::unique_ptr<BuiltinFunctionForEVM>, verbatimIDOffset> mutable m_verbatimFunctions{};
+	std::set<std::string, std::less<>> m_reserved;
+
+	std::optional<BuiltinHandle> m_discardFunction;
+	std::optional<BuiltinHandle> m_equalityFunction;
+	std::optional<BuiltinHandle> m_booleanNegationFunction;
+	std::optional<BuiltinHandle> m_memoryStoreFunction;
+	std::optional<BuiltinHandle> m_memoryLoadFunction;
+	std::optional<BuiltinHandle> m_storageStoreFunction;
+	std::optional<BuiltinHandle> m_storageLoadFunction;
+	std::optional<BuiltinHandle> m_hashFunction;
+	AuxiliaryBuiltinHandles m_auxiliaryBuiltinHandles;
 };
 
 }

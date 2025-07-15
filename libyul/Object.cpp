@@ -49,13 +49,15 @@ std::string Object::toString(
 ) const
 {
 	yulAssert(hasCode(), "No code");
+	yulAssert(dialect(), "No dialect");
 	yulAssert(debugData, "No debug data");
 
-	std::string inner = "code " + AsmPrinter(
+	std::string inner = "code " + AsmPrinter::format(
+		*code(),
 		debugData->sourceNames,
 		_debugInfoSelection,
 		_soliditySourceProvider
-	)(code()->root());
+	);
 
 	for (auto const& obj: subObjects)
 		inner += "\n" + obj->toString(_debugInfoSelection, _soliditySourceProvider);
@@ -93,10 +95,11 @@ std::string ObjectDebugData::formatUseSrcComment() const
 Json Object::toJson() const
 {
 	yulAssert(hasCode(), "No code");
+	yulAssert(dialect(), "No dialect");
 
 	Json codeJson;
 	codeJson["nodeType"] = "YulCode";
-	codeJson["block"] = AsmJsonConverter(0 /* sourceIndex */)(code()->root());
+	codeJson["block"] = AsmJsonConverter(*dialect(), 0 /* sourceIndex */)(code()->root());
 
 	Json subObjectsJson = Json::array();
 	for (std::shared_ptr<ObjectNode> const& subObject: subObjects)
@@ -110,29 +113,60 @@ Json Object::toJson() const
 	return ret;
 }
 
-std::set<std::string> Object::qualifiedDataNames() const
+
+std::set<std::string> Object::Structure::topLevelSubObjectNames() const
 {
-	std::set<std::string> qualifiedNames =
+	std::set<std::string> topLevelObjectNames;
+
+	for (auto const& path: objectPaths)
+		if (!util::contains(path, '.') && path != objectName)
+			topLevelObjectNames.insert(path);
+
+	return topLevelObjectNames;
+}
+
+Object::Structure Object::summarizeStructure() const
+{
+	Structure structure;
+
+	structure.objectPaths =
 		name.empty() || util::contains(name, '.') ?
 		std::set<std::string>{} :
 		std::set<std::string>{name};
+
+	structure.objectName = name;
+
 	for (std::shared_ptr<ObjectNode> const& subObjectNode: subObjects)
 	{
-		yulAssert(qualifiedNames.count(subObjectNode->name) == 0, "");
+		yulAssert(!structure.contains(subObjectNode->name));
 		if (util::contains(subObjectNode->name, '.'))
 			continue;
-		qualifiedNames.insert(subObjectNode->name);
+
 		if (auto const* subObject = dynamic_cast<Object const*>(subObjectNode.get()))
-			for (auto const& subSubObj: subObject->qualifiedDataNames())
+		{
+			structure.objectPaths.insert(subObjectNode->name);
+
+			auto const subObjectStructure = subObject->summarizeStructure();
+
+			for (auto const& subSubObj: subObjectStructure.objectPaths)
 				if (subObject->name != subSubObj)
 				{
-					yulAssert(qualifiedNames.count(subObject->name + "." + subSubObj) == 0, "");
-					qualifiedNames.insert(subObject->name + "." + subSubObj);
+					yulAssert(!structure.contains(subObject->name + "." + subSubObj));
+					structure.objectPaths.insert(subObject->name + "." + subSubObj);
 				}
+			for (auto const& subSubObjData: subObjectStructure.dataPaths)
+				if (subObject->name != subSubObjData)
+				{
+					yulAssert(!structure.contains(subObject->name + "." + subSubObjData));
+					structure.dataPaths.insert(subObject->name + "." + subSubObjData);
+				}
+		}
+		else
+			structure.dataPaths.insert(subObjectNode->name);
 	}
 
-	yulAssert(qualifiedNames.count("") == 0, "");
-	return qualifiedNames;
+	yulAssert(!structure.contains(""));
+	return structure;
 }
 
 std::vector<size_t> Object::pathToSubObject(std::string_view _qualifiedName) const
@@ -207,4 +241,11 @@ bool Object::hasContiguousSourceIndices() const
 
 	solAssert(maxSourceIndex + 1 >= indices.size());
 	return indices.size() == 0 || indices.size() == maxSourceIndex + 1;
+}
+
+Dialect const* Object::dialect() const
+{
+	if (!m_code)
+		return nullptr;
+	return &m_code->dialect();
 }

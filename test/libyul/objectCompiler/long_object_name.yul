@@ -7,7 +7,10 @@ object "t" {
 	}
 }
 // ====
+// EVMVersion: >=shanghai
 // optimizationPreset: full
+// outputs: Assembly
+// bytecodeFormat: legacy
 // ----
 // Assembly:
 //     /* "source":56:169   */
@@ -24,6 +27,3 @@ object "t" {
 //         /* "source":317:324   */
 //       stop
 // }
-// Bytecode: 60015f5500fe
-// Opcodes: PUSH1 0x1 PUSH0 SSTORE STOP INVALID
-// SourceMappings: 56:113:0:-:0;53:1;46:124;22:164

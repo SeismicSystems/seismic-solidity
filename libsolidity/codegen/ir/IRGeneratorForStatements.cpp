@@ -84,7 +84,7 @@ struct CopyTranslate: public yul::ASTCopier
 		// from the Yul dialect we are compiling to. So we are assuming here that the builtin
 		// functions are identical. This should not be a problem for now since everything
 		// is EVM anyway.
-		if (m_dialect.builtin(_name))
+		if (m_dialect.findBuiltin(_name.str()))
 			return _name;
 		else
 			return yul::YulName{"usr$" + _name.str()};
@@ -273,6 +273,7 @@ void IRGeneratorForStatements::initializeStateVar(VariableDeclaration const& _va
 		solAssert(!_varDecl.isConstant());
 		if (!_varDecl.value())
 			return;
+		solAssert(_varDecl.referenceLocation() != VariableDeclaration::Location::Transient, "Transient storage state variables cannot be initialized in place.");
 
 		_varDecl.value()->accept(*this);
 
@@ -377,15 +378,6 @@ std::string IRGeneratorForStatements::constantValueFunction(VariableDeclaration 
 void IRGeneratorForStatements::endVisit(VariableDeclarationStatement const& _varDeclStatement)
 {
 	setLocation(_varDeclStatement);
-
-	auto static notTransient = [](std::shared_ptr<VariableDeclaration> const& _varDeclaration) {
-		return (_varDeclaration ? _varDeclaration->referenceLocation() != VariableDeclaration::Location::Transient : true);
-	};
-
-	solUnimplementedAssert(
-		ranges::all_of(_varDeclStatement.declarations(), notTransient),
-		"Transient storage variables are not supported."
-	);
 
 	if (Expression const* expression = _varDeclStatement.initialValue())
 	{
@@ -729,11 +721,21 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 			util::GenericVisitor{
 				[&](IRLValue::Storage const& _storage) {
 					appendCode() <<
-						m_utils.storageSetToZeroFunction(m_currentLValue->type) <<
+						m_utils.storageSetToZeroFunction(m_currentLValue->type, VariableDeclaration::Location::Unspecified) <<
 						"(" <<
 						_storage.slot <<
 						", " <<
 						_storage.offsetString() <<
+						")\n";
+					m_currentLValue.reset();
+				},
+				[&](IRLValue::TransientStorage const& _transientStorage) {
+					appendCode() <<
+						m_utils.storageSetToZeroFunction(m_currentLValue->type, VariableDeclaration::Location::Transient) <<
+						"(" <<
+						_transientStorage.slot <<
+						", " <<
+						_transientStorage.offsetString() <<
 						")\n";
 					m_currentLValue.reset();
 				},
@@ -1072,7 +1074,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 	{
 		auto const& event = dynamic_cast<EventDefinition const&>(functionType->declaration());
 		TypePointers paramTypes = functionType->parameterTypes();
-		ABIFunctions abi(m_context.evmVersion(), m_context.revertStrings(), m_context.functionCollector());
+		ABIFunctions abi(m_context.evmVersion(), m_context.eofVersion(), m_context.revertStrings(), m_context.functionCollector());
 
 		std::vector<IRVariable> indexedArgs;
 		std::vector<std::string> nonIndexedArgs;
@@ -1529,6 +1531,15 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 	case FunctionType::Kind::BlockHash:
 	case FunctionType::Kind::BlobHash:
 	{
+		solAssert(
+			!m_context.eofVersion().has_value() || functionType->kind() != FunctionType::Kind::GasLeft,
+			"EOF does not support gasleft."
+		);
+		solAssert(
+			!m_context.eofVersion().has_value() || functionType->kind() != FunctionType::Kind::Selfdestruct,
+			"EOF does not support selfdestruct."
+		);
+
 		static std::map<FunctionType::Kind, std::string> functions = {
 			{FunctionType::Kind::GasLeft, "gas"},
 			{FunctionType::Kind::Selfdestruct, "selfdestruct"},
@@ -1563,22 +1574,30 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 			&dynamic_cast<ContractType const&>(*functionType->returnParameterTypes().front()).contractDefinition();
 		m_context.addSubObject(contract);
 
-		Whiskers t(R"(let <memPos> := <allocateUnbounded>()
-			let <memEnd> := add(<memPos>, datasize("<object>"))
-			if or(gt(<memEnd>, 0xffffffffffffffff), lt(<memEnd>, <memPos>)) { <panic>() }
-			datacopy(<memPos>, dataoffset("<object>"), datasize("<object>"))
-			<memEnd> := <abiEncode>(<memEnd><constructorParams>)
-			<?saltSet>
-				let <address> := create2(<value>, <memPos>, sub(<memEnd>, <memPos>), <salt>)
-			<!saltSet>
-				let <address> := create(<value>, <memPos>, sub(<memEnd>, <memPos>))
-			</saltSet>
+		Whiskers t(R"(
+			<?eof>
+				let <memPos> := <allocateUnbounded>()
+				let <memEnd> := <abiEncode>(<memPos><constructorParams>)
+				let <address> := eofcreate("<object>", <value>, <salt>, <memPos>, sub(<memEnd>, <memPos>))
+			<!eof>
+				let <memPos> := <allocateUnbounded>()
+				let <memEnd> := add(<memPos>, datasize("<object>"))
+				if or(gt(<memEnd>, 0xffffffffffffffff), lt(<memEnd>, <memPos>)) { <panic>() }
+				datacopy(<memPos>, dataoffset("<object>"), datasize("<object>"))
+				<memEnd> := <abiEncode>(<memEnd><constructorParams>)
+				<?saltSet>
+					let <address> := create2(<value>, <memPos>, sub(<memEnd>, <memPos>), <salt>)
+				<!saltSet>
+					let <address> := create(<value>, <memPos>, sub(<memEnd>, <memPos>))
+				</saltSet>
+			</eof>
 			<?isTryCall>
 				let <success> := iszero(iszero(<address>))
 			<!isTryCall>
 				if iszero(<address>) { <forwardingRevert>() }
 			</isTryCall>
 		)");
+		t("eof", m_context.eofVersion().has_value());
 		t("memPos", m_context.newYulVariable());
 		t("memEnd", m_context.newYulVariable());
 		t("allocateUnbounded", m_utils.allocateUnboundedFunction());
@@ -1592,6 +1611,8 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		t("saltSet", functionType->saltSet());
 		if (functionType->saltSet())
 			t("salt", IRVariable(_functionCall.expression()).part("salt").name());
+		else if (m_context.eofVersion().has_value()) // Set salt to 0 if not defined.
+			t("salt", "0"); // TODO: We should reject non-salted creation during analysis and not set here
 		solAssert(IRVariable(_functionCall).stackSlots().size() == 1);
 		t("address", IRVariable(_functionCall).commaSeparatedList());
 		t("isTryCall", _functionCall.annotation().tryCall);
@@ -1612,11 +1633,16 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		Whiskers templ(R"(
 			let <gas> := 0
 			if iszero(<value>) { <gas> := <callStipend> }
-			let <success> := call(<gas>, <address>, <value>, 0, 0, 0, 0)
+			<?eof>
+				let <success> := iszero(extcall(<address>, 0, 0, <value>))
+			<!eof>
+				let <success> := call(<gas>, <address>, <value>, 0, 0, 0, 0)
+			</eof>
 			<?isTransfer>
 				if iszero(<success>) { <forwardingRevert>() }
 			</isTransfer>
 		)");
+		templ("eof", m_context.eofVersion().has_value());
 		templ("gas", m_context.newYulVariable());
 		templ("callStipend", toString(evmasm::GasCosts::callStipend));
 		templ("address", address);
@@ -1659,17 +1685,30 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 			<?isECRecover>
 				mstore(0, 0)
 			</isECRecover>
-			let <success> := <call>(<gas>, <address> <?isCall>, 0</isCall>, <pos>, sub(<end>, <pos>), 0, 32)
+			<?eof>
+				// EOF always uses extstaticcall
+				let <success> := iszero(extstaticcall(<address>, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := <call>(<gas>, <address> <?isCall>, 0</isCall>, <pos>, sub(<end>, <pos>), 0, 32)
+			</eof>
 			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if eq(returndatasize(), 32) { returndatacopy(0, 0, 32) }
+			</eof>
 			let <retVars> := <shl>(mload(0))
 		)");
-		templ("call", m_context.evmVersion().hasStaticCall() ? "staticcall" : "call");
-		templ("isCall", !m_context.evmVersion().hasStaticCall());
+		auto const eof = m_context.eofVersion().has_value();
+		if (!eof)
+		{
+			templ("call", m_context.evmVersion().hasStaticCall() ? "staticcall" : "call");
+			templ("isCall", !m_context.evmVersion().hasStaticCall());
+		}
 		templ("shl", m_utils.shiftLeftFunction(offset * 8));
 		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
 		templ("pos", m_context.newYulVariable());
 		templ("end", m_context.newYulVariable());
 		templ("isECRecover", FunctionType::Kind::ECRecover == functionType->kind());
+		templ("eof", eof);
 		if (FunctionType::Kind::ECRecover == functionType->kind())
 			templ("encodeArgs", m_context.abiFunctions().tupleEncoder(argumentTypes, parameterTypes));
 		else
@@ -1817,6 +1856,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 				")\n";
 		else if (member == "code")
 		{
+			solAssert(!m_context.eofVersion().has_value(), "EOF does not support address.code.");
 			std::string externalCodeFunction = m_utils.externalCodeFunction();
 			define(_memberAccess) <<
 				externalCodeFunction <<
@@ -1825,10 +1865,13 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 				")\n";
 		}
 		else if (member == "codehash")
+		{
+			solAssert(!m_context.eofVersion().has_value(), "EOF does not support address.codehash.");
 			define(_memberAccess) <<
 				"extcodehash(" <<
 				expressionAsType(_memberAccess.expression(), *TypeProvider::address()) <<
 				")\n";
+		}
 		else if (std::set<std::string>{"send", "transfer"}.count(member))
 		{
 			solAssert(dynamic_cast<AddressType const&>(*_memberAccess.expression().annotation().type).stateMutability() == StateMutability::Payable);
@@ -1977,6 +2020,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 			solAssert(false, "Blockhash has been removed.");
 		else if (member == "creationCode" || member == "runtimeCode")
 		{
+			solAssert(!m_context.eofVersion().has_value(), "EOF does not support \"" + member + "\".");
 			Type const* arg = dynamic_cast<MagicType const&>(*_memberAccess.expression().annotation().type).typeArgument();
 			auto const& contractType = dynamic_cast<ContractType const&>(*arg);
 			solAssert(!contractType.isSuper());
@@ -2298,7 +2342,7 @@ bool IRGeneratorForStatements::visit(InlineAssembly const& _inlineAsm)
 
 	solAssert(std::holds_alternative<yul::Block>(modified));
 
-	appendCode() << yul::AsmPrinter()(std::get<yul::Block>(modified)) << "\n";
+	appendCode() << yul::AsmPrinter(_inlineAsm.dialect())(std::get<yul::Block>(modified)) << "\n";
 	return false;
 }
 
@@ -2602,7 +2646,17 @@ void IRGeneratorForStatements::handleVariableReference(
 			*_variable.annotation().type,
 			IRLValue::Stack{m_context.localVariable(_variable)}
 		});
+	else if (m_context.isStateVariable(_variable) && _variable.referenceLocation() == VariableDeclaration::Location::Transient)
+		setLValue(_referencingExpression, IRLValue{
+			*_variable.annotation().type,
+			IRLValue::TransientStorage{
+				toCompactHexWithPrefix(m_context.storageLocationOfStateVariable(_variable).first),
+				m_context.storageLocationOfStateVariable(_variable).second
+			}
+		});
 	else if (m_context.isStateVariable(_variable))
+	{
+		solAssert(_variable.referenceLocation() == VariableDeclaration::Location::Unspecified, "Must have storage location.");
 		setLValue(_referencingExpression, IRLValue{
 			*_variable.annotation().type,
 			IRLValue::Storage{
@@ -2610,6 +2664,7 @@ void IRGeneratorForStatements::handleVariableReference(
 				m_context.storageLocationOfStateVariable(_variable).second
 			}
 		});
+	}
 	else
 		solAssert(false, "Invalid variable kind.");
 }
@@ -2651,7 +2706,6 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 		argumentStrings += IRVariable(*arg).stackSlots();
 	}
 
-
 	if (!m_context.evmVersion().canOverchargeGasForCall())
 	{
 		// Touch the end of the output area so that we do not pay for memory resize during the call
@@ -2663,7 +2717,7 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 	}
 
 	// NOTE: When the expected size of returndata is static, we pass that in to the call opcode and it gets copied automatically.
-    // When it's dynamic, we get zero from estimatedReturnSize() instead and then we need an explicit returndatacopy().
+	// When it's dynamic, we get zero from estimatedReturnSize() instead and then we need an explicit returndatacopy().
 	Whiskers templ(R"(
 		<?checkExtcodesize>
 			if iszero(extcodesize(<address>)) { <revertNoCode>() }
@@ -2673,7 +2727,11 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 		mstore(<pos>, <shl28>(<funSel>))
 		let <end> := <encodeArgs>(add(<pos>, 4) <argumentString>)
 
-		let <success> := <call>(<gas>, <address>, <?hasValue> <value>, </hasValue> <pos>, sub(<end>, <pos>), <pos>, <staticReturndataSize>)
+		<?eof>
+			let <success> := iszero(<call>(<address>, <pos>, sub(<end>, <pos>) <?hasValue>, <value></hasValue>))
+		<!eof>
+			let <success> := <call>(<gas>, <address>, <?hasValue> <value>, </hasValue> <pos>, sub(<end>, <pos>), <pos>, <staticReturndataSize>)
+		</eof>
 		<?noTryCall>
 			if iszero(<success>) { <forwardingRevert>() }
 		</noTryCall>
@@ -2688,6 +2746,9 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 					if gt(<returnDataSizeVar>, returndatasize()) {
 						<returnDataSizeVar> := returndatasize()
 					}
+					<?eof>
+						returndatacopy(<pos>, 0, <returnDataSizeVar>)
+					</eof>
 				</supportsReturnData>
 			</isReturndataSizeDynamic>
 
@@ -2699,6 +2760,9 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 		}
 	)");
 	templ("revertNoCode", m_utils.revertReasonIfDebugFunction("Target contract does not contain code"));
+	auto const eof = m_context.eofVersion().has_value();
+	solAssert(!eof || !funType.gasSet());
+	templ("eof", eof);
 
 	// We do not need to check extcodesize if we expect return data: If there is no
 	// code, the call will return empty data and the ABI decoder will revert.
@@ -2706,9 +2770,12 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 	for (auto const& t: returnInfo.returnTypes)
 		encodedHeadSize += t->decodingType()->calldataHeadSize();
 	bool const checkExtcodesize =
-		encodedHeadSize == 0 ||
-		!m_context.evmVersion().supportsReturndata() ||
-		m_context.revertStrings() >= RevertStrings::Debug;
+		!eof &&
+		(
+			encodedHeadSize == 0 ||
+			!m_context.evmVersion().supportsReturndata() ||
+			m_context.revertStrings() >= RevertStrings::Debug
+		);
 	templ("checkExtcodesize", checkExtcodesize);
 
 	templ("pos", m_context.newYulVariable());
@@ -2769,11 +2836,11 @@ void IRGeneratorForStatements::appendExternalFunctionCall(
 	}
 	// Order is important here, STATICCALL might overlap with DELEGATECALL.
 	if (isDelegateCall)
-		templ("call", "delegatecall");
+		templ("call", eof ? "extdelegatecall" : "delegatecall");
 	else if (useStaticCall)
-		templ("call", "staticcall");
+		templ("call", eof ? "extstaticcall" : "staticcall");
 	else
-		templ("call", "call");
+		templ("call", eof ? "extcall" : "call");
 
 	templ("forwardingRevert", m_utils.forwardingRevertFunction());
 
@@ -2812,13 +2879,20 @@ void IRGeneratorForStatements::appendBareCall(
 			let <length> := mload(<arg>)
 		</needsEncoding>
 
-		let <success> := <call>(<gas>, <address>, <?+value> <value>, </+value> <pos>, <length>, 0, 0)
+		<?eof>
+			let <success> := iszero(<call>(<address>, <pos>, <length> <?+value>, <value></+value>))
+		<!eof>
+			let <success> := <call>(<gas>, <address>, <?+value> <value>, </+value> <pos>, <length>, 0, 0)
+		</eof>
+
 		let <returndataVar> := <extractReturndataFunction>()
 	)");
 
 	templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
 	templ("pos", m_context.newYulVariable());
 	templ("length", m_context.newYulVariable());
+	auto const eof = m_context.eofVersion().has_value();
+	templ("eof", eof);
 
 	templ("arg", IRVariable(*_arguments.front()).commaSeparatedList());
 	Type const& argType = type(*_arguments.front());
@@ -2827,7 +2901,7 @@ void IRGeneratorForStatements::appendBareCall(
 	else
 	{
 		templ("needsEncoding", true);
-		ABIFunctions abi(m_context.evmVersion(), m_context.revertStrings(), m_context.functionCollector());
+		ABIFunctions abi(m_context.evmVersion(), m_context.eofVersion(), m_context.revertStrings(), m_context.functionCollector());
 		templ("encode", abi.tupleEncoderPacked({&argType}, {TypeProvider::bytesMemory()}));
 	}
 
@@ -2840,18 +2914,19 @@ void IRGeneratorForStatements::appendBareCall(
 	if (funKind == FunctionType::Kind::BareCall)
 	{
 		templ("value", funType.valueSet() ? IRVariable(_functionCall.expression()).part("value").name() : "0");
-		templ("call", "call");
+		templ("call", eof ? "extcall" : "call");
 	}
 	else
 	{
 		solAssert(!funType.valueSet(), "Value set for delegatecall or staticcall.");
 		templ("value", "");
 		if (funKind == FunctionType::Kind::BareStaticCall)
-			templ("call", "staticcall");
+			templ("call", eof ? "extstaticcall" : "staticcall");
 		else
-			templ("call", "delegatecall");
+			templ("call", eof ? "extdelegatecall" : "delegatecall");
 	}
 
+	solAssert(!eof || !funType.gasSet());
 	if (funType.gasSet())
 		templ("gas", IRVariable(_functionCall.expression()).part("gas").name());
 	else if (m_context.evmVersion().canOverchargeGasForCall())
@@ -3117,13 +3192,29 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 				}, _storage.offset);
 
 				appendCode() <<
-					m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, offsetStatic) <<
+					m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, VariableDeclaration::Location::Unspecified, offsetStatic) <<
 					"(" <<
 					_storage.slot <<
 					offsetArgument <<
 					_value.commaSeparatedListPrefixed() <<
 					")\n";
+			},
+			[&](IRLValue::TransientStorage const& _transientStorage) {
+				std::string offsetArgument;
+				std::optional<unsigned> offsetStatic;
 
+				std::visit(GenericVisitor{
+					[&](unsigned _offset) { offsetStatic = _offset; },
+					[&](std::string const& _offset) { offsetArgument = ", " + _offset; }
+				}, _transientStorage.offset);
+
+				appendCode() <<
+					m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, VariableDeclaration::Location::Transient, offsetStatic) <<
+					"(" <<
+					_transientStorage.slot <<
+					offsetArgument <<
+					_value.commaSeparatedListPrefixed() <<
+					")\n";
 			},
 			[&](IRLValue::Memory const& _memory) {
 				if (_lvalue.type.isValueType())
@@ -3202,7 +3293,7 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 				define(result) << _storage.slot << "\n";
 			else if (std::holds_alternative<std::string>(_storage.offset))
 				define(result) <<
-					m_utils.readFromStorageDynamic(_lvalue.type, true) <<
+					m_utils.readFromStorageDynamic(_lvalue.type, true, VariableDeclaration::Location::Unspecified) <<
 					"(" <<
 					_storage.slot <<
 					", " <<
@@ -3210,9 +3301,27 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 					")\n";
 			else
 				define(result) <<
-					m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_storage.offset), true) <<
+					m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_storage.offset), true, VariableDeclaration::Location::Unspecified) <<
 					"(" <<
 					_storage.slot <<
+					")\n";
+		},
+		[&](IRLValue::TransientStorage const& _transientStorage) {
+			if (!_lvalue.type.isValueType())
+				define(result) << _transientStorage.slot << "\n";
+			else if (std::holds_alternative<std::string>(_transientStorage.offset))
+				define(result) <<
+					m_utils.readFromStorageDynamic(_lvalue.type, true, VariableDeclaration::Location::Transient) <<
+					"(" <<
+					_transientStorage.slot <<
+					", " <<
+					std::get<std::string>(_transientStorage.offset) <<
+					")\n";
+			else
+				define(result) <<
+					m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_transientStorage.offset), true, VariableDeclaration::Location::Transient) <<
+					"(" <<
+					_transientStorage.slot <<
 					")\n";
 		},
 		[&](IRLValue::Memory const& _memory) {
@@ -3242,7 +3351,12 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 					")\n";
 			}
 			else
-				define(result) << "loadimmutable(\"" << std::to_string(_immutable.variable->id()) << "\")\n";
+			{
+				if (!m_context.eofVersion().has_value())
+					define(result) << "loadimmutable(\"" << std::to_string(_immutable.variable->id()) << "\")\n";
+				else
+					define(result) << "auxdataloadn(" << std::to_string(m_context.immutableMemoryOffsetRelative(*_immutable.variable)) << ")\n";
+			}
 		},
 		[&](IRLValue::Tuple const&) {
 			solAssert(false, "Attempted to read from tuple lvalue.");

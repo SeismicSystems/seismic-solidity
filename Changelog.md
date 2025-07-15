@@ -1,14 +1,67 @@
-### 0.8.28 (unreleased)
+### 0.8.29 (2025-03-12)
 
 Language Features:
+ * Allow relocating contract storage to an arbitrary location.
 
 
 Compiler Features:
- * Code Generator: Transient storage value type state variables are now supported by the legacy pipeline.
+ * Error Reporting: Errors reported during code generation now point at the location of the contract when more fine-grained location is not available.
+ * ethdebug: Experimental support for instructions and source locations.
+ * EVM: Support for the EVM version "Osaka".
+ * EVM Assembly Import: Allow enabling opcode-based optimizer.
+ * General: The experimental EOF backend implements a subset of EOF sufficient to compile arbitrary high-level Solidity syntax via IR with optimization enabled.
+ * SMTChecker: Support ``block.blobbasefee`` and ``blobhash``.
+ * SMTChecker: The option ``--model-checker-print-query`` no longer requires ``--model-checker-solvers smtlib2``.
+ * SMTChecker: Z3 is now a runtime dependency, not a build dependency (except for emscripten build).
+ * Yul Parser: Make name clash with a builtin a non-fatal error.
+
+
+Bugfixes:
+ * Commandline Interface: Report StackTooDeep errors in compiler mode as proper errors instead of printing diagnostic information meant for internal compiler errors.
+ * Error Reporting: Fix error locations not being shown for source files with empty names.
+ * General: Fix internal compiler error when requesting IR AST outputs for interfaces and abstract contracts.
+ * Metadata: Fix custom cleanup sequence missing from metadata when other optimizer settings have default values.
+ * SMTChecker: Fix internal compiler error when analyzing overflowing expressions or bitwise negation of unsigned types involving constants.
+ * SMTChecker: Fix reporting on targets that are safe in the context of one contract but unsafe in the context of another contract.
+ * SMTChecker: Fix SMT logic error when analyzing cross-contract getter call with BMC.
+ * SMTChecker: Fix SMT logic error when contract deployment involves string literal to fixed bytes conversion.
+ * SMTChecker: Fix SMT logic error when external call has extra effectless parentheses.
+ * SMTChecker: Fix SMT logic error when initializing a fixed-sized-bytes array using string literals.
+ * SMTChecker: Fix SMT logic error when translating invariants involving array store and select operations.
+ * SMTChecker: Fix wrong encoding of string literals as arguments of ``ecrecover`` precompile.
+ * Standard JSON Interface: Fix ``generatedSources`` and ``sourceMap`` being generated internally even when not requested.
+ * TypeChecker: Fix spurious compilation errors due to incorrect computation of contract storage size which erroneously included transient storage variables.
+ * Yul: Fix internal compiler error when a code generation error should be reported instead.
+ * Yul Optimizer: Fix failing debug assertion due to dereferencing of an empty ``optional`` value.
+
+
+Build system:
+ * Linux release builds are fully static again and no longer depend on ``glibc``.
+ * Switch from C++17 to C++20 as the target standard.
+
+
+Solc-Js:
+ * The wrapper now requires at least nodejs v12.
+
+### 0.8.28 (2024-10-09)
+
+Language Features:
+ * Transient storage state variables of value types are now fully supported.
+
+
+Compiler Features:
+ * General: Generate JSON representations of Yul ASTs only on demand to reduce memory usage.
+ * Standard JSON Interface: Bytecode or IR can now be requested for a subset of all contracts without triggering unnecessary code generation for other contracts.
 
 
 Bugfixes:
  * SMTChecker: Fix SMT logic error when assigning to an array of addresses.
+ * Yul AST: Fix shifted native source locations when debug info selection included code snippets.
+
+
+Build system:
+* Removed ``USE_LD_GOLD`` option and default to use the compiler default linker. For custom linkers, ``CMAKE_CXX_FLAGS`` can be used.
+
 
 ### 0.8.27 (2024-09-04)
 
@@ -1415,7 +1468,7 @@ Language Features:
  * Introduce ``virtual`` and ``override`` keywords.
  * Modify ``push(element)`` for dynamic storage arrays such that it does not return the new length anymore.
  * Yul: Introduce ``leave`` statement that exits the current function.
- * JSON AST: Add the function selector of each externally-visible FunctonDefinition to the AST JSON export.
+ * JSON AST: Add the function selector of each externally-visible FunctionDefinition to the AST JSON export.
 
 Compiler Features:
  * Allow revert strings to be stripped from the binary using the ``--revert-strings`` option or the ``settings.debug.revertStrings`` setting.

@@ -230,9 +230,6 @@ test_suite* init_unit_test_suite(int /*argc*/, char* /*argv*/[])
 		if (solidity::test::CommonOptions::get().disableSemanticTests)
 			std::cout << std::endl << "--- SKIPPING ALL SEMANTICS TESTS ---" << std::endl << std::endl;
 
-		if (!solidity::test::CommonOptions::get().enforceGasTest)
-			std::cout << std::endl << "WARNING :: Gas Cost Expectations are not being enforced" << std::endl << std::endl;
-
 		Batcher batcher(CommonOptions::get().selectedBatch, CommonOptions::get().batches);
 		if (CommonOptions::get().batches > 1)
 			std::cout << "Batch " << CommonOptions::get().selectedBatch << " out of " << CommonOptions::get().batches << std::endl;

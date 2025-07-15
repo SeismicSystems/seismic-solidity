@@ -54,10 +54,19 @@
             "component": "general",
             "errorCode": "1284",
             "formattedMessage": "CodeGenerationError: Some immutables were read from but never assigned, possibly because of optimization.
+ --> C:4:1:
+  |
+4 | contract C {
+  | ^ (Relevant source part starts here and spans across multiple lines).
 
 ",
             "message": "Some immutables were read from but never assigned, possibly because of optimization.",
             "severity": "error",
+            "sourceLocation": {
+                "end": 320,
+                "file": "C",
+                "start": 56
+            },
             "type": "CodeGenerationError"
         }
     ],

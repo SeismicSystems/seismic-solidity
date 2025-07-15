@@ -1,5 +1,8 @@
 {
 }
+// ====
+// EVMVersion: >=constantinople
+// bytecodeFormat: legacy
 // ----
 // Assembly:
 //     /* "source":27:34   */
