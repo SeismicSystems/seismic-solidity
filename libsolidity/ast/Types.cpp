@@ -1160,6 +1160,13 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 	auto category = _convertTo.category();
 	if (category == Category::FixedBytes)
 		return false;
+	else if (category == Category::ShieldedFixedBytes)
+	{
+		if (isFractional())
+			return false;
+		ShieldedFixedBytesType const& targetType = dynamic_cast<ShieldedFixedBytesType const&>(_convertTo);
+		return (m_value == 0) || (!isNegative() && integerType() && (integerType()->numBits() <= targetType.numBytes() * 8));
+	}
 	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
 		return (m_value == 0) ||
 			((addressType->stateMutability() != StateMutability::Payable) &&
