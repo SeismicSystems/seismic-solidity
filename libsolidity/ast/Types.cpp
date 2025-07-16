@@ -857,7 +857,7 @@ BoolResult ShieldedFixedBytesType::isExplicitlyConvertibleTo(Type const& _conver
 			(addressType->stateMutability() != StateMutability::Payable) &&
 			(numBytes() == 20);
 	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
-		return true;
+		return numBytes() == fixedBytesType->numBytes();
 	return false;
 }
 
@@ -1494,6 +1494,8 @@ BoolResult FixedBytesType::isExplicitlyConvertibleTo(Type const& _convertTo) con
 			(numBytes() == 20);
 	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
 		return fixedPointType->numBits() == numBytes() * 8;
+	else if (auto shieldedFixedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(&_convertTo))
+		return numBytes() == shieldedFixedBytesType->numBytes();
 
 	return false;
 }
