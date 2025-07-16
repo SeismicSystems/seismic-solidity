@@ -838,6 +838,39 @@ BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo
 	return false;
 }
 
+BoolResult ShieldedFixedBytesType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (_convertTo.category() != category())
+		return false;
+	ShieldedFixedBytesType const& convertTo = dynamic_cast<ShieldedFixedBytesType const&>(_convertTo);
+	return convertTo.m_bytes >= m_bytes;
+}
+
+BoolResult ShieldedFixedBytesType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (_convertTo.category() == category())
+		return true;
+	else if (auto integerType = dynamic_cast<ShieldedIntegerType const*>(&_convertTo))
+		return (!integerType->isSigned() && integerType->numBits() == numBytes() * 8);
+	else if (auto addressType = dynamic_cast<ShieldedAddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			(numBytes() == 20);
+	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
+		return true;
+	return false;
+}
+
+std::string ShieldedFixedBytesType::richIdentifier() const
+{
+	return "t_sbytes" + std::to_string(m_bytes);
+}
+
+std::string ShieldedFixedBytesType::toString(bool) const
+{
+	return "sbytes" + util::toString(m_bytes);
+}
+
 
 FixedPointType::FixedPointType(unsigned _totalBits, unsigned _fractionalDigits, FixedPointType::Modifier _modifier):
 	m_totalBits(_totalBits), m_fractionalDigits(_fractionalDigits), m_modifier(_modifier)

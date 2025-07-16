@@ -68,6 +68,9 @@ public:
 
 	static FixedBytesType const* byte() { return fixedBytes(1); }
 	static FixedBytesType const* fixedBytes(unsigned m) { return m_bytesM.at(m - 1).get(); }
+	
+	static ShieldedFixedBytesType const* shieldedByte() { return shieldedFixedBytes(1); }
+	static ShieldedFixedBytesType const* shieldedFixedBytes(unsigned m) { return m_sbytesM.at(m - 1).get(); }
 
 	static ArrayType const* bytesStorage();
 	static ArrayType const* bytesMemory();
@@ -247,6 +250,7 @@ private:
 	static std::array<std::unique_ptr<ShieldedIntegerType>, 32> const m_suintM;
 	static std::array<std::unique_ptr<ShieldedIntegerType>, 32> const m_sintM;
 	static std::array<std::unique_ptr<FixedBytesType>, 32> const m_bytesM;
+	static std::array<std::unique_ptr<ShieldedFixedBytesType>, 32> const m_sbytesM;
 	static std::array<std::unique_ptr<MagicType>, 5> const m_magics;        ///< MagicType's except MetaType
 
 	std::map<std::pair<unsigned, unsigned>, std::unique_ptr<FixedPointType>> m_ufixedMxN{};

@@ -77,6 +77,14 @@ Returns: 'returns';
 Revert: 'revert'; // not a real keyword
 ShieldedAddress: 'saddress';
 /**
+ * Shielded bytes types of fixed length.
+ */
+ShieldedFixedBytes:
+	'sbytes1' | 'sbytes2' | 'sbytes3' | 'sbytes4' | 'sbytes5' | 'sbytes6' | 'sbytes7' | 'sbytes8' |
+	'sbytes9' | 'sbytes10' | 'sbytes11' | 'sbytes12' | 'sbytes13' | 'sbytes14' | 'sbytes15' | 'sbytes16' |
+	'sbytes17' | 'sbytes18' | 'sbytes19' | 'sbytes20' | 'sbytes21' | 'sbytes22' | 'sbytes23' | 'sbytes24' |
+	'sbytes25' | 'sbytes26' | 'sbytes27' | 'sbytes28' | 'sbytes29' | 'sbytes30' | 'sbytes31' | 'sbytes32';
+/**
  * Sized shieled unsigned integer types.
  * suint is an alias of suint256.
  */

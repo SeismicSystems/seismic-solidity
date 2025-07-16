@@ -190,6 +190,7 @@ public:
 		Array,
 		ArraySlice,
 		FixedBytes,
+		ShieldedFixedBytes,
 		Contract,
 		Struct,
 		Function,
@@ -782,6 +783,39 @@ public:
 
 private:
 	unsigned m_bytes;
+};
+
+/**
+ * A shielded fixed-size byte array type.
+ */
+class ShieldedFixedBytesType: public FixedBytesType
+{
+public:
+	explicit ShieldedFixedBytesType(unsigned _bytes): FixedBytesType(_bytes), m_bytes(_bytes)
+	{
+		solAssert(
+			m_bytes > 0 && m_bytes <= 32,
+			"Invalid byte number for shielded fixed bytes type: " + util::toString(m_bytes)
+		);
+	}
+
+	virtual unsigned storageBytes() const override { return 32; }
+	bool isShielded() const override { return true; }
+	Category category() const override { return Category::ShieldedFixedBytes; }
+
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	
+	std::string richIdentifier() const override;
+	std::string toString(bool _withoutDataLocation) const override;
+	
+	unsigned numBytes() const { return m_bytes; }
+	
+	Type const* encodingType() const override { return this; }
+	TypeResult interfaceType(bool) const override { return this; }
+
+private:
+	unsigned const m_bytes;
 };
 
 /**
