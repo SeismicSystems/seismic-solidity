@@ -1,0 +1,1378 @@
+
+======= shielded_array_uses_cload_cstore/input.sol:C =======
+EVM assembly:
+    /* "shielded_array_uses_cload_cstore/input.sol":55:193  contract C {... */
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  revert(0x00, 0x00)
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+        /* "shielded_array_uses_cload_cstore/input.sol":55:193  contract C {... */
+      mstore(0x40, 0x80)
+      callvalue
+      dup1
+      iszero
+      tag_1
+      jumpi
+      revert(0x00, 0x00)
+    tag_1:
+      pop
+      jumpi(tag_2, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0x5edc48e7
+      eq
+      tag_3
+      jumpi
+    tag_2:
+      revert(0x00, 0x00)
+        /* "shielded_array_uses_cload_cstore/input.sol":99:191  function setShieldedBytes(sbytes memory _data) public {... */
+    tag_3:
+      tag_4
+      0x04
+      dup1
+      calldatasize
+      sub
+      dup2
+      add
+      swap1
+      tag_5
+      swap2
+      swap1
+      tag_6
+      jump	// in
+    tag_5:
+      tag_7
+      jump	// in
+    tag_4:
+      stop
+    tag_7:
+        /* "shielded_array_uses_cload_cstore/input.sol":179:184  _data */
+      dup1
+        /* "shielded_array_uses_cload_cstore/input.sol":163:176  shieldedBytes */
+      0x00
+        /* "shielded_array_uses_cload_cstore/input.sol":163:184  shieldedBytes = _data */
+      swap1
+      dup2
+      tag_9
+      swap2
+      swap1
+      tag_10
+      jump	// in
+    tag_9:
+      pop
+        /* "shielded_array_uses_cload_cstore/input.sol":99:191  function setShieldedBytes(sbytes memory _data) public {... */
+      pop
+      jump	// out
+        /* "#utility.yul":7:82   */
+    tag_11:
+        /* "#utility.yul":40:46   */
+      0x00
+        /* "#utility.yul":73:75   */
+      0x40
+        /* "#utility.yul":67:76   */
+      mload
+        /* "#utility.yul":57:76   */
+      swap1
+      pop
+        /* "#utility.yul":7:82   */
+      swap1
+      jump	// out
+        /* "#utility.yul":88:205   */
+    tag_12:
+        /* "#utility.yul":197:198   */
+      0x00
+        /* "#utility.yul":194:195   */
+      0x00
+        /* "#utility.yul":187:199   */
+      revert
+        /* "#utility.yul":211:328   */
+    tag_13:
+        /* "#utility.yul":320:321   */
+      0x00
+        /* "#utility.yul":317:318   */
+      0x00
+        /* "#utility.yul":310:322   */
+      revert
+        /* "#utility.yul":334:451   */
+    tag_14:
+        /* "#utility.yul":443:444   */
+      0x00
+        /* "#utility.yul":440:441   */
+      0x00
+        /* "#utility.yul":433:445   */
+      revert
+        /* "#utility.yul":457:574   */
+    tag_15:
+        /* "#utility.yul":566:567   */
+      0x00
+        /* "#utility.yul":563:564   */
+      0x00
+        /* "#utility.yul":556:568   */
+      revert
+        /* "#utility.yul":580:682   */
+    tag_16:
+        /* "#utility.yul":621:627   */
+      0x00
+        /* "#utility.yul":672:674   */
+      0x1f
+        /* "#utility.yul":668:675   */
+      not
+        /* "#utility.yul":663:665   */
+      0x1f
+        /* "#utility.yul":656:661   */
+      dup4
+        /* "#utility.yul":652:666   */
+      add
+        /* "#utility.yul":648:676   */
+      and
+        /* "#utility.yul":638:676   */
+      swap1
+      pop
+        /* "#utility.yul":580:682   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":688:868   */
+    tag_17:
+        /* "#utility.yul":736:813   */
+      0x4e487b7100000000000000000000000000000000000000000000000000000000
+        /* "#utility.yul":733:734   */
+      0x00
+        /* "#utility.yul":726:814   */
+      mstore
+        /* "#utility.yul":833:837   */
+      0x41
+        /* "#utility.yul":830:831   */
+      0x04
+        /* "#utility.yul":823:838   */
+      mstore
+        /* "#utility.yul":857:861   */
+      0x24
+        /* "#utility.yul":854:855   */
+      0x00
+        /* "#utility.yul":847:862   */
+      revert
+        /* "#utility.yul":874:1155   */
+    tag_18:
+        /* "#utility.yul":957:984   */
+      tag_52
+        /* "#utility.yul":979:983   */
+      dup3
+        /* "#utility.yul":957:984   */
+      tag_16
+      jump	// in
+    tag_52:
+        /* "#utility.yul":949:955   */
+      dup2
+        /* "#utility.yul":945:985   */
+      add
+        /* "#utility.yul":1087:1093   */
+      dup2
+        /* "#utility.yul":1075:1085   */
+      dup2
+        /* "#utility.yul":1072:1094   */
+      lt
+        /* "#utility.yul":1051:1069   */
+      0xffffffffffffffff
+        /* "#utility.yul":1039:1049   */
+      dup3
+        /* "#utility.yul":1036:1070   */
+      gt
+        /* "#utility.yul":1033:1095   */
+      or
+        /* "#utility.yul":1030:1118   */
+      iszero
+      tag_53
+      jumpi
+        /* "#utility.yul":1098:1116   */
+      tag_54
+      tag_17
+      jump	// in
+    tag_54:
+        /* "#utility.yul":1030:1118   */
+    tag_53:
+        /* "#utility.yul":1138:1148   */
+      dup1
+        /* "#utility.yul":1134:1136   */
+      0x40
+        /* "#utility.yul":1127:1149   */
+      mstore
+        /* "#utility.yul":917:1155   */
+      pop
+        /* "#utility.yul":874:1155   */
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":1161:1290   */
+    tag_19:
+        /* "#utility.yul":1195:1201   */
+      0x00
+        /* "#utility.yul":1222:1242   */
+      tag_56
+      tag_11
+      jump	// in
+    tag_56:
+        /* "#utility.yul":1212:1242   */
+      swap1
+      pop
+        /* "#utility.yul":1251:1284   */
+      tag_57
+        /* "#utility.yul":1279:1283   */
+      dup3
+        /* "#utility.yul":1271:1277   */
+      dup3
+        /* "#utility.yul":1251:1284   */
+      tag_18
+      jump	// in
+    tag_57:
+        /* "#utility.yul":1161:1290   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":1296:1604   */
+    tag_20:
+        /* "#utility.yul":1358:1362   */
+      0x00
+        /* "#utility.yul":1448:1466   */
+      0xffffffffffffffff
+        /* "#utility.yul":1440:1446   */
+      dup3
+        /* "#utility.yul":1437:1467   */
+      gt
+        /* "#utility.yul":1434:1490   */
+      iszero
+      tag_59
+      jumpi
+        /* "#utility.yul":1470:1488   */
+      tag_60
+      tag_17
+      jump	// in
+    tag_60:
+        /* "#utility.yul":1434:1490   */
+    tag_59:
+        /* "#utility.yul":1508:1537   */
+      tag_61
+        /* "#utility.yul":1530:1536   */
+      dup3
+        /* "#utility.yul":1508:1537   */
+      tag_16
+      jump	// in
+    tag_61:
+        /* "#utility.yul":1500:1537   */
+      swap1
+      pop
+        /* "#utility.yul":1592:1596   */
+      0x20
+        /* "#utility.yul":1586:1590   */
+      dup2
+        /* "#utility.yul":1582:1597   */
+      add
+        /* "#utility.yul":1574:1597   */
+      swap1
+      pop
+        /* "#utility.yul":1296:1604   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":1610:1758   */
+    tag_21:
+        /* "#utility.yul":1708:1714   */
+      dup3
+        /* "#utility.yul":1703:1706   */
+      dup2
+        /* "#utility.yul":1698:1701   */
+      dup4
+        /* "#utility.yul":1685:1715   */
+      calldatacopy
+        /* "#utility.yul":1749:1750   */
+      0x00
+        /* "#utility.yul":1740:1746   */
+      dup4
+        /* "#utility.yul":1735:1738   */
+      dup4
+        /* "#utility.yul":1731:1747   */
+      add
+        /* "#utility.yul":1724:1751   */
+      mstore
+        /* "#utility.yul":1610:1758   */
+      pop
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":1764:2189   */
+    tag_22:
+        /* "#utility.yul":1842:1847   */
+      0x00
+        /* "#utility.yul":1867:1933   */
+      tag_64
+        /* "#utility.yul":1883:1932   */
+      tag_65
+        /* "#utility.yul":1925:1931   */
+      dup5
+        /* "#utility.yul":1883:1932   */
+      tag_20
+      jump	// in
+    tag_65:
+        /* "#utility.yul":1867:1933   */
+      tag_19
+      jump	// in
+    tag_64:
+        /* "#utility.yul":1858:1933   */
+      swap1
+      pop
+        /* "#utility.yul":1956:1962   */
+      dup3
+        /* "#utility.yul":1949:1954   */
+      dup2
+        /* "#utility.yul":1942:1963   */
+      mstore
+        /* "#utility.yul":1994:1998   */
+      0x20
+        /* "#utility.yul":1987:1992   */
+      dup2
+        /* "#utility.yul":1983:1999   */
+      add
+        /* "#utility.yul":2032:2035   */
+      dup5
+        /* "#utility.yul":2023:2029   */
+      dup5
+        /* "#utility.yul":2018:2021   */
+      dup5
+        /* "#utility.yul":2014:2030   */
+      add
+        /* "#utility.yul":2011:2036   */
+      gt
+        /* "#utility.yul":2008:2120   */
+      iszero
+      tag_66
+      jumpi
+        /* "#utility.yul":2039:2118   */
+      tag_67
+      tag_15
+      jump	// in
+    tag_67:
+        /* "#utility.yul":2008:2120   */
+    tag_66:
+        /* "#utility.yul":2129:2183   */
+      tag_68
+        /* "#utility.yul":2176:2182   */
+      dup5
+        /* "#utility.yul":2171:2174   */
+      dup3
+        /* "#utility.yul":2166:2169   */
+      dup6
+        /* "#utility.yul":2129:2183   */
+      tag_21
+      jump	// in
+    tag_68:
+        /* "#utility.yul":1848:2189   */
+      pop
+        /* "#utility.yul":1764:2189   */
+      swap4
+      swap3
+      pop
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":2209:2549   */
+    tag_23:
+        /* "#utility.yul":2265:2270   */
+      0x00
+        /* "#utility.yul":2314:2317   */
+      dup3
+        /* "#utility.yul":2307:2311   */
+      0x1f
+        /* "#utility.yul":2299:2305   */
+      dup4
+        /* "#utility.yul":2295:2312   */
+      add
+        /* "#utility.yul":2291:2318   */
+      slt
+        /* "#utility.yul":2281:2403   */
+      tag_70
+      jumpi
+        /* "#utility.yul":2322:2401   */
+      tag_71
+      tag_14
+      jump	// in
+    tag_71:
+        /* "#utility.yul":2281:2403   */
+    tag_70:
+        /* "#utility.yul":2439:2445   */
+      dup2
+        /* "#utility.yul":2426:2446   */
+      calldataload
+        /* "#utility.yul":2464:2543   */
+      tag_72
+        /* "#utility.yul":2539:2542   */
+      dup5
+        /* "#utility.yul":2531:2537   */
+      dup3
+        /* "#utility.yul":2524:2528   */
+      0x20
+        /* "#utility.yul":2516:2522   */
+      dup7
+        /* "#utility.yul":2512:2529   */
+      add
+        /* "#utility.yul":2464:2543   */
+      tag_22
+      jump	// in
+    tag_72:
+        /* "#utility.yul":2455:2543   */
+      swap2
+      pop
+        /* "#utility.yul":2271:2549   */
+      pop
+        /* "#utility.yul":2209:2549   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":2555:3064   */
+    tag_6:
+        /* "#utility.yul":2624:2630   */
+      0x00
+        /* "#utility.yul":2673:2675   */
+      0x20
+        /* "#utility.yul":2661:2670   */
+      dup3
+        /* "#utility.yul":2652:2659   */
+      dup5
+        /* "#utility.yul":2648:2671   */
+      sub
+        /* "#utility.yul":2644:2676   */
+      slt
+        /* "#utility.yul":2641:2760   */
+      iszero
+      tag_74
+      jumpi
+        /* "#utility.yul":2679:2758   */
+      tag_75
+      tag_12
+      jump	// in
+    tag_75:
+        /* "#utility.yul":2641:2760   */
+    tag_74:
+        /* "#utility.yul":2827:2828   */
+      0x00
+        /* "#utility.yul":2816:2825   */
+      dup3
+        /* "#utility.yul":2812:2829   */
+      add
+        /* "#utility.yul":2799:2830   */
+      calldataload
+        /* "#utility.yul":2857:2875   */
+      0xffffffffffffffff
+        /* "#utility.yul":2849:2855   */
+      dup2
+        /* "#utility.yul":2846:2876   */
+      gt
+        /* "#utility.yul":2843:2960   */
+      iszero
+      tag_76
+      jumpi
+        /* "#utility.yul":2879:2958   */
+      tag_77
+      tag_13
+      jump	// in
+    tag_77:
+        /* "#utility.yul":2843:2960   */
+    tag_76:
+        /* "#utility.yul":2984:3047   */
+      tag_78
+        /* "#utility.yul":3039:3046   */
+      dup5
+        /* "#utility.yul":3030:3036   */
+      dup3
+        /* "#utility.yul":3019:3028   */
+      dup6
+        /* "#utility.yul":3015:3037   */
+      add
+        /* "#utility.yul":2984:3047   */
+      tag_23
+      jump	// in
+    tag_78:
+        /* "#utility.yul":2974:3047   */
+      swap2
+      pop
+        /* "#utility.yul":2770:3057   */
+      pop
+        /* "#utility.yul":2555:3064   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":3070:3169   */
+    tag_24:
+        /* "#utility.yul":3122:3128   */
+      0x00
+        /* "#utility.yul":3156:3161   */
+      dup2
+        /* "#utility.yul":3150:3162   */
+      mload
+        /* "#utility.yul":3140:3162   */
+      swap1
+      pop
+        /* "#utility.yul":3070:3169   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":3175:3355   */
+    tag_25:
+        /* "#utility.yul":3223:3300   */
+      0x4e487b7100000000000000000000000000000000000000000000000000000000
+        /* "#utility.yul":3220:3221   */
+      0x00
+        /* "#utility.yul":3213:3301   */
+      mstore
+        /* "#utility.yul":3320:3324   */
+      0x22
+        /* "#utility.yul":3317:3318   */
+      0x04
+        /* "#utility.yul":3310:3325   */
+      mstore
+        /* "#utility.yul":3344:3348   */
+      0x24
+        /* "#utility.yul":3341:3342   */
+      0x00
+        /* "#utility.yul":3334:3349   */
+      revert
+        /* "#utility.yul":3361:3681   */
+    tag_26:
+        /* "#utility.yul":3405:3411   */
+      0x00
+        /* "#utility.yul":3442:3443   */
+      0x02
+        /* "#utility.yul":3436:3440   */
+      dup3
+        /* "#utility.yul":3432:3444   */
+      div
+        /* "#utility.yul":3422:3444   */
+      swap1
+      pop
+        /* "#utility.yul":3489:3490   */
+      0x01
+        /* "#utility.yul":3483:3487   */
+      dup3
+        /* "#utility.yul":3479:3491   */
+      and
+        /* "#utility.yul":3510:3528   */
+      dup1
+        /* "#utility.yul":3500:3581   */
+      tag_82
+      jumpi
+        /* "#utility.yul":3566:3570   */
+      0x7f
+        /* "#utility.yul":3558:3564   */
+      dup3
+        /* "#utility.yul":3554:3571   */
+      and
+        /* "#utility.yul":3544:3571   */
+      swap2
+      pop
+        /* "#utility.yul":3500:3581   */
+    tag_82:
+        /* "#utility.yul":3628:3630   */
+      0x20
+        /* "#utility.yul":3620:3626   */
+      dup3
+        /* "#utility.yul":3617:3631   */
+      lt
+        /* "#utility.yul":3597:3615   */
+      dup2
+        /* "#utility.yul":3594:3632   */
+      sub
+        /* "#utility.yul":3591:3675   */
+      tag_83
+      jumpi
+        /* "#utility.yul":3647:3665   */
+      tag_84
+      tag_25
+      jump	// in
+    tag_84:
+        /* "#utility.yul":3591:3675   */
+    tag_83:
+        /* "#utility.yul":3412:3681   */
+      pop
+        /* "#utility.yul":3361:3681   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":3687:3828   */
+    tag_27:
+        /* "#utility.yul":3736:3740   */
+      0x00
+        /* "#utility.yul":3759:3762   */
+      dup2
+        /* "#utility.yul":3751:3762   */
+      swap1
+      pop
+        /* "#utility.yul":3782:3785   */
+      dup2
+        /* "#utility.yul":3779:3780   */
+      0x00
+        /* "#utility.yul":3772:3786   */
+      mstore
+        /* "#utility.yul":3816:3820   */
+      0x20
+        /* "#utility.yul":3813:3814   */
+      0x00
+        /* "#utility.yul":3803:3821   */
+      keccak256
+        /* "#utility.yul":3795:3821   */
+      swap1
+      pop
+        /* "#utility.yul":3687:3828   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":3834:3927   */
+    tag_28:
+        /* "#utility.yul":3871:3877   */
+      0x00
+        /* "#utility.yul":3918:3920   */
+      0x20
+        /* "#utility.yul":3913:3915   */
+      0x1f
+        /* "#utility.yul":3906:3911   */
+      dup4
+        /* "#utility.yul":3902:3916   */
+      add
+        /* "#utility.yul":3898:3921   */
+      div
+        /* "#utility.yul":3888:3921   */
+      swap1
+      pop
+        /* "#utility.yul":3834:3927   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":3933:4040   */
+    tag_29:
+        /* "#utility.yul":3977:3985   */
+      0x00
+        /* "#utility.yul":4027:4032   */
+      dup3
+        /* "#utility.yul":4021:4025   */
+      dup3
+        /* "#utility.yul":4017:4033   */
+      shl
+        /* "#utility.yul":3996:4033   */
+      swap1
+      pop
+        /* "#utility.yul":3933:4040   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":4046:4439   */
+    tag_30:
+        /* "#utility.yul":4115:4121   */
+      0x00
+        /* "#utility.yul":4165:4166   */
+      0x08
+        /* "#utility.yul":4153:4163   */
+      dup4
+        /* "#utility.yul":4149:4167   */
+      mul
+        /* "#utility.yul":4188:4285   */
+      tag_89
+        /* "#utility.yul":4218:4284   */
+      0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        /* "#utility.yul":4207:4216   */
+      dup3
+        /* "#utility.yul":4188:4285   */
+      tag_29
+      jump	// in
+    tag_89:
+        /* "#utility.yul":4306:4345   */
+      tag_90
+        /* "#utility.yul":4336:4344   */
+      dup7
+        /* "#utility.yul":4325:4334   */
+      dup4
+        /* "#utility.yul":4306:4345   */
+      tag_29
+      jump	// in
+    tag_90:
+        /* "#utility.yul":4294:4345   */
+      swap6
+      pop
+        /* "#utility.yul":4378:4382   */
+      dup1
+        /* "#utility.yul":4374:4383   */
+      not
+        /* "#utility.yul":4367:4372   */
+      dup5
+        /* "#utility.yul":4363:4384   */
+      and
+        /* "#utility.yul":4354:4384   */
+      swap4
+      pop
+        /* "#utility.yul":4427:4431   */
+      dup1
+        /* "#utility.yul":4417:4425   */
+      dup7
+        /* "#utility.yul":4413:4432   */
+      and
+        /* "#utility.yul":4406:4411   */
+      dup5
+        /* "#utility.yul":4403:4433   */
+      or
+        /* "#utility.yul":4393:4433   */
+      swap3
+      pop
+        /* "#utility.yul":4122:4439   */
+      pop
+      pop
+        /* "#utility.yul":4046:4439   */
+      swap4
+      swap3
+      pop
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":4445:4522   */
+    tag_31:
+        /* "#utility.yul":4482:4489   */
+      0x00
+        /* "#utility.yul":4511:4516   */
+      dup2
+        /* "#utility.yul":4500:4516   */
+      swap1
+      pop
+        /* "#utility.yul":4445:4522   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":4528:4588   */
+    tag_32:
+        /* "#utility.yul":4556:4559   */
+      0x00
+        /* "#utility.yul":4577:4582   */
+      dup2
+        /* "#utility.yul":4570:4582   */
+      swap1
+      pop
+        /* "#utility.yul":4528:4588   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":4594:4736   */
+    tag_33:
+        /* "#utility.yul":4644:4653   */
+      0x00
+        /* "#utility.yul":4677:4730   */
+      tag_94
+        /* "#utility.yul":4695:4729   */
+      tag_95
+        /* "#utility.yul":4704:4728   */
+      tag_96
+        /* "#utility.yul":4722:4727   */
+      dup5
+        /* "#utility.yul":4704:4728   */
+      tag_31
+      jump	// in
+    tag_96:
+        /* "#utility.yul":4695:4729   */
+      tag_32
+      jump	// in
+    tag_95:
+        /* "#utility.yul":4677:4730   */
+      tag_31
+      jump	// in
+    tag_94:
+        /* "#utility.yul":4664:4730   */
+      swap1
+      pop
+        /* "#utility.yul":4594:4736   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":4742:4817   */
+    tag_34:
+        /* "#utility.yul":4785:4788   */
+      0x00
+        /* "#utility.yul":4806:4811   */
+      dup2
+        /* "#utility.yul":4799:4811   */
+      swap1
+      pop
+        /* "#utility.yul":4742:4817   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":4823:5092   */
+    tag_35:
+        /* "#utility.yul":4933:4972   */
+      tag_99
+        /* "#utility.yul":4964:4971   */
+      dup4
+        /* "#utility.yul":4933:4972   */
+      tag_33
+      jump	// in
+    tag_99:
+        /* "#utility.yul":4994:5085   */
+      tag_100
+        /* "#utility.yul":5043:5084   */
+      tag_101
+        /* "#utility.yul":5067:5083   */
+      dup3
+        /* "#utility.yul":5043:5084   */
+      tag_34
+      jump	// in
+    tag_101:
+        /* "#utility.yul":5035:5041   */
+      dup5
+        /* "#utility.yul":5028:5032   */
+      dup5
+        /* "#utility.yul":5022:5033   */
+      sload
+        /* "#utility.yul":4994:5085   */
+      tag_30
+      jump	// in
+    tag_100:
+        /* "#utility.yul":4988:4992   */
+      dup3
+        /* "#utility.yul":4981:5086   */
+      sstore
+        /* "#utility.yul":4899:5092   */
+      pop
+        /* "#utility.yul":4823:5092   */
+      pop
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":5098:5171   */
+    tag_36:
+        /* "#utility.yul":5143:5146   */
+      0x00
+        /* "#utility.yul":5164:5165   */
+      0x00
+        /* "#utility.yul":5157:5165   */
+      swap1
+      pop
+        /* "#utility.yul":5098:5171   */
+      swap1
+      jump	// out
+        /* "#utility.yul":5177:5366   */
+    tag_37:
+        /* "#utility.yul":5254:5286   */
+      tag_104
+      tag_36
+      jump	// in
+    tag_104:
+        /* "#utility.yul":5295:5360   */
+      tag_105
+        /* "#utility.yul":5353:5359   */
+      dup2
+        /* "#utility.yul":5345:5351   */
+      dup5
+        /* "#utility.yul":5339:5343   */
+      dup5
+        /* "#utility.yul":5295:5360   */
+      tag_35
+      jump	// in
+    tag_105:
+        /* "#utility.yul":5230:5366   */
+      pop
+        /* "#utility.yul":5177:5366   */
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":5372:5558   */
+    tag_38:
+        /* "#utility.yul":5432:5552   */
+    tag_107:
+        /* "#utility.yul":5449:5452   */
+      dup2
+        /* "#utility.yul":5442:5447   */
+      dup2
+        /* "#utility.yul":5439:5453   */
+      lt
+        /* "#utility.yul":5432:5552   */
+      iszero
+      tag_109
+      jumpi
+        /* "#utility.yul":5503:5542   */
+      tag_110
+        /* "#utility.yul":5540:5541   */
+      0x00
+        /* "#utility.yul":5533:5538   */
+      dup3
+        /* "#utility.yul":5503:5542   */
+      tag_37
+      jump	// in
+    tag_110:
+        /* "#utility.yul":5476:5477   */
+      0x01
+        /* "#utility.yul":5469:5474   */
+      dup2
+        /* "#utility.yul":5465:5478   */
+      add
+        /* "#utility.yul":5456:5478   */
+      swap1
+      pop
+        /* "#utility.yul":5432:5552   */
+      jump(tag_107)
+    tag_109:
+        /* "#utility.yul":5372:5558   */
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":5564:6107   */
+    tag_39:
+        /* "#utility.yul":5665:5667   */
+      0x1f
+        /* "#utility.yul":5660:5663   */
+      dup3
+        /* "#utility.yul":5657:5668   */
+      gt
+        /* "#utility.yul":5654:6100   */
+      iszero
+      tag_112
+      jumpi
+        /* "#utility.yul":5699:5737   */
+      tag_113
+        /* "#utility.yul":5731:5736   */
+      dup2
+        /* "#utility.yul":5699:5737   */
+      tag_27
+      jump	// in
+    tag_113:
+        /* "#utility.yul":5783:5812   */
+      tag_114
+        /* "#utility.yul":5801:5811   */
+      dup5
+        /* "#utility.yul":5783:5812   */
+      tag_28
+      jump	// in
+    tag_114:
+        /* "#utility.yul":5773:5781   */
+      dup2
+        /* "#utility.yul":5769:5813   */
+      add
+        /* "#utility.yul":5966:5968   */
+      0x20
+        /* "#utility.yul":5954:5964   */
+      dup6
+        /* "#utility.yul":5951:5969   */
+      lt
+        /* "#utility.yul":5948:5997   */
+      iszero
+      tag_115
+      jumpi
+        /* "#utility.yul":5987:5995   */
+      dup2
+        /* "#utility.yul":5972:5995   */
+      swap1
+      pop
+        /* "#utility.yul":5948:5997   */
+    tag_115:
+        /* "#utility.yul":6010:6090   */
+      tag_116
+        /* "#utility.yul":6066:6088   */
+      tag_117
+        /* "#utility.yul":6084:6087   */
+      dup6
+        /* "#utility.yul":6066:6088   */
+      tag_28
+      jump	// in
+    tag_117:
+        /* "#utility.yul":6056:6064   */
+      dup4
+        /* "#utility.yul":6052:6089   */
+      add
+        /* "#utility.yul":6039:6050   */
+      dup3
+        /* "#utility.yul":6010:6090   */
+      tag_38
+      jump	// in
+    tag_116:
+        /* "#utility.yul":5669:6100   */
+      pop
+      pop
+        /* "#utility.yul":5654:6100   */
+    tag_112:
+        /* "#utility.yul":5564:6107   */
+      pop
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":6113:6230   */
+    tag_40:
+        /* "#utility.yul":6167:6175   */
+      0x00
+        /* "#utility.yul":6217:6222   */
+      dup3
+        /* "#utility.yul":6211:6215   */
+      dup3
+        /* "#utility.yul":6207:6223   */
+      shr
+        /* "#utility.yul":6186:6223   */
+      swap1
+      pop
+        /* "#utility.yul":6113:6230   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":6236:6405   */
+    tag_41:
+        /* "#utility.yul":6280:6286   */
+      0x00
+        /* "#utility.yul":6313:6364   */
+      tag_120
+        /* "#utility.yul":6361:6362   */
+      0x00
+        /* "#utility.yul":6357:6363   */
+      not
+        /* "#utility.yul":6349:6354   */
+      dup5
+        /* "#utility.yul":6346:6347   */
+      0x08
+        /* "#utility.yul":6342:6355   */
+      mul
+        /* "#utility.yul":6313:6364   */
+      tag_40
+      jump	// in
+    tag_120:
+        /* "#utility.yul":6309:6365   */
+      not
+        /* "#utility.yul":6394:6398   */
+      dup1
+        /* "#utility.yul":6388:6392   */
+      dup4
+        /* "#utility.yul":6384:6399   */
+      and
+        /* "#utility.yul":6374:6399   */
+      swap2
+      pop
+        /* "#utility.yul":6287:6405   */
+      pop
+        /* "#utility.yul":6236:6405   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":6410:6705   */
+    tag_42:
+        /* "#utility.yul":6486:6490   */
+      0x00
+        /* "#utility.yul":6632:6661   */
+      tag_122
+        /* "#utility.yul":6657:6660   */
+      dup4
+        /* "#utility.yul":6651:6655   */
+      dup4
+        /* "#utility.yul":6632:6661   */
+      tag_41
+      jump	// in
+    tag_122:
+        /* "#utility.yul":6624:6661   */
+      swap2
+      pop
+        /* "#utility.yul":6694:6697   */
+      dup3
+        /* "#utility.yul":6691:6692   */
+      0x02
+        /* "#utility.yul":6687:6698   */
+      mul
+        /* "#utility.yul":6681:6685   */
+      dup3
+        /* "#utility.yul":6678:6699   */
+      or
+        /* "#utility.yul":6670:6699   */
+      swap1
+      pop
+        /* "#utility.yul":6410:6705   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":6710:8105   */
+    tag_10:
+        /* "#utility.yul":6827:6864   */
+      tag_124
+        /* "#utility.yul":6860:6863   */
+      dup3
+        /* "#utility.yul":6827:6864   */
+      tag_24
+      jump	// in
+    tag_124:
+        /* "#utility.yul":6929:6947   */
+      0xffffffffffffffff
+        /* "#utility.yul":6921:6927   */
+      dup2
+        /* "#utility.yul":6918:6948   */
+      gt
+        /* "#utility.yul":6915:6971   */
+      iszero
+      tag_125
+      jumpi
+        /* "#utility.yul":6951:6969   */
+      tag_126
+      tag_17
+      jump	// in
+    tag_126:
+        /* "#utility.yul":6915:6971   */
+    tag_125:
+        /* "#utility.yul":6995:7033   */
+      tag_127
+        /* "#utility.yul":7027:7031   */
+      dup3
+        /* "#utility.yul":7021:7032   */
+      cload
+        /* "#utility.yul":6995:7033   */
+      tag_26
+      jump	// in
+    tag_127:
+        /* "#utility.yul":7080:7147   */
+      tag_128
+        /* "#utility.yul":7140:7146   */
+      dup3
+        /* "#utility.yul":7132:7138   */
+      dup3
+        /* "#utility.yul":7126:7130   */
+      dup6
+        /* "#utility.yul":7080:7147   */
+      tag_39
+      jump	// in
+    tag_128:
+        /* "#utility.yul":7174:7175   */
+      0x00
+        /* "#utility.yul":7198:7202   */
+      0x20
+        /* "#utility.yul":7185:7202   */
+      swap1
+      pop
+        /* "#utility.yul":7230:7232   */
+      0x1f
+        /* "#utility.yul":7222:7228   */
+      dup4
+        /* "#utility.yul":7219:7233   */
+      gt
+        /* "#utility.yul":7247:7248   */
+      0x01
+        /* "#utility.yul":7242:7860   */
+      dup2
+      eq
+      tag_130
+      jumpi
+        /* "#utility.yul":7904:7905   */
+      0x00
+        /* "#utility.yul":7921:7927   */
+      dup5
+        /* "#utility.yul":7918:7995   */
+      iszero
+      tag_131
+      jumpi
+        /* "#utility.yul":7970:7979   */
+      dup3
+        /* "#utility.yul":7965:7968   */
+      dup8
+        /* "#utility.yul":7961:7980   */
+      add
+        /* "#utility.yul":7955:7981   */
+      mload
+        /* "#utility.yul":7946:7981   */
+      swap1
+      pop
+        /* "#utility.yul":7918:7995   */
+    tag_131:
+        /* "#utility.yul":8021:8088   */
+      tag_132
+        /* "#utility.yul":8081:8087   */
+      dup6
+        /* "#utility.yul":8074:8079   */
+      dup3
+        /* "#utility.yul":8021:8088   */
+      tag_42
+      jump	// in
+    tag_132:
+        /* "#utility.yul":8015:8019   */
+      dup7
+        /* "#utility.yul":8008:8089   */
+      cstore
+        /* "#utility.yul":7877:8099   */
+      pop
+        /* "#utility.yul":7212:8099   */
+      jump(tag_129)
+        /* "#utility.yul":7242:7860   */
+    tag_130:
+        /* "#utility.yul":7294:7298   */
+      0x1f
+        /* "#utility.yul":7290:7299   */
+      not
+        /* "#utility.yul":7282:7288   */
+      dup5
+        /* "#utility.yul":7278:7300   */
+      and
+        /* "#utility.yul":7328:7365   */
+      tag_133
+        /* "#utility.yul":7360:7364   */
+      dup7
+        /* "#utility.yul":7328:7365   */
+      tag_27
+      jump	// in
+    tag_133:
+        /* "#utility.yul":7387:7388   */
+      0x00
+        /* "#utility.yul":7401:7609   */
+    tag_134:
+        /* "#utility.yul":7415:7422   */
+      dup3
+        /* "#utility.yul":7412:7413   */
+      dup2
+        /* "#utility.yul":7409:7423   */
+      lt
+        /* "#utility.yul":7401:7609   */
+      iszero
+      tag_136
+      jumpi
+        /* "#utility.yul":7494:7503   */
+      dup5
+        /* "#utility.yul":7489:7492   */
+      dup10
+        /* "#utility.yul":7485:7504   */
+      add
+        /* "#utility.yul":7479:7505   */
+      mload
+        /* "#utility.yul":7471:7477   */
+      dup3
+        /* "#utility.yul":7464:7506   */
+      sstore
+        /* "#utility.yul":7545:7546   */
+      0x01
+        /* "#utility.yul":7537:7543   */
+      dup3
+        /* "#utility.yul":7533:7547   */
+      add
+        /* "#utility.yul":7523:7547   */
+      swap2
+      pop
+        /* "#utility.yul":7592:7594   */
+      0x20
+        /* "#utility.yul":7581:7590   */
+      dup6
+        /* "#utility.yul":7577:7595   */
+      add
+        /* "#utility.yul":7564:7595   */
+      swap5
+      pop
+        /* "#utility.yul":7438:7442   */
+      0x20
+        /* "#utility.yul":7435:7436   */
+      dup2
+        /* "#utility.yul":7431:7443   */
+      add
+        /* "#utility.yul":7426:7443   */
+      swap1
+      pop
+        /* "#utility.yul":7401:7609   */
+      jump(tag_134)
+    tag_136:
+        /* "#utility.yul":7637:7643   */
+      dup7
+        /* "#utility.yul":7628:7635   */
+      dup4
+        /* "#utility.yul":7625:7644   */
+      lt
+        /* "#utility.yul":7622:7801   */
+      iszero
+      tag_137
+      jumpi
+        /* "#utility.yul":7695:7704   */
+      dup5
+        /* "#utility.yul":7690:7693   */
+      dup10
+        /* "#utility.yul":7686:7705   */
+      add
+        /* "#utility.yul":7680:7706   */
+      mload
+        /* "#utility.yul":7738:7786   */
+      tag_138
+        /* "#utility.yul":7780:7784   */
+      0x1f
+        /* "#utility.yul":7772:7778   */
+      dup10
+        /* "#utility.yul":7768:7785   */
+      and
+        /* "#utility.yul":7757:7766   */
+      dup3
+        /* "#utility.yul":7738:7786   */
+      tag_41
+      jump	// in
+    tag_138:
+        /* "#utility.yul":7730:7736   */
+      dup4
+        /* "#utility.yul":7723:7787   */
+      cstore
+        /* "#utility.yul":7645:7801   */
+      pop
+        /* "#utility.yul":7622:7801   */
+    tag_137:
+        /* "#utility.yul":7847:7848   */
+      0x01
+        /* "#utility.yul":7843:7844   */
+      0x02
+        /* "#utility.yul":7835:7841   */
+      dup9
+        /* "#utility.yul":7831:7845   */
+      mul
+        /* "#utility.yul":7827:7849   */
+      add
+        /* "#utility.yul":7821:7825   */
+      dup9
+        /* "#utility.yul":7814:7850   */
+      cstore
+        /* "#utility.yul":7249:7860   */
+      pop
+      pop
+      pop
+        /* "#utility.yul":7212:8099   */
+    tag_129:
+      pop
+        /* "#utility.yul":6802:8105   */
+      pop
+      pop
+      pop
+        /* "#utility.yul":6710:8105   */
+      pop
+      pop
+      jump	// out
+
+    auxdata: <AUXDATA REMOVED>
+}
