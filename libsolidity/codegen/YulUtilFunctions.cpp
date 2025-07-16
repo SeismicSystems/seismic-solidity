@@ -1458,7 +1458,7 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 			}
 		)")
 		("extractLength", extractByteArrayLengthFunction())
-		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+		("loadOpcode", _type.category() == Type::Category::ShieldedArray ? "cload" : "sload")
 		("decreaseSize", decreaseByteArraySizeFunction(_type))
 		("increaseSize", increaseByteArraySizeFunction(_type))
 		.render();
@@ -1506,7 +1506,7 @@ std::string YulUtilFunctions::decreaseByteArraySizeFunction(ArrayType const& _ty
 
 					<clearStorageRange>(deleteStart, add(arrayDataStart, <div32Ceil>(oldLen)))
 
-					sstore(array, or(mul(2, newLen), 1))
+					<storeOpcode>(array, or(mul(2, newLen), 1))
 				}
 				default {
 					switch gt(oldLen, 31)
@@ -1517,7 +1517,7 @@ std::string YulUtilFunctions::decreaseByteArraySizeFunction(ArrayType const& _ty
 						<transitLongToShort>(array, newLen)
 					}
 					default {
-						sstore(array, <encodeUsedSetLen>(data, newLen))
+						<storeOpcode>(array, <encodeUsedSetLen>(data, newLen))
 					}
 				}
 			})")
@@ -1528,6 +1528,7 @@ std::string YulUtilFunctions::decreaseByteArraySizeFunction(ArrayType const& _ty
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("div32Ceil", divide32CeilFunction())
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
+			("storeOpcode", (_type.category() == Type::Category::ShieldedArray || _type.category() == Type::Category::ShieldedInteger) ? "cstore" : "sstore")
 			.render();
 	});
 }
@@ -1543,7 +1544,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 			switch lt(oldLen, 32)
 			case 0 {
 				// in this case array stays unpacked, so we just set new length
-				sstore(array, add(mul(2, newLen), 1))
+				<storeOpcode>(array, add(mul(2, newLen), 1))
 			}
 			default {
 				switch lt(newLen, 32)
@@ -1551,11 +1552,11 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 					// we need to copy elements to data area as we changed array from packed to unpacked
 					data := and(not(0xff), data)
 					<storeOpcode>(<dataPosition>(array), data)
-					sstore(array, add(mul(2, newLen), 1))
+					<storeOpcode>(array, add(mul(2, newLen), 1))
 				}
 				default {
 					// here array stays packed, we just need to increase length
-					sstore(array, <encodeUsedSetLen>(data, newLen))
+					<storeOpcode>(array, <encodeUsedSetLen>(data, newLen))
 				}
 			}
 		)")
@@ -1563,7 +1564,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 		("maxArrayLength", (u256(1) << 64).str())
 		("dataPosition", arrayDataAreaFunction(_type))
 		("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
+		("storeOpcode", (_type.category() == Type::Category::ShieldedArray || _type.category() == Type::Category::ShieldedInteger) ? "cstore" : "sstore")
 		.render();
 	});
 }
@@ -1584,8 +1585,8 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("storeOpcode", (_type.category() == Type::Category::ShieldedArray || _type.category() == Type::Category::ShieldedInteger) ? "cstore" : "sstore")
+			("loadOpcode", (_type.category() == Type::Category::ShieldedArray || _type.category() == Type::Category::ShieldedInteger) ? "cload" : "sload")
 			.render();
 	});
 }
@@ -1695,7 +1696,7 @@ std::string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("indexAccessNoChecks", longByteArrayStorageIndexAccessNoCheckFunction())
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("loadOpcode", (_type.category() == Type::Category::ShieldedArray || _type.category() == Type::Category::ShieldedInteger) ? "cload" : "sload")
 			("setToZero", storageSetToZeroFunction(*_type.baseType(), VariableDeclaration::Location::Unspecified))
 			.render();
 	});
@@ -2061,6 +2062,7 @@ std::string YulUtilFunctions::copyByteArrayToStorageFunction(ArrayType const& _f
 
 	std::string functionName = "copy_byte_array_to_storage_from_" + _fromType.identifier() + "_to_" + _toType.identifier();
 	return m_functionCollector.createFunction(functionName, [&](){
+		bool isShielded = _toType.category() == Type::Category::ShieldedArray;
 		Whiskers templ(R"(
 			function <functionName>(slot, src<?fromCalldata>, len</fromCalldata>) {
 				<?fromStorage> if eq(slot, src) { leave } </fromStorage>
@@ -2069,7 +2071,7 @@ std::string YulUtilFunctions::copyByteArrayToStorageFunction(ArrayType const& _f
 				// Make sure array length is sane
 				if gt(newLen, 0xffffffffffffffff) { <panic>() }
 
-				let oldLen := <byteArrayLength>(sload(slot))
+				let oldLen := <byteArrayLength>(<loadOpcode>(slot))
 
 				// potentially truncate data
 				<cleanUpEndArray>(slot, oldLen, newLen)
@@ -2092,16 +2094,16 @@ std::string YulUtilFunctions::copyByteArrayToStorageFunction(ArrayType const& _f
 					}
 					if lt(loopEnd, newLen) {
 						let lastValue := <read>(add(src, srcOffset))
-						sstore(dstPtr, <maskBytes>(lastValue, and(newLen, 0x1f)))
+						<storeOpcode>(dstPtr, <maskBytes>(lastValue, and(newLen, 0x1f)))
 					}
-					sstore(slot, add(mul(newLen, 2), 1))
+					<storeOpcode>(slot, add(mul(newLen, 2), 1))
 				}
 				default {
 					let value := 0
 					if newLen {
 						value := <read>(add(src, srcOffset))
 					}
-					sstore(slot, <byteArrayCombineShort>(value, newLen))
+					<storeOpcode>(slot, <byteArrayCombineShort>(value, newLen))
 				}
 			}
 		)");
@@ -2114,6 +2116,8 @@ std::string YulUtilFunctions::copyByteArrayToStorageFunction(ArrayType const& _f
 		templ("arrayLength", arrayLengthFunction(_fromType));
 		templ("panic", panicFunction(PanicCode::ResourceError));
 		templ("byteArrayLength", extractByteArrayLengthFunction());
+		templ("loadOpcode", isShielded ? "cload" : "sload");
+		templ("storeOpcode", isShielded ? "cstore" : "sstore");
 		templ("dstDataLocation", arrayDataAreaFunction(_toType));
 		if (fromStorage)
 			templ("srcDataLocation", arrayDataAreaFunction(_fromType));
