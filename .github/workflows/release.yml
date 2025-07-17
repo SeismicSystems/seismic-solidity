@@ -69,7 +69,7 @@ jobs:
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
           fi
-          cmake --build . --config Release -j 2
+          cmake --build . --config Release -j $(nproc)
 
       # Archive binary
       - name: Archive binary (Linux & macOS)
@@ -81,8 +81,10 @@ jobs:
             tar -czvf ssolc-macos-arm64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "macos-13" ]; then
             tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
-          elif [[ "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
+          elif [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
+            tar -czvf ssolc-${{ matrix.os }}-${{ matrix.arch }}.tar.gz solc/solc
           fi
 
       - name: Archive binary (Windows)
