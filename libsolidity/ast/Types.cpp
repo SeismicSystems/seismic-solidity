@@ -790,7 +790,7 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 
 std::string ShieldedIntegerType::richIdentifier() const
 {
-	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());  // Changed from m_bits
+	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());
 }
 
 std::string ShieldedIntegerType::toString(bool) const
