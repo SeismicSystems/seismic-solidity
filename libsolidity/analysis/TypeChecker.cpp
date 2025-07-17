@@ -1964,7 +1964,7 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 						""
 					);
 			}
-			else if (auto type = dynamic_cast<ContractType const*>(resultType))
+			else if (dynamic_cast<ContractType const*>(resultType))
 			{
 				if (argType->category() == Type::Category::ShieldedAddress)
 				{

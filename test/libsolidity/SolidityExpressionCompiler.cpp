@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE(shielded_unary_operators)
 {
 	char const* sourceCode = R"(
 		contract test {
-			function f(sint y) public { unchecked { !(~- y == 2); } }
+			function f(sint y) public { unchecked { !(~- y == sint(2)); } }
 		}
 	)";
 	bytes code = compileFirstExpression(sourceCode, {}, {{"test", "f", "y"}});
@@ -615,7 +615,7 @@ BOOST_AUTO_TEST_CASE(shielded_unary_inc_dec)
 {
 	char const* sourceCode = R"(
 		contract test {
-			function f(suint a) public returns (suint x) { unchecked { x = --a ^ (a-- ^ (++a ^ a++)); } }
+			function f(suint a) internal returns (suint x) { unchecked { x = --a ^ (a-- ^ (++a ^ a++)); } }
 		}
 	)";
 	bytes code = compileFirstExpression(sourceCode, {}, {{"test", "f", "a"}, {"test", "f", "x"}});
