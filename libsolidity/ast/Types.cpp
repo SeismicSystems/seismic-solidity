@@ -571,10 +571,10 @@ MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 
 std::string ShieldedAddressType::richIdentifier() const
 {
-    if (stateMutability() == StateMutability::Payable)
-        return "t_saddress_payable";
-    else
-        return "t_saddress";
+	if (stateMutability() == StateMutability::Payable)
+		return "t_saddress_payable";
+	else
+		return "t_saddress";
 }
 
 std::string ShieldedAddressType::toString(bool) const
@@ -587,7 +587,7 @@ std::string ShieldedAddressType::toString(bool) const
 
 std::string ShieldedAddressType::canonicalName() const
 {
-    return "saddress";
+	return "saddress";
 }
 
 namespace
