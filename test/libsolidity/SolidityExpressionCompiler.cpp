@@ -137,7 +137,6 @@ bytes compileFirstExpression(
 	DeclarationTypeChecker declarationTypeChecker(errorReporter, solidity::test::CommonOptions::get().evmVersion());
 	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
 		BOOST_REQUIRE(declarationTypeChecker.check(*node));
-		
 	TypeChecker typeChecker(
 		solidity::test::CommonOptions::get().evmVersion(),
 		solidity::test::CommonOptions::get().eofVersion(),
