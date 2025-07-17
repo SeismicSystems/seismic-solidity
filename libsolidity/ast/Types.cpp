@@ -795,25 +795,25 @@ std::string ShieldedIntegerType::richIdentifier() const
 
 std::string ShieldedIntegerType::toString(bool) const
 {
-    std::string prefix = isSigned() ? "sint" : "suint";
-    return prefix + util::toString(numBits());  // Changed from m_bits
+	std::string prefix = isSigned() ? "sint" : "suint";
+	return prefix + util::toString(numBits());
 }
 
 BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 {
-    if (_convertTo.category() == Category::ShieldedInteger)
-    {
-        IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
-        // disallowing unsigned to signed conversion of different bits
-        if (isSigned() != convertTo.isSigned())  // Changed from m_modifier
-            return false;
-        else if (convertTo.numBits() < numBits())  // Changed from m_bits
-            return false;
+	if (_convertTo.category() == Category::ShieldedInteger)
+	{
+		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
+		// disallowing unsigned to signed conversion of different bits
+		if (isSigned() != convertTo.isSigned())
+			return false;
+		else if (convertTo.numBits() < numBits())
+			return false;
         else
-            return true;
-    }
+			return true;
+	}
     else
-        return false;
+		return false;
 }
 
 BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
