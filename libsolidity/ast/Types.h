@@ -563,31 +563,30 @@ private:
  class ShieldedIntegerType: public IntegerType
  {
  public:
-	 explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier=Modifier::Unsigned): 
-		 IntegerType(_bits, _modifier)
-	 {
-		 solAssert(
-			 _bits > 0 && _bits <= 256 && _bits % 8 == 0,
-			 "Invalid bit number for shielded integer type: " + util::toString(_bits)
-		 );
-	 }
- 
-	 virtual unsigned storageBytes() const override { return 32; }
-	 bool isShielded() const override { return true; }
- 
-	 virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
-	 virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
-	 Category category() const override { return Category::ShieldedInteger; }
- 
-	 std::string richIdentifier() const override;
-	 std::string toString(bool _withoutDataLocation) const override;
-	 
-	 // Use the base class public methods instead of private members:
-	 unsigned numBits() const override { return IntegerType::numBits(); }
-	 bool isSigned() const override { return IntegerType::isSigned(); }
- 
-	 Type const* encodingType() const override { return this; }
-	 TypeResult interfaceType(bool) const override { return this; }
+	explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier=Modifier::Unsigned): IntegerType(_bits, _modifier)
+	{
+		solAssert(
+			_bits > 0 && _bits <= 256 && _bits % 8 == 0,
+			"Invalid bit number for shielded integer type: " + util::toString(_bits)
+		);
+	}
+
+	virtual unsigned storageBytes() const override { return 32; }
+	bool isShielded() const override { return true; }
+
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	Category category() const override { return Category::ShieldedInteger; }
+
+	std::string richIdentifier() const override;
+	std::string toString(bool _withoutDataLocation) const override;
+
+	// Use the base class public methods instead of private members:
+	unsigned numBits() const override { return IntegerType::numBits(); }
+	bool isSigned() const override { return IntegerType::isSigned(); }
+
+	Type const* encodingType() const override { return this; }
+	TypeResult interfaceType(bool) const override { return this; }
 };
 
 /**

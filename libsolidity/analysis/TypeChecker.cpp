@@ -1968,12 +1968,12 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 			{
 				if (argType->category() == Type::Category::ShieldedAddress)
 				{
-					m_errorReporter.typeError(
-						7399_error,
-						_functionCall.location(),
-						ssl,
-						"Instantiating a contract with a saddress is not yet supported"
-					);
+				m_errorReporter.typeError(
+					7399_error,
+					_functionCall.location(),
+					ssl,
+					"Instantiating a contract with a saddress is not yet supported"
+				);
 				}
 			}
 		}
