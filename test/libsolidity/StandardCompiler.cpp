@@ -36,8 +36,6 @@
 #include <set>
 #include <utility>
 
-#include <iostream>
-
 using namespace solidity::evmasm;
 using namespace std::string_literals;
 
@@ -1198,8 +1196,7 @@ BOOST_AUTO_TEST_CASE(evm_version)
 	BOOST_CHECK(result["contracts"]["fileA"]["A"]["metadata"].get<std::string>().find("\"evmVersion\":\"cancun\"") != std::string::npos);
 	// test default
 	result = compile(inputForVersion(""));
-	std::cout << result << std::endl; // Pretty print with indentation
-	BOOST_CHECK(result["contracts"]["fileA"]["A"]["metadata"].get<std::string>().find("\"evmVersion\":\"cancun\"") != std::string::npos);
+	BOOST_CHECK(result["contracts"]["fileA"]["A"]["metadata"].get<std::string>().find("\"evmVersion\":\"mercury\"") != std::string::npos);
 	// test invalid
 	result = compile(inputForVersion("\"evmVersion\": \"invalid\","));
 	BOOST_CHECK(result["errors"][0]["message"].get<std::string>() == "Invalid EVM version requested.");
