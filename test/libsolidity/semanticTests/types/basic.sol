@@ -3,6 +3,6 @@ contract C {
 
         return true;
     }
-
+}
 // ----
 // basic() -> true
