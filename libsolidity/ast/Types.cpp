@@ -579,10 +579,10 @@ std::string ShieldedAddressType::richIdentifier() const
 
 std::string ShieldedAddressType::toString(bool) const
 {
-    if (stateMutability() == StateMutability::Payable)
-        return "saddress payable";
-    else
-        return "saddress";
+	if (stateMutability() == StateMutability::Payable)
+		return "saddress payable";
+	else
+		return "saddress";
 }
 
 std::string ShieldedAddressType::canonicalName() const
@@ -790,7 +790,7 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 
 std::string ShieldedIntegerType::richIdentifier() const
 {
-    return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());  // Changed from m_bits
+	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());  // Changed from m_bits
 }
 
 std::string ShieldedIntegerType::toString(bool) const
@@ -809,10 +809,10 @@ BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo
 			return false;
 		else if (convertTo.numBits() < numBits())
 			return false;
-        else
+		else
 			return true;
 	}
-    else
+	else
 		return false;
 }
 
