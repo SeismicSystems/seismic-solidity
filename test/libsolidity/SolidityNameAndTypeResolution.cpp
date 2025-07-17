@@ -163,8 +163,8 @@ BOOST_AUTO_TEST_CASE(function_canonical_signature_type_aliases_shielded)
 {
 	char const* text = R"(
 		contract Test {
-			function boo(suint, bytes32, address) public returns (suint ret) {
-				ret = 5;
+			function boo(suint, bytes32, address) internal returns (suint ret) {
+				ret = suint(5);
 			}
 		}
 	)";
@@ -215,8 +215,8 @@ BOOST_AUTO_TEST_CASE(function_external_types_shielded)
 			uint a;
 		}
 		contract Test {
-			function boo(suint, bool, bytes8, bool[2] calldata, suint[] calldata, C, address[] calldata) external returns (suint ret) {
-				ret = 5;
+			function boo(suint, bool, bytes8, bool[2] calldata, suint[] calldata, C, address[] calldata) internal returns (suint ret) {
+				ret = suint(5);
 			}
 		}
 	)";

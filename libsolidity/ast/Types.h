@@ -493,8 +493,8 @@ private:
 class ShieldedAddressType: public AddressType
 {
 public:
-	explicit ShieldedAddressType(StateMutability _stateMutability): AddressType(_stateMutability), m_stateMutability(_stateMutability) {
-		solAssert(m_stateMutability == StateMutability::Payable || m_stateMutability == StateMutability::NonPayable, "");
+	explicit ShieldedAddressType(StateMutability _stateMutability): AddressType(_stateMutability) {
+		solAssert(_stateMutability == StateMutability::Payable || _stateMutability == StateMutability::NonPayable, "");
 	}
 
 	Category category() const override { return Category::ShieldedAddress; }
@@ -506,10 +506,7 @@ public:
 	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 
-	StateMutability stateMutability(void) const { return m_stateMutability; }
-
-private:
-	StateMutability m_stateMutability;
+	StateMutability stateMutability(void) const { return AddressType::stateMutability(); }
 };
 
 /**
@@ -564,15 +561,15 @@ private:
 /**
  * Any kind of shielded integer type (signed, unsigned).
  */
-class ShieldedIntegerType: public IntegerType
-{
-public:
-	explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier=Modifier::Unsigned): IntegerType(_bits, _modifier), m_bits(_bits), m_modifier(_modifier)
+ class ShieldedIntegerType: public IntegerType
+ {
+ public:
+	explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier=Modifier::Unsigned): IntegerType(_bits, _modifier)
 	{
 		solAssert(
-			m_bits > 0 && m_bits <= 256 && m_bits % 8 == 0,
-			"Invalid bit number for shielded integer type: " + util::toString(m_bits)
-			);
+			_bits > 0 && _bits <= 256 && _bits % 8 == 0,
+			"Invalid bit number for shielded integer type: " + util::toString(_bits)
+		);
 	}
 
 	virtual unsigned storageBytes() const override { return 32; }
@@ -583,18 +580,14 @@ public:
 	Category category() const override { return Category::ShieldedInteger; }
 
 	std::string richIdentifier() const override;
-
 	std::string toString(bool _withoutDataLocation) const override;
-	unsigned numBits() const override { return m_bits; }
 
-	bool isSigned() const override { return m_modifier == Modifier::Signed; }
+	// Use the base class public methods instead of private members:
+	unsigned numBits() const override { return IntegerType::numBits(); }
+	bool isSigned() const override { return IntegerType::isSigned(); }
 
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
-
-private:
-	unsigned const m_bits;
-	Modifier const m_modifier;
 };
 
 /**
