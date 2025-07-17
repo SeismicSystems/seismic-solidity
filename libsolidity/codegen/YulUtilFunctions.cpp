@@ -4034,6 +4034,22 @@ std::string YulUtilFunctions::cleanupFunction(Type const& _type)
 			}
 			break;
 		}
+		case Type::Category::ShieldedFixedBytes:
+		{
+			ShieldedFixedBytesType const& type = dynamic_cast<ShieldedFixedBytesType const&>(_type);
+			if (type.numBytes() == 32)
+				templ("body", "cleaned := value");
+			else if (type.numBytes() == 0)
+				// This is disallowed in the type system.
+				solAssert(false, "");
+			else
+			{
+				size_t numBits = type.numBytes() * 8;
+				u256 mask = ((u256(1) << numBits) - 1) << (256 - numBits);
+				templ("body", "cleaned := and(value, " + toCompactHexWithPrefix(mask) + ")");
+			}
+			break;
+		}
 		case Type::Category::Contract:
 		{
 			AddressType addressType(dynamic_cast<ContractType const&>(_type).isPayable() ?

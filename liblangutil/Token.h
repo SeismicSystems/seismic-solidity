@@ -211,6 +211,7 @@ namespace solidity::langutil
 	K(SUInt, "suint", 0)											   \
 	K(SInt, "sint", 0)                                                 \
 	K(Bytes, "bytes", 0)                                               \
+	K(SBytes, "sbytes", 0)                                             \
 	K(String, "string", 0)                                             \
 	K(Address, "address", 0)                                           \
 	K(SAddress, "saddress", 0)                                  \
@@ -223,6 +224,7 @@ namespace solidity::langutil
 	T(SIntM, "sintM", 0)                                               \
 	T(SUIntM, "suintM", 0)                                             \
 	T(BytesM, "bytesM", 0)                                             \
+	T(SBytesM, "sbytesM", 0)                                           \
 	T(FixedMxN, "fixedMxN", 0)                                         \
 	T(UFixedMxN, "ufixedMxN", 0)                                       \
 	T(TypesEnd, nullptr, 0) /* used as type enum end marker */         \

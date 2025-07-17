@@ -835,8 +835,45 @@ void CompilerUtils::convertType(
 		else
 		{
 			// clear for conversion to longer bytes
-			solAssert(targetTypeCategory == Type::Category::FixedBytes, "Invalid type conversion requested.");
-			FixedBytesType const& targetType = dynamic_cast<FixedBytesType const&>(_targetType);
+			solAssert(targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes, "Invalid type conversion requested.");
+			FixedBytesType const& targetType = (targetTypeCategory == Type::Category::FixedBytes) ?
+				dynamic_cast<FixedBytesType const&>(_targetType) :
+				dynamic_cast<ShieldedFixedBytesType const&>(_targetType);
+			if (typeOnStack.numBytes() == 0 || targetType.numBytes() == 0)
+				m_context << Instruction::POP << u256(0);
+			else if (targetType.numBytes() > typeOnStack.numBytes() || _cleanupNeeded)
+			{
+				unsigned bytes = std::min(typeOnStack.numBytes(), targetType.numBytes());
+				m_context << ((u256(1) << (256 - bytes * 8)) - 1);
+				m_context << Instruction::NOT << Instruction::AND;
+			}
+		}
+		break;
+	}
+	case Type::Category::ShieldedFixedBytes:
+	{
+		ShieldedFixedBytesType const& typeOnStack = dynamic_cast<ShieldedFixedBytesType const&>(_typeOnStack);
+		if (targetTypeCategory == Type::Category::Integer || targetTypeCategory==Type::Category::ShieldedInteger)
+		{
+			// conversion from bytes to integer. no need to clean the high bit
+			// only to shift right because of opposite alignment
+			IntegerType const& targetIntegerType = dynamic_cast<IntegerType const&>(_targetType);
+			rightShiftNumberOnStack(256 - typeOnStack.numBytes() * 8);
+			if (targetIntegerType.numBits() < typeOnStack.numBytes() * 8)
+				convertType(IntegerType(typeOnStack.numBytes() * 8), _targetType, _cleanupNeeded);
+		}
+		else if (targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress)
+		{
+			solAssert(typeOnStack.numBytes() * 8 == 160);
+			rightShiftNumberOnStack(256 - 160);
+		}
+		else
+		{
+			// clear for conversion to longer bytes
+			solAssert(targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes, "Invalid type conversion requested.");
+			FixedBytesType const& targetType = (targetTypeCategory == Type::Category::FixedBytes) ?
+				dynamic_cast<FixedBytesType const&>(_targetType) :
+				dynamic_cast<ShieldedFixedBytesType const&>(_targetType);
 			if (typeOnStack.numBytes() == 0 || targetType.numBytes() == 0)
 				m_context << Instruction::POP << u256(0);
 			else if (targetType.numBytes() > typeOnStack.numBytes() || _cleanupNeeded)
@@ -870,7 +907,7 @@ void CompilerUtils::convertType(
 	case Type::Category::Contract:
 	case Type::Category::RationalNumber:
 	case Type::Category::ShieldedInteger:
-		if (targetTypeCategory == Type::Category::FixedBytes)
+		if (targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes)
 		{
 			solAssert(
 				(stackTypeCategory == Type::Category::Address ||
@@ -882,7 +919,9 @@ void CompilerUtils::convertType(
 			);
 			// conversion from bytes to string. no need to clean the high bit
 			// only to shift left because of opposite alignment
-			FixedBytesType const& targetBytesType = dynamic_cast<FixedBytesType const&>(_targetType);
+			FixedBytesType const& targetBytesType = (targetTypeCategory == Type::Category::FixedBytes) ?
+				dynamic_cast<FixedBytesType const&>(_targetType) :
+				dynamic_cast<ShieldedFixedBytesType const&>(_targetType);
 			if (auto typeOnStack = dynamic_cast<IntegerType const*>(&_typeOnStack))
 			{
 				if (targetBytesType.numBytes() * 8 > typeOnStack->numBits())
@@ -926,7 +965,8 @@ void CompilerUtils::convertType(
 				targetTypeCategory == Type::Category::Integer ||
 				targetTypeCategory == Type::Category::Contract ||
 				targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress ||
-				targetTypeCategory == Type::Category::ShieldedInteger,
+				targetTypeCategory == Type::Category::ShieldedInteger ||
+				targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes,
 				""
 			);
 			IntegerType addressType(160);

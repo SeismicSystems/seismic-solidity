@@ -220,6 +220,41 @@ std::array<std::unique_ptr<ShieldedIntegerType>, 32> const TypeProvider::m_suint
 	{std::make_unique<ShieldedIntegerType>(8 * 32, ShieldedIntegerType::Modifier::Unsigned)}
 }};
 
+std::array<std::unique_ptr<ShieldedFixedBytesType>, 32> const TypeProvider::m_sbytesM{{
+	{std::make_unique<ShieldedFixedBytesType>(1)},
+	{std::make_unique<ShieldedFixedBytesType>(2)},
+	{std::make_unique<ShieldedFixedBytesType>(3)},
+	{std::make_unique<ShieldedFixedBytesType>(4)},
+	{std::make_unique<ShieldedFixedBytesType>(5)},
+	{std::make_unique<ShieldedFixedBytesType>(6)},
+	{std::make_unique<ShieldedFixedBytesType>(7)},
+	{std::make_unique<ShieldedFixedBytesType>(8)},
+	{std::make_unique<ShieldedFixedBytesType>(9)},
+	{std::make_unique<ShieldedFixedBytesType>(10)},
+	{std::make_unique<ShieldedFixedBytesType>(11)},
+	{std::make_unique<ShieldedFixedBytesType>(12)},
+	{std::make_unique<ShieldedFixedBytesType>(13)},
+	{std::make_unique<ShieldedFixedBytesType>(14)},
+	{std::make_unique<ShieldedFixedBytesType>(15)},
+	{std::make_unique<ShieldedFixedBytesType>(16)},
+	{std::make_unique<ShieldedFixedBytesType>(17)},
+	{std::make_unique<ShieldedFixedBytesType>(18)},
+	{std::make_unique<ShieldedFixedBytesType>(19)},
+	{std::make_unique<ShieldedFixedBytesType>(20)},
+	{std::make_unique<ShieldedFixedBytesType>(21)},
+	{std::make_unique<ShieldedFixedBytesType>(22)},
+	{std::make_unique<ShieldedFixedBytesType>(23)},
+	{std::make_unique<ShieldedFixedBytesType>(24)},
+	{std::make_unique<ShieldedFixedBytesType>(25)},
+	{std::make_unique<ShieldedFixedBytesType>(26)},
+	{std::make_unique<ShieldedFixedBytesType>(27)},
+	{std::make_unique<ShieldedFixedBytesType>(28)},
+	{std::make_unique<ShieldedFixedBytesType>(29)},
+	{std::make_unique<ShieldedFixedBytesType>(30)},
+	{std::make_unique<ShieldedFixedBytesType>(31)},
+	{std::make_unique<ShieldedFixedBytesType>(32)}
+}};
+
 std::array<std::unique_ptr<MagicType>, 5> const TypeProvider::m_magics{{
 	{std::make_unique<MagicType>(MagicType::Kind::Block)},
 	{std::make_unique<MagicType>(MagicType::Kind::Message)},
@@ -268,6 +303,7 @@ void TypeProvider::reset()
 	clearCaches(instance().m_suintM);
 	clearCaches(instance().m_sintM);
 	clearCaches(instance().m_bytesM);
+	clearCaches(instance().m_sbytesM);
 	clearCaches(instance().m_magics);
 	instance().m_generalTypes.clear();
 	instance().m_stringLiteralTypes.clear();
@@ -302,6 +338,8 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		return shieldedInteger(m, ShieldedIntegerType::Modifier::Unsigned);
 	case Token::SIntM:
 		return shieldedInteger(m, ShieldedIntegerType::Modifier::Signed);
+	case Token::SBytesM:
+		return shieldedFixedBytes(m);
 	case Token::Byte:
 		return byte();
 	case Token::BytesM:
