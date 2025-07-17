@@ -571,7 +571,7 @@ MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 
 std::string ShieldedAddressType::richIdentifier() const
 {
-	if (m_stateMutability == StateMutability::Payable)
+	if (stateMutability() == StateMutability::Payable)
 		return "t_saddress_payable";
 	else
 		return "t_saddress";
@@ -579,7 +579,7 @@ std::string ShieldedAddressType::richIdentifier() const
 
 std::string ShieldedAddressType::toString(bool) const
 {
-	if (m_stateMutability == StateMutability::Payable)
+	if (stateMutability() == StateMutability::Payable)
 		return "saddress payable";
 	else
 		return "saddress";
@@ -589,7 +589,6 @@ std::string ShieldedAddressType::canonicalName() const
 {
 	return "saddress";
 }
-
 
 namespace
 {
@@ -797,7 +796,7 @@ std::string ShieldedIntegerType::richIdentifier() const
 std::string ShieldedIntegerType::toString(bool) const
 {
 	std::string prefix = isSigned() ? "sint" : "suint";
-	return prefix + util::toString(m_bits);
+	return prefix + util::toString(numBits());
 }
 
 BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
@@ -808,7 +807,7 @@ BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo
 		// disallowing unsigned to signed conversion of different bits
 		if (isSigned() != convertTo.isSigned())
 			return false;
-		else if (convertTo.numBits() < m_bits)
+		else if (convertTo.numBits() < numBits())
 			return false;
 		else
 			return true;
