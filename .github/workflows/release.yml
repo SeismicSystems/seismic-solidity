@@ -1,22 +1,18 @@
-name: Build and Release
+name: Release
 
 on:
   push:
     branches:
       - seismic
-  pull_request:
-    branches:
-      - seismic
 
 jobs:
-  build-and-release:
-    name: Build and Release Binaries
+  build:
+    name: Build and Archive Binaries
     runs-on: ${{ matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest, macos-13]
-        os: [ubuntu-22.04]
+        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest, macos-13]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
@@ -35,7 +31,8 @@ jobs:
       - name: Set up dependencies (Linux & macOS)
         if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
-        # NOTE: on ubuntu-22.04, these dependencies are already installed
+        # NOTE: on the self-runner machine (ubuntu-22.04),
+        #       these dependencies are already installed
         run: |
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt-get update
