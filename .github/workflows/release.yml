@@ -66,12 +66,12 @@ jobs:
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
-            cmake --build . --config Release -j 2
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DUSE_Z3=OFF -DPEDANTIC=OFF
-            cmake --build . --config Release -j $(nproc)
           fi
+          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]] && echo 2 || nproc)
+          cmake --build . --config Release -j $JOBS
 
       # Archive binary
       - name: Archive binary (Linux & macOS)
