@@ -6,7 +6,7 @@ on:
       - seismic
 
 jobs:
-  build:
+  build-release:
     name: Build and Archive Binaries
     runs-on: ${{ matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' || matrix.os }}
     strategy:
@@ -102,9 +102,9 @@ jobs:
           name: binaries-${{ matrix.os }}-${{ matrix.arch }}
           path: build/*ssolc-*
 
-  release:
+  publish-release:
     name: Create Release
-    needs: build-and-release
+    needs: build-release
     runs-on: ubuntu-latest
     permissions:
       contents: write
