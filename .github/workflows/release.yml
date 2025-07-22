@@ -1,4 +1,4 @@
-name: Build and Release
+name: Release
 
 on:
   push:
@@ -6,14 +6,13 @@ on:
       - seismic
 
 jobs:
-  build-and-release:
-    name: Build and Release Binaries
-    runs-on: ${{ matrix.os }}
+  build-release:
+    name: Build and Archive Binaries
+    runs-on: ${{ matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest, macos-13]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
@@ -32,8 +31,10 @@ jobs:
       - name: Set up dependencies (Linux & macOS)
         if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
+        # NOTE: on the self-runner machine (ubuntu-22.04),
+        #       these dependencies are already installed
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt-get update
             sudo apt-get install -y build-essential python3 python3-pip \
               zlib1g-dev libboost-all-dev libssl-dev ccache
@@ -101,9 +102,9 @@ jobs:
           name: binaries-${{ matrix.os }}-${{ matrix.arch }}
           path: build/*ssolc-*
 
-  release:
+  publish-release:
     name: Create Release
-    needs: build-and-release
+    needs: build-release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -149,7 +150,9 @@ jobs:
             --notes "Automated release for commit ${{ github.sha }}."
 
           # Then upload each asset separately
+          shopt -s nullglob
           for file in *.tar.gz *.zip; do
             echo "Uploading $file..."
             gh release upload "$SHORT_SHA" "$file" --clobber
           done
+          shopt -u nullglob
