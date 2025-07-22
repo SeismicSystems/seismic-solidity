@@ -59,18 +59,20 @@ jobs:
       - name: Build Seismic Solidity on Linux & macOS
         if: ${{ matrix.os != 'windows-latest' }}
         shell: bash
+        # For some reason, -j 2 is much faster than -j $(nproc) on macosx
         run: |
           mkdir build
           cd build
           if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF
+              -DPEDANTIC=OFF
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
-              -DUSE_Z3=OFF -DPEDANTIC=OFF
+              -DPEDANTIC=OFF
           fi
-          cmake --build . --config Release -j $(nproc)
+          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]] && echo 2 || nproc)
+          cmake --build . --config Release -j $JOBS
 
       # Archive binary
       - name: Archive binary (Linux & macOS)
