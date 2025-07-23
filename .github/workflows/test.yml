@@ -68,4 +68,4 @@ jobs:
           echo "SEISMIC_REVME_EXEC=$SEISMIC_REVM_PATH/target/debug/revme" >> $GITHUB_ENV
       - name: Run semantic tests
         run: |
-          RUST_BACKTRACE=1 cargo run -p revme -- semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR"
+          RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR"
