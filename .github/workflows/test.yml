@@ -22,9 +22,6 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - name: Set semantic tests path
-        run: |
-          echo "SEMANTIC_TESTS_DIR=$(pwd)/test/libsolidity/semanticTests" >> $GITHUB_ENV
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -67,6 +64,9 @@ jobs:
           cd $SEISMIC_REVM_PATH
           cargo build -p revme
           echo "SEISMIC_REVME_EXEC=$SEISMIC_REVM_PATH/target/debug/revme" >> $GITHUB_ENV
+      - name: Set semantic tests path
+        run: |
+          echo "SEMANTIC_TESTS_DIR=$(pwd)/test/libsolidity/semanticTests" >> $GITHUB_ENV
       - name: Run semantic tests
         run: |
           RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR"
