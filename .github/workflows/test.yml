@@ -17,11 +17,15 @@ env:
   CARGO_NET_GIT_FETCH_WITH_CLI: true
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "semantic-test-cache-${{ runner.os }}"
       - name: Restore ccache
         uses: actions/cache@v4
         with:
@@ -46,26 +50,8 @@ jobs:
                  -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                  -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build . --config Debug -j $(nproc)
-
-  soltest:
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
       - name: Run soltest
         run: ./scripts/soltest.sh -p
-
-  semantic-tests:
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "semantic-test-cache-${{ runner.os }}"
       - name: Clone seismic-revm repo
         run: |
           set -euo pipefail
