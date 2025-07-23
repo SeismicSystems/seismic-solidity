@@ -18,7 +18,7 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: xl-github-runner
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
