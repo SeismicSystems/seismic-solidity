@@ -40,6 +40,7 @@ jobs:
           echo "SEISMIC_REVME_EXEC=$SEISMIC_REVM_PATH/target/debug/revme" >> $GITHUB_ENV 
       - name: Install & configure ccache
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y ccache
           ccache --set-config=cache_dir=$HOME/.ccache
@@ -60,6 +61,7 @@ jobs:
 
       - name: Build ssolc
         run: |
+          set -euo pipefail
           mkdir -p build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Debug \
@@ -71,6 +73,7 @@ jobs:
         run: ./scripts/soltest.sh
       - name: Run semantic tests
         run: |
+          set -euo pipefail
           SSOLC_EXEC="$GITHUB_WORKSPACE/build/solc/solc"
           [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
           [ -x "$SEISMIC_REVME_EXEC" ] || { echo "Error: revme executable not found at $SEISMIC_REVME_EXEC"; exit 1; }
