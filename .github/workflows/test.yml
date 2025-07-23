@@ -32,7 +32,7 @@ jobs:
           echo "seismic-revm cloned to: /tmp/seismic-revm"
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "semantic-test-cache-${{ runner.os }}"
+          shared-key: "semantic-test-cache"
           workspaces: /tmp/seismic-revm
       - name: Build seismic-revm
         run: |
@@ -52,8 +52,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: ccache-${{ runner.os }}-
+          key: ccache-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: ccache-
 
       - name: Install dependencies
         run: |
