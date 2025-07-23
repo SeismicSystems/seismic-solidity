@@ -24,11 +24,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       # TODO: move lower after works
-      - name: Checkout seismic-revm
-        uses: actions/checkout@v4
-        with:
-          repository: SeismicSystems/seismic-revm
-          path: /tmp/seismic-revm
+      - name: Clone seismic-revm repo
+        run: |
+          set -euo pipefail
+          git clone https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
+          echo "SEISMIC_REVM_PATH=/tmp/seismic-revm" >> $GITHUB_ENV
+          echo "seismic-revm cloned to: /tmp/seismic-revm"
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "semantic-test-cache-${{ runner.os }}"
@@ -50,13 +51,15 @@ jobs:
       - name: Restore ccache
         uses: actions/cache@v4
         with:
-            path: ~/.ccache
-            key: ccache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
-            restore-keys: ccache-${{ runner.os }}-
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: ccache-${{ runner.os }}-
+
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
+
       - name: Build ssolc
         run: |
           mkdir -p build
