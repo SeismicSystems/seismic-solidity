@@ -1,0 +1,66 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - seismic
+  pull_request:
+    branches:
+      - seismic
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set semantic tests path
+        run: |
+          echo "SEMANTIC_TESTS_DIR=$(pwd)/test/libsolidity/semanticTests" >> $GITHUB_ENV
+      - name: Build ssolc
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DPEDANTIC=OFF
+          cmake --build . --config Release -j $(nproc)
+          echo "SSOLC_EXEC=$(pwd)/solc/solc" >> $GITHUB_ENV
+
+  soltest:
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 60
+    steps:
+      - name: Run soltest
+        run: ./scripts/soltest.sh -p
+
+  semantic-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 60
+    steps:
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "semantic-test-cache"
+      - name: Clone seismic-revm repo
+        run: |
+          TEMP_DIR=$(mktemp -d)
+          git clone https://github.com/SeismicSystems/seismic-revm.git "$TEMP_DIR/seismic-revm"
+          echo "SEISMIC_REVM_PATH=$TEMP_DIR/seismic-revm" >> $GITHUB_ENV
+          echo "seismic-revm cloned to: $TEMP_DIR/seismic-revm"
+      - name: Build seismic-revm
+        run: |
+          cd $SEISMIC_REVM_PATH
+          cargo build -p revme
+          echo "SEISMIC_REVME_EXEC=$SEISMIC_REVM_PATH/target/debug/revme" >> $GITHUB_ENV
+      - name: Run semantic tests
+        run: |
+          RUST_BACKTRACE=1 cargo run -p revme -- semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR"
