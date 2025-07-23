@@ -26,7 +26,6 @@ jobs:
       # TODO: move lower after works
       - name: Clone seismic-revm repo
         run: |
-          set -euo pipefail
           git clone https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
           echo "SEISMIC_REVM_PATH=/tmp/seismic-revm" >> $GITHUB_ENV
           echo "seismic-revm cloned to: /tmp/seismic-revm"
@@ -36,7 +35,6 @@ jobs:
           workspaces: /tmp/seismic-revm
       - name: Build seismic-revm
         run: |
-          set -euo pipefail
           cd $SEISMIC_REVM_PATH
           cargo build -p revme
           echo "SEISMIC_REVME_EXEC=$SEISMIC_REVM_PATH/target/debug/revme" >> $GITHUB_ENV 
@@ -73,7 +71,6 @@ jobs:
         run: ./scripts/soltest.sh
       - name: Run semantic tests
         run: |
-          set -euo pipefail
           SSOLC_EXEC="$GITHUB_WORKSPACE/build/solc/solc"
           [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
           SEMANTIC_TESTS_DIR="$GITHUB_WORKSPACE/test/libsolidity/semanticTests"
