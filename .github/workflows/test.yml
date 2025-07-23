@@ -43,6 +43,7 @@ jobs:
     needs: build
     timeout-minutes: 60
     steps:
+      - uses: actions/checkout@v4
       - name: Run soltest
         run: ./scripts/soltest.sh -p
 
