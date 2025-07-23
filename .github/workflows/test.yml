@@ -1,0 +1,81 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - seismic
+  pull_request:
+    branches:
+      - seismic
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+
+jobs:
+  test:
+    runs-on: xl-github-runner
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # TODO: move lower after works
+      - name: Clone seismic-revm repo
+        run: |
+          git clone https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
+          echo "SEISMIC_REVM_PATH=/tmp/seismic-revm" >> $GITHUB_ENV
+          echo "seismic-revm cloned to: /tmp/seismic-revm"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "semantic-test-cache"
+          workspaces: /tmp/seismic-revm
+      - name: Build seismic-revm
+        run: |
+          cd $SEISMIC_REVM_PATH
+          cargo build -p revme
+          echo "SEISMIC_REVME_EXEC=$SEISMIC_REVM_PATH/target/debug/revme" >> $GITHUB_ENV 
+      - name: Install & configure ccache
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ccache
+          ccache --set-config=cache_dir=$HOME/.ccache
+          ccache --set-config=max_size=1G
+          mkdir -p ~/.ccache
+          ccache --show-config | grep cache_dir
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: ccache-
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
+
+      - name: Build ssolc
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                 -DPEDANTIC=OFF \
+                 -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                 -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build . --config Debug -j $(nproc)
+      - name: Run soltest
+        run: ./scripts/soltest.sh
+      - name: Run semantic tests
+        run: |
+          set -euo pipefail
+          SSOLC_EXEC="$GITHUB_WORKSPACE/build/solc/solc"
+          [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
+          [ -x "$SEISMIC_REVME_EXEC" ] || { echo "Error: revme executable not found at $SEISMIC_REVME_EXEC"; exit 1; }
+          SEMANTIC_TESTS_DIR="$GITHUB_WORKSPACE/test/libsolidity/semanticTests"
+          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" 2>&1
