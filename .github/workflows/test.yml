@@ -51,7 +51,7 @@ jobs:
                  -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake --build . --config Debug -j $(nproc)
       - name: Run soltest
-        run: ./scripts/soltest.sh -p
+        run: ./scripts/soltest.sh
       - name: Clone seismic-revm repo
         run: |
           set -euo pipefail
