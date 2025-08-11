@@ -6,12 +6,12 @@ contract c {
         returns (uint256 x, uint256 y, uint256 z, uint256 l)
     {
         data.push(suint(5));
-        x = uint(data[suint(0)]);
+        x = uint(data[0]);
         data.push(suint(4));
-        y = uint(data[suint(1)]);
+        y = uint(data[1]);
         data.push(suint(3));
         l = uint(data.length);
-        z = uint(data[suint(2)]);
+        z = uint(data[2]);
     }
 }
 // ----
