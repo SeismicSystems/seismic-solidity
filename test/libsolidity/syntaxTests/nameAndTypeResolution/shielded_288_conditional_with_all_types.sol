@@ -85,5 +85,4 @@ contract C {
 }
 // ----
 // Warning 2519: (1074-1088): This declaration shadows an existing declaration.
-// Warning 2018: (262-681): Function state mutability can be restricted to pure
-// Warning 2018: (686-1298): Function state mutability can be restricted to pure
+// TypeError 7804: (193-199): Shielded types are not allowed as mapping keys.
