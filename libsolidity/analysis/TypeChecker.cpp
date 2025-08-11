@@ -3497,7 +3497,7 @@ bool TypeChecker::visit(IndexAccess const& _access)
 			if (type(*index)->isShielded())
 			{
 				m_errorReporter.fatalTypeError(
-					0000_error,
+					5910_error,
 					index->location(),
 					"Shielded types are not allowed as array indices."
 				);
