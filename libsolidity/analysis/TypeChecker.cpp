@@ -3493,7 +3493,10 @@ bool TypeChecker::visit(IndexAccess const& _access)
 		}
 		else
 		{
-			// Reject shielded types as array indices for all arrays
+			// Always expect uint256 for array indices (this processes the expression)
+			expectType(*index, *TypeProvider::uint256());
+			
+			// Check if index type is shielded and reject it
 			if (type(*index)->isShielded())
 			{
 				m_errorReporter.fatalTypeError(
@@ -3501,11 +3504,6 @@ bool TypeChecker::visit(IndexAccess const& _access)
 					index->location(),
 					"Shielded types are not allowed as array indices."
 				);
-			}
-			else
-			{
-				// For non-shielded indices, expect uint256 regardless of array type
-				expectType(*index, *TypeProvider::uint256());
 			}
 			
 			if (!m_errorReporter.hasErrors())
