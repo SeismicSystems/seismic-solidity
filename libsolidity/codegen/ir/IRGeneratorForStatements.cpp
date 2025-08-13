@@ -1978,6 +1978,10 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 			define(_memberAccess) << "coinbase()\n";
 		else if (member == "timestamp")
 			define(_memberAccess) << "timestamp()\n";
+		else if (member == "timestamp_ms")
+			define(_memberAccess) << "timestamp_ms()\n";
+		else if (member == "timestamp_seconds")
+			define(_memberAccess) << "timestamp_seconds()\n";
 		else if (member == "difficulty" || member == "prevrandao")
 		{
 			if (m_context.evmVersion().hasPrevRandao())
