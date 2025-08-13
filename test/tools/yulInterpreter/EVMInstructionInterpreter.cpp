@@ -298,6 +298,8 @@ u256 EVMInstructionInterpreter::eval(
 		return h256(m_state.coinbase, h256::AlignRight);
 	case Instruction::TIMESTAMP:
 		return m_state.timestamp;
+	case Instruction::TIMESTAMPMS:
+		return m_state.timestamp_ms;
 	case Instruction::NUMBER:
 		return m_state.blockNumber;
 	case Instruction::PREVRANDAO:

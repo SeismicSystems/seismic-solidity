@@ -1,0 +1,35 @@
+contract C {
+    function getTimestamp() public view returns (uint256) {
+        return block.timestamp;
+    }
+
+    function getTimestampMs() public view returns (uint256) {
+        return block.timestamp_ms;
+    }
+
+    function getTimestampSeconds() public view returns (uint256) {
+        return block.timestamp_seconds;
+    }
+
+    // check that timestamp equal to timestamp_seconds
+    function checkTimestampEqualTimestampSeconds() public view returns (bool) {
+        return block.timestamp == block.timestamp_seconds;
+    }
+
+    // check that timestamp ms 1000 times greater than timestamp
+    function checkTimestampMsGreaterThanTimestamp() public view returns (bool) {
+        return block.timestamp_ms == block.timestamp * 1000;
+    }
+
+    // check that ms are within the threshold of what is valid from start unix epoch
+    function checkTimestampMsValid() public view returns (bool) {
+        return block.timestamp_ms >= 1000000000000;
+    }
+}
+// ----
+// getTimestamp() -> 0
+// getTimestampMs() -> 0
+// getTimestampSeconds() -> 0
+// checkTimestampEqualTimestampSeconds() -> true
+// checkTimestampMsGreaterThanTimestamp() -> true
+// checkTimestampMsValid() -> true
