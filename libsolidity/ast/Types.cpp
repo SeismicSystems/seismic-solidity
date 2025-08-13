@@ -4382,6 +4382,8 @@ MemberList::MemberMap MagicType::nativeMembers(ASTNode const*) const
 		return MemberList::MemberMap({
 			{"coinbase", TypeProvider::payableAddress()},
 			{"timestamp", TypeProvider::uint256()},
+			{"timestamp_ms", TypeProvider::uint256()},
+			{"timestamp_seconds", TypeProvider::uint256()},
 			{"blockhash", TypeProvider::function(strings{"uint"}, strings{"bytes32"}, FunctionType::Kind::BlockHash, StateMutability::View)},
 			{"difficulty", TypeProvider::uint256()},
 			{"prevrandao", TypeProvider::uint256()},

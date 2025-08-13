@@ -1977,8 +1977,10 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		// we can ignore the kind of magic and only look at the name of the member
 		if (member == "coinbase")
 			m_context << Instruction::COINBASE;
-		else if (member == "timestamp")
+		else if (member == "timestamp" || member == "timestamp_seconds")
 			m_context << Instruction::TIMESTAMP;
+		else if (member == "timestamp_ms")
+			m_context << Instruction::TIMESTAMPMS;
 		else if (member == "difficulty" || member == "prevrandao")
 			m_context << Instruction::PREVRANDAO;
 		else if (member == "number")
