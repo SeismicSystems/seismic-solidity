@@ -18,8 +18,8 @@ contract C {
             cstore(add(keccak256(0, 32), 1), 123)
         }
 
-        assert(data[suint(0)] == suint(234));
-        assert(data[suint(1)] == suint(123));
+        assert(data[0] == suint(234));
+        assert(data[1] == suint(123));
 
         delete data;
 

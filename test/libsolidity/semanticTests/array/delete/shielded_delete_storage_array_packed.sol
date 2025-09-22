@@ -9,7 +9,7 @@ contract C {
         assembly {
             cstore(data.slot, 3)
         }
-        return (uint120(data[suint(0)]), uint120(data[suint(1)]), uint120(data[suint(2)]));
+        return (uint120(data[0]), uint120(data[1]), uint120(data[2]));
     }
 }
 // ----

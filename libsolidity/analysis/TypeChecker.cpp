@@ -3195,7 +3195,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 			if (auto const* arrayType = dynamic_cast<ArrayType const*>(exprType)) {
 				if (memberName == "push") {
 					if (arrayType->containsShieldedType() && !annotation.arguments.value().types.front()->isShielded()) {
-						return { 8878_error, "Cannot push a non-shielded type to a shielded array" };
+						return { 4254_error, "Cannot push a non-shielded type to a shielded array" };
 					}
 					else if (!arrayType->containsShieldedType() && annotation.arguments.value().types.front()->isShielded()) {
 						return { 8878_error, "Cannot push a shielded type to a non-shielded array" };
@@ -3493,10 +3493,19 @@ bool TypeChecker::visit(IndexAccess const& _access)
 		}
 		else
 		{
-			if (actualType.containsShieldedType())
-				expectType(*index, *TypeProvider::shieldedUint256());
-			else
-				expectType(*index, *TypeProvider::uint256());
+			// Always expect uint256 for array indices (this processes the expression)
+			expectType(*index, *TypeProvider::uint256());
+			
+			// Check if index type is shielded and reject it
+			if (type(*index)->isShielded())
+			{
+				m_errorReporter.fatalTypeError(
+					5910_error,
+					index->location(),
+					"Shielded types are not allowed as array indices."
+				);
+			}
+			
 			if (!m_errorReporter.hasErrors())
 			{
 				if (auto numberType = dynamic_cast<RationalNumberType const*>(type(*index)))

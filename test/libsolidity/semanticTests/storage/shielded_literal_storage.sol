@@ -29,7 +29,7 @@ contract LiteralStorageTest {
         uint256[] memory uintArray = new uint256[](uint(arrayOfLiterals.length));
 
         for (uint256 i = 0; i < uint(arrayOfLiterals.length); i++) {
-            uintArray[i] = uint256(arrayOfLiterals[suint(i)]);
+            uintArray[i] = uint256(arrayOfLiterals[i]);
         }
 
         return uintArray;

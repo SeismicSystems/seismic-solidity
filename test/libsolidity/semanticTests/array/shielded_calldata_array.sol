@@ -7,8 +7,8 @@ contract C {
         pure
         returns (uint256 a, uint256 b)
     {
-        a = uint(s[suint(0)]);
-        b = uint(s[suint(1)]);
+        a = uint(s[0]);
+        b = uint(s[1]);
     }
 }
 // ----
