@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - seismic
+  pull_request:  # TODO(temp) remove this
+    branches:
+      - seismic
 
 jobs:
   build-release:
@@ -40,7 +43,15 @@ jobs:
               zlib1g-dev libboost-all-dev libssl-dev ccache
           elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
             brew update
+            # Complete nuclear option - remove and reinstall boost
+            brew uninstall --ignore-dependencies boost || true
+            brew cleanup -s || true
+            rm -rf /opt/homebrew/lib/libboost* || true
+            rm -rf /opt/homebrew/include/boost || true
             brew install boost openssl ccache
+            # Verify installation
+            echo "Installed boost libraries:"
+            ls -la /opt/homebrew/lib/libboost* || echo "ERROR: Boost libraries not found after installation!"
           fi
 
       - name: Set up dependencies (Windows)
