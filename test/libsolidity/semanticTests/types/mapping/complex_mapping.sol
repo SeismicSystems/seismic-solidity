@@ -33,4 +33,3 @@ contract C {
 // get_n(uint256,uint256): 1, 0 -> 7, 8
 // get_n(uint256,uint256): 1, 1 -> 9, 0x0a
 // get_n(uint256,uint256): 1, 2 -> 0x00, 0x00
-
