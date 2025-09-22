@@ -64,10 +64,15 @@ jobs:
           mkdir build
           cd build
           if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+            export Boost_ROOT=/opt/homebrew
+            export Boost_INCLUDEDIR=/opt/homebrew/include
+            export Boost_LIBRARYDIR=/opt/homebrew/lib
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DPEDANTIC=OFF \
-              -DBoost_NO_BOOST_CMAKE=ON
+              -DBoost_NO_BOOST_CMAKE=ON \
+              -DBoost_USE_STATIC_LIBS=OFF \
+              -Wno-dev
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DPEDANTIC=OFF
