@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - seismic
+  pull_request:  # TODO(temp) remove this
+    branches:
+      - seismic
 
 jobs:
   build-release:
