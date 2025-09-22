@@ -4103,6 +4103,7 @@ std::string YulUtilFunctions::validatorFunction(Type const& _type, bool _revertO
 		case Type::Category::Struct:
 		case Type::Category::Mapping:
 		case Type::Category::FixedBytes:
+		case Type::Category::ShieldedFixedBytes:
 		case Type::Category::Contract:
 		case Type::Category::UserDefinedValueType:
 		{
