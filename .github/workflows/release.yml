@@ -53,7 +53,7 @@ jobs:
             brew install ccache
 
             # Then install boost separately
-            brew install boost@1.85.0
+            brew install boost@1.84
 
             # Verify installation
             echo "Installed boost libraries:"
