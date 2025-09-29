@@ -670,6 +670,7 @@ bool SemanticInformation::invalidInPureFunctions(Instruction _instruction)
 	case Instruction::BLOBHASH:
 	case Instruction::COINBASE:
 	case Instruction::TIMESTAMP:
+	case Instruction::TIMESTAMPMS:
 	case Instruction::NUMBER:
 	case Instruction::PREVRANDAO:
 	case Instruction::GASLIMIT:

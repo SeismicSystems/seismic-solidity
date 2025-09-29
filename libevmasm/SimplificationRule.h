@@ -123,6 +123,7 @@ struct EVMBuiltins
 	static auto constexpr BLOBHASH = PatternGenerator<Instruction::BLOBHASH>{};
 	static auto constexpr COINBASE = PatternGenerator<Instruction::COINBASE>{};
 	static auto constexpr TIMESTAMP = PatternGenerator<Instruction::TIMESTAMP>{};
+	static auto constexpr TIMESTAMPMS = PatternGenerator<Instruction::TIMESTAMPMS>{};
 	static auto constexpr NUMBER = PatternGenerator<Instruction::NUMBER>{};
 	static auto constexpr PREVRANDAO = PatternGenerator<Instruction::PREVRANDAO>{};
 	static auto constexpr GASLIMIT = PatternGenerator<Instruction::GASLIMIT>{};
