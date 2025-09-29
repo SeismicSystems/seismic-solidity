@@ -828,7 +828,7 @@ option ``--model-checker-solvers {all,cvc5,eld,smtlib2,z3}`` or the JSON option
 - ``cvc5`` is used via its binary which must be installed in the system. Only BMC uses ``cvc5``.
 - ``eld`` is used via its binary which must be installed in the system. Only CHC uses ``eld``, and only if ``z3`` is not enabled.
 - ``smtlib2`` outputs SMT/Horn queries in the `smtlib2 <http://smtlib.cs.uiowa.edu/>`_ format.
-  These can be used together with the compiler's `callback mechanism <https://github.com/ethereum/solc-js>`_ so that
+  These can be used together with the compiler's `callback mechanism <https://github.com/argotorg/solc-js>`_ so that
   any solver binary from the system can be employed to synchronously return the results of the queries to the compiler.
   This can be used by both BMC and CHC depending on which solvers are called.
 - ``z3`` is available statically in ``soljson.js`` (from Solidity 0.6.9), that is, the JavaScript binary of the compiler. Otherwise it is used via its binary which must be installed in the system.

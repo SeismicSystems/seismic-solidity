@@ -217,7 +217,7 @@ void Parser::parsePragmaVersion(SourceLocation const& _location, std::vector<Tok
 
 ASTPointer<StructuredDocumentation> Parser::parseStructuredDocumentation()
 {
-	if (m_scanner->currentCommentLiteral() != "")
+	if (!m_scanner->currentCommentLiteral().empty())
 	{
 		ASTNodeFactory nodeFactory{*this};
 		nodeFactory.setLocation(m_scanner->currentCommentLocation());
@@ -824,8 +824,9 @@ ASTPointer<EnumValue> Parser::parseEnumValue()
 {
 	RecursionGuard recursionGuard(*this);
 	ASTNodeFactory nodeFactory(*this);
+	ASTPointer<StructuredDocumentation> documentation = parseStructuredDocumentation();
 	nodeFactory.markEndPosition();
-	return nodeFactory.createNode<EnumValue>(expectIdentifierToken());
+	return nodeFactory.createNode<EnumValue>(expectIdentifierToken(), documentation);
 }
 
 ASTPointer<EnumDefinition> Parser::parseEnumDefinition()
@@ -1444,7 +1445,7 @@ ASTPointer<Statement> Parser::parseStatement(bool _allowUnchecked)
 	RecursionGuard recursionGuard(*this);
 	ASTPointer<ASTString> docString;
 	ASTPointer<Statement> statement;
-	if (m_scanner->currentCommentLiteral() != "")
+	if (!m_scanner->currentCommentLiteral().empty())
 		docString = std::make_shared<ASTString>(m_scanner->currentCommentLiteral());
 	switch (m_scanner->currentToken())
 	{

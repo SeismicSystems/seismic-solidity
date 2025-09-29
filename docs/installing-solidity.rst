@@ -33,7 +33,7 @@ Remix
 
 `Access Remix online <https://remix.ethereum.org/>`_, you do not need to install anything.
 If you want to use it without connection to the Internet, go to
-https://github.com/ethereum/remix-live/tree/gh-pages#readme and follow the instructions on that page.
+https://github.com/argotorg/remix-live/tree/gh-pages#readme and follow the instructions on that page.
 Remix is also a convenient option for testing nightly builds
 without installing multiple Solidity versions.
 
@@ -51,7 +51,7 @@ Use ``npm`` for a convenient and portable way to install ``solcjs``, a Solidity 
 further down this page. The
 :ref:`commandline-compiler` documentation assumes you are using
 the full-featured compiler, ``solc``. The usage of ``solcjs`` is documented inside its own
-`repository <https://github.com/ethereum/solc-js>`_.
+`repository <https://github.com/argotorg/solc-js>`_.
 
 Note: The solc-js project is derived from the C++
 ``solc`` by using Emscripten, which means that both use the same compiler source code.
@@ -115,7 +115,7 @@ Linux Packages
 ==============
 
 Binary packages of Solidity are available at
-`solidity/releases <https://github.com/ethereum/solidity/releases>`_.
+`solidity/releases <https://github.com/argotorg/solidity/releases>`_.
 
 We also have PPAs for Ubuntu, you can get the latest stable
 version using the following commands:
@@ -256,7 +256,7 @@ Each one includes a ``list.json`` file listing the available binaries. For examp
 This means that:
 
 - You can find the binary in the same directory under the name
-  `solc-emscripten-wasm32-v0.7.4+commit.3f05b770.js <https://github.com/ethereum/solc-bin/blob/gh-pages/emscripten-wasm32/solc-emscripten-wasm32-v0.7.4+commit.3f05b770.js>`_.
+  `solc-emscripten-wasm32-v0.7.4+commit.3f05b770.js <https://github.com/argotorg/solc-bin/blob/gh-pages/emscripten-wasm32/solc-emscripten-wasm32-v0.7.4+commit.3f05b770.js>`_.
   Note that the file might be a symlink, and you will need to resolve it yourself if you are not using
   git to download it or your file system does not support symlinks.
 - The binary is also mirrored at https://binaries.soliditylang.org/emscripten-wasm32/solc-emscripten-wasm32-v0.7.4+commit.3f05b770.js.
@@ -304,8 +304,8 @@ This means that:
     in the long-term.
 
 .. _IPFS: https://ipfs.io
-.. _solc-bin: https://github.com/ethereum/solc-bin/
-.. _Solidity release page on GitHub: https://github.com/ethereum/solidity/releases
+.. _solc-bin: https://github.com/argotorg/solc-bin/
+.. _Solidity release page on GitHub: https://github.com/argotorg/solidity/releases
 .. _sha3sum: https://github.com/maandree/sha3sum
 .. _keccak256() function from ethereumjs-util: https://github.com/ethereumjs/ethereumjs-util/blob/master/docs/modules/_hash_.md#const-keccak256
 .. _WebAssembly builds: https://emscripten.org/docs/compiling/WebAssembly.html
@@ -327,7 +327,7 @@ The following are dependencies for all builds of Solidity:
 | Windows, 3.13+ otherwise)         |                                                       |
 +-----------------------------------+-------------------------------------------------------+
 | `Boost`_ (version 1.77+ on        | C++ libraries.                                        |
-| Windows, 1.67+ otherwise)         |                                                       |
+| Windows, 1.70+ otherwise)         |                                                       |
 +-----------------------------------+-------------------------------------------------------+
 | `Git`_                            | Command-line tool for retrieving source code.         |
 +-----------------------------------+-------------------------------------------------------+
@@ -365,7 +365,7 @@ The following are dependencies for all builds of Solidity:
     Doing this is not recommended for general use but may be necessary when using a toolchain we are
     not testing with or trying to build an older version with newer tools.
     If you encounter such warnings, please consider
-    `reporting them <https://github.com/ethereum/solidity/issues/new>`_.
+    `reporting them <https://github.com/argotorg/solidity/issues/new>`_.
 
 Minimum Compiler Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -447,7 +447,7 @@ To clone the source code, execute the following command:
 
 .. code-block:: bash
 
-    git clone --recursive https://github.com/ethereum/solidity.git
+    git clone --recursive https://github.com/argotorg/solidity.git
     cd solidity
 
 If you want to help develop Solidity,
@@ -463,7 +463,7 @@ you should fork Solidity and add your personal fork as a second remote:
     If you want to re-build a released Solidity compiler, then
     please use the source tarball on the GitHub release page:
 
-    https://github.com/ethereum/solidity/releases/download/v0.X.Y/solidity_0.X.Y.tar.gz
+    https://github.com/argotorg/solidity/releases/download/v0.X.Y/solidity_0.X.Y.tar.gz
 
     (not the "Source code" provided by GitHub).
 

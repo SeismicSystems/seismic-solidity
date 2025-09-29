@@ -823,11 +823,19 @@ private:
 /**
  * Declaration of an Enum Value
  */
-class EnumValue: public Declaration
+class EnumValue: public Declaration, public StructurallyDocumented
 {
 public:
-	EnumValue(int64_t _id, SourceLocation const& _location, ASTPointer<ASTString> const& _name):
-		Declaration(_id, _location, _name, _location) {}
+	EnumValue(
+		int64_t _id,
+		SourceLocation const& _location,
+		ASTPointer<ASTString> const& _name,
+		ASTPointer<StructuredDocumentation> _documentation
+	):
+		Declaration(_id, _location, _name, _location),
+		StructurallyDocumented(std::move(_documentation))
+	{
+	}
 
 	void accept(ASTVisitor& _visitor) override;
 	void accept(ASTConstVisitor& _visitor) const override;
@@ -1143,7 +1151,7 @@ public:
 	bool isCallableOrCatchParameter() const;
 	/// @returns true if this variable is a return parameter of a function.
 	bool isReturnParameter() const;
-	/// @returns true if this variable is a parameter of the success or failure clausse
+	/// @returns true if this variable is a parameter of the success or failure clause
 	/// of a try/catch statement.
 	bool isTryCatchParameter() const;
 	/// @returns true if this variable is a local variable or return parameter.

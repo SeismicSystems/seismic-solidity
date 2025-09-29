@@ -51,7 +51,11 @@ detect_stray_source_files("${libsolutil_sources}" "libsolutil/")
 
 set(libevmasm_sources
     libevmasm/Assembler.cpp
+    libevmasm/EVMAssemblyTest.cpp
+    libevmasm/EVMAssemblyTest.h
     libevmasm/Optimiser.cpp
+    libevmasm/PlainAssemblyParser.cpp
+    libevmasm/PlainAssemblyParser.h
 )
 detect_stray_source_files("${libevmasm_sources}" "libevmasm/")
 
@@ -145,6 +149,7 @@ set(libyul_sources
     libyul/ControlFlowSideEffectsTest.h
     libyul/EVMCodeTransformTest.cpp
     libyul/EVMCodeTransformTest.h
+    libyul/EVMDialectCompatibility.cpp
     libyul/FunctionSideEffects.cpp
     libyul/FunctionSideEffects.h
     libyul/Inliner.cpp

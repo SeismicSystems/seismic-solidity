@@ -22,7 +22,7 @@ set -e
 
 # Requires $REPO_ROOT to be defined and "${REPO_ROOT}/scripts/common.sh" to be included before.
 
-CURRENT_EVM_VERSION=cancun
+CURRENT_EVM_VERSION=prague
 
 AVAILABLE_PRESETS=(
     legacy-no-optimize
@@ -83,7 +83,7 @@ function setup_solc
         printLog "Setting up solc-js..."
         if [[ $solcjs_dir == "" ]]; then
             printLog "Cloning branch ${solcjs_branch}..."
-            git clone --depth 1 -b "$solcjs_branch" https://github.com/ethereum/solc-js.git "$install_dir"
+            git clone --depth 1 -b "$solcjs_branch" https://github.com/argotorg/solc-js.git "$install_dir"
         else
             printLog "Using local solc-js from ${solcjs_dir}..."
             cp -ra "$solcjs_dir" solc

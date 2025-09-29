@@ -34,7 +34,7 @@ parameters:
     default: "solbuildpackpusher/solidity-buildpack-deps@sha256:98f963ed799a0d206ef8e7b5475f847e0dea53b7fdea9618bbc6106a62730bd2"
   evm-version:
     type: string
-    default: cancun
+    default: prague
 
 orbs:
   win: circleci/windows@2.2.0
@@ -127,7 +127,7 @@ commands:
             if [[ "<< parameters.packages >>" != "" ]]
             then
               echo "Installing additional packages..."
-              python3 -m pip install --user << parameters.packages >>
+              python3 -m pip install --user --break-system-packages << parameters.packages >>
             fi
 
   install_foundry:
@@ -380,12 +380,12 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - osx-dependencies-cached-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
+            - macos-dependencies-cached-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
       - run:
           name: Installing dependencies / Restoring dependency cache
           command: |
-            if [[ -f ~/osx-dependencies-cached ]]; then
-              echo "Dependency flag exists. Removing /usr/local/ and /opt/homebrew/. These directories will be restored from cache."
+            if [[ -f ~/macos-dependencies-cached ]]; then
+              echo "Dependency flag exists. Removing /usr/local/, /opt/homebrew/, and /opt/boost. These directories will be restored from cache."
 
               # CircleCI is providing the circleci cli tools via some kind of symlink magic.
               # So we just save the original symlinks and restore them later.
@@ -405,12 +405,16 @@ commands:
               sudo mkdir -p /usr/local/bin
               sudo chmod 777 /usr/{local,local/bin}
 
+              sudo rm -rf /opt/boost
+              sudo mkdir -p /opt/boost
+              sudo chmod 777 /opt/boost
+
               mv /tmp/circleci "${circleci_binary_path}"
               mv /tmp/circleci-agent "${circleci_agent_binary_path}"
             fi
       - restore_cache:
           keys:
-            - osx-dependencies-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
+            - macos-dependencies-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
       # DO NOT EDIT between here and save_cache, but rather edit ./circleci/osx_install_dependencies.sh
       # WARNING! If you do edit anything here instead, remember to invalidate the cache manually.
       - run:
@@ -418,17 +422,18 @@ commands:
           command: .circleci/osx_install_dependencies.sh
       - run:
           name: Mark dependencies as cached
-          command: touch ~/osx-dependencies-cached
+          command: touch ~/macos-dependencies-cached
       - save_cache:
-          key: osx-dependencies-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
+          key: macos-dependencies-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
           paths:
             # Homebrew is installed in /usr/local on intel macs, but in /opt/homebrew on apple silicon.
             - /usr/local
             - /opt/homebrew
+            - /opt/boost
       - save_cache:
-          key: osx-dependencies-cached-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
+          key: macos-dependencies-cached-{{ arch }}-{{ checksum ".circleci/osx_install_dependencies.sh" }}
           paths:
-            - ~/osx-dependencies-cached
+            - ~/macos-dependencies-cached
 
 defaults:
 
@@ -740,7 +745,7 @@ defaults:
   # Parameterized Job Templates
 
   # Separate compile-only runs of those external tests where a full run takes much longer.
-  # Also see https://github.com/ethereum/solidity/pull/14234 for why we excluded those
+  # Also see https://github.com/argotorg/solidity/pull/14234 for why we excluded those
   # external tests from the nightly jobs.
   - job_ems_compile_ext_colony: &job_ems_compile_ext_colony
       <<: *requires_b_ems
@@ -774,7 +779,7 @@ defaults:
       name: t_native_test_ext_ens
       project: ens
       binary_type: native
-      image: cimg/node:18.16
+      image: cimg/node:lts
 
   - job_native_compile_ext_trident: &job_native_compile_ext_trident
       <<: *requires_b_ubu_static
@@ -818,14 +823,15 @@ defaults:
       # NOTE: test suite disabled due to dependence on a specific version of Hardhat
       # which does not support shanghai EVM.
       compile_only: 1
-      image: cimg/node:18.16
+      image: cimg/node:lts
 
   - job_native_test_ext_uniswap: &job_native_test_ext_uniswap
       <<: *requires_b_ubu_static
       name: t_native_test_ext_uniswap
       project: uniswap
       binary_type: native
-      image: cimg/node:18.16
+      image: cimg/node:lts
+      resource_class: medium # Tests run out of memory on a smaller machine
 
   - job_native_test_ext_prb_math: &job_native_test_ext_prb_math
       <<: *requires_b_ubu_static
@@ -833,16 +839,14 @@ defaults:
       project: prb-math
       binary_type: native
       image: cimg/rust:1.74.0-node
-      resource_class: medium
-      # TODO: Use nightly Foundry builds after https://github.com/PaulRBerg/prb-math/issues/248 is fixed
-      foundry_version: "v0.3.0"
+      resource_class: large # Tests run out of memory on a smaller machine
 
   - job_native_test_ext_elementfi: &job_native_test_ext_elementfi
       <<: *requires_b_ubu_static
       name: t_native_test_ext_elementfi
       project: elementfi
       binary_type: native
-      image: cimg/node:18.16
+      image: cimg/node:lts
       resource_class: medium
 
   - job_native_test_ext_brink: &job_native_test_ext_brink
@@ -850,7 +854,7 @@ defaults:
       name: t_native_test_ext_brink
       project: brink
       binary_type: native
-      image: cimg/node:18.16
+      image: cimg/node:lts
 
   - job_native_compile_ext_chainlink: &job_native_compile_ext_chainlink
       <<: *requires_b_ubu_static
@@ -870,7 +874,7 @@ defaults:
       binary_type: native
       # NOTE: test suite disabled due to constant failures.
       compile_only: 1
-      image: cimg/node:18.16
+      image: cimg/node:lts
 
   - job_b_ubu_asan_clang: &job_b_ubu_asan_clang
       <<: *on_all_tags_and_branches
@@ -946,6 +950,8 @@ jobs:
   chk_pylint:
     <<: *base_ubuntu2404_small
     steps:
+      - install_python3:
+          packages: pyyaml jsonschema pytest
       - checkout
       - run: pylint --version
       - run:
@@ -1075,7 +1081,7 @@ jobs:
   b_ubu_static:
     # We temporarily keep building static release binaries on ubuntu 20.04
     # to avoid glibc incompatibilities.
-    # See: https://github.com/ethereum/solidity/issues/13954
+    # See: https://github.com/argotorg/solidity/issues/13954
     # On large runs 2x faster than on medium. 3x on xlarge.
     <<: *base_ubuntu2404_xlarge
     environment:
@@ -1132,7 +1138,7 @@ jobs:
       - run:
           name: Regression tests
           command: |
-            git clone https://github.com/ethereum/solidity-fuzzing-corpus /tmp/solidity-fuzzing-corpus
+            git clone https://github.com/argotorg/solidity-fuzzing-corpus /tmp/solidity-fuzzing-corpus
             mkdir -p test_results
             scripts/regressions.py -o test_results
       - store_test_results:
@@ -1159,7 +1165,8 @@ jobs:
     environment:
       <<: *base_osx_env
       CMAKE_BUILD_TYPE: Release
-      CMAKE_OPTIONS: -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64;arm64
+      # boost root configured to the prefix used in `osx_install_dependencies.sh`
+      CMAKE_OPTIONS: -DCMAKE_OSX_ARCHITECTURES:STRING=x86_64;arm64 -DBoost_ROOT=/opt/boost
     steps:
       - checkout
       - install_dependencies_osx
@@ -1228,6 +1235,11 @@ jobs:
     steps:
       - checkout
       - setup_prerelease_commit_hash
+      - run:
+          name: Install build system dependencies
+          command: |
+            apt-get update
+            apt-get install --quiet=2 --no-install-recommends python3-dev libcairo2-dev pkg-config
       - run:
           name: Build documentation
           command: docs/docs.sh
@@ -1324,7 +1336,7 @@ jobs:
       <<: *base_ubuntu2404_env
       ASAN_OPTIONS: check_initialization_order=true:detect_stack_use_after_return=true:strict_init_order=true:strict_string_checks=true:detect_invalid_pointer_pairs=2
       # Suppress CLN memory leak.
-      # See: https://github.com/ethereum/solidity/issues/13891 for details.
+      # See: https://github.com/argotorg/solidity/issues/13891 for details.
       LSAN_OPTIONS: suppressions=/root/project/.circleci/cln-asan.supp:print_suppressions=0
     steps:
       - cmdline_tests
@@ -1340,7 +1352,7 @@ jobs:
       SOLTEST_FLAGS: --no-smt
       ASAN_OPTIONS: check_initialization_order=true:detect_stack_use_after_return=true:strict_init_order=true:strict_string_checks=true:detect_invalid_pointer_pairs=2
       # Suppress CLN memory leak.
-      # See: https://github.com/ethereum/solidity/issues/13891 for details.
+      # See: https://github.com/argotorg/solidity/issues/13891 for details.
       LSAN_OPTIONS: suppressions=/root/project/.circleci/cln-asan.supp
     steps:
       - soltest
@@ -1527,6 +1539,19 @@ jobs:
           paths:
             - reports/externalTests/
       - matrix_notify_failure_unless_pr
+
+  t_ethdebug_output_validity:
+    <<: *base_node_small
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - install_python3:
+            packages: pyyaml jsonschema pytest
+      - run:
+          name: Ethdebug validity tests
+          command: |
+            pytest test/ethdebugSchemaTests --solc-binary-path=/tmp/workspace/solc/solc-static-linux -v
 
   c_ext_benchmarks:
     <<: *base_node_small
@@ -1920,6 +1945,9 @@ workflows:
       #- t_ext: *job_native_compile_ext_trident
       #- t_ext: *job_native_compile_ext_chainlink
       #- t_ext: *job_native_compile_ext_bleeps
+
+      - t_ethdebug_output_validity:
+          <<: *requires_b_ubu_static
 
       - c_ext_benchmarks:
           <<: *requires_nothing
