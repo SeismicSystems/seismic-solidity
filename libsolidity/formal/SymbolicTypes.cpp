@@ -684,6 +684,8 @@ std::map<std::string, frontend::Type const*> transactionMemberTypes()
 		{"block.gaslimit", TypeProvider::uint256()},
 		{"block.number", TypeProvider::uint256()},
 		{"block.timestamp", TypeProvider::uint256()},
+		{"block.timestamp_ms", TypeProvider::uint256()},
+		{"block.timestamp_seconds", TypeProvider::uint256()},
 		{"blobhash", TypeProvider::array(DataLocation::Memory, TypeProvider::uint256())},
 		{"blockhash", TypeProvider::array(DataLocation::Memory, TypeProvider::uint256())},
 		{"msg.data", TypeProvider::bytesCalldata()},
