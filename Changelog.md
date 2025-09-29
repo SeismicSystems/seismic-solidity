@@ -1,3 +1,30 @@
+### 0.8.31 (unreleased)
+
+Language Features:
+
+Compiler Features:
+* ethdebug: Experimental support for instructions and source locations under EOF.
+
+Bugfixes:
+* Assembler: Fix not using a fixed-width type for IDs being assigned to subassemblies nested more than one level away, resulting in inconsistent `--asm-json` output between target architectures.
+* Yul Optimizer: Fix edge case in which invalid Yul code is produced by ExpressionSimplifier due to expressions being substituted that contain out-of-scope variables.
+
+Build System:
+* Update to boost 1.70.0 for non-windows builds.
+
+### 0.8.30 (2025-05-07)
+
+Compiler Features:
+* EVM: Set default EVM Version to `prague`.
+* NatSpec: Capture Natspec documentation of `enum` values in the AST.
+
+
+Bugfixes:
+* SMTChecker: Do not consider loop conditions as constant-condition verification target as this could cause incorrect reports and internal compiler errors.
+* SMTChecker: Fix incorrect analysis when only a subset of contracts is selected with `--model-checker-contracts`.
+* SMTChecker: Fix internal compiler error when string literal is used to initialize user-defined type based on fixed bytes.
+
+
 ### 0.8.29 (2025-03-12)
 
 Language Features:

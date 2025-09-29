@@ -1,5 +1,8 @@
 name: buildpack-deps
 
+permissions:
+  pull-requests: write
+
 on:
   pull_request:
     branches: [ develop ]
@@ -26,7 +29,7 @@ jobs:
         image_variant: [emscripten, ubuntu.clang.ossfuzz, ubuntu2004, ubuntu2204, ubuntu2404, ubuntu2404.clang]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
@@ -38,9 +41,6 @@ jobs:
 
       - name: comment PR
         if: "env.DOCKER_IMAGE"
-        # NOTE: Can't update to v1.3.1 due to an error: `/entrypoint.sh:5:in 'require_relative': cannot load such file -- /lib/github (LoadError)`
-        uses: unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b #v1.3.0
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
-          msg: "`${{ env.DOCKER_IMAGE }} ${{ env.DOCKER_REPO_DIGEST }}`."
-          check_for_duplicate_msg: false
-
+          message: "`${{ env.DOCKER_IMAGE }} ${{ env.DOCKER_REPO_DIGEST }}`."

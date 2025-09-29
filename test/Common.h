@@ -39,13 +39,13 @@ namespace solidity::test
 
 #ifdef _WIN32
 static constexpr auto evmoneFilename = "evmone.dll";
-static constexpr auto evmoneDownloadLink = "https://github.com/ethereum/evmone/releases/download/v0.13.0/evmone-0.13.0-windows-amd64.zip";
+static constexpr auto evmoneDownloadLink = "https://github.com/ipsilon/evmone/releases/download/v0.13.0/evmone-0.13.0-windows-amd64.zip";
 #elif defined(__APPLE__)
 static constexpr auto evmoneFilename = "libevmone.dylib";
-static constexpr auto evmoneDownloadLink = "https://github.com/ethereum/evmone/releases/download/v0.13.0/evmone-0.13.0-darwin-arm64.tar.gz";
+static constexpr auto evmoneDownloadLink = "https://github.com/ipsilon/evmone/releases/download/v0.13.0/evmone-0.13.0-darwin-arm64.tar.gz";
 #else
 static constexpr auto evmoneFilename = "libevmone.so";
-static constexpr auto evmoneDownloadLink = "https://github.com/ethereum/evmone/releases/download/v0.13.0/evmone-0.13.0-linux-x86_64.tar.gz";
+static constexpr auto evmoneDownloadLink = "https://github.com/ipsilon/evmone/releases/download/v0.13.0/evmone-0.13.0-linux-x86_64.tar.gz";
 #endif
 
 struct ConfigException: public util::Exception {};
@@ -115,6 +115,10 @@ boost::unit_test::precondition::predicate_t minEVMVersionCheck(langutil::EVMVers
 /// Helper that can be used to skip tests when the EOF is not supported by the test case.
 /// @return A predicate (function) that can be passed into @a boost::unit_test::precondition().
 boost::unit_test::precondition::predicate_t nonEOF();
+
+/// Helper that can be used to skip tests when the legacy bytecode is not supported by the test case.
+/// @return A predicate (function) that can be passed into @a boost::unit_test::precondition().
+boost::unit_test::precondition::predicate_t onEOF();
 
 bool loadVMs(CommonOptions const& _options);
 

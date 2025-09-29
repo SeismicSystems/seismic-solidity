@@ -29,8 +29,12 @@ if (WIN32)
 	option(Boost_USE_STATIC_RUNTIME "Link Boost against static C++ runtime libraries" ON)
 endif()
 
-set(BOOST_COMPONENTS "filesystem;unit_test_framework;program_options;system")
+set(BOOST_COMPONENTS "filesystem;unit_test_framework;program_options")
 
+# CMake >= 3.30 should not use the vendored boost
+if(POLICY CMP0167)
+	cmake_policy(SET CMP0167 NEW)
+endif()
 if (WIN32)
 	# Boost 1.77 fixes a bug that causes crashes on Windows for some relative paths in --allow-paths.
 	# See https://github.com/boostorg/filesystem/issues/201
@@ -38,7 +42,9 @@ if (WIN32)
 else()
 	# Boost 1.65 is the first to also provide boost::get for rvalue-references (#5787).
 	# Boost 1.67 moved container_hash into is own module.
-	find_package(Boost 1.67.0 QUIET REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+	# Boost 1.69 boost::system is header-only and no longer needs to be fetched as component
+	# Boost 1.70 comes with its own BoostConfig.cmake and is the new (non-deprecated) behavior
+	find_package(Boost 1.70.0 QUIET REQUIRED COMPONENTS ${BOOST_COMPONENTS})
 endif()
 
 # If cmake is older than boost and boost is older than 1.70,
@@ -49,8 +55,7 @@ if (NOT TARGET Boost::boost) # header only target
 	add_library(Boost::boost INTERFACE IMPORTED)
 	set_property(TARGET Boost::boost APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIRS})
 endif()
-get_property(LOCATION TARGET Boost::boost PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-message(STATUS "Found Boost headers in ${LOCATION}")
+message(STATUS "Found Boost ${Boost_VERSION} headers in ${Boost_INCLUDE_DIRS}")
 
 foreach (BOOST_COMPONENT IN LISTS BOOST_COMPONENTS)
 	if (NOT TARGET Boost::${BOOST_COMPONENT})

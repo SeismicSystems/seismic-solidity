@@ -24,6 +24,7 @@
 
 #include <libevmasm/Instruction.h>
 #include <libevmasm/Exceptions.h>
+#include <libevmasm/SubAssemblyID.h>
 #include <liblangutil/DebugData.h>
 #include <liblangutil/Exceptions.h>
 #include <libsolutil/Common.h>
@@ -85,7 +86,10 @@ public:
 		m_type(Operation),
 		m_instruction(_i),
 		m_debugData(std::move(_debugData))
-	{}
+	{
+		solAssert(_i != Instruction::SWAPN, "Construct via AssemblyItem::swapN");
+		solAssert(_i != Instruction::DUPN, "Construct via AssemblyItem::dupN");
+	}
 	AssemblyItem(AssemblyItemType _type, u256 _data = 0, langutil::DebugData::ConstPtr _debugData = langutil::DebugData::create()):
 		m_type(_type),
 		m_debugData(std::move(_debugData))
@@ -105,7 +109,6 @@ public:
 
 	explicit AssemblyItem(bytes _verbatimData, size_t _arguments, size_t _returnVariables):
 		m_type(VerbatimBytecode),
-		m_instruction{},
 		m_verbatimBytecode{{_arguments, _returnVariables, std::move(_verbatimData)}},
 		m_debugData{langutil::DebugData::create()}
 	{}
@@ -169,14 +172,14 @@ public:
 	AssemblyItem pushTag() const { solAssert(m_type == PushTag || m_type == Tag || m_type == RelativeJump || m_type == ConditionalRelativeJump); return AssemblyItem(PushTag, data()); }
 	/// Converts the tag to a subassembly tag. This has to be called in order to move a tag across assemblies.
 	/// @param _subId the identifier of the subassembly the tag is taken from.
-	AssemblyItem toSubAssemblyTag(size_t _subId) const;
+	AssemblyItem toSubAssemblyTag(SubAssemblyID _subId) const;
 	/// @returns splits the data of the push tag into sub assembly id and actual tag id.
 	/// The sub assembly id of non-foreign push tags is -1.
-	std::pair<size_t, size_t> splitForeignPushTag() const;
+	std::pair<SubAssemblyID, size_t> splitForeignPushTag() const;
 	/// @returns relative jump target tag ID. Asserts that it is not foreign tag.
 	size_t relativeJumpTagID() const;
 	/// Sets sub-assembly part and tag for a push tag.
-	void setPushTagSubIdAndTag(size_t _subId, size_t _tag);
+	void setPushTagSubIdAndTag(SubAssemblyID _subId, size_t _tag);
 
 	AssemblyItemType type() const { return m_type; }
 	u256 const& data() const { solAssert(m_type != Operation && m_data != nullptr); return *m_data; }
@@ -195,7 +198,7 @@ public:
 	/// @returns true if the item has m_instruction properly set.
 	bool hasInstruction() const
 	{
-		return
+		bool const shouldHaveInstruction =
 			m_type == Operation ||
 			m_type == EOFCreate ||
 			m_type == ReturnContract ||
@@ -206,12 +209,14 @@ public:
 			m_type == RetF ||
 			m_type == SwapN ||
 			m_type == DupN;
+		solAssert(shouldHaveInstruction == m_instruction.has_value());
+		return shouldHaveInstruction;
 	}
 	/// @returns the instruction of this item (only valid if hasInstruction returns true)
 	Instruction instruction() const
 	{
 		solAssert(hasInstruction());
-		return m_instruction;
+		return *m_instruction;
 	}
 
 	/// @returns true if the type and data of the items are equal.
@@ -243,7 +248,7 @@ public:
 	/// Shortcut that avoids constructing an AssemblyItem just to perform the comparison.
 	bool operator==(Instruction _instr) const
 	{
-		return type() == Operation && instruction() == _instr;
+		return hasInstruction() && instruction() == _instr;
 	}
 	bool operator!=(Instruction _instr) const { return !operator==(_instr); }
 
@@ -323,7 +328,7 @@ private:
 	size_t opcodeCount() const noexcept;
 
 	AssemblyItemType m_type;
-	Instruction m_instruction; ///< Only valid if m_type == Operation
+	std::optional<Instruction> m_instruction; ///< Only valid for item types that represent a specific opcode
 	std::shared_ptr<u256> m_data; ///< Only valid if m_type != Operation
 	std::optional<FunctionSignature> m_functionSignature; ///< Only valid if m_type == CallF or JumpF
 	/// If m_type == VerbatimBytecode, this holds number of arguments, number of

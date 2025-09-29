@@ -109,7 +109,7 @@ export LC_ALL=C
 
 cd "$tmp_dir"
 
-git clone https://github.com/ethereum/solc-js.git "$solcjs_dir"
+git clone https://github.com/argotorg/solc-js.git "$solcjs_dir"
 cd "$solcjs_dir"
 npm install
 npm run build

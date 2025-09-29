@@ -68,7 +68,7 @@ packagename=solc
 # This needs to be a still active release
 static_build_distribution=noble
 
-DISTRIBUTIONS="jammy noble oracular"
+DISTRIBUTIONS="jammy noble oracular plucky"
 
 if is_release
 then
@@ -92,7 +92,6 @@ cd "$distribution"
 if [ "$distribution" = STATIC ]
 then
     pparepo=ethereum-static
-    SMTDEPENDENCY=""
     CMAKE_OPTIONS="-DSOLC_LINK_STATIC=On -DCMAKE_EXE_LINKER_FLAGS=-static"
 else
     if is_release
@@ -101,26 +100,12 @@ else
     else
         pparepo=ethereum-dev
     fi
-    if [ "$distribution" = focal ]
-    then
-        SMTDEPENDENCY="libz3-static-dev,
-            libcvc4-dev,
-            "
-    elif [ "$distribution" = disco ]
-    then
-        SMTDEPENDENCY="libz3-static-dev,
-            libcvc4-dev,
-            "
-    else
-        SMTDEPENDENCY="libz3-static-dev,
-            "
-    fi
     CMAKE_OPTIONS=""
 fi
 ppafilesurl=https://launchpad.net/~ethereum/+archive/ubuntu/${pparepo}/+files
 
 # Fetch source
-git clone --depth 2 --recursive https://github.com/ethereum/solidity.git -b "$branch"
+git clone --depth 2 --recursive https://github.com/argotorg/solidity.git -b "$branch"
 mv solidity solc
 
 # Determine version
@@ -156,7 +141,7 @@ Source: solc
 Section: science
 Priority: extra
 Maintainer: Christian (Buildserver key) <builds@ethereum.org>
-Build-Depends: ${SMTDEPENDENCY}debhelper (>= 9.0.0),
+Build-Depends: debhelper (>= 9.0.0),
                cmake,
                g++ (>= 5.0),
                git,
@@ -167,8 +152,8 @@ Build-Depends: ${SMTDEPENDENCY}debhelper (>= 9.0.0),
                scons
 Standards-Version: 3.9.5
 Homepage: https://ethereum.org
-Vcs-Git: https://github.com/ethereum/solidity.git
-Vcs-Browser: https://github.com/ethereum/solidity
+Vcs-Git: https://github.com/argotorg/solidity.git
+Vcs-Browser: https://github.com/argotorg/solidity
 
 Package: solc
 Architecture: any-amd64
@@ -216,7 +201,7 @@ EOF
 cat <<EOF > debian/copyright
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: solc
-Source: https://github.com/ethereum/solidity
+Source: https://github.com/argotorg/solidity
 
 Files: *
 Copyright: 2014-2016 Ethereum
