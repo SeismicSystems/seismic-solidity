@@ -163,9 +163,9 @@ private:
 	YulStringRepository::Handle m_handle{ 0, YulStringRepository::emptyHash() };
 };
 
-inline YulString operator "" _yulname(char const* _string, std::size_t _size)
+inline YulString operator""_yulname(char const* _string, std::size_t _size)
 {
-	return YulString(std::string(_string, _size));
+	return YulString(std::string_view(_string, _size));
 }
 
 }

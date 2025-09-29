@@ -48,6 +48,8 @@ function validate_checksum {
 
 if [ ! -f /usr/local/lib/libz3.a ] # if this file does not exists (cache was not restored), rebuild dependencies
 then
+  brew uninstall temurin17
+  brew untap homebrew/homebrew-cask-versions
   brew update
   brew upgrade
   brew install cmake
@@ -59,9 +61,6 @@ then
   brew install openjdk@11
   brew install unzip
 
-  # writing to /usr/local/lib need administrative privileges.
-  sudo ./scripts/install_obsolete_jsoncpp_1_7_4.sh
-
   # boost
   boost_version="1.84.0"
   boost_package="boost_${boost_version//./_}.tar.bz2"
@@ -72,7 +71,8 @@ then
   cd "$boost_dir"
   ./bootstrap.sh --with-toolset=clang --with-libraries=thread,system,filesystem,program_options,serialization,test
   # the default number of jobs that b2 is taking, is the number of detected available CPU threads.
-  sudo ./b2 -a address-model=64 architecture=arm+x86 install
+  # install boost to /opt/boost, to use it in CMake, specify Boost_ROOT
+  sudo ./b2 -a address-model=64 architecture=arm+x86 --prefix=/opt/boost install
   cd ..
   sudo rm -rf "$boost_dir"
 
@@ -112,7 +112,7 @@ then
   # evmone
   evmone_version="0.13.0"
   evmone_package="evmone-${evmone_version}-darwin-arm64.tar.gz"
-  wget "https://github.com/ethereum/evmone/releases/download/v${evmone_version}/${evmone_package}"
+  wget "https://github.com/ipsilon/evmone/releases/download/v${evmone_version}/${evmone_package}"
   validate_checksum "$evmone_package" 49fe6cc35e0e13c48ca2f29a6b85a47f7b25dcd427e14254000d3bc29cddf2a6
   sudo tar xzpf "$evmone_package" -C /usr/local
   rm "$evmone_package"

@@ -13,7 +13,7 @@ if (( $# < 1 || $# > 3 )); then
 fi
 
 branch="$1"
-repo_url="${2:-https://github.com/ethereum/solidity.git}"
+repo_url="${2:-https://github.com/argotorg/solidity.git}"
 
 if (( $# >= 3 )); then
     [[ $3 == --no-push ]] || fail "Invalid flag: $3. Expected --no-push."
