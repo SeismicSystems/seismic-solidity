@@ -43,7 +43,7 @@ jobs:
               zlib1g-dev libboost-all-dev libssl-dev ccache
           elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
             ls -la ./circleci
-            ./circleci/osx_install_dependencies.sh
+            ./.circleci/osx_install_dependencies.sh
           fi
 
       - name: Set up dependencies (Windows)
