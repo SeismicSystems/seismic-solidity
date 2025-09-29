@@ -10,12 +10,12 @@ contract C {
     constructor() {
         suint length = suint(2);
         suint8[] memory d = new suint8[](length);
-        d[suint(0)] = suint8(3);
-        d[suint(1)] = suint8(4);
+        d[0] = suint8(3);
+        d[1] = suint8(4);
 
         suint8[][] memory y = new suint8[][](length);
-        y[suint(0)] = d;
-        y[suint(1)] = d;
+        y[0] = d;
+        y[1] = d;
 
         data = S({y: y});
     }

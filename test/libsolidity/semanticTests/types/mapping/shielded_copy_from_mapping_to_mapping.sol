@@ -7,24 +7,24 @@ contract C {
         suint16 z;
     }
 
-    mapping (suint8 => S) src;
-    mapping (suint8 => S) dst;
+    mapping (uint8 => S) src;
+    mapping (uint8 => S) dst;
 
     constructor() {
         suint8[] memory d = new suint8[](suint(2));
-        d[suint8(0)] = suint8(3);
-        d[suint8(1)] = suint8(4);
+        d[0] = suint8(3);
+        d[1] = suint8(4);
 
         suint8[][] memory y = new suint8[][](suint(2));
-        y[suint8(0)] = d;
-        y[suint8(1)] = d;
+        y[0] = d;
+        y[1] = d;
 
-        src[suint8(0)] = S({x: [suint8(7), suint8(8), suint8(9)], y: y, z: suint16(13)});
+        src[0] = S({x: [suint8(7), suint8(8), suint8(9)], y: y, z: suint16(13)});
     }
 
     function f() public returns (S memory) {
-        dst[suint8(0)] = src[suint8(0)];
-        return dst[suint8(0)];
+        dst[0] = src[0];
+        return dst[0];
     }
 }
 // ----

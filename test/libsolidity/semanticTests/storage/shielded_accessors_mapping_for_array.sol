@@ -1,23 +1,23 @@
 contract test {
-    mapping(suint => suint[8]) data;
-    mapping(suint => suint[]) dynamicData;
+    mapping(uint => suint[8]) data;
+    mapping(uint => suint[]) dynamicData;
     constructor() {
-        suint index = suint(2);
+        uint index = 2;
         data[index][index] = suint(8);
         for (uint i = 0; i < 3; i++)
             dynamicData[index].push();
-        dynamicData[index][index] = suint(8);
+        dynamicData[index][sindex] = suint(8);
     }
 
-    function get_data(suint a, suint256 b) public returns (uint) {
+    function get_data(uint a, uint256 b) public returns (uint) {
         return uint(data[a][b]);
     }
 
-    function get_dynamicData(suint a, suint256 b) public returns (uint) {
+    function get_dynamicData(uint a, uint256 b) public returns (uint) {
         return uint(dynamicData[a][b]);
     }
 
-    function get_data_assembly(suint a, suint256 b) public returns (uint) {
+    function get_data_assembly(uint a, uint256 b) public returns (uint) {
         assembly {
             // Get the storage slot of the `data` mapping
             let p0 := data.slot
@@ -44,7 +44,7 @@ contract test {
         }
     }
 
-    function get_dynamicData_assembly(suint a, suint256 b) public returns (uint) {
+    function get_dynamicData_assembly(uint a, uint256 b) public returns (uint) {
         assembly {
             // Get the storage slot of the `dynamicData` mapping
             let p0 := dynamicData.slot
@@ -80,9 +80,9 @@ contract test {
     }
 }
 // ----
-// get_data(suint256,suint256): 2, 2 -> 8
-// get_data(suint256,suint256): 2, 8 -> FAILURE # NB: the original code contained a bug here #
-// get_dynamicData(suint256,suint256): 2, 2 -> 8
-// get_dynamicData(suint256,suint256): 2, 8 -> FAILURE
-// get_data_assembly(suint256,suint256): 2, 2 -> 8
-// get_dynamicData_assembly(suint256,suint256): 2, 2 -> 8
+// get_data(uint256,uint256): 2, 2 -> 8
+// get_data(uint256,uint256): 2, 8 -> FAILURE # NB: the original code contained a bug here #
+// get_dynamicData(uint256,uint256): 2, 2 -> 8
+// get_dynamicData(uint256,uint256): 2, 8 -> FAILURE
+// get_data_assembly(uint256,uint256): 2, 2 -> 8
+// get_dynamicData_assembly(uint256,uint256): 2, 2 -> 8

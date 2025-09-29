@@ -5,26 +5,26 @@ contract C {
         suint8[][] y;
     }
 
-    mapping (suint8 => S) src;
+    mapping (uint8 => S) src;
 
     constructor() {
         suint8[] memory d = new suint8[](suint(2));
-        d[suint8(0)] = suint8(3);
-        d[suint8(1)] = suint8(4);
+        d[0] = suint8(3);
+        d[1] = suint8(4);
 
         suint8[][] memory y = new suint8[][](suint(2));
-        y[suint8(0)] = d;
-        y[suint8(1)] = d;
+        y[0] = d;
+        y[1] = d;
 
-        src[suint8(0)] = S({y: y});
+        src[0] = S({y: y});
     }
 
-    function f(suint8 index) public returns (S memory) {
+    function f(uint8 index) public returns (S memory) {
         return src[index];
     }
 }
 // ----
-// f(suint8): 0 -> 0x20, 0x20, 2, 0x40, 0xa0, 2, 3, 4, 2, 3, 4 # offset to start of S in mem, offset to start of y in mem, length of y, offset to start of y[0] in mem, offset to start of y[1] in mem, values of y[0] and y[1]
+// f(uint8): 0 -> 0x20, 0x20, 2, 0x40, 0xa0, 2, 3, 4, 2, 3, 4 # offset to start of S in mem, offset to start of y in mem, length of y, offset to start of y[0] in mem, offset to start of y[1] in mem, values of y[0] and y[1]
 // gas irOptimized: 197102
 // gas legacy: 199887
 // gas legacyOptimized: 196845

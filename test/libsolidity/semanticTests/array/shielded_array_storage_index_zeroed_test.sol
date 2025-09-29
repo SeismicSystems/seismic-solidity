@@ -1,23 +1,23 @@
 contract C {
     suint[] storageArray;
-    function test_zeroed_indices(suint256 len) public
+    function test_zeroed_indices(uint256 len) public
     {
-        while(storageArray.length < len)
+        while(storageArray.length < suint(len))
             storageArray.push();
-        while(storageArray.length > len)
+        while(storageArray.length > suint(len))
             storageArray.pop();
 
-        for (suint i = suint(0); i < len; i++)
-            storageArray[i] = i + suint(1);
+        for (uint i = 0; i < len; i++)
+            storageArray[i] = suint(i) + suint(1);
 
-        if (len > suint(3))
+        if (suint(len) > suint(3))
         {
             while(storageArray.length > suint(0))
                 storageArray.pop();
             while(storageArray.length < suint(3))
                 storageArray.push();
 
-            for (uint i = 3; suint(i) < len; i++)
+            for (uint i = 3; i < len; i++)
             {
                 assembly {
                     mstore(0, storageArray.slot)
@@ -33,10 +33,10 @@ contract C {
 
         while(storageArray.length > suint(0))
             storageArray.pop();
-        while(storageArray.length < len)
+        while(storageArray.length < suint(len))
             storageArray.push();
 
-        for (suint i = suint(0); i < len; i++)
+        for (uint i = 0; i < len; i++)
         {
             require(storageArray[i] == suint(0));
 
@@ -50,20 +50,20 @@ contract C {
     }
 }
 // ----
-// test_zeroed_indices(suint256): 1 ->
-// test_zeroed_indices(suint256): 5 ->
+// test_zeroed_indices(uint256): 1 ->
+// test_zeroed_indices(uint256): 5 ->
 // gas irOptimized: 133763
 // gas legacy: 131664
 // gas legacyOptimized: 129990
-// test_zeroed_indices(suint256): 10 ->
+// test_zeroed_indices(uint256): 10 ->
 // gas irOptimized: 228556
 // gas legacy: 225215
 // gas legacyOptimized: 222351
-// test_zeroed_indices(suint256): 15 ->
+// test_zeroed_indices(uint256): 15 ->
 // gas irOptimized: 327360
 // gas legacy: 322899
 // gas legacyOptimized: 318907
-// test_zeroed_indices(suint256): 0xFF ->
+// test_zeroed_indices(uint256): 0xFF ->
 // gas irOptimized: 5180120
 // gas legacy: 5093135
 // gas legacyOptimized: 5020523
