@@ -1,11 +1,9 @@
 name: Release
-
 on:
   push:
     branches:
       - seismic
       - ameya/fix-macos-13-build
-
 jobs:
   build-release:
     name: Build and Archive Binaries
@@ -24,16 +22,14 @@ jobs:
             arch: x86_64
           - os: macos-14-large # since macos-14-large is x86_64
             arch: arm64
-          - os: macos-latest-large 
+          - os: macos-latest-large
             arch: arm64 # since macos-latest-large is x86_64
-
     steps:
       # Checkout source code
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
       # Set up dependencies
       - name: Set up dependencies (Linux & macOS)
         if: ${{ matrix.os != 'windows-latest' }}
@@ -49,19 +45,16 @@ jobs:
             brew update
             brew install boost openssl ccache
           fi
-
       - name: Set up dependencies (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         shell: powershell
         run: |
           .\scripts\install_deps.ps1
-
       - name: Build Seismic Solidity on Windows
         if: ${{ matrix.os == 'windows-latest' }}
         shell: powershell
         run: |
           .\.circleci\build_win.ps1
-
       # Build Seismic Solidity
       - name: Build Seismic Solidity on Linux & macOS
         if: ${{ matrix.os != 'windows-latest' }}
@@ -80,7 +73,6 @@ jobs:
           fi
           JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]] && echo 2 || nproc)
           cmake --build . --config Release -j $JOBS
-
       # Archive binary
       - name: Archive binary (Linux & macOS)
         if: ${{ matrix.os != 'windows-latest' }}
@@ -100,37 +92,31 @@ jobs:
           elif [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             tar -czvf ssolc-${{ matrix.os }}-${{ matrix.arch }}.tar.gz solc/solc
           fi
-
       - name: Archive binary (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         shell: powershell
         run: |
           cd build
           Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
-
       # Upload artifacts
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.os }}-${{ matrix.arch }}
           path: build/*ssolc-*
-
   publish-release:
     name: Create Release
     needs: build-release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
-
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -169,5 +155,3 @@ jobs:
             gh release upload "$SHORT_SHA" "$file" --clobber
           done
           shopt -u nullglob
-
-          
