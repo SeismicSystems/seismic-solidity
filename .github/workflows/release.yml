@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - seismic
+      - ameya/fix-macos-13-build
 
 jobs:
   build-release:
@@ -12,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest]
+        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest, macos-14]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
@@ -36,7 +37,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y build-essential python3 python3-pip \
               zlib1g-dev libboost-all-dev libssl-dev ccache
-          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" ]]; then
             brew update
             brew install boost openssl ccache
           fi
@@ -61,7 +62,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DPEDANTIC=OFF
@@ -69,7 +70,7 @@ jobs:
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DPEDANTIC=OFF
           fi
-          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]] && echo 2 || nproc)
+          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" ]] && echo 2 || nproc)
           cmake --build . --config Release -j $JOBS
 
       # Archive binary
@@ -80,7 +81,7 @@ jobs:
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
             tar -czvf ssolc-macos-arm64.tar.gz solc/solc
-          elif [ "${{ matrix.os }}" = "macos-13" ]; then
+          elif [ "${{ matrix.os }}" = "macos-14" ]; then
             tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
@@ -156,3 +157,4 @@ jobs:
             gh release upload "$SHORT_SHA" "$file" --clobber
           done
           shopt -u nullglob
+          
