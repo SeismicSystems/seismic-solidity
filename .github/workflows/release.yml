@@ -1,10 +1,8 @@
 name: Release
-
 on:
   push:
     branches:
       - seismic
-
 jobs:
   build-release:
     name: Build and Archive Binaries
@@ -12,19 +10,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest]
+        # macos-14-large is macos-14 with x86_64
+        # macos-latest-large is macos-latest (macos-15) with x86_64
+        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest-large, macos-latest, macos-14-large, macos-14]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
             arch: x86_64
-
+          - os: macos-14
+            arch: x86_64
+          - os: macos-14-large # since macos-14-large is x86_64
+            arch: arm64
+          - os: macos-latest-large
+            arch: arm64 # since macos-latest-large is x86_64
     steps:
       # Checkout source code
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
       # Set up dependencies
       - name: Set up dependencies (Linux & macOS)
         if: ${{ matrix.os != 'windows-latest' }}
@@ -36,23 +40,20 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y build-essential python3 python3-pip \
               zlib1g-dev libboost-all-dev libssl-dev ccache
-          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]]; then
             brew update
             brew install boost openssl ccache
           fi
-
       - name: Set up dependencies (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         shell: powershell
         run: |
           .\scripts\install_deps.ps1
-
       - name: Build Seismic Solidity on Windows
         if: ${{ matrix.os == 'windows-latest' }}
         shell: powershell
         run: |
           .\.circleci\build_win.ps1
-
       # Build Seismic Solidity
       - name: Build Seismic Solidity on Linux & macOS
         if: ${{ matrix.os != 'windows-latest' }}
@@ -61,7 +62,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]]; then
+          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DPEDANTIC=OFF
@@ -69,9 +70,8 @@ jobs:
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DPEDANTIC=OFF
           fi
-          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-13" ]] && echo 2 || nproc)
+          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]] && echo 2 || nproc)
           cmake --build . --config Release -j $JOBS
-
       # Archive binary
       - name: Archive binary (Linux & macOS)
         if: ${{ matrix.os != 'windows-latest' }}
@@ -80,48 +80,46 @@ jobs:
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
             tar -czvf ssolc-macos-arm64.tar.gz solc/solc
-          elif [ "${{ matrix.os }}" = "macos-13" ]; then
-            tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-latest-large" ]; then
+            tar -czvf ssolc-macos-latest-x86_64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-14" ]; then
+            tar -czvf ssolc-macos-14-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-14-large" ]; then
+            tar -czvf ssolc-macos-14-x86_64.tar.gz solc/solc
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
           elif [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
             tar -czvf ssolc-${{ matrix.os }}-${{ matrix.arch }}.tar.gz solc/solc
           fi
-
       - name: Archive binary (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         shell: powershell
         run: |
           cd build
           Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
-
       # Upload artifacts
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ matrix.os }}-${{ matrix.arch }}
           path: build/*ssolc-*
-
   publish-release:
     name: Create Release
     needs: build-release
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
-
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
+        run: |-
           cd artifacts/
 
           # Move all archives to a flat directory structure
