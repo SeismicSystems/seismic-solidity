@@ -13,11 +13,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest, macos-14]
+        # macos-14-large is macos-14 with x86_64
+        # macos-15-large is macos-15 with x86_64
+        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-15-large, macos-15, macos-14-large, macos-14]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
             arch: x86_64
+          - os: macos-14-large # since macos-14-large is x86_64
+            arch: arm64
+          - os: macos-15-large 
+            arch: arm64 # since macos-15-large is x86_64
 
     steps:
       # Checkout source code
