@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - seismic
-      - ameya/fix-macos-13-build
 jobs:
   build-release:
     name: Build and Archive Binaries
@@ -120,7 +119,7 @@ jobs:
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
+        run: |-
           cd artifacts/
 
           # Move all archives to a flat directory structure
