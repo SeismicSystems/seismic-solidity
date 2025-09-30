@@ -22,7 +22,7 @@ jobs:
             arch: x86_64
           - os: macos-14-large # since macos-14-large is x86_64
             arch: arm64
-          - os: macos-15-large 
+          - os: macos-latest-large 
             arch: arm64 # since macos-latest-large is x86_64
 
     steps:
@@ -43,7 +43,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y build-essential python3 python3-pip \
               zlib1g-dev libboost-all-dev libssl-dev ccache
-          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" ]]; then
+          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]]; then
             brew update
             brew install boost openssl ccache
           fi
@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" ]]; then
+          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]]; then
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
               -DPEDANTIC=OFF
@@ -76,7 +76,7 @@ jobs:
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DPEDANTIC=OFF
           fi
-          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" ]] && echo 2 || nproc)
+          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]] && echo 2 || nproc)
           cmake --build . --config Release -j $JOBS
 
       # Archive binary
@@ -87,8 +87,12 @@ jobs:
           cd build
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
             tar -czvf ssolc-macos-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-latest-large" ]; then
+            tar -czvf ssolc-macos-latest-x86_64.tar.gz solc/solc
           elif [ "${{ matrix.os }}" = "macos-14" ]; then
-            tar -czvf ssolc-macos-x86_64.tar.gz solc/solc
+            tar -czvf ssolc-macos-14-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-14-large" ]; then
+            tar -czvf ssolc-macos-14-x86_64.tar.gz solc/solc
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
           elif [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
