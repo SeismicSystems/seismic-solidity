@@ -20,6 +20,8 @@ jobs:
         exclude:
           - os: macos-latest
             arch: x86_64
+          - os: macos-14
+            arch: x86_64
           - os: macos-14-large # since macos-14-large is x86_64
             arch: arm64
           - os: macos-latest-large 
