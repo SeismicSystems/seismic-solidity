@@ -6,7 +6,7 @@ contract test {
         data[index][index] = suint(8);
         for (uint i = 0; i < 3; i++)
             dynamicData[index].push();
-        dynamicData[index][sindex] = suint(8);
+        dynamicData[index][index] = suint(8);
     }
 
     function get_data(uint a, uint256 b) public returns (uint) {
