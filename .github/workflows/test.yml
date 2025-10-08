@@ -78,4 +78,7 @@ jobs:
           [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
           [ -x "$SEISMIC_REVME_EXEC" ] || { echo "Error: revme executable not found at $SEISMIC_REVME_EXEC"; exit 1; }
           SEMANTIC_TESTS_DIR="$GITHUB_WORKSPACE/test/libsolidity/semanticTests"
-          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" 2>&1
+          if ! RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" 2>&1; then
+            echo "❌ Semantic tests failed"
+            exit 1
+          fi
