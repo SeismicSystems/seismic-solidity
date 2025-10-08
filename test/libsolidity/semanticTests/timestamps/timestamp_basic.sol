@@ -34,8 +34,8 @@ contract C {
 }
 // ----
 // getTimestamp() -> 0x0f
-// getTimestampMs() -> 0x3aa7
-// getTimestampSeconds() -> 0x0f
+// getTimestampMs() -> 0x7530
+// getTimestampSeconds() -> 0x2d
 // checkTimestampEqualTimestampSeconds() -> true
 // checkTimestampMsGreaterThanTimestamp() -> true
 // checkTimestampMsValid() -> false
