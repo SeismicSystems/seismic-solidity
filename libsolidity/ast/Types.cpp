@@ -2137,10 +2137,8 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 	MemberList::MemberMap members;
 	if (!isString())
 	{
-		if (containsShieldedType())
-			members.emplace_back("length", TypeProvider::shieldedUint256());
-		else
-			members.emplace_back("length", TypeProvider::uint256());
+		// Array length is always uint256, even for shielded arrays, because it's stored in public storage
+		members.emplace_back("length", TypeProvider::uint256());
 		if (isDynamicallySized() && location() == DataLocation::Storage)
 		{
 			Type const* thisAsPointer = TypeProvider::withLocation(this, location(), true);
