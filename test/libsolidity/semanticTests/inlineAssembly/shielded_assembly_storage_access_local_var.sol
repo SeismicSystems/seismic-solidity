@@ -5,7 +5,7 @@ contract C {
         suint256[] storage x = a;
         suint256 off;
         assembly {
-            cstore(x.slot, 7)
+            sstore(x.slot, 7)
             off := x.offset
         }
         assert(off ==suint(0));

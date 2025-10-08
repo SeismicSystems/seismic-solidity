@@ -6,7 +6,7 @@ contract test {
         data[index][index] = suint(8);
         for (uint i = 0; i < 3; i++)
             dynamicData[index].push();
-        dynamicData[index][sindex] = suint(8);
+        dynamicData[index][index] = suint(8);
     }
 
     function get_data(uint a, uint256 b) public returns (uint) {
@@ -55,7 +55,7 @@ contract test {
             let hash := keccak256(0x0, 0x40)
 
             // Load the length of the dynamic array `dynamicData[a]`
-            let len := cload(hash)
+            let len := sload(hash)
 
             // Ensure index `b` is within bounds (0 <= b < len)
             if iszero(lt(b, len)) {
