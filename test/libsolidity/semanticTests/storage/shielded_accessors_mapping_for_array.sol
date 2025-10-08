@@ -1,3 +1,5 @@
+pragma solidity ^0.8.0;
+
 contract test {
     mapping(uint => suint[8]) data;
     mapping(uint => suint[]) dynamicData;
