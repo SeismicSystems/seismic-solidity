@@ -2,9 +2,9 @@ contract C {
     suint[] storageArray;
     function test_indices(uint256 len) public
     {
-        while (storageArray.length < suint(len))
+        while (storageArray.length < len)
             storageArray.push();
-        while (storageArray.length > suint(len))
+        while (storageArray.length > len)
             storageArray.pop();
         for (uint i = 0; i < len; i++)
             storageArray[i] = suint(i) + suint(1);

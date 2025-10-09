@@ -26,7 +26,7 @@ contract ShieldedArrayTest {
 
     // GetShieldedUint in normal Solidity
     function getShieldedUint(uint256 index) external view returns (uint) {
-        require(suint(index) < shieldedUints.length, "Index out of bounds");
+        require(index < shieldedUints.length, "Index out of bounds");
         return uint(shieldedUints[index]);
     }
 
@@ -61,7 +61,7 @@ contract ShieldedArrayTest {
 
     // GetShieldedAddress in normal Solidity
     function getShieldedAddress(uint256 index) external view returns (address) {
-        require(suint(index) < shieldedAddresses.length, "Index out of bounds");
+        require(index < shieldedAddresses.length, "Index out of bounds");
         return address(shieldedAddresses[index]);
     }
 
@@ -89,7 +89,7 @@ contract ShieldedArrayTest {
 
     // GetShieldedBool in normal Solidity
     function getShieldedBool(uint256 index) external view returns (bool) {
-        require(suint(index) < shieldedBools.length, "Index out of bounds");
+        require(index < shieldedBools.length, "Index out of bounds");
         return bool(shieldedBools[index]);
     }
 
