@@ -2137,7 +2137,6 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 	MemberList::MemberMap members;
 	if (!isString())
 	{
-		// Array length is always uint256, even for shielded arrays, because it's stored in public storage
 		members.emplace_back("length", TypeProvider::uint256());
 		if (isDynamicallySized() && location() == DataLocation::Storage)
 		{
