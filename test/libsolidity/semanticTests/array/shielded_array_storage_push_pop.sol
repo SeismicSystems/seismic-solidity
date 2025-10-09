@@ -5,7 +5,7 @@ contract C {
             storageArray.push();
         while(storageArray.length > 0)
             storageArray.pop();
-        return uint(storageArray.length);
+        return storageArray.length;
     }
 }
 // ----

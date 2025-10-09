@@ -6,7 +6,7 @@ contract C {
         suint128[] memory y = new suint128[](suint(1));
         y[0] = suint128(23);
         x = y;
-        assembly { cstore(x.slot, 4) }
+        assembly { sstore(x.slot, 4) }
 
         assert(x[0] == suint128(23));
         assert(x[1] == suint128(0));

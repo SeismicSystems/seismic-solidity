@@ -7,7 +7,7 @@ contract C {
         data.push(suint120(345));
         delete data;
         assembly {
-            cstore(data.slot, 3)
+            sstore(data.slot, 3)
         }
         return (uint120(data[0]), uint120(data[1]), uint120(data[2]));
     }

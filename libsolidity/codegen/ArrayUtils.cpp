@@ -128,13 +128,9 @@ void ArrayUtils::copyArrayToStorage(ArrayType const& _targetType, ArrayType cons
 			if (_targetType.isDynamicallySized())
 			{
 				// store new target length
+				// Array length is always stored in public storage, even for shielded arrays
 				solAssert(!_targetType.isByteArrayOrString());
-				if (_targetType.containsShieldedType()) {
-					_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::CSTORE;
-				}
-				else {
-					_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::SSTORE;
-				}
+				_context << Instruction::DUP3 << Instruction::DUP3 << Instruction::SSTORE;
 			}
 			if (sourceBaseType->category() == Type::Category::Mapping)
 			{
@@ -837,18 +833,12 @@ void ArrayUtils::incrementDynamicArraySize(ArrayType const& _type) const
 	}
 	else
 	{
-		if(_type.containsShieldedType())
-			m_context.appendInlineAssembly(R"({
-				let new_length := add(cload(ref), 1)
-				cstore(ref, new_length)
-				ref := new_length
-			})", {"ref"});
-		else
-			m_context.appendInlineAssembly(R"({
-				let new_length := add(sload(ref), 1)
-				sstore(ref, new_length)
-				ref := new_length
-			})", {"ref"});
+		// Array length is always stored in public storage, even for shielded arrays
+		m_context.appendInlineAssembly(R"({
+			let new_length := add(sload(ref), 1)
+			sstore(ref, new_length)
+			ref := new_length
+		})", {"ref"});
 	}
 }
 
@@ -936,10 +926,8 @@ void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
 		}
 
 		// Stack: ArrayReference newLength
-		if (_type.containsShieldedType())
-			m_context << Instruction::SWAP1 << Instruction::CSTORE;
-		else
-			m_context << Instruction::SWAP1 << Instruction::SSTORE;
+		// Array length is always stored in public storage, even for shielded arrays
+		m_context << Instruction::SWAP1 << Instruction::SSTORE;
 	}
 }
 
@@ -1039,10 +1027,8 @@ void ArrayUtils::retrieveLength(ArrayType const& _arrayType, unsigned _stackDept
 			m_context << Instruction::MLOAD;
 			break;
 		case DataLocation::Storage:
-			if(_arrayType.containsShieldedType())
-				m_context << Instruction::CLOAD;
-			else
-				m_context << Instruction::SLOAD;
+			// Array length is always stored in public storage, even for shielded arrays
+			m_context << Instruction::SLOAD;
 			if (_arrayType.isByteArrayOrString())
 				m_context.callYulFunction(m_context.utilFunctions().extractByteArrayLengthFunction(), 1, 1);
 			break;
