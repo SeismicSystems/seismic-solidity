@@ -8,7 +8,7 @@ contract C {
     S data;
 
     constructor() {
-        suint length = suint(2);
+        uint length = 2;
         suint8[] memory d = new suint8[](length);
         d[0] = suint8(3);
         d[1] = suint8(4);

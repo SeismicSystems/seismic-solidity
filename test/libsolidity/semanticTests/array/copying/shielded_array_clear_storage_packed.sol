@@ -4,7 +4,7 @@ contract C {
     suint120[] x2;
     function f() public returns(uint128) {
         x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42));
-        suint128[] memory y = new suint128[](suint(1));
+        suint128[] memory y = new suint128[](1);
         y[0] = suint128(23);
         x = y;
         assembly { sstore(x.slot, 4) }
@@ -16,7 +16,7 @@ contract C {
 
     function g() public returns(uint64) {
         x1.push(suint64(42)); x1.push(suint64(42)); x1.push(suint64(42)); x1.push(suint64(42));
-        suint64[] memory y = new suint64[](suint(1));
+        suint64[] memory y = new suint64[](1);
         y[0] = suint64(23);
         x1 = y;
         assembly { sstore(x1.slot, 4) }
@@ -28,7 +28,7 @@ contract C {
 
     function h() public returns(uint120) {
         x2.push(suint120(42)); x2.push(suint120(42)); x2.push(suint120(42)); x2.push(suint120(42));
-        suint120[] memory y = new suint120[](suint(1));
+        suint120[] memory y = new suint120[](1);
         y[0] = suint120(23);
         x2 = y;
         assembly { sstore(x2.slot, 4) }
