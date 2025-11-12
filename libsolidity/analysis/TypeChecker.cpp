@@ -3123,10 +3123,9 @@ void TypeChecker::endVisit(NewExpression const& _newExpression)
 				_newExpression.typeName().location(),
 				"Length has to be placed in parentheses after the array type for new expression."
 			);
-		auto lengthType = type->containsShieldedType() ? TypeProvider::shieldedUint256() : TypeProvider::uint256();
 		type = TypeProvider::withLocationIfReference(DataLocation::Memory, type);
 		_newExpression.annotation().type = TypeProvider::function(
-			TypePointers{lengthType},
+			TypePointers{TypeProvider::uint256()},
 			TypePointers{type},
 			strings(1, ""),
 			strings(1, ""),

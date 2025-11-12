@@ -1303,9 +1303,8 @@ std::string YulUtilFunctions::wrappingIntExpFunction(
 std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 {
 	std::string functionName = "array_length_" + _type.identifier();
-	bool isShielded = _type.containsShieldedType();
 
-	return m_functionCollector.createFunction(functionName, [&, isShielded]() {
+	return m_functionCollector.createFunction(functionName, [&]() {
 		Whiskers w(R"(
 			function <functionName>(value<?dynamic><?calldata>, len</calldata></dynamic>) -> length {
 				<?dynamic>
@@ -1320,7 +1319,8 @@ std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 		)");
 		w("functionName", functionName);
 		w("dynamic", _type.isDynamicallySized());
-		w("loadOpcode", isShielded ? "cload" : "sload");
+		// Array length is always stored in public storage, even for shielded arrays
+		w("loadOpcode", "sload");
 		if (!_type.isDynamicallySized()) w("length", toCompactHexWithPrefix(_type.length()));
 		w("memory", _type.location() == DataLocation::Memory);
 		w("storage", _type.location() == DataLocation::Storage);
@@ -1367,8 +1367,6 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 	if (_type.isByteArrayOrString())
 		return resizeDynamicByteArrayFunction(_type);
 
-	bool isShielded = _type.containsShieldedType();
-
 	std::string functionName = "resize_array_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		Whiskers templ(R"(
@@ -1393,7 +1391,8 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 			templ("panic", panicFunction(util::PanicCode::ResourceError));
 			templ("fetchLength", arrayLengthFunction(_type));
 			templ("isDynamic", _type.isDynamicallySized());
-			templ("storeOpcode", isShielded ? "cstore" : "sstore");
+			// Array length is always stored in public storage, even for shielded arrays
+			templ("storeOpcode", "sstore");
 			bool isMappingBase = _type.baseType()->category() == Type::Category::Mapping;
 			templ("needsClearing", !isMappingBase);
 			if (!isMappingBase)
@@ -1709,7 +1708,6 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 		_fromType = _type.baseType();
 	else if (_fromType->isValueType())
 		solUnimplementedAssert(*_fromType == *_type.baseType());
-	bool isShielded = _type.containsShieldedType();
 	std::string functionName =
 		std::string{"array_push_from_"} +
 		_fromType->identifier() +
@@ -1759,12 +1757,13 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 				</isByteArrayOrString>
 			})")
 			("functionName", functionName)
-			("storeOpcode", isShielded ? "cstore" : "sstore")
+			// Array length is always stored in public storage, even for shielded arrays
+			("storeOpcode", "sstore")
 			("values", _fromType->sizeOnStack() == 0 ? "" : ", " + suffixedVariableNameList("value", 0, _fromType->sizeOnStack()))
 			("panic", panicFunction(PanicCode::ResourceError))
 			("extractByteArrayLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
 			("dataAreaFunction", arrayDataAreaFunction(_type))
-			("loadOpcode", isShielded ? "cload" : "sload")
+			("loadOpcode", "sload")
 			("isByteArrayOrString", _type.isByteArrayOrString())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
 			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType(), VariableDeclaration::Location::Unspecified))
@@ -1779,7 +1778,6 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 	solAssert(_type.location() == DataLocation::Storage, "");
 	solAssert(_type.isDynamicallySized(), "");
 	solUnimplementedAssert(_type.baseType()->storageBytes() <= 32, "Base type is not yet implemented.");
-	bool isShielded = _type.containsShieldedType();
 	std::string functionName = "array_push_zero_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
@@ -1799,8 +1797,9 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 			("isBytes", _type.isByteArrayOrString())
 			("increaseBytesSize", _type.isByteArrayOrString() ? increaseByteArraySizeFunction(_type) : "")
 			("extractLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
-			("loadOpcode", isShielded ? "cload" : "sload")
-			("storeOpcode", isShielded ? "cstore" : "sstore")
+			// Array length is always stored in public storage, even for shielded arrays
+			("loadOpcode", "sload")
+			("storeOpcode", "sstore")
 			("panic", panicFunction(PanicCode::ResourceError))
 			("fetchLength", arrayLengthFunction(_type))
 			("indexAccess", storageArrayIndexAccessFunction(_type))

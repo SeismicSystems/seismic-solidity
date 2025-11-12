@@ -2,9 +2,9 @@ contract C {
     suint[] storageArray;
     function test_zeroed_indices(uint256 len) public
     {
-        while(storageArray.length < suint(len))
+        while(storageArray.length < len)
             storageArray.push();
-        while(storageArray.length > suint(len))
+        while(storageArray.length > len)
             storageArray.pop();
 
         for (uint i = 0; i < len; i++)
@@ -12,9 +12,9 @@ contract C {
 
         if (suint(len) > suint(3))
         {
-            while(storageArray.length > suint(0))
+            while(storageArray.length > 0)
                 storageArray.pop();
-            while(storageArray.length < suint(3))
+            while(storageArray.length < 3)
                 storageArray.push();
 
             for (uint i = 3; i < len; i++)
@@ -31,9 +31,9 @@ contract C {
 
         }
 
-        while(storageArray.length > suint(0))
+        while(storageArray.length > 0)
             storageArray.pop();
-        while(storageArray.length < suint(len))
+        while(storageArray.length < len)
             storageArray.push();
 
         for (uint i = 0; i < len; i++)

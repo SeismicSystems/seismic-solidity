@@ -8,11 +8,11 @@ contract C {
     mapping (uint8 => S) src;
 
     constructor() {
-        suint8[] memory d = new suint8[](suint(2));
+        suint8[] memory d = new suint8[](2);
         d[0] = suint8(3);
         d[1] = suint8(4);
 
-        suint8[][] memory y = new suint8[][](suint(2));
+        suint8[][] memory y = new suint8[][](2);
         y[0] = d;
         y[1] = d;
 

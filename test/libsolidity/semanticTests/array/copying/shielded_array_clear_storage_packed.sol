@@ -4,10 +4,10 @@ contract C {
     suint120[] x2;
     function f() public returns(uint128) {
         x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42));
-        suint128[] memory y = new suint128[](suint(1));
+        suint128[] memory y = new suint128[](1);
         y[0] = suint128(23);
         x = y;
-        assembly { cstore(x.slot, 4) }
+        assembly { sstore(x.slot, 4) }
         assert(x[0] == suint128(23));
         assert(x[2] == suint128(0));
         assert(x[3] == suint128(0));
@@ -16,10 +16,10 @@ contract C {
 
     function g() public returns(uint64) {
         x1.push(suint64(42)); x1.push(suint64(42)); x1.push(suint64(42)); x1.push(suint64(42));
-        suint64[] memory y = new suint64[](suint(1));
+        suint64[] memory y = new suint64[](1);
         y[0] = suint64(23);
         x1 = y;
-        assembly { cstore(x1.slot, 4) }
+        assembly { sstore(x1.slot, 4) }
         assert(x1[0] == suint64(23));
         assert(x1[2] == suint64(0));
         assert(x1[3] == suint64(0));
@@ -28,10 +28,10 @@ contract C {
 
     function h() public returns(uint120) {
         x2.push(suint120(42)); x2.push(suint120(42)); x2.push(suint120(42)); x2.push(suint120(42));
-        suint120[] memory y = new suint120[](suint(1));
+        suint120[] memory y = new suint120[](1);
         y[0] = suint120(23);
         x2 = y;
-        assembly { cstore(x2.slot, 4) }
+        assembly { sstore(x2.slot, 4) }
         assert(x2[0] == suint120(23));
         assert(x2[2] == suint120(0));
         assert(x2[3] == suint120(0));
