@@ -3,7 +3,7 @@ contract C {
     suint128[] x;
     function f() public returns(bool) {
         x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42)); x.push(suint128(42));
-        suint128[] memory y = new suint128[](suint(1));
+        suint128[] memory y = new suint128[](1);
         y[0] = suint128(23);
         x = y;
         assembly { sstore(x.slot, 4) }

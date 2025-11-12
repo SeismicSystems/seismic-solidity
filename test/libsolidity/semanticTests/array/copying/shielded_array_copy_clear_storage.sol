@@ -2,7 +2,7 @@ contract C {
     suint256[] x;
     function f() public returns(uint256) {
         x.push(suint(42)); x.push(suint(42)); x.push(suint(42)); x.push(suint(42));
-        suint256[] memory y = new suint256[](suint(1));
+        suint256[] memory y = new suint256[](1);
         y[0] = suint(23);
         x = y;
         assembly { sstore(x.slot, 4) }
