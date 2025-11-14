@@ -2170,10 +2170,10 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 Type const* ArrayType::encodingType() const
 {
 	if (location() == DataLocation::Storage)
-		if (containsShieldedType())
-			return TypeProvider::shieldedUint256();
-		else
-			return TypeProvider::uint256();
+		// Array length/reference is always stored in public storage (uint256),
+		// even if the array contains shielded types. Only the individual elements
+		// use confidential storage.
+		return TypeProvider::uint256();
 	else
 		return TypeProvider::withLocation(this, DataLocation::Memory, true);
 }
@@ -2181,10 +2181,10 @@ Type const* ArrayType::encodingType() const
 Type const* ArrayType::decodingType() const
 {
 	if (location() == DataLocation::Storage)
-		if (containsShieldedType())
-			return TypeProvider::shieldedUint256();
-		else
-			return TypeProvider::uint256();
+		// Array length/reference is always stored in public storage (uint256),
+		// even if the array contains shielded types. Only the individual elements
+		// use confidential storage.
+		return TypeProvider::uint256();
 	else
 		return this;
 }
