@@ -961,6 +961,7 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 bool TypeChecker::visit(IfStatement const& _ifStatement)
 {
 	expectBoolOrShieldedBool(_ifStatement.condition());
+	checkAndWarnShieldedCondition(_ifStatement.condition());
 	_ifStatement.trueStatement().accept(*this);
 	if (_ifStatement.falseStatement())
 		_ifStatement.falseStatement()->accept(*this);
@@ -4268,6 +4269,37 @@ bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
         return expectType(_expression, *TypeProvider::boolean());
 }
 
+bool TypeChecker::checkAndWarnShieldedCondition(Expression const& _condition)
+{
+	Type const* condType = type(_condition);
+
+	// Check if condition result type is shielded
+	bool isShielded = condType && (condType->isShielded() || condType->containsShieldedType());
+
+	// For binary operations, also check if operands are shielded (e.g., suint >= suint produces bool, not sbool)
+	if (!isShielded)
+	{
+		if (auto binOp = dynamic_cast<BinaryOperation const*>(&_condition))
+		{
+			Type const* leftType = type(binOp->leftExpression());
+			Type const* rightType = type(binOp->rightExpression());
+			isShielded = (leftType && (leftType->isShielded() || leftType->containsShieldedType())) ||
+			             (rightType && (rightType->isShielded() || rightType->containsShieldedType()));
+		}
+	}
+
+	if (isShielded)
+	{
+		m_errorReporter.warning(
+			9663_error,
+			_condition.location(),
+			"Using shielded types in branching conditions can leak information through "
+			"observable execution patterns such as gas costs, state changes, and execution traces."
+		);
+		return true;
+	}
+	return false;
+}
 
 void TypeChecker::requireLValue(Expression const& _expression)
 {

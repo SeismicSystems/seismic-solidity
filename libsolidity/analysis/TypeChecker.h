@@ -176,6 +176,8 @@ private:
 	bool expectType(Expression const& _expression, Type const& _expectedType);
 	/// Helper function for conditionals that checks for either bool or shielded_bools.
 	bool expectBoolOrShieldedBool(Expression const& _expression);
+	/// Checks if a condition uses shielded types and emits a warning about potential information leakage.
+	bool checkAndWarnShieldedCondition(Expression const& _condition);
 	/// Runs type checks on @a _expression to infer its type and then checks that it is an LValue.
 	void requireLValue(Expression const& _expression);
 
