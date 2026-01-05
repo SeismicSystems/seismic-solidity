@@ -1418,6 +1418,7 @@ void TypeChecker::endVisit(ExpressionStatement const& _statement)
 bool TypeChecker::visit(Conditional const& _conditional)
 {
 	expectBoolOrShieldedBool(_conditional.condition());
+	checkAndWarnShieldedCondition(_conditional.condition());
 
 	_conditional.trueExpression().accept(*this);
 	_conditional.falseExpression().accept(*this);
