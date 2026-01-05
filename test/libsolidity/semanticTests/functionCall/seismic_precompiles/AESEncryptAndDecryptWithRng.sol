@@ -5,14 +5,14 @@ contract AES {
     bytes32 public constant AES_KEY = hex"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
     bytes public constant PLAINTEXT = hex"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f";
 
-    suint96 NONCE;
+    uint96 NONCE;
     bytes public encryptedData;
     bytes public decryptedData;
 
     /// @notice Generates a random nonce using seismicRng.
     function updateNonce() public {
         bytes32 rngOutput = seismicRng();
-        NONCE = suint96(suint256(rngOutput)); 
+        NONCE = uint96(uint256(rngOutput));
     }
 
 

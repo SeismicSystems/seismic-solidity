@@ -2221,6 +2221,21 @@ void TypeChecker::typeCheckABIEncodeFunctions(
 	{
 		auto const& argType = type(*arguments[i]);
 
+		// Prevent encoding of shielded types (skip check for tuples to avoid unimplemented feature errors)
+		if (argType && argType->category() != Type::Category::Tuple)
+		{
+			if (argType->isShielded() || argType->containsShieldedType())
+			{
+				m_errorReporter.typeError(
+					9664_error,
+					arguments[i]->location(),
+					"Shielded types cannot be ABI-encoded. "
+					"Encoding shielded values would leak information through the resulting bytes."
+				);
+				continue;
+			}
+		}
+
 		if (argType->category() == Type::Category::RationalNumber)
 		{
 			auto const& rationalType = dynamic_cast<RationalNumberType const&>(*argType);
@@ -2360,6 +2375,22 @@ void TypeChecker::typeCheckABIEncodeCallFunction(FunctionCall const& _functionCa
 		return;
 	}
 	solAssert(!externalFunctionType->takesArbitraryParameters(), "Function must have fixed parameters.");
+
+	// Check if function has shielded parameters
+	for (auto const& paramType : externalFunctionType->parameterTypes())
+	{
+		if (paramType && (paramType->isShielded() || paramType->containsShieldedType()))
+		{
+			m_errorReporter.typeError(
+				9664_error,
+				arguments[0]->location(),
+				"Cannot use abi.encodeCall with functions that have shielded parameter types. "
+				"Encoding shielded values would leak information through the resulting bytes."
+			);
+			return;
+		}
+	}
+
 	// Tuples with only one component become that component
 	std::vector<ASTPointer<Expression const>> callArguments;
 
@@ -2409,6 +2440,7 @@ void TypeChecker::typeCheckABIEncodeCallFunction(FunctionCall const& _functionCa
 	for (size_t i = 0; i < numParameters; i++)
 	{
 		Type const& argType = *type(*callArguments[i]);
+
 		BoolResult result = argType.isImplicitlyConvertibleTo(*externalFunctionType->parameterTypes()[i]);
 		if (!result)
 			m_errorReporter.typeError(

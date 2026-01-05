@@ -8,4 +8,4 @@ contract testContract {
     }
 }
 // ----
-// TypeError 5407: (172-183): Cannot implicitly convert component at position 0 from "saddress" to "saddress payable".
+// TypeError 9664: (155-170): Cannot use abi.encodeCall with functions that have shielded parameter types. Encoding shielded values would leak information through the resulting bytes.
