@@ -1136,7 +1136,10 @@ bool TypeChecker::visit(ForStatement const& _forStatement)
 	if (_forStatement.initializationExpression())
 		_forStatement.initializationExpression()->accept(*this);
 	if (_forStatement.condition())
+	{
 		expectBoolOrShieldedBool(*_forStatement.condition());
+		checkAndWarnShieldedCondition(*_forStatement.condition());
+	}
 	if (_forStatement.loopExpression())
 		_forStatement.loopExpression()->accept(*this);
 	_forStatement.body().accept(*this);

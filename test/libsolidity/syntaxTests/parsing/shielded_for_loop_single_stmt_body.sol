@@ -7,5 +7,6 @@ contract test {
 }
 // ----
 // Warning 9660: (62-83): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9663: (112-125): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
 // Warning 5667: (33-43): Unused function parameter. Remove or comment out the variable name to silence this warning.
 // Warning 2018: (20-159): Function state mutability can be restricted to pure
