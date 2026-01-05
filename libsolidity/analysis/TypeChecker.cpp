@@ -1126,6 +1126,7 @@ void TypeChecker::endVisit(TryStatement const& _tryStatement)
 bool TypeChecker::visit(WhileStatement const& _whileStatement)
 {
 	expectBoolOrShieldedBool(_whileStatement.condition());
+	checkAndWarnShieldedCondition(_whileStatement.condition());
 	_whileStatement.body().accept(*this);
 	return false;
 }
