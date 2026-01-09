@@ -3428,6 +3428,12 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 					_memberAccess.location(),
 					"\"blobbasefee\" is not supported by the VM version."
 				);
+			else if (memberName == "timestamp" || memberName == "timestamp_ms" || memberName == "timestamp_seconds")
+				m_errorReporter.warning(
+					9328_error,
+					_memberAccess.location(),
+					"\"block." + memberName + "\" can be influenced by block producers and should not be relied upon as a source of randomness."
+				);
 			else if (memberName == "prevrandao" && !m_evmVersion.hasPrevRandao())
 				m_errorReporter.warning(
 					9432_error,

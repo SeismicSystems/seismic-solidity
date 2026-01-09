@@ -40,10 +40,12 @@ class AssemblyViewPureChecker
 public:
 	explicit AssemblyViewPureChecker(
 		yul::Dialect const& _dialect,
-		std::function<void(StateMutability, SourceLocation const&)> _reportMutability
+		std::function<void(StateMutability, SourceLocation const&)> _reportMutability,
+		std::function<void(SourceLocation const&)> _reportTimestampUse
 	):
 		m_dialect(_dialect),
-		m_reportMutability(std::move(_reportMutability)) {}
+		m_reportMutability(std::move(_reportMutability)),
+		m_reportTimestampUse(std::move(_reportTimestampUse)) {}
 
 	void operator()(yul::Literal const&) {}
 	void operator()(yul::Identifier const&) {}
@@ -114,6 +116,9 @@ public:
 private:
 	void checkInstruction(SourceLocation _location, evmasm::Instruction _instruction)
 	{
+		if (_instruction == evmasm::Instruction::TIMESTAMP)
+			m_reportTimestampUse(_location);
+
 		if (evmasm::SemanticInformation::invalidInViewFunctions(_instruction))
 			m_reportMutability(StateMutability::NonPayable, _location);
 		else if (evmasm::SemanticInformation::invalidInPureFunctions(_instruction))
@@ -122,6 +127,7 @@ private:
 
 	yul::Dialect const& m_dialect;
 	std::function<void(StateMutability, SourceLocation const&)> m_reportMutability;
+	std::function<void(SourceLocation const&)> m_reportTimestampUse;
 };
 
 }
@@ -227,6 +233,15 @@ void ViewPureChecker::endVisit(InlineAssembly const& _inlineAssembly)
 	AssemblyViewPureChecker{
 		_inlineAssembly.dialect(),
 		[&](StateMutability _mutability, SourceLocation const& _location) { reportMutability(_mutability, _location); }
+		,
+		[&](SourceLocation const& _location)
+		{
+			m_errorReporter.warning(
+				9328_error,
+				_location,
+				"\"timestamp()\" can be influenced by block producers and should not be relied upon as a source of randomness."
+			);
+		}
 	}(_inlineAssembly.operations().root());
 }
 
