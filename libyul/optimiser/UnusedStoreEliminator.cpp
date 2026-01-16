@@ -158,7 +158,7 @@ void UnusedStoreEliminator::visit(Statement const& _statement)
 	// both by querying a combination of semantic information and by listing the instructions.
 	// This way the assert below should be triggered on any change.
 	using evmasm::SemanticInformation;
-	bool isStorageWrite = (*instruction == Instruction::SSTORE);
+	bool isStorageWrite = (*instruction == Instruction::SSTORE || *instruction == Instruction::CSTORE);
 	bool isMemoryWrite =
 		*instruction == Instruction::EXTCODECOPY ||
 		*instruction == Instruction::CODECOPY ||
