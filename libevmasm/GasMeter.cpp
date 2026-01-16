@@ -79,12 +79,6 @@ GasMeter::GasConsumption GasMeter::estimateMax(AssemblyItem const& _item, bool _
 		case Instruction::SLOAD:
 			gas = GasCosts::sloadGas(m_evmVersion);
 			break;
-		case Instruction::CLOAD:
-			gas = GasCosts::cloadGas;
-			break;
-		case Instruction::CSTORE:
-			gas = GasCosts::cstoreGas(m_evmVersion);
-			break;
 		case Instruction::RETURN:
 		case Instruction::REVERT:
 			gas = runGas(_item.instruction(), m_evmVersion);
