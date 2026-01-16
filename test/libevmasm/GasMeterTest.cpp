@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(cload_gas_cost)
 	auto gas = meter.estimateMax(cloadItem, false);
 
 	// CLOAD should cost coldSloadCost = 2100
-	// BOOST_CHECK_EQUAL(gas.value, GasCosts::cloadGas);
+	BOOST_CHECK_EQUAL(gas.value, GasCosts::cloadGas);
 	BOOST_CHECK_EQUAL(gas.value, 2100);
 }
 
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(cstore_gas_cost_berlin)
 
 	// CSTORE for Berlin+ should cost: warmStorageReadCost(100) + 20000 + coldSloadCost-warmStorageReadCost(2000)
 	// = 100 + 20000 + 2000 = 22100
-	// BOOST_CHECK_EQUAL(gas.value, GasCosts::cstoreGas(evmVersion));
+	BOOST_CHECK_EQUAL(gas.value, GasCosts::cstoreGas(evmVersion));
 	BOOST_CHECK_EQUAL(gas.value, 22100);
 }
 
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(cstore_gas_cost_istanbul)
 	auto gas = meter.estimateMax(cstoreItem, false);
 
 	// CSTORE for Istanbul should cost: 800 + 20000 + 2000 = 22800
-	// BOOST_CHECK_EQUAL(gas.value, GasCosts::cstoreGas(evmVersion));
+	BOOST_CHECK_EQUAL(gas.value, GasCosts::cstoreGas(evmVersion));
 	BOOST_CHECK_EQUAL(gas.value, 22800);
 }
 
