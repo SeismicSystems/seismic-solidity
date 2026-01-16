@@ -69,7 +69,7 @@ GasMeter::GasConsumption GasMeter::estimateMax(AssemblyItem const& _item, bool _
 			ExpressionClasses::Id value = m_state->relativeStackElement(-1);
 			if (classes.knownZero(value) || (
 				m_state->storageContent().count(slot) &&
-				classes.knownNonZero(m_state->storageContent().at(slot))
+				classes.knownNonZero(m_state->storageContent().at(slot).value)
 			))
 				gas = GasCosts::totalSstoreResetGas(m_evmVersion); //@todo take refunds into account
 			else
