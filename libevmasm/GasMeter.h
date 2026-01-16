@@ -121,25 +121,6 @@ namespace GasCosts
 		else
 			return 20;
 	}
-	/// Fixed gas cost for CSTORE instruction to prevent information leakage.
-	/// Corresponds to CSTORE_FIXED_GAS in seismic-revm.
-	static unsigned const cstoreFixedGas = 20000;
-	/// Fixed gas cost for CLOAD (confidential storage load)
-	/// Uses flat cost to prevent information leakage
-	static unsigned const cloadGas = coldSloadCost;
-	/// Fixed gas cost for CSTORE (confidential storage store)
-	/// Uses flat cost to prevent information leakage
-	inline unsigned cstoreGas(langutil::EVMVersion _evmVersion)
-	{
-		// CSTORE gas = static_sstore_cost + CSTORE_FIXED_GAS + COLD_SLOAD_COST_ADDITIONAL
-		// For Berlin+: WARM_STORAGE_READ_COST + cstoreFixedGas + COLD_SLOAD_COST_ADDITIONAL = 100 + 20000 + 2000 = 22100
-		if (_evmVersion >= langutil::EVMVersion::berlin())
-			return warmStorageReadCost + cstoreFixedGas + (coldSloadCost - warmStorageReadCost);
-		else if (_evmVersion >= langutil::EVMVersion::istanbul())
-			return 800 + cstoreFixedGas + (coldSloadCost - warmStorageReadCost);
-		else
-			return sstoreResetGas + cstoreFixedGas + (coldSloadCost - warmStorageReadCost);
-	}
 	inline unsigned balanceGas(langutil::EVMVersion _evmVersion)
 	{
 		if (_evmVersion >= langutil::EVMVersion::berlin())
