@@ -2521,6 +2521,108 @@ BOOST_AUTO_TEST_CASE(inliner_invalid)
 }
 
 
+BOOST_AUTO_TEST_CASE(cse_sstore_then_cload_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// Optimizer does stack manipulation but keeps CLOAD (doesn't replace with SSTORE value)
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::SWAP1,
+		Instruction::DUP2,
+		Instruction::SSTORE,
+		Instruction::CLOAD
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_then_sload_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::SLOAD
+	};
+	// Optimizer does stack manipulation but keeps SLOAD (doesn't replace with CSTORE value)
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::SWAP1,
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		Instruction::SLOAD
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_sstore_cload_different_slots_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(1),
+		Instruction::CLOAD
+	};
+	checkCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_sload_different_slots_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(1),
+		Instruction::SLOAD
+	};
+	checkCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_sstore_sload_same_slot_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::SLOAD
+	};
+	// Optimizer eliminates SLOAD and keeps value on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_cload_same_slot_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// Optimizer eliminates CLOAD and keeps value on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::CSTORE
+	});
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // end namespaces
