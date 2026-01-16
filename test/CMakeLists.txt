@@ -53,6 +53,7 @@ set(libevmasm_sources
     libevmasm/Assembler.cpp
     libevmasm/EVMAssemblyTest.cpp
     libevmasm/EVMAssemblyTest.h
+    libevmasm/GasMeterTest.cpp
     libevmasm/Optimiser.cpp
     libevmasm/PlainAssemblyParser.cpp
     libevmasm/PlainAssemblyParser.h
