@@ -84,7 +84,7 @@ public:
 	using Id = ExpressionClasses::Id;
 	struct StoreOperation
 	{
-		enum Target { Invalid, Memory, Storage };
+		enum Target { Invalid, Memory, Storage, ShieldedStorage };
 
 		bool isValid() const { return target != Invalid; }
 
