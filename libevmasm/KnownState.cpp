@@ -356,8 +356,13 @@ KnownState::StoreOperation KnownState::storeInStorage(
 	// Copy over all values (i.e. retain knowledge about them) where we know that this store
 	// operation will not destroy the knowledge. Specifically, we copy storage locations we know
 	// are different from _slot or locations where we know that the stored value is equal to _value.
+	//
+	// Also preserve storage items from different storage domains (private vs public), as they
+	// cannot overwrite each other and accessing the same slot from different domains causes a runtime error.
 	for (auto const& storageItem: m_storageContent)
-		if (m_expressionClasses->knownToBeDifferent(storageItem.first, _slot) || storageItem.second.value == _value)
+		if (m_expressionClasses->knownToBeDifferent(storageItem.first, _slot) ||
+		    storageItem.second.value == _value ||
+		    storageItem.second.is_private)  // Public store cannot overwrite private storage
 			storageContents.insert(storageItem);
 	m_storageContent = std::move(storageContents);
 
@@ -385,14 +390,19 @@ KnownState::StoreOperation KnownState::storeInShieldedStorage(
 	// Copy over all values (i.e. retain knowledge about them) where we know that this store
 	// operation will not destroy the knowledge. Specifically, we copy storage locations we know
 	// are different from _slot or locations where we know that the stored value is equal to _value.
+	//
+	// Also preserve storage items from different storage domains (private vs public), as they
+	// cannot overwrite each other and accessing the same slot from different domains causes a runtime error.
 	for (auto const& storageItem: m_storageContent)
-		if (m_expressionClasses->knownToBeDifferent(storageItem.first, _slot) || storageItem.second.value == _value)
+		if (m_expressionClasses->knownToBeDifferent(storageItem.first, _slot) ||
+		    storageItem.second.value == _value ||
+		    !storageItem.second.is_private)  // Private store cannot overwrite public storage
 			storageContents.insert(storageItem);
 	m_storageContent = std::move(storageContents);
 
 	AssemblyItem item(Instruction::CSTORE, std::move(_debugData));
 	Id id = m_expressionClasses->find(item, {_slot, _value}, true, m_sequenceNumber);
-	StoreOperation operation{StoreOperation::Storage, _slot, m_sequenceNumber, id};
+	StoreOperation operation{StoreOperation::ShieldedStorage, _slot, m_sequenceNumber, id};
 	m_storageContent[_slot] = {_value, true};
 	// increment a second time so that we get unique sequence numbers for writes
 	m_sequenceNumber++;

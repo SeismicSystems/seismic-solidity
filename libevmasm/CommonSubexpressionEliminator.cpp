@@ -243,9 +243,22 @@ void CSECodeGenerator::addDependencies(Id _c)
 		// this loads an unknown value from storage or memory and thus, in addition to its
 		// arguments, depends on all store operations to addresses where we do not know that
 		// they are different that occur before this load
-		StoreOperation::Target target = (expr.item->instruction() == Instruction::SLOAD 
-		|| expr.item->instruction() == Instruction::CLOAD) ?
-			StoreOperation::Storage : StoreOperation::Memory;
+		StoreOperation::Target target;
+		switch (expr.item->instruction())
+		{
+		case Instruction::SLOAD:
+			target = StoreOperation::Storage;
+			break;
+		case Instruction::CLOAD:
+			target = StoreOperation::ShieldedStorage;
+			break;
+		case Instruction::MLOAD:
+		case Instruction::KECCAK256:
+			target = StoreOperation::Memory;
+			break;
+		default:
+			solAssert(false, "Unexpected load instruction in CSE dependency analysis");
+		}
 		Id slotToLoadFrom = expr.arguments.at(0);
 		for (auto const& p: m_storeOperations)
 		{
