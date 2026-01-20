@@ -549,30 +549,6 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 	if ( (_variable.isConstant() || _variable.immutable()) && (type->isShielded()))
 		m_errorReporter.declarationError(7491_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
 
-    if (_variable.isReturnParameter())
-    {
-        auto const* scope = _variable.scope();
-		if (auto const* function = dynamic_cast<FunctionDefinition const*>(scope))
-            {
-				// this error will get catched in another place
-				if (!function->isConstructor())
-				{
-					Visibility functionVisibility = function->visibility();
-					if (
-						(functionVisibility == Visibility::Public || functionVisibility == Visibility::External) &&
-						(type->category() == Type::Category::ShieldedInteger || type->category() == Type::Category::ShieldedAddress)
-					)
-					{
-						m_errorReporter.declarationError(
-							7492_error,
-							_variable.location(),
-							"Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type."
-						);
-					}
-				}
-            }
-        }
-
 	if (_variable.isConstant() && !type->isValueType())
 	{
 		bool allowed = false;
