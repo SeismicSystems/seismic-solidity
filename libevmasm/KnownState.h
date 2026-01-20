@@ -94,6 +94,17 @@ public:
 		Id expression{std::numeric_limits<Id>::max()};
 	};
 
+	struct FlaggedStorage
+	{
+		Id value;
+		bool is_private;
+
+		bool operator==(FlaggedStorage const& _other) const
+		{
+			return value == _other.value && is_private == _other.is_private;
+		}
+	};
+
 	explicit KnownState(
 		std::shared_ptr<ExpressionClasses> _expressionClasses = std::make_shared<ExpressionClasses>()
 	): m_expressionClasses(std::move(_expressionClasses))
@@ -149,7 +160,7 @@ public:
 	std::map<int, Id> const& stackElements() const { return m_stackElements; }
 	ExpressionClasses& expressionClasses() const { return *m_expressionClasses; }
 
-	std::map<Id, Id> const& storageContent() const { return m_storageContent; }
+	std::map<Id, FlaggedStorage> const& storageContent() const { return m_storageContent; }
 
 private:
 	/// Assigns a new equivalence class to the next sequence number of the given stack element.
@@ -184,7 +195,7 @@ private:
 	/// Current sequence number, this is incremented with each modification to storage or memory.
 	unsigned m_sequenceNumber = 1;
 	/// Knowledge about storage content.
-	std::map<Id, Id> m_storageContent;
+	std::map<Id, FlaggedStorage> m_storageContent;
 	/// Knowledge about memory content. Keys are memory addresses, note that the values overlap
 	/// and are not contained here if they are not completely known.
 	std::map<Id, Id> m_memoryContent;
