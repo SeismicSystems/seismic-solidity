@@ -365,6 +365,17 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			);
 		else if (functionIsExternallyVisible)
 		{
+			// Check for shielded return types in public/external functions.
+			// Note that constructors can't have return types so the second clause
+			// in functionIsExternallyVisible (non-abstract constructor) does not apply here.
+			if (_var.isReturnParameter() && type(_var)->containsShieldedType())
+				m_errorReporter.typeError(
+					7492_error,
+					_var.location(),
+					"Shielded objects cannot be returned from public or external functions. "
+					"Use internal or private functions or cast to an unshielded type."
+				);
+
 			auto iType = type(_var)->interfaceType(_function.libraryFunction());
 
 			if (!iType)
@@ -3494,7 +3505,7 @@ bool TypeChecker::visit(IndexAccess const& _access)
 		{
 			// Always expect uint256 for array indices (this processes the expression)
 			expectType(*index, *TypeProvider::uint256());
-			
+
 			// Check if index type is shielded and reject it
 			if (type(*index)->isShielded())
 			{
@@ -3504,7 +3515,7 @@ bool TypeChecker::visit(IndexAccess const& _access)
 					"Shielded types are not allowed as array indices."
 				);
 			}
-			
+
 			if (!m_errorReporter.hasErrors())
 			{
 				if (auto numberType = dynamic_cast<RationalNumberType const*>(type(*index)))
