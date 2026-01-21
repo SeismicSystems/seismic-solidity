@@ -25,7 +25,7 @@ contract C {
     }
 }
 // ----
-// TypeError 6160: (204-206): Return argument type saddress[] memory is not implicitly convertible to expected type (type of first return variable) address[] memory.
-// TypeError 6160: (366-367): Return argument type address[] memory is not implicitly convertible to expected type (type of first return variable) saddress[] memory.
-// TypeError 6160: (596-602): Return argument type saddress[] memory is not implicitly convertible to expected type (type of first return variable) address[] memory.
-// TypeError 6160: (808-813): Return argument type address[] memory is not implicitly convertible to expected type (type of first return variable) saddress[] memory.
+// TypeError 6359: (216-218): Return argument type saddress[] storage ref is not implicitly convertible to expected type (type of first return variable) address[] memory.
+// TypeError 6359: (395-396): Return argument type address[] storage ref is not implicitly convertible to expected type (type of first return variable) saddress[] memory.
+// TypeError 6359: (645-651): Return argument type saddress[] memory is not implicitly convertible to expected type (type of first return variable) address[] memory.
+// TypeError 6359: (899-904): Return argument type address[] memory is not implicitly convertible to expected type (type of first return variable) saddress[] memory.

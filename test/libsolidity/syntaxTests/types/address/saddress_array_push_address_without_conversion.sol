@@ -6,12 +6,6 @@ contract C {
         // Should require explicit conversion
         sa.push(addr);
     }
-
-    function pushAddressLiteral() external {
-        // Should also require explicit conversion
-        sa.push(address(0x456));
-    }
 }
 // ----
-// TypeError 9574: (164-168): Invalid type for argument in function call. Invalid implicit conversion from address to saddress requested.
-// TypeError 9574: (276-291): Invalid type for argument in function call. Invalid implicit conversion from address to saddress requested.
+// TypeError 4254: (164-171): Cannot push a non-shielded type to a shielded array

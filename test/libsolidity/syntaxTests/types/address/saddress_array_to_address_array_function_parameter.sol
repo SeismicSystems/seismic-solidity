@@ -21,7 +21,7 @@ contract C {
     }
 }
 // ----
-// TypeError 6160: (341-343): Wrong argument type address[] memory supplied to function. Expected saddress[] memory.
-// TypeError 6160: (271-273): Wrong argument type saddress[] memory supplied to function. Expected address[] memory.
-// TypeError 6160: (584-590): Wrong argument type saddress[] memory supplied to function. Expected address[] memory.
-// TypeError 6160: (617-622): Wrong argument type address[] memory supplied to function. Expected saddress[] memory.
+// TypeError 9553: (324-326): Invalid type for argument in function call. Invalid implicit conversion from saddress[] storage ref to address[] memory requested.
+// TypeError 9553: (414-415): Invalid type for argument in function call. Invalid implicit conversion from address[] storage ref to saddress[] memory requested.
+// TypeError 9553: (640-646): Invalid type for argument in function call. Invalid implicit conversion from saddress[] memory to address[] memory requested.
+// TypeError 9553: (676-681): Invalid type for argument in function call. Invalid implicit conversion from address[] memory to saddress[] memory requested.

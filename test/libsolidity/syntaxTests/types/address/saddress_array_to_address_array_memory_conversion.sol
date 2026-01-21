@@ -8,5 +8,5 @@ contract C {
     }
 }
 // ----
-// TypeError 7407: (179-181): Type saddress[] memory is not implicitly convertible to expected type address[] memory.
-// TypeError 7407: (197-198): Type address[] memory is not implicitly convertible to expected type saddress[] memory.
+// TypeError 7407: (213-215): Type saddress[] memory is not implicitly convertible to expected type address[] memory.
+// TypeError 7407: (230-231): Type address[] memory is not implicitly convertible to expected type saddress[] memory.

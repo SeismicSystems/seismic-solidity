@@ -25,9 +25,9 @@ contract C {
     }
 }
 // ----
-// TypeError 7407: (217-221): Type saddress[][] memory is not implicitly convertible to expected type address[][] memory.
-// TypeError 7407: (236-239): Type address[][] memory is not implicitly convertible to expected type saddress[][] memory.
-// TypeError 7407: (398-402): Type saddress[][] memory is not implicitly convertible to expected type address[][] memory.
-// TypeError 7407: (440-443): Type address[][] memory is not implicitly convertible to expected type saddress[][] memory.
-// TypeError 6160: (752-756): Wrong argument type saddress[][] memory supplied to function. Expected address[][] memory.
-// TypeError 6160: (790-793): Wrong argument type address[][] memory supplied to function. Expected saddress[][] memory.
+// TypeError 7407: (241-245): Type saddress[][] memory is not implicitly convertible to expected type address[][] memory.
+// TypeError 7407: (262-265): Type address[][] memory is not implicitly convertible to expected type saddress[][] memory.
+// TypeError 9574: (420-453): Type saddress[][] memory is not implicitly convertible to expected type address[][] memory.
+// TypeError 9574: (463-497): Type address[][] memory is not implicitly convertible to expected type saddress[][] memory.
+// TypeError 9553: (900-904): Invalid type for argument in function call. Invalid implicit conversion from saddress[][] memory to address[][] memory requested.
+// TypeError 9553: (940-943): Invalid type for argument in function call. Invalid implicit conversion from address[][] memory to saddress[][] memory requested.

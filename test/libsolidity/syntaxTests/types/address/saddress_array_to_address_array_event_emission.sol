@@ -7,4 +7,4 @@ contract C {
     }
 }
 // ----
-// TypeError 7407: (105-106): Type saddress[] storage ref is not implicitly convertible to expected type address[] memory.
+// TypeError 9553: (111-112): Invalid type for argument in function call. Invalid implicit conversion from saddress[] storage ref to address[] memory requested.
