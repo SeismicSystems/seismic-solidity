@@ -174,6 +174,10 @@ public:
 		bool _removeReference = true
 	) const override;
 private:
+	// NOTE: when using s_sload/s_storeInstruction on shielded types,
+	//       we instead use CLOAD/CSTORE when the type is not transient.
+	// IMPORTANT to use similar pattern on any future usage these instructions.
+	// Be especially cautious about merging in upstream code that uses these
 	static constexpr evmasm::Instruction s_storeInstruction = IsTransient ? evmasm::Instruction::TSTORE : evmasm::Instruction::SSTORE;
 	static constexpr evmasm::Instruction s_loadInstruction = IsTransient ? evmasm::Instruction::TLOAD : evmasm::Instruction::SLOAD;
 };
