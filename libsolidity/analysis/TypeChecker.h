@@ -161,6 +161,22 @@ private:
 
 	void checkErrorAndEventParameters(CallableDeclaration const& _callable);
 
+	/// Checks if a literal expression is being converted to a shielded type and emits a warning.
+	/// This is the core check that matches the original warning logic.
+	void checkLiteralToShielded(
+		Expression const& _expression,
+		Type const& _targetType,
+		langutil::SourceLocation const& _location
+	);
+
+	/// Recursively checks if an expression contains literals being converted to shielded types.
+	/// Handles direct conversions, struct constructors, and other complex initializers.
+	void checkShieldedLiteralWarning(
+		Expression const& _expression,
+		Type const& _targetType,
+		langutil::SourceLocation const& _location
+	);
+
 	/// @returns the referenced declaration and throws on error.
 	Declaration const& dereference(Identifier const& _identifier) const;
 	/// @returns the referenced declaration and throws on error.
