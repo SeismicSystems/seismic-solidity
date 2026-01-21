@@ -6,7 +6,7 @@ contract C {
     function set(suint256 v) external {
         x = v;
     }
-    function get() external {
-        suint256 y = x;
+    function get() external view {
+        x;
     }
 }

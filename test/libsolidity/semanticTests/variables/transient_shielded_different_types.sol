@@ -4,40 +4,27 @@ contract C {
     saddress transient sa;
     sbool transient sb;
 
-    function setSu(suint256 v) public {
-        su = v;
-    }
-    function setSi(sint256 v) public {
-        si = v;
-    }
-    function setSa(saddress v) public {
-        sa = v;
-    }
-    function setSb(sbool v) public {
-        sb = v;
-    }
-
-    function checkSu() public view returns (uint256) {
+    function setAndCheckSu(uint256 v) public returns (uint256) {
+        su = suint256(v);
         return uint256(su);
     }
-    function checkSi() public view returns (int256) {
+    function setAndCheckSi(int256 v) public returns (int256) {
+        si = sint256(v);
         return int256(si);
     }
-    function checkSa() public view returns (address) {
+    function setAndCheckSa(address v) public returns (address) {
+        sa = saddress(v);
         return address(sa);
     }
-    function checkSb() public view returns (bool) {
+    function setAndCheckSb(bool v) public returns (bool) {
+        sb = sbool(v);
         return bool(sb);
     }
 }
 // ====
 // EVMVersion: >=cancun
 // ----
-// setSu(uint256): 123 ->
-// checkSu() -> 123
-// setSi(int256): -456 ->
-// checkSi() -> -456
-// setSa(address): 0x1234567890123456789012345678901234567890 ->
-// checkSa() -> 0x1234567890123456789012345678901234567890
-// setSb(bool): true ->
-// checkSb() -> true
+// setAndCheckSu(uint256): 123 -> 123
+// setAndCheckSi(int256): -456 -> -456
+// setAndCheckSa(address): 0x1234567890123456789012345678901234567890 -> 0x1234567890123456789012345678901234567890
+// setAndCheckSb(bool): true -> true

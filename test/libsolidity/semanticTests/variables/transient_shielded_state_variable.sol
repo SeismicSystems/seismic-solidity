@@ -1,27 +1,16 @@
 contract C {
-    suint256 transient public x;
+    suint256 transient x;
 
-    function setX(suint256 v) public {
-        x = v;
+    function setAndCheck(uint256 v) public returns (uint256) {
+        x = suint256(v);
+        return uint256(x);
     }
-    function resetX() public {
-        x = suint256(0);
-    }
-    function getX() internal view returns (suint256) {
-        return x;
-    }
-    function checkX() public returns (uint256) {
-        // Return 1 if x is zero (transient behavior working), 0 otherwise
-        if (uint256(getX()) == 0) {
-            return 1;
-        }
-        return 0;
+    function checkX() public view returns (uint256) {
+        return uint256(x);
     }
 }
 // ====
 // EVMVersion: >=cancun
 // ----
-// setX(uint256): 42 ->
+// setAndCheck(uint256): 42 -> 42
 // checkX() -> 0
-// resetX() ->
-// checkX() -> 1

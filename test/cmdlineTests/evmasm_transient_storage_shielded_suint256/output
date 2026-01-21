@@ -1,5 +1,3 @@
-Warning: This is a pre-release compiler version, please do not use it in production.
-
 
 ======= input.sol:C =======
 EVM assembly:
@@ -46,31 +44,41 @@ sub_0: assembly {
     tag_2:
       revert(0x00, 0x00)
     tag_3:
-      tag_5
-      calldataload(0x04)
-      tag_6
-      jump	// in
-    tag_5:
       stop
     tag_4:
-      tag_7
+      tag_3
       tag_8
+      calldatasize
+      0x04
+      tag_9
       jump	// in
-    tag_7:
-      stop
-    tag_6:
+    tag_8:
+      dup1
+      dup1
       0x00
-      dup2
-      swap1
       tstore
       pop
+      pop
       jump	// out
-    tag_8:
+    tag_9:
       0x00
-      tload
+      0x20
+      dup3
+      dup5
+      sub
+      slt
+      iszero
+      tag_15
+      jumpi
+      0x00
+      0x00
+      revert
+    tag_15:
+      pop
+      calldataload
+      swap2
+      swap1
       pop
       jump	// out
 }
 
-Opcodes:
-PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH1 0x11 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x66 DUP1 PUSH1 0x1F PUSH1 0x0 CODECOPY PUSH1 0x0 RETURN INVALID PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH1 0x11 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x4 CALLDATASIZE LT PUSH1 0x2E JUMPI PUSH1 0x0 CALLDATALOAD PUSH1 0xE0 SHR DUP1 PUSH4 0x6D4CE63C EQ PUSH1 0x33 JUMPI DUP1 PUSH4 0xA00DDDBD EQ PUSH1 0x3D JUMPI JUMPDEST PUSH1 0x0 DUP1 REVERT JUMPDEST PUSH1 0x3B PUSH1 0x4 CALLDATALOAD PUSH1 0x47 JUMP JUMPDEST STOP JUMPDEST PUSH1 0x45 PUSH1 0x50 JUMP JUMPDEST STOP JUMPDEST PUSH1 0x0 DUP2 SWAP1 TSTORE POP JUMP JUMPDEST PUSH1 0x0 TLOAD POP JUMP INVALID
