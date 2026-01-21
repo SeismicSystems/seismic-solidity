@@ -16,6 +16,9 @@ contract C {
     }
 }
 // ----
+// Warning 9663: (57-84): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 9663: (94-135): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 9663: (145-237): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // TypeError 7407: (639-642): Type sbytes8 is not implicitly convertible to expected type sbytes1.
 // TypeError 7407: (705-709): Type sbytes32 is not implicitly convertible to expected type sbytes1.
 // TypeError 7407: (772-776): Type sbytes32 is not implicitly convertible to expected type sbytes8.
