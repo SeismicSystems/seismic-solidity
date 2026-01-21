@@ -543,7 +543,7 @@ TypeResult AddressType::binaryOperatorResult(Token _operator, Type const* _other
 
 bool AddressType::operator==(Type const& _other) const
 {
-	if (_other.category() != Category::Address && _other.category() != Category::ShieldedAddress)
+	if (_other.category() != category())
 		return false;
 	AddressType const& other = dynamic_cast<AddressType const&>(_other);
 	return other.m_stateMutability == m_stateMutability;
@@ -1862,11 +1862,6 @@ BoolResult ArrayType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 			*TypeProvider::withLocationIfReference(location(), baseType()) !=
 			*TypeProvider::withLocationIfReference(location(), convertTo.baseType())
 		)
-			return false;
-		// For shielded types, we require explicit conversion.
-		// Disallow implicit conversion between shielded and non-shielded arrays.
-		// Use containsShieldedType() to handle nested arrays correctly.
-		if (baseType()->containsShieldedType() != convertTo.baseType()->containsShieldedType())
 			return false;
 		if (isDynamicallySized() != convertTo.isDynamicallySized())
 			return false;
