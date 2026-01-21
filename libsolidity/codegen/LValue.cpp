@@ -511,12 +511,16 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 		solAssert(m_dataType->isValueType(), "Clearing of unsupported type requested: " + m_dataType->toString());
 		if (!_removeReference)
 			CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
-		if (m_dataType->category() == Type::Category::ShieldedInteger && m_dataType->storageBytes() == 32)
+		if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
 		{
-			// offset should be zero. remember, shielded integers have to be 32 bytes!!
+			// offset should be zero. remember, shielded types have to be 32 bytes!!
 			m_context
 				<< Instruction::POP << u256(0)
 				<< Instruction::SWAP1 << Instruction::CSTORE;
+		}
+		else if (m_dataType->isShielded())
+		{
+			solAssert(false, "Shielded types must occupy exactly 32 bytes in storage: " + m_dataType->toString());
 		}
 		else if (m_dataType->storageBytes() == 32)
 		{
