@@ -10,7 +10,7 @@ contract C {
     }
 }
 // ====
-// EVMVersion: >=cancun
+// EVMVersion: >=mercury
 // ----
 // setAndCheck(uint256): 42 -> 42
 // checkX() -> 0

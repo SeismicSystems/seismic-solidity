@@ -22,7 +22,7 @@ contract C {
     }
 }
 // ====
-// EVMVersion: >=cancun
+// EVMVersion: >=mercury
 // ----
 // setAndCheckSu(uint256): 123 -> 123
 // setAndCheckSi(int256): -456 -> -456
