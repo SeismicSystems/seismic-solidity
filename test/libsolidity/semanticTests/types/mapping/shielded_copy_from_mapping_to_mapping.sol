@@ -20,11 +20,30 @@ contract C {
         y[1] = d;
 
         src[0] = S({x: [suint8(7), suint8(8), suint8(9)], y: y, z: suint16(13)});
+        dst[0] = src[0];
     }
 
-    function f() public returns (S memory) {
-        dst[0] = src[0];
-        return dst[0];
+    struct SUnshielded {
+        uint8[3] x;
+        uint8[][] y;
+        uint16 z;
+    }
+
+    function f() public returns (SUnshielded memory) {
+        return toUnshielded(dst[0]);
+    }
+
+    function toUnshielded(S memory s) internal pure returns (SUnshielded memory) {
+        uint8[][] memory y = new uint8[][](s.y.length);
+        for (uint256 i = 0; i < s.y.length; i++) {
+            uint256 innerLen = s.y[i].length;
+            y[i] = new uint8[](innerLen);
+            for (uint256 j = 0; j < innerLen; j++) {
+                y[i][j] = uint8(s.y[i][j]);
+            }
+        }
+        uint8[3] memory x = [uint8(s.x[0]), uint8(s.x[1]), uint8(s.x[2])];
+        return SUnshielded({x: x, y: y, z: uint16(s.z)});
     }
 }
 // ----
