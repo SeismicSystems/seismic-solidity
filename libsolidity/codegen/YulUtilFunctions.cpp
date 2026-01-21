@@ -3652,6 +3652,41 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 			}
 			break;
 		}
+		case Type::Category::ShieldedFixedBytes:
+		{
+			ShieldedFixedBytesType const& from = dynamic_cast<ShieldedFixedBytesType const&>(_from);
+			if (toCategory == Type::Category::Integer || toCategory == Type::Category::ShieldedInteger)
+				body =
+					Whiskers("converted := <convert>(<shift>(value))")
+					("shift", shiftRightFunction(256 - from.numBytes() * 8))
+					("convert", conversionFunction(IntegerType(from.numBytes() * 8), _to))
+					.render();
+			else if (toCategory == Type::Category::Address || toCategory == Type::Category::ShieldedAddress)
+				body =
+					Whiskers("converted := <convert>(value)")
+						("convert", conversionFunction(_from, IntegerType(160)))
+						.render();
+			else if (toCategory == Type::Category::FixedBytes)
+			{
+				// ShieldedFixedBytes to FixedBytes (same size)
+				FixedBytesType const& to = dynamic_cast<FixedBytesType const&>(_to);
+				solAssert(from.numBytes() == to.numBytes(), "Invalid conversion between sbytes and bytes of different sizes.");
+				body =
+					Whiskers("converted := <clean>(value)")
+					("clean", cleanupFunction(to))
+					.render();
+			}
+			else
+			{
+				solAssert(toCategory == Type::Category::ShieldedFixedBytes, "Invalid type conversion requested.");
+				ShieldedFixedBytesType const& to = dynamic_cast<ShieldedFixedBytesType const&>(_to);
+				body =
+					Whiskers("converted := <clean>(value)")
+					("clean", cleanupFunction((to.numBytes() <= from.numBytes()) ? to : from))
+					.render();
+			}
+			break;
+		}
 		case Type::Category::Function:
 		{
 			solAssert(false, "Conversion should not be called for function types.");
