@@ -1338,52 +1338,9 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
-		if (auto funcCall = dynamic_cast<FunctionCall const*>(_statement.initialValue()))
-		{
-			auto const& args = funcCall->arguments();
-			if (!args.empty())
-			{
-				if (auto literal = dynamic_cast<Literal const*>(args.front().get()))
-				{
-					if (var.annotation().type->category()==Type::Category::ShieldedBool)
-					{
-						std::string val = literal->value();
-						if (val == "true" || val == "false")
-							m_errorReporter.warning(
-							9661_error,
-							_statement.location(),
-							"Bool Literals converted to shielded bools will leak during contract deployment."
-							);
-					}
-					else if (literal->looksLikeAddress() && var.annotation().type->category()==Type::Category::ShieldedAddress)
-					{
-						if (literal->passesAddressChecksum()) {
-							m_errorReporter.warning(
-							9662_error,
-							_statement.location(),
-							"Address Literals converted to shielded addresses will leak during contract deployment."
-							);
-						}
-					}
-					else if (args.front()->annotation().type->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
-					{
-						m_errorReporter.warning(
-						9660_error,
-						_statement.location(),
-						"Literals converted to shielded integers will leak during contract deployment."
-					);
-					}
-					else if (args.front()->annotation().type->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
-					{
-						m_errorReporter.warning(
-						1457_error,
-						_statement.location(),
-						"Enums converted to shielded integers will leak during contract deployment."
-					);
-					}
-				}
-			}
-		}
+		// Check for literals being converted to shielded types (including nested in structs/arrays)
+		if (_statement.initialValue() && var.annotation().type)
+			checkShieldedLiteralWarning(*_statement.initialValue(), *var.annotation().type, _statement.location());
 	}
 
 	if (valueTypes.size() != variables.size())
@@ -4174,6 +4131,133 @@ void TypeChecker::endVisit(UsingForDirective const& _usingFor)
 					);
 				}
 			}
+		}
+	}
+}
+
+void TypeChecker::checkLiteralToShielded(
+	Expression const& _expression,
+	Type const& _targetType,
+	langutil::SourceLocation const& _location
+)
+{
+	auto literal = dynamic_cast<Literal const*>(&_expression);
+	if (!literal)
+		return;
+
+	if (_targetType.category() == Type::Category::ShieldedBool)
+	{
+		std::string val = literal->value();
+		if (val == "true" || val == "false")
+			m_errorReporter.warning(
+				9661_error,
+				_location,
+				"Bool Literals converted to shielded bools will leak during contract deployment."
+			);
+	}
+	else if (literal->looksLikeAddress() && _targetType.category() == Type::Category::ShieldedAddress)
+	{
+		if (literal->passesAddressChecksum())
+			m_errorReporter.warning(
+				9662_error,
+				_location,
+				"Address Literals converted to shielded addresses will leak during contract deployment."
+			);
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			9660_error,
+			_location,
+			"Literals converted to shielded integers will leak during contract deployment."
+		);
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::Enum &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			1457_error,
+			_location,
+			"Enums converted to shielded integers will leak during contract deployment."
+		);
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedFixedBytes
+	)
+	{
+		m_errorReporter.warning(
+			9663_error,
+			_location,
+			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
+		);
+	}
+}
+
+void TypeChecker::checkShieldedLiteralWarning(
+	Expression const& _expression,
+	Type const& _targetType,
+	langutil::SourceLocation const& _location
+)
+{
+	auto funcCall = dynamic_cast<FunctionCall const*>(&_expression);
+	if (!funcCall)
+		return;
+
+	auto const& args = funcCall->arguments();
+
+	// Direct conversion to a shielded type - check all arguments for literals
+	if (
+		_targetType.category() == Type::Category::ShieldedBool ||
+		_targetType.category() == Type::Category::ShieldedAddress ||
+		_targetType.category() == Type::Category::ShieldedInteger ||
+		_targetType.category() == Type::Category::ShieldedFixedBytes
+	)
+	{
+		for (auto const& arg : args)
+			if (arg)
+				checkLiteralToShielded(*arg, _targetType, _location);
+		return;
+	}
+
+	// Struct constructor - recursively check each member
+	if (auto structType = dynamic_cast<StructType const*>(&_targetType))
+	{
+		auto const& members = structType->structDefinition().members();
+
+		// Named arguments: S({field: value})
+		if (!funcCall->names().empty())
+		{
+			for (size_t i = 0; i < funcCall->names().size() && i < args.size(); ++i)
+			{
+				for (auto const& member : members)
+				{
+					if (
+						member->name() == *funcCall->names()[i] &&
+						args[i] &&
+						member->annotation().type
+					)
+					{
+						checkShieldedLiteralWarning(*args[i], *member->annotation().type, _location);
+						break;
+					}
+				}
+			}
+		}
+		// Positional arguments: S(value1, value2)
+		else
+		{
+			for (size_t i = 0; i < args.size() && i < members.size(); ++i)
+				if (args[i] && members[i]->annotation().type)
+					checkShieldedLiteralWarning(*args[i], *members[i]->annotation().type, _location);
 		}
 	}
 }
