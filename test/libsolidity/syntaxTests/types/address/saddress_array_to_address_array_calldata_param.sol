@@ -9,5 +9,5 @@ contract C {
     }
 }
 // ----
-// TypeError 9553: (352-354): Invalid type for argument in function call. Invalid implicit conversion from saddress[] calldata to address[] calldata requested.
-// TypeError 9553: (389-390): Invalid type for argument in function call. Invalid implicit conversion from address[] calldata to saddress[] calldata requested.
+// TypeError 9553: (356-358): Invalid type for argument in function call. Invalid implicit conversion from saddress[] calldata to address[] calldata requested.
+// TypeError 9553: (396-397): Invalid type for argument in function call. Invalid implicit conversion from address[] calldata to saddress[] calldata requested.

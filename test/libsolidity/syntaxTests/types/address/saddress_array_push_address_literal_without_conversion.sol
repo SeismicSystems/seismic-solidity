@@ -7,4 +7,4 @@ contract C {
     }
 }
 // ----
-// TypeError 4254: (144-159): Cannot push a non-shielded type to a shielded array
+// TypeError 4254: (132-139): Cannot push a non-shielded type to a shielded array

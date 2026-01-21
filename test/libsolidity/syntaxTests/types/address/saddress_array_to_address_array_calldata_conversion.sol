@@ -6,5 +6,5 @@ contract C {
     }
 }
 // ----
-// TypeError 7407: (177-179): Type saddress[] calldata is not implicitly convertible to expected type address[] memory.
-// TypeError 7407: (217-218): Type address[] calldata is not implicitly convertible to expected type saddress[] memory.
+// TypeError 9574: (180-207): Type saddress[] calldata is not implicitly convertible to expected type address[] memory.
+// TypeError 9574: (217-245): Type address[] calldata is not implicitly convertible to expected type saddress[] memory.
