@@ -235,7 +235,7 @@ void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation con
 	if (!_remove)
 		CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
 	if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
-		m_context << Instruction::POP << Instruction::CLOAD;
+		m_context << Instruction::POP << (IsTransient ? s_loadInstruction : Instruction::CLOAD);
 	else if (m_dataType->storageBytes() == 32)
 		m_context << Instruction::POP << s_loadInstruction;
 	else
@@ -317,7 +317,7 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 			utils.convertType(_sourceType, *m_dataType, true);
 			m_context << Instruction::SWAP1;
 
-			m_context << Instruction::CSTORE;
+			m_context << (IsTransient ? s_storeInstruction : Instruction::CSTORE);
 		}
 		else if (m_dataType->storageBytes() == 32)
 		{
@@ -516,7 +516,7 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 			// offset should be zero. remember, shielded types have to be 32 bytes!!
 			m_context
 				<< Instruction::POP << u256(0)
-				<< Instruction::SWAP1 << Instruction::CSTORE;
+				<< Instruction::SWAP1 << (IsTransient ? s_storeInstruction : Instruction::CSTORE);
 		}
 		else if (m_dataType->isShielded())
 		{
