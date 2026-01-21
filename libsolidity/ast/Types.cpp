@@ -1863,6 +1863,11 @@ BoolResult ArrayType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 			*TypeProvider::withLocationIfReference(location(), convertTo.baseType())
 		)
 			return false;
+		// For shielded types, we require explicit conversion.
+		// Disallow implicit conversion between shielded and non-shielded arrays.
+		// Use containsShieldedType() to handle nested arrays correctly.
+		if (baseType()->containsShieldedType() != convertTo.baseType()->containsShieldedType())
+			return false;
 		if (isDynamicallySized() != convertTo.isDynamicallySized())
 			return false;
 		// We also require that the size is the same.
