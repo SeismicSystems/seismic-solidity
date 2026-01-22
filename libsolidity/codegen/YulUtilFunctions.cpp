@@ -1562,6 +1562,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 		("maxArrayLength", (u256(1) << 64).str())
 		("dataPosition", arrayDataAreaFunction(_type))
 		("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
+		// TODO: checking if equals ShieldedInteger here feels very wrong
 		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
 		.render();
 	});
@@ -1583,6 +1584,7 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
+			// TODO: checking if equals ShieldedInteger here feels very wrong
 			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
 			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
 			.render();
