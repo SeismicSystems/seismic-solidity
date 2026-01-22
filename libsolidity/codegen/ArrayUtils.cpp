@@ -569,11 +569,13 @@ void ArrayUtils::clearArray(ArrayType const& _typeIn) const
 			{
 				// unroll loop for small arrays @todo choose a good value
 				// Note that we loop over storage slots here, not elements.
+				bool isShielded = _type.baseType()->isShielded();
+				auto storeInstruction = isShielded ? Instruction::CSTORE : Instruction::SSTORE;
 				for (unsigned i = 1; i < _type.storageSize(); ++i)
 					_context
-						<< u256(0) << Instruction::DUP2 << Instruction::SSTORE
+						<< u256(0) << Instruction::DUP2 << storeInstruction
 						<< u256(1) << Instruction::ADD;
-				_context << u256(0) << Instruction::SWAP1 << Instruction::SSTORE;
+				_context << u256(0) << Instruction::SWAP1 << storeInstruction;
 			}
 			else if (!_type.baseType()->isValueType() && _type.length() <= 4)
 			{
