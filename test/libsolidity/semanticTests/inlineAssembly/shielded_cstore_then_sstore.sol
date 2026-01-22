@@ -1,16 +1,16 @@
 contract C {
-    uint256 a;
+    suint256 a;
 
     function f1() public {
-        a = 7;
+        a = suint(7);
     }
 
     function f() public returns (uint256 x) {
        assembly {
-            x :=cload(a.slot)
+            sstore(a.slot, 42)
        }
     }
 }
 // ----
 // f1()
-// f() -> 7
+// f() -> FAILURE
