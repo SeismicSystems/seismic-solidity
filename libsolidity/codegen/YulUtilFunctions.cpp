@@ -2241,8 +2241,8 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 		unsigned itemsPerSlot = 32 / _toType.storageStride();
 		templ("itemsPerSlot", std::to_string(itemsPerSlot));
 		templ("multipleItemsPerSlotDst", itemsPerSlot > 1);
-		templ("storeOpcode", "sstore");
-		templ("loadOpcode",  "sload");
+		templ("storeOpcode", _toType.baseType()->isShielded() ? "cstore" : "sstore");
+		templ("loadOpcode",  _fromType.baseType()->isShielded() ? "cload" : "sload");
 		bool sameTypeFromStorage = fromStorage && (*_fromType.baseType() == *_toType.baseType());
 		if (auto functionType = dynamic_cast<FunctionType const*>(_fromType.baseType()))
 		{
@@ -2272,16 +2272,17 @@ std::string YulUtilFunctions::copyValueArrayToStorageFunction(ArrayType const& _
 					if eq(srcItemIndexInSlot, <srcItemsPerSlot>) {
 						// here we are done with this slot, we need to read next one
 						srcPtr := add(srcPtr, 1)
-						srcSlotValue := sload(srcPtr)
+						srcSlotValue := <loadOpcode>(srcPtr)
 						srcItemIndexInSlot := 0
 					}
 				<!srcReadMultiPerSlot>
 					srcPtr := add(srcPtr, 1)
-					srcSlotValue := sload(srcPtr)
+					srcSlotValue := <loadOpcode>(srcPtr)
 				</srcReadMultiPerSlot>
 				)")
 				("srcReadMultiPerSlot", !sameTypeFromStorage && _fromType.storageStride() <= 16)
 				("srcItemsPerSlot", std::to_string(32 / _fromType.storageStride()))
+				("loadOpcode", _fromType.baseType()->isShielded() ? "cload" : "sload")
 				.render()
 			);
 		else
