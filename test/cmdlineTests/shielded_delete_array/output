@@ -1,0 +1,145 @@
+Warning: This is a pre-release compiler version, please do not use it in production.
+
+
+======= input.sol:C =======
+EVM assembly:
+    /* "input.sol":60:382  contract C {... */
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  revert(0x00, 0x00)
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+        /* "input.sol":60:382  contract C {... */
+      mstore(0x40, 0x80)
+      callvalue
+      dup1
+      iszero
+      tag_1
+      jumpi
+      revert(0x00, 0x00)
+    tag_1:
+      pop
+      jumpi(tag_2, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0x131f5cd6
+      eq
+      tag_3
+      jumpi
+      dup1
+      0xc6ae8c0c
+      eq
+      tag_4
+      jumpi
+      dup1
+      0xe6bb513b
+      eq
+      tag_5
+      jumpi
+    tag_2:
+      revert(0x00, 0x00)
+        /* "input.sol":252:315  function clearLarge() public {... */
+    tag_3:
+      tag_6
+      tag_7
+      jump	// in
+    tag_6:
+      stop
+        /* "input.sol":183:246  function clearSmall() public {... */
+    tag_4:
+      tag_6
+        /* "input.sol":229:239  smallArray */
+      0x00
+      dup1
+      dup1
+      sstore
+      0x01
+      dup2
+      swap1
+      sstore
+      0x02
+      sstore
+        /* "input.sol":252:315  function clearLarge() public {... */
+      jump
+        /* "input.sol":321:380  function clearAddrs() public {... */
+    tag_5:
+      tag_6
+        /* "input.sol":367:373  saddrs */
+      0x00
+      0x0d
+      dup2
+      swap1
+      sstore
+      0x0e
+      dup2
+      swap1
+      sstore
+      0x0f
+      dup2
+      swap1
+      sstore
+      0x10
+      sstore
+        /* "input.sol":252:315  function clearLarge() public {... */
+      jump
+    tag_7:
+        /* "input.sol":291:308  delete largeArray */
+      tag_13
+        /* "input.sol":298:308  largeArray */
+      0x03
+      0x00
+        /* "input.sol":291:308  delete largeArray */
+      tag_14
+      jump	// in
+    tag_13:
+        /* "input.sol":252:315  function clearLarge() public {... */
+      jump	// out
+    tag_14:
+      pop
+      tag_21
+      swap1
+      0x0a
+      dup2
+      add
+      swap1
+      tag_22
+      jump	// in
+    tag_21:
+      pop
+      jump	// out
+    tag_22:
+    tag_23:
+      dup1
+      dup3
+      gt
+      iszero
+      tag_24
+      jumpi
+      0x00
+      dup2
+      cstore
+      0x01
+      add
+      jump(tag_23)
+    tag_24:
+      pop
+      swap1
+      jump	// out
+
+    auxdata: 0xa2646970667358221220c773b0f9dcaec87d4bc80d443c6d9384f9b062cae07690dfcf1a87d40fb7609264736f6c637828302e382e33312d646576656c6f702e323032362e312e32322b636f6d6d69742e38636561336431360059
+}
+
