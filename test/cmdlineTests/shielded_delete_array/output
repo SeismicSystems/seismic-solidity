@@ -66,13 +66,13 @@ sub_0: assembly {
       0x00
       dup1
       dup1
-      sstore
+      cstore
       0x01
       dup2
       swap1
-      sstore
+      cstore
       0x02
-      sstore
+      cstore
         /* "input.sol":252:315  function clearLarge() public {... */
       jump
         /* "input.sol":321:380  function clearAddrs() public {... */
@@ -83,17 +83,17 @@ sub_0: assembly {
       0x0d
       dup2
       swap1
-      sstore
+      cstore
       0x0e
       dup2
       swap1
-      sstore
+      cstore
       0x0f
       dup2
       swap1
-      sstore
+      cstore
       0x10
-      sstore
+      cstore
         /* "input.sol":252:315  function clearLarge() public {... */
       jump
     tag_7:
@@ -140,6 +140,6 @@ sub_0: assembly {
       swap1
       jump	// out
 
-    auxdata: 0xa2646970667358221220c773b0f9dcaec87d4bc80d443c6d9384f9b062cae07690dfcf1a87d40fb7609264736f6c637828302e382e33312d646576656c6f702e323032362e312e32322b636f6d6d69742e38636561336431360059
+    auxdata: 0xa264697066735822122013da03895d972cae40f39a891c290e38db6c2ef2b2111967fa1e665cb15aa49e64736f6c63782c302e382e33312d646576656c6f702e323032362e312e32322b636f6d6d69742e62373237363834392e6d6f64005d
 }
 
