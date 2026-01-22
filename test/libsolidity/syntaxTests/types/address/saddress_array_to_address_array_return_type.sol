@@ -7,9 +7,14 @@ contract C {
         return sa;
     }
 
-    function returnsSaddressArray() external view returns (saddress[] memory) {
+    function returnsSaddressArray() internal view returns (saddress[] memory) {
         // Should fail: returning address[] where saddress[] is expected
         return a;
+    }
+
+    // External wrapper to test the internal function
+    function testReturnsSaddressArray() external view {
+        address[] memory result = returnsSaddressArray();
     }
 
     function returnsAddressArrayMemory() external pure returns (address[] memory) {
@@ -18,14 +23,21 @@ contract C {
         return sa_mem;
     }
 
-    function returnsSaddressArrayMemory() external pure returns (saddress[] memory) {
+    function returnsSaddressArrayMemory() internal pure returns (saddress[] memory) {
         address[] memory a_mem = new address[](5);
         // Should fail: returning address[] memory where saddress[] memory is expected
         return a_mem;
+    }
+
+    // External wrapper to test the internal function
+    function testReturnsSaddressArrayMemory() external pure {
+        address[] memory result = returnsSaddressArrayMemory();
     }
 }
 // ----
 // TypeError 6359: (216-218): Return argument type saddress[] storage ref is not implicitly convertible to expected type (type of first return variable) address[] memory.
 // TypeError 6359: (395-396): Return argument type address[] storage ref is not implicitly convertible to expected type (type of first return variable) saddress[] memory.
-// TypeError 6359: (645-651): Return argument type saddress[] memory is not implicitly convertible to expected type (type of first return variable) address[] memory.
-// TypeError 6359: (899-904): Return argument type address[] memory is not implicitly convertible to expected type (type of first return variable) saddress[] memory.
+// TypeError 9574: (523-571): Type saddress[] memory is not implicitly convertible to expected type address[] memory.
+// TypeError 6359: (820-826): Return argument type saddress[] memory is not implicitly convertible to expected type (type of first return variable) address[] memory.
+// TypeError 6359: (1074-1079): Return argument type address[] memory is not implicitly convertible to expected type (type of first return variable) saddress[] memory.
+// TypeError 9574: (1212-1266): Type saddress[] memory is not implicitly convertible to expected type address[] memory.
