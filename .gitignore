@@ -67,3 +67,6 @@ emscripten_build/
 # OS specific local files
 .DS_Store
 Thumbs.db
+
+# forkdiff output
+index.html

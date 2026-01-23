@@ -1,0 +1,95 @@
+title: "SeismicSystems/seismic-solidity" # Define the HTML page title
+logo: "logo.png"
+footer: | # define the footer with markdown
+  SeismicSystems' [seismic-solidity](https://github.com/SeismicSystems/seismic-solidity) fork overview - created with [Forkdiff](https://github.com/protolambda/forkdiff)
+base:
+  name: solidity
+  url: https://github.com/SeismicSystems/seismic-solidity
+  ref: refs/remotes/origin/develop
+fork:
+  name: seismic-solidity
+  url: https://github.com/SeismicSystems/seismic-solidity
+  ref: refs/heads/chore--add-forkdiff
+  # hash: d28d5527f20f7d295e4c616fcfcad3205e42e199
+def:
+  title: "Seismic-Solidity fork diff"
+  description: | # description in markdown
+    - Original solidity codebase: [`https://github.com/argotorg/solidity/`](https://github.com/argotorg/solidity/).
+    - Seismic solidity fork: [`https://github.com/SeismicSystems/seismic-solidity`](https://github.com/SeismicSystems/seismic-solidity).
+
+  sub:
+    - title: "EVM ASM"
+      description: |
+        Add support for new opcodes that we added in our seismic-revm fork:
+
+        - CLOAD/CSTORE - confidential storage opcodes
+        - TIMESTAMPMS - timestamp with millisecond precision given that our blocks are subsecond
+      sub:
+        - title: "evmasm"
+          globs:
+            - "libevmasm/**"
+
+    - title: "Solidity Compiler"
+      description: |
+        Add support for shielded types: sint, suint, sbytes, saddress, sbool.
+      sub:
+        - title: "lexing + parsing + ast"
+          globs:
+            - "liblangutil/Token.**"
+            - "libsolidity/parsing/**"
+            - "libsolidity/ast/**"
+
+        - title: "analysis"
+          globs:
+            - "libsolidity/analysis/**"
+
+        - title: "codegen"
+          globs:
+            - "libsolidity/codegen/**"
+
+        - title: "formal verification"
+          globs:
+            - "libsolidity/formal/**"
+
+        - title: "language server (lsp)"
+          globs:
+            - "libsolidity/lsp/**"
+
+    - title: "Tests"
+      description: |
+        tests ^.^
+      sub:
+        - title: "ast json tests"
+          globs:
+            - "test/libsolidity/ASTJSON/**"
+
+        - title: "syntax tests"
+          globs:
+            - "test/libsolidity/syntaxTests/**"
+
+        - title: "semantic tests"
+          globs:
+            - "test/libsolidity/semanticTests/**"
+
+        - title: "other tests"
+          globs:
+            - "test/**"
+
+        - title: "testing scripts"
+          globs:
+            - "scripts/**"
+
+    - title: "CICD"
+      description: |
+        Changes to CICD workflows to support our custom testing and deployment.
+      sub:
+        - title: "Github workflows"
+          globs:
+            - ".github/**"
+            - ".circleci/**"
+
+# files can be ignored globally, these will be listed in a separate grayed-out section,
+# and do not count towards the total line count.
+ignore:
+  - "**/Cargo.toml"
+  - "fork.yaml"
