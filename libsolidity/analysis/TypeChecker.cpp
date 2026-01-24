@@ -857,7 +857,16 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 					}
 					// Track if the variable is shielded for storage operation validation
 					if (suffix == "slot")
-						identifierInfo.isShieldedStorage = var->type()->isShielded() || var->type()->containsShieldedType();
+					{
+						// For dynamic arrays, .slot contains the length (not shielded)
+						// The actual shielded elements are stored at keccak256(slot) + index
+						// For other types, .slot contains the actual shielded data
+						if (auto const* arrayType = dynamic_cast<ArrayType const*>(var->type());
+							arrayType && arrayType->isDynamicallySized())
+							identifierInfo.isShieldedStorage = false;
+						else
+							identifierInfo.isShieldedStorage = var->type()->isShielded() || var->type()->containsShieldedType();
+					}
 				}
 				else if (
 					auto const* arrayType = dynamic_cast<ArrayType const*>(var->type());
