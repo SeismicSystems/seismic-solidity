@@ -7,4 +7,4 @@ contract C {
     }
 }
 // ----
-// f() -> FAILURE
+// f() -> 42
