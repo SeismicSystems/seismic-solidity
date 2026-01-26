@@ -33,9 +33,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build
-          key: build-${{ runner.os }}-${{ github.base_ref || github.ref_name }}-${{ github.sha }}
-          restore-keys: |
-            build-${{ runner.os }}-${{ github.base_ref || github.ref_name }}-
+          key: build-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
 
       - name: Install & configure ccache
         run: |
@@ -50,9 +48,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ runner.os }}-${{ github.base_ref || github.ref_name }}-${{ github.sha }}
-          restore-keys: |
-            ccache-${{ runner.os }}-${{ github.base_ref || github.ref_name }}-
+          key: ccache-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
 
       - name: Install dependencies
         run: |
@@ -106,16 +102,25 @@ jobs:
           RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" --optimize --optimizer-runs 200 2>&1
 
       # Save caches only on push to target branches (after PR merge)
+      # Delete old caches first since GitHub caches are immutable
+      - name: Delete old caches
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache delete "build-${{ runner.os }}-${{ github.ref_name }}" --repo ${{ github.repository }} || true
+          gh cache delete "ccache-${{ runner.os }}-${{ github.ref_name }}" --repo ${{ github.repository }} || true
+
       - name: Save build cache
         if: github.event_name == 'push'
         uses: actions/cache/save@v4
         with:
           path: build
-          key: build-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
+          key: build-${{ runner.os }}-${{ github.ref_name }}
 
       - name: Save ccache
         if: github.event_name == 'push'
         uses: actions/cache/save@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
+          key: ccache-${{ runner.os }}-${{ github.ref_name }}
