@@ -9,4 +9,6 @@ contract C {
         return block.timestamp_seconds;
     }
 }
+// ====
+// EVMVersion: >=mercury
 // ----
