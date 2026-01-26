@@ -981,7 +981,13 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 		lvalueAccessToMemoryVariable ||
 		(analyzer.sideEffects().memory != yul::SideEffects::None);
 
-	// Validate shielded/non-shielded storage operation consistency
+	validateShieldedStorageOps(_inlineAssembly);
+
+	return false;
+}
+
+void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssembly)
+{
 	auto const& externalRefs = _inlineAssembly.annotation().externalReferences;
 
 	// Track storage operations: slot key -> (isShielded, location, funcName)
@@ -1110,8 +1116,6 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 			}
 		}
 	}
-
-	return false;
 }
 
 bool TypeChecker::visit(IfStatement const& _ifStatement)
