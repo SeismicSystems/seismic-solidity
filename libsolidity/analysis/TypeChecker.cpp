@@ -30,6 +30,7 @@
 #include <libyul/AsmAnalysis.h>
 #include <libyul/AsmAnalysisInfo.h>
 #include <libyul/AST.h>
+#include <libyul/Utilities.h>
 
 #include <liblangutil/ErrorReporter.h>
 
@@ -854,6 +855,19 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 							return false;
 						}
 					}
+					// Track if the variable is shielded for storage operation validation
+					if (suffix == "slot")
+					{
+						// For dynamic arrays, .slot contains the length (not shielded)
+						// The actual shielded elements are stored at keccak256(slot) + index
+						// For other types, .slot contains the actual shielded data
+						// Note: if we ever change the semantics of the length slot and also make it shielded, then we'd need to change this.
+						if (auto const* arrayType = dynamic_cast<ArrayType const*>(var->type());
+						arrayType && arrayType->isDynamicallySized())
+						identifierInfo.isShieldedStorage = false;
+						else
+							identifierInfo.isShieldedStorage = var->type()->isShielded() || var->type()->containsShieldedType();
+					}
 				}
 				else if (
 					auto const* arrayType = dynamic_cast<ArrayType const*>(var->type());
@@ -966,7 +980,142 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 	_inlineAssembly.annotation().hasMemoryEffects =
 		lvalueAccessToMemoryVariable ||
 		(analyzer.sideEffects().memory != yul::SideEffects::None);
+
+	validateShieldedStorageOps(_inlineAssembly);
+
 	return false;
+}
+
+void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssembly)
+{
+	auto const& externalRefs = _inlineAssembly.annotation().externalReferences;
+
+	// Track storage operations: slot key -> (isShielded, location, funcName)
+	struct StorageOp {
+		bool isShielded;
+		langutil::SourceLocation location;
+		std::string funcName;
+	};
+	std::map<std::string, std::vector<StorageOp>> storageOps;
+
+	// Helper to get a string key for a slot expression
+	auto getSlotKey = [](yul::Expression const& _expr) -> std::optional<std::string> {
+		if (auto const* lit = std::get_if<yul::Literal>(&_expr))
+		{
+			if (lit->kind == yul::LiteralKind::Number)
+				return "lit:" + lit->value.value().str();
+		}
+		else if (auto const* ident = std::get_if<yul::Identifier>(&_expr))
+		{
+			return "var:" + ident->name.str();
+		}
+		return std::nullopt;
+	};
+
+	// Helper to check and record a storage operation
+	auto checkStorageOp = [&](yul::FunctionCall const* funCall) {
+		std::string_view funcName = yul::resolveFunctionName(funCall->functionName, _inlineAssembly.dialect());
+		bool isShieldedOp = (funcName == "cstore" || funcName == "cload");
+		bool isNonShieldedOp = (funcName == "sstore" || funcName == "sload");
+
+		if ((isShieldedOp || isNonShieldedOp) && !funCall->arguments.empty())
+		{
+			auto const& slotExpr = funCall->arguments.front();
+
+			// Check for external identifier referencing shielded variable with wrong op
+			if (isNonShieldedOp)
+			{
+				if (auto const* slotIdent = std::get_if<yul::Identifier>(&slotExpr))
+				{
+					auto it = externalRefs.find(slotIdent);
+					if (it != externalRefs.end() && it->second.isShieldedStorage)
+					{
+						m_errorReporter.typeError(
+							5765_error,
+							nativeLocationOf(*funCall),
+							std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
+							(funcName == "sstore" ? "cstore" : "cload") + "() instead."
+						);
+					}
+				}
+			}
+
+			// Track for same-slot conflict detection
+			if (auto slotKey = getSlotKey(slotExpr))
+			{
+				storageOps[*slotKey].push_back({isShieldedOp, nativeLocationOf(*funCall), std::string(funcName)});
+			}
+		}
+	};
+
+	std::function<void(yul::Block const&)> collectStorageOps = [&](yul::Block const& _block) {
+		for (auto const& statement : _block.statements)
+		{
+			std::visit(util::GenericVisitor{
+				[&](yul::ExpressionStatement const& _exprStmt) {
+					if (auto const* funCall = std::get_if<yul::FunctionCall>(&_exprStmt.expression))
+						checkStorageOp(funCall);
+				},
+				[&](yul::VariableDeclaration const& _varDecl) {
+					if (_varDecl.value)
+						if (auto const* funCall = std::get_if<yul::FunctionCall>(_varDecl.value.get()))
+							checkStorageOp(funCall);
+				},
+				[&](yul::Assignment const& _assignment) {
+					if (_assignment.value)
+						if (auto const* funCall = std::get_if<yul::FunctionCall>(_assignment.value.get()))
+							checkStorageOp(funCall);
+				},
+				[&](yul::If const& _if) {
+					collectStorageOps(_if.body);
+				},
+				[&](yul::Switch const& _switch) {
+					for (auto const& _case : _switch.cases)
+						collectStorageOps(_case.body);
+				},
+				[&](yul::ForLoop const& _forLoop) {
+					collectStorageOps(_forLoop.pre);
+					collectStorageOps(_forLoop.body);
+					collectStorageOps(_forLoop.post);
+				},
+				[&](yul::Block const& _nestedBlock) {
+					collectStorageOps(_nestedBlock);
+				},
+				[&](yul::FunctionDefinition const& _funDef) {
+					collectStorageOps(_funDef.body);
+				},
+				[](auto const&) {}
+			}, statement);
+		}
+	};
+	collectStorageOps(_inlineAssembly.operations().root());
+
+	// Check for conflicts: cstore makes a slot private, after which sstore/sload will fail
+	// Note: cload can read from any slot (public or private), so it doesn't conflict
+	for (auto const& [slotKey, ops] : storageOps)
+	{
+		StorageOp const* firstCstore = nullptr;
+
+		for (auto const& op : ops)
+		{
+			if (op.funcName == "cstore" && !firstCstore)
+			{
+				firstCstore = &op;
+			}
+			else if (firstCstore && (op.funcName == "sstore" || op.funcName == "sload"))
+			{
+				// cstore was called before sstore/sload on the same slot
+				// cstore makes the slot private, and sstore/sload cannot access private slots
+				m_errorReporter.typeError(
+					5768_error,
+					op.location,
+					"Cannot use " + op.funcName + "() on a slot that was previously written with cstore(). "
+					"cstore() makes the slot private, and " + op.funcName + "() cannot access private storage. "
+					"Use " + (op.funcName == "sstore" ? "cstore" : "cload") + "() instead."
+				);
+			}
+		}
+	}
 }
 
 bool TypeChecker::visit(IfStatement const& _ifStatement)
