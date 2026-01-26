@@ -861,9 +861,10 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 						// For dynamic arrays, .slot contains the length (not shielded)
 						// The actual shielded elements are stored at keccak256(slot) + index
 						// For other types, .slot contains the actual shielded data
+						// Note: if we ever change the semantics of the length slot and also make it shielded, then we'd need to change this.
 						if (auto const* arrayType = dynamic_cast<ArrayType const*>(var->type());
-							arrayType && arrayType->isDynamicallySized())
-							identifierInfo.isShieldedStorage = false;
+						arrayType && arrayType->isDynamicallySized())
+						identifierInfo.isShieldedStorage = false;
 						else
 							identifierInfo.isShieldedStorage = var->type()->isShielded() || var->type()->containsShieldedType();
 					}
