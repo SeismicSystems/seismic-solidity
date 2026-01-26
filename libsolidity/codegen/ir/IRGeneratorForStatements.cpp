@@ -1971,12 +1971,12 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 		// we can ignore the kind of magic and only look at the name of the member
 		if (member == "coinbase")
 			define(_memberAccess) << "coinbase()\n";
-		else if (member == "timestamp")
+		// "timestamp_seconds" is an alias for "timestamp", allowing contract authors
+		// to be explicit about the unit when used alongside "timestamp_ms"
+		else if (member == "timestamp" || member == "timestamp_seconds")
 			define(_memberAccess) << "timestamp()\n";
 		else if (member == "timestamp_ms")
-			define(_memberAccess) << "timestamp_ms()\n";
-		else if (member == "timestamp_seconds")
-			define(_memberAccess) << "timestamp_seconds()\n";
+			define(_memberAccess) << "timestampms()\n";
 		else if (member == "difficulty" || member == "prevrandao")
 		{
 			if (m_context.evmVersion().hasPrevRandao())
