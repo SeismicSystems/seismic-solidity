@@ -132,6 +132,11 @@ private:
 	bool visit(ErrorDefinition const& _errorDef) override;
 	void endVisit(FunctionTypeName const& _funType) override;
 	bool visit(InlineAssembly const& _inlineAssembly) override;
+	/// Validates that shielded/non-shielded storage operations (cstore/cload vs sstore/sload)
+	/// are used consistently within inline assembly. Reports errors when:
+	/// - sstore/sload is used on a shielded variable reference
+	/// - sstore/sload is used on a slot that was previously written with cstore
+	void validateShieldedStorageOps(InlineAssembly const& _inlineAssembly);
 	bool visit(IfStatement const& _ifStatement) override;
 	void endVisit(TryStatement const& _tryStatement) override;
 	bool visit(WhileStatement const& _whileStatement) override;
