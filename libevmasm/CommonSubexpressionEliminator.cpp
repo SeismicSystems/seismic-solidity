@@ -247,10 +247,10 @@ void CSECodeGenerator::addDependencies(Id _c)
 		switch (expr.item->instruction())
 		{
 		case Instruction::SLOAD:
-			target = StoreOperation::Storage;
-			break;
+		// CLOAD can read both public and private storage, so its treated separately below.
+		// We still need it here however to avoid the default assert.
 		case Instruction::CLOAD:
-			target = StoreOperation::ShieldedStorage;
+			target = StoreOperation::Storage;
 			break;
 		case Instruction::MLOAD:
 		case Instruction::KECCAK256:
@@ -262,7 +262,12 @@ void CSECodeGenerator::addDependencies(Id _c)
 		Id slotToLoadFrom = expr.arguments.at(0);
 		for (auto const& p: m_storeOperations)
 		{
-			if (p.first.first != target)
+			// CLOAD can read both public and private storage, so check both domains
+			bool shouldCheckTarget
+				= (expr.item->instruction() == Instruction::CLOAD)
+					  ? (p.first.first == StoreOperation::Storage || p.first.first == StoreOperation::ShieldedStorage)
+					  : (p.first.first == target);
+			if (!shouldCheckTarget)
 				continue;
 			Id slot = p.first.second;
 			StoreOperations const& storeOps = p.second;
