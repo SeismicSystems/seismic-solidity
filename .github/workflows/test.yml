@@ -56,7 +56,7 @@ jobs:
       - name: Configure ccache
         run: |
           ccache --set-config=cache_dir=$HOME/.ccache
-          ccache --set-config=max_size=1G
+          ccache --set-config=max_size=2G
           # CRITICAL: hash_dir=false allows cache hits even when build paths differ between CI runs
           ccache --set-config=hash_dir=false
           ccache --set-config=base_dir=$GITHUB_WORKSPACE
