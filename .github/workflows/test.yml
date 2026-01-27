@@ -12,6 +12,7 @@ on:
       # Re-enable after zellic-audit merges to seismic.
       # - seismic
       - zellic-audit
+      - fix-unused-store-eliminator-cstore-then-store  # TODO: remove
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
