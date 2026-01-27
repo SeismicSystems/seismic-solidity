@@ -18,9 +18,7 @@
 //     let a := 1
 //     let q := g()
 //     for { } iszero(eq(a, 10)) { a := add(a, 1) }
-//     {
-//         let t := sload(f())
-//     }
+//     { let t := sload(f()) }
 //     function f() -> x
 //     { x := g() }
 //     function g() -> x_1
