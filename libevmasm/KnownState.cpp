@@ -179,7 +179,7 @@ KnownState::StoreOperation KnownState::feedItem(AssemblyItem const& _item, bool 
 					m_stackHeight + static_cast<int>(_item.deposit()),
 					loadFromStorage(arguments[0], _item.debugData())
 				);
-				break;	
+				break;
 			case Instruction::CLOAD:
 				setStackElement(
 					m_stackHeight + static_cast<int>(_item.deposit()),
@@ -391,12 +391,12 @@ KnownState::StoreOperation KnownState::storeInShieldedStorage(
 	// operation will not destroy the knowledge. Specifically, we copy storage locations we know
 	// are different from _slot or locations where we know that the stored value is equal to _value.
 	//
-	// Also preserve storage items from different storage domains (private vs public), as they
-	// cannot overwrite each other and accessing the same slot from different domains causes a runtime error.
+	// CSTORE can claim a public slot if its value is 0, so we cannot unconditionally preserve
+	// public storage knowledge about the same slot. We only preserve knowledge about different slots
+	// or if we're storing the exact same private value.
 	for (auto const& storageItem: m_storageContent)
 		if (m_expressionClasses->knownToBeDifferent(storageItem.first, _slot) ||
-		    storageItem.second.value == _value ||
-		    !storageItem.second.is_private)  // Private store cannot overwrite public storage
+		    storageItem.second == FlaggedStorage{_value, true})
 			storageContents.insert(storageItem);
 	m_storageContent = std::move(storageContents);
 
@@ -423,13 +423,16 @@ ExpressionClasses::Id KnownState::loadFromStorage(Id _slot, langutil::DebugData:
 
 ExpressionClasses::Id KnownState::loadFromShieldedStorage(Id _slot, langutil::DebugData::ConstPtr _debugData)
 {
-	if (m_storageContent.count(_slot) && m_storageContent.at(_slot).is_private)
+	// CLOAD can read both public and private storage
+	if (m_storageContent.count(_slot))
 		return m_storageContent.at(_slot).value;
 
+	// No prior knowledge about this slot - create a fresh CLOAD expression.
+	// Unlike loadFromStorage, we intentionally don't cache this result because we don't know whether
+	// the slot is public or private (since CLOAD can read both), and caching with the wrong domain flag
+	// could cause incorrect behavior in subsequent store operations.
 	AssemblyItem item(Instruction::CLOAD, std::move(_debugData));
-	Id value = m_expressionClasses->find(item, {_slot}, true, m_sequenceNumber);
-	m_storageContent[_slot] = {value, true};
-	return value;
+	return m_expressionClasses->find(item, {_slot}, true, m_sequenceNumber);
 }
 
 KnownState::StoreOperation KnownState::storeInMemory(Id _slot, Id _value, langutil::DebugData::ConstPtr _debugData)
