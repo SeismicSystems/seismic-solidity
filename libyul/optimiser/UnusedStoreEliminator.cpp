@@ -235,9 +235,9 @@ std::vector<UnusedStoreEliminator::Operation> UnusedStoreEliminator::operationsF
 		std::vector<Operation> result;
 		// Unknown read is worse than unknown write.
 		if (sideEffects.memory != SideEffects::Effect::None)
-			result.emplace_back(Operation{Location::Memory, Effect::Read, {}, {}});
+			result.emplace_back(Operation{Location::Memory, Effect::Read, {}, {}, false});
 		if (sideEffects.storage != SideEffects::Effect::None)
-			result.emplace_back(Operation{Location::Storage, Effect::Read, {}, {}});
+			result.emplace_back(Operation{Location::Storage, Effect::Read, {}, {}, false});
 		return result;
 	}
 
@@ -249,7 +249,7 @@ std::vector<UnusedStoreEliminator::Operation> UnusedStoreEliminator::operationsF
 		{
 			yulAssert(!(_op.lengthParameter && _op.lengthConstant));
 			yulAssert(_op.effect != Effect::None);
-			Operation ourOp{_op.location, _op.effect, {}, {}};
+			Operation ourOp{_op.location, _op.effect, {}, {}, false};
 			if (_op.startParameter)
 				ourOp.start = identifierNameIfSSA(_functionCall.arguments.at(*_op.startParameter));
 			if (_op.lengthParameter)
@@ -261,6 +261,9 @@ std::vector<UnusedStoreEliminator::Operation> UnusedStoreEliminator::operationsF
 				case 32: ourOp.length = u256(32); break;
 				default: yulAssert(false);
 				}
+			// Mark shielded/private storage operations
+			if (_op.location == Location::Storage)
+				ourOp.isShieldedStorage = (*instruction == Instruction::CSTORE || *instruction == Instruction::CLOAD);
 			return ourOp;
 		}
 	);
@@ -287,6 +290,12 @@ void UnusedStoreEliminator::applyOperation(UnusedStoreEliminator::Operation cons
 		else if (_operation.effect == Effect::Write && knownCovered(storeOperation, _operation))
 			// This store is overwritten before being read, remove it from the active set.
 			it = active.erase(it);
+		else if (_operation.effect == Effect::Write && hasStorageDomainConflict(storeOperation, _operation))
+		{
+			// Storage domain conflict: mark the first store as used since the second will cause runtime error.
+			m_usedStores.insert(statement);
+			it = active.erase(it);
+		}
 		else
 			++it;
 	}
@@ -301,6 +310,15 @@ bool UnusedStoreEliminator::knownUnrelated(
 		return true;
 	if (_op1.location == Location::Storage)
 	{
+		// Different storage domains (public vs shielded) are generally unrelated.
+		// However, CLOAD can read BOTH domains, so it's related to any storage store.
+		// Note: _op1 is always a store (from m_storeOperations), so we only check _op2.
+		if (_op1.isShieldedStorage != _op2.isShieldedStorage)
+		{
+			bool op2IsCload = (_op2.effect == Effect::Read && _op2.isShieldedStorage);
+			if (!op2IsCload)
+				return true;
+		}
 		if (_op1.start && _op2.start)
 		{
 			yulAssert(
@@ -369,6 +387,10 @@ bool UnusedStoreEliminator::knownCovered(
 {
 	if (_covered.location != _covering.location)
 		return false;
+	// CSTORE/CLOAD and SSTORE/SLOAD operate on different storage domains.
+	// A public storage write (SSTORE) cannot cover a private storage write (CSTORE) and vice versa.
+	if (_covered.location == Location::Storage && _covered.isShieldedStorage != _covering.isShieldedStorage)
+		return false;
 	if (
 		(_covered.start && _covered.start == _covering.start) &&
 		(_covered.length && _covered.length == _covering.length)
@@ -404,6 +426,44 @@ bool UnusedStoreEliminator::knownCovered(
 		// i.start <= e.start && e.start + e.length <= i.start + i.length
 	}
 	return false;
+}
+
+/// Detects a storage domain conflict between two operations.
+///
+/// A storage domain conflict occurs when two operations (CSTORE/CLOAD vs SSTORE/SLOAD)
+/// target the same storage slot but operate on different storage domains:
+/// - Public storage domain: SSTORE/SLOAD operations
+/// - Shielded/private storage domain: CSTORE/CLOAD operations
+///
+/// These domains are separate and mutually exclusive. Attempting to access the same slot
+/// with operations from different domains (e.g., CSTORE followed by SSTORE on slot 0)
+/// will cause a runtime error, as the slot's privacy cannot be changed without first
+/// clearing it.
+///
+/// When such a conflict is detected, the optimizer must preserve both operations to
+/// allow the runtime error to occur, rather than incorrectly optimizing away one of them.
+///
+/// @param _op1 First operation to check
+/// @param _op2 Second operation to check
+/// @return true if the operations target the same slot in different storage domains
+bool UnusedStoreEliminator::hasStorageDomainConflict(
+	UnusedStoreEliminator::Operation const& _op1,
+	UnusedStoreEliminator::Operation const& _op2
+) const
+{
+	// Only applies to storage operations
+	if (_op1.location != Location::Storage || _op2.location != Location::Storage)
+		return false;
+
+	// Check if they operate on different storage domains (public vs shielded)
+	if (_op1.isShieldedStorage == _op2.isShieldedStorage)
+		return false;
+
+	// Check if they target the same slot (or we can't prove they're different)
+	if (!_op1.start || !_op2.start)
+		return false;
+
+	return !m_knowledgeBase.knownToBeDifferent(*_op1.start, *_op2.start);
 }
 
 void UnusedStoreEliminator::markActiveAsUsed(
