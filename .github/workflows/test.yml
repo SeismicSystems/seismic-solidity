@@ -37,30 +37,28 @@ jobs:
           path: build
           key: build-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
 
-      - name: Install & configure ccache
+      # Combined dependency installation (saves ~15-20s by avoiding duplicate apt-get update)
+      - name: Install dependencies & ccache
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y ccache
+          sudo apt-get install -y ccache build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
           ccache --set-config=cache_dir=$HOME/.ccache
           ccache --set-config=max_size=1G
           mkdir -p ~/.ccache
-          ccache --show-config | grep cache_dir
+
       - name: Restore ccache
         uses: actions/cache/restore@v4
         with:
           path: ~/.ccache
           key: ccache-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
-
       - name: Build ssolc
         run: |
           set -euo pipefail
           echo "Building with $(nproc) parallel jobs"
+          echo "=== ccache stats BEFORE build ==="
+          ccache -s
           mkdir -p build
           cd build
           # Only run cmake configure if CMakeCache.txt doesn't exist.
@@ -75,6 +73,8 @@ jobs:
             echo "CMakeCache.txt exists, skipping configure step"
           fi
           cmake --build . --config Debug -j $(nproc)
+          echo "=== ccache stats AFTER build ==="
+          ccache -s
       - name: Run soltest
         run: ./scripts/soltest.sh
 
