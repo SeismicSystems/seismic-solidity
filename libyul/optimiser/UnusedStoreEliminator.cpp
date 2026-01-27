@@ -310,10 +310,15 @@ bool UnusedStoreEliminator::knownUnrelated(
 		return true;
 	if (_op1.location == Location::Storage)
 	{
-		// CSTORE/CLOAD and SSTORE/SLOAD operate on different storage domains
-		// and should never be considered related, even if targeting the same slot.
+		// Different storage domains (public vs shielded) are generally unrelated.
+		// However, CLOAD can read BOTH domains, so it's related to any storage store.
+		// Note: _op1 is always a store (from m_storeOperations), so we only check _op2.
 		if (_op1.isShieldedStorage != _op2.isShieldedStorage)
-			return true;
+		{
+			bool op2IsCload = (_op2.effect == Effect::Read && _op2.isShieldedStorage);
+			if (!op2IsCload)
+				return true;
+		}
 		if (_op1.start && _op2.start)
 		{
 			yulAssert(
