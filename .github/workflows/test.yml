@@ -5,6 +5,7 @@ on:
     branches:
       - seismic
       - zellic-audit
+      - ci-speedup-try-3  # TEMP: remove after testing ccache fix
   pull_request:
     branches:
       # NOTE: seismic temporarily removed to avoid duplicate builds from zellic-audit→seismic PR.
