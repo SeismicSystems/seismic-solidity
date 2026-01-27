@@ -235,7 +235,6 @@ smtutil::Expression SymbolicState::txTypeConstraints() const
 		smt::symbolicUnknownConstraints(m_tx.member("block.number"), TypeProvider::uint256()) &&
 		smt::symbolicUnknownConstraints(m_tx.member("block.timestamp"), TypeProvider::uint256()) &&
 		smt::symbolicUnknownConstraints(m_tx.member("block.timestamp_ms"), TypeProvider::uint256()) &&
-		smt::symbolicUnknownConstraints(m_tx.member("block.timestamp_seconds"), TypeProvider::uint256()) &&
 		smt::symbolicUnknownConstraints(m_tx.member("msg.sender"), TypeProvider::address()) &&
 		smt::symbolicUnknownConstraints(m_tx.member("msg.value"), TypeProvider::uint256()) &&
 		smt::symbolicUnknownConstraints(m_tx.member("tx.origin"), TypeProvider::address()) &&
