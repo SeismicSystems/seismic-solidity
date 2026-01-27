@@ -1,3 +1,4 @@
+# CI workflow for seismic-solidity
 name: Tests
 
 on:
