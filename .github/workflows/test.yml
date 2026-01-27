@@ -61,10 +61,17 @@ jobs:
           echo "Building with $(nproc) parallel jobs"
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Debug \
-                 -DPEDANTIC=OFF \
-                 -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                 -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          # Only run cmake configure if CMakeCache.txt doesn't exist.
+          # cmake --build will automatically re-run cmake if CMakeLists.txt changed.
+          if [ ! -f CMakeCache.txt ]; then
+            echo "No CMakeCache.txt found, running cmake configure..."
+            cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                   -DPEDANTIC=OFF \
+                   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          else
+            echo "CMakeCache.txt exists, skipping configure step"
+          fi
           cmake --build . --config Debug -j $(nproc)
       - name: Run soltest
         run: ./scripts/soltest.sh
