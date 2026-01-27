@@ -2521,7 +2521,7 @@ BOOST_AUTO_TEST_CASE(inliner_invalid)
 }
 
 
-BOOST_AUTO_TEST_CASE(cse_sstore_then_cload_no_optimization)
+BOOST_AUTO_TEST_CASE(cse_sstore_then_cload_can_optimize)
 {
 	AssemblyItems input{
 		u256(0x42),
@@ -2530,14 +2530,13 @@ BOOST_AUTO_TEST_CASE(cse_sstore_then_cload_no_optimization)
 		u256(0),
 		Instruction::CLOAD
 	};
-	// Optimizer does stack manipulation but keeps CLOAD (doesn't replace with SSTORE value)
+	// CLOAD can read from public storage, so optimizer eliminates CLOAD and keeps 0x42 on stack
 	checkCSE(input, {
 		u256(0x42),
 		u256(0),
-		Instruction::SWAP1,
 		Instruction::DUP2,
-		Instruction::SSTORE,
-		Instruction::CLOAD
+		Instruction::SWAP1,
+		Instruction::SSTORE
 	});
 }
 
