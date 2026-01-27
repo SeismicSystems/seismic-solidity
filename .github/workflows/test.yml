@@ -43,8 +43,6 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y ccache build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
-          ccache --set-config=cache_dir=$HOME/.ccache
-          ccache --set-config=max_size=1G
           mkdir -p ~/.ccache
 
       - name: Restore ccache
@@ -52,6 +50,15 @@ jobs:
         with:
           path: ~/.ccache
           key: ccache-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
+
+      # Configure ccache AFTER restore to ensure settings aren't overwritten
+      - name: Configure ccache
+        run: |
+          ccache --set-config=cache_dir=$HOME/.ccache
+          ccache --set-config=max_size=1G
+          # CRITICAL: hash_dir=false allows cache hits even when build paths differ between CI runs
+          ccache --set-config=hash_dir=false
+          ccache --set-config=base_dir=$GITHUB_WORKSPACE
 
       - name: Build ssolc
         run: |
