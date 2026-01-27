@@ -3,7 +3,7 @@ contract C
 	function f(uint timestamp_seconds) public view {
 		assert(block.timestamp_seconds == timestamp_seconds); // should fail
 		assert(block.timestamp == timestamp_seconds); // should fail
-		assert(block.timestamp == block.timestamp_seconds); // should hold, but fails due to SMT model bug
+		assert(block.timestamp == block.timestamp_seconds); // should hold
 	}
 }
 // ====
@@ -13,4 +13,4 @@ contract C
 // ----
 // Warning 6328: (63-113): CHC: Assertion violation happens here.
 // Warning 6328: (132-174): CHC: Assertion violation happens here.
-// Warning 6328: (193-243): CHC: Assertion violation happens here.
+// Info 1391: CHC: 1 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
