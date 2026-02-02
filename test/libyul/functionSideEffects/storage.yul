@@ -11,4 +11,4 @@
 // a: writes storage
 // f: writes storage
 // g: writes other state, writes storage, writes memory
-// h: movable apart from effects, can be removed, can be removed if no msize, reads storage
+// h: can be removed, can be removed if no msize, reads storage

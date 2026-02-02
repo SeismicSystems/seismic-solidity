@@ -546,7 +546,10 @@ bool SemanticInformation::movableApartFromEffects(Instruction _instruction)
 	case Instruction::RETURNDATASIZE:
 	case Instruction::BALANCE:
 	case Instruction::SELFBALANCE:
-	case Instruction::SLOAD:
+	// SLOAD is NOT movable apart from effects because it can revert due to
+	// confidentiality mismatch (reading private storage).
+	// Hoisting SLOAD out of a loop could change behavior from non-reverting
+	// to reverting for zero-iteration loops.
 	case Instruction::CLOAD:
 	case Instruction::TLOAD:
 	case Instruction::KECCAK256:
