@@ -3399,11 +3399,28 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 						return { 3125_error, errorMsg };
 					}
 			}
-			else if (auto const* addressType = dynamic_cast<AddressType const*>(exprType))
+			else if (exprType->category() == Type::Category::ShieldedAddress)
+			{
+				// Shielded addresses only expose code and codehash.
+				// For other address members, suggest casting to address.
+				for (MemberList::Member const& addressMember: TypeProvider::payableAddress()->nativeMembers(nullptr))
+					if (addressMember.name == memberName)
+					{
+						auto const* var = dynamic_cast<Identifier const*>(&_memberAccess.expression());
+						std::string varName = var ? var->name() : "...";
+						errorMsg += " Cast to address first: \"address(" + varName + ")." + memberName + "\".";
+						return { 3125_error, errorMsg };
+					}
+			}
+			else if (exprType->category() == Type::Category::Address)
 			{
 				// Trigger error when using send or transfer with a non-payable fallback function.
+				// Note: ShieldedAddressType inherits from AddressType but has its own category,
+				// so this only matches regular address types.
 				if (memberName == "send" || memberName == "transfer")
 				{
+					auto const* addressType = dynamic_cast<AddressType const*>(exprType);
+					solAssert(addressType, "");
 					solAssert(
 						addressType->stateMutability() != StateMutability::Payable,
 						"Expected address not-payable as members were not found"

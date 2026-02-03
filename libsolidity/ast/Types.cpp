@@ -569,6 +569,16 @@ MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 	return members;
 }
 
+MemberList::MemberMap ShieldedAddressType::nativeMembers(ASTNode const*) const
+{
+	// Only code and codehash are allowed on shielded addresses.
+	// For balance, call, delegatecall, staticcall, send, transfer: cast to address first.
+	return MemberList::MemberMap{
+		{"code", TypeProvider::array(DataLocation::Memory)},
+		{"codehash", TypeProvider::fixedBytes(32)}
+	};
+}
+
 std::string ShieldedAddressType::richIdentifier() const
 {
 	if (stateMutability() == StateMutability::Payable)
