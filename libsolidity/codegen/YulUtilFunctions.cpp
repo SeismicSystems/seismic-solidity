@@ -4492,7 +4492,7 @@ std::string YulUtilFunctions::conversionFunctionSpecial(Type const& _from, Type 
 			"Type conversion " + _from.toString() + " -> " + _to.toString() + " not yet implemented."
 		);
 		std::string const& data = dynamic_cast<StringLiteralType const&>(_from).value();
-		if (_to.category() == Type::Category::FixedBytes)
+		if (_to.category() == Type::Category::FixedBytes || _to.category() == Type::Category::ShieldedFixedBytes)
 		{
 			unsigned const numBytes = dynamic_cast<FixedBytesType const&>(_to).numBytes();
 			solAssert(data.size() <= 32, "");
