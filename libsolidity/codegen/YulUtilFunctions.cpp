@@ -1744,9 +1744,9 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 						}
 					}
 					default {
-						sload(array, add(data, 2))
+						sstore(array, add(data, 2))
 						let slot, offset := <indexAccess>(array, oldLen)
-						storeValue(slot, offset <values>)
+						<storeValue>(slot, offset <values>)
 					}
 				<!isByteArrayOrString>
 					let oldLen := <loadOpcode>(array)
