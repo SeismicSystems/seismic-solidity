@@ -2913,6 +2913,22 @@ Type const& UserDefinedValueType::underlyingType() const
 	return *type;
 }
 
+bool UserDefinedValueType::isShielded() const
+{
+	Type const* type = m_definition.underlyingType()->annotation().type;
+	if (!type)
+		return false;
+	return type->isShielded();
+}
+
+bool UserDefinedValueType::containsShieldedType() const
+{
+	Type const* type = m_definition.underlyingType()->annotation().type;
+	if (!type)
+		return false;
+	return type->containsShieldedType();
+}
+
 Declaration const* UserDefinedValueType::typeDefinition() const
 {
 	return &m_definition;
