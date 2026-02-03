@@ -4357,6 +4357,23 @@ void TypeChecker::checkShieldedLiteralWarning(
 	langutil::SourceLocation const& _location
 )
 {
+	// Handle array literals: [suint(1), suint(2)]
+	if (auto tupleExpr = dynamic_cast<TupleExpression const*>(&_expression))
+	{
+		if (tupleExpr->isInlineArray())
+		{
+			// Get the base type of the array
+			if (auto arrayType = dynamic_cast<ArrayType const*>(&_targetType))
+			{
+				Type const* baseType = arrayType->baseType();
+				for (auto const& component : tupleExpr->components())
+					if (component)
+						checkShieldedLiteralWarning(*component, *baseType, _location);
+			}
+		}
+		return;
+	}
+
 	auto funcCall = dynamic_cast<FunctionCall const*>(&_expression);
 	if (!funcCall)
 		return;
