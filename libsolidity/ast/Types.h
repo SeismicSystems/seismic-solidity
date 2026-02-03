@@ -506,6 +506,10 @@ public:
 	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 
+	/// Only code and codehash are allowed on shielded addresses.
+	/// For other members, cast to address first.
+	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
+
 	StateMutability stateMutability(void) const { return AddressType::stateMutability(); }
 };
 
