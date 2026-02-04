@@ -3082,7 +3082,7 @@ bool ExpressionCompiler::cleanupNeededForOp(Type::Category _type, Token _op, Ari
 		return true;
 	else if (
 		_arithmetic == Arithmetic::Wrapping &&
-		_type == Type::Category::Integer &&
+		(_type == Type::Category::Integer || _type == Type::Category::ShieldedInteger) &&
 		(_op == Token::Div || _op == Token::Mod || _op == Token::Exp)
 	)
 		// We need cleanup for EXP because 0**0 == 1, but 0**0x100 == 0
