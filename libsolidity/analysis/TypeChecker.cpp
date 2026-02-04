@@ -1909,7 +1909,9 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 	Type const* resultType = nullptr;
 	if (TokenTraits::isCompareOp(_operation.getOperator()))
 	{
-		if (commonType->category() == Type::Category::ShieldedBool)
+		// Comparisons involving any shielded operands yield a shielded boolean
+		// to preserve confidentiality of the comparison result.
+		if (commonType->isShielded())
 			resultType = TypeProvider::shieldedBoolean();
 		else
 			resultType = TypeProvider::boolean();
