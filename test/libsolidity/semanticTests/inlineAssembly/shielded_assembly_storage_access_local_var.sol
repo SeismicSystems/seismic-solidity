@@ -8,7 +8,7 @@ contract C {
             sstore(x.slot, 7)
             off := x.offset
         }
-        assert(off ==suint(0));
+        assert(bool(off == suint(0)));
         return uint(a.length);
     }
 }
