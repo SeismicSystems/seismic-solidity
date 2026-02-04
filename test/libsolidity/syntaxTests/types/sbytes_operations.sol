@@ -14,13 +14,13 @@ contract C {
         sbytes8 not8 = ~sb8;
         sbytes32 not32 = ~sb32;
 
-        // Test comparisons
-        bool eq = sb1 == sbytes1(0x01);
-        bool neq = sb8 != sbytes8(0x0000000000000000);
-        bool lt = sb1 < sbytes1(0xFF);
-        bool lte = sb8 <= sbytes8(0xFFFFFFFFFFFFFFFF);
-        bool gt = sb32 > sbytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
-        bool gte = sb32 >= sbytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
+        // Test comparisons - shielded type comparisons return sbool
+        sbool eq = sb1 == sbytes1(0x01);
+        sbool neq = sb8 != sbytes8(0x0000000000000000);
+        sbool lt = sb1 < sbytes1(0xFF);
+        sbool lte = sb8 <= sbytes8(0xFFFFFFFFFFFFFFFF);
+        sbool gt = sb32 > sbytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
+        sbool gte = sb32 >= sbytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
     }
 }
 // ----
@@ -33,9 +33,9 @@ contract C {
 // Warning 2072: (541-553): Unused local variable.
 // Warning 2072: (570-582): Unused local variable.
 // Warning 2072: (599-613): Unused local variable.
-// Warning 2072: (660-667): Unused local variable.
-// Warning 2072: (700-708): Unused local variable.
-// Warning 2072: (755-762): Unused local variable.
-// Warning 2072: (794-802): Unused local variable.
-// Warning 2072: (849-856): Unused local variable.
-// Warning 2072: (952-960): Unused local variable.
+// Warning 2072: (701-709): Unused local variable.
+// Warning 2072: (742-751): Unused local variable.
+// Warning 2072: (798-806): Unused local variable.
+// Warning 2072: (838-847): Unused local variable.
+// Warning 2072: (894-902): Unused local variable.
+// Warning 2072: (998-1007): Unused local variable.

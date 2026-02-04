@@ -1,6 +1,6 @@
 contract C {
     saddress a;
-    function f() public pure returns(bool) {
+    function f() internal pure returns(sbool) {
         a = saddress(0) + saddress(0);
         a = saddress(0) - saddress(0);
         a = saddress(0) * saddress(0);
@@ -9,7 +9,7 @@ contract C {
     }
 }
 // ----
-// TypeError 2271: (86-111): Built-in binary operator + cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.
-// TypeError 2271: (125-150): Built-in binary operator - cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.
-// TypeError 2271: (164-189): Built-in binary operator * cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.
-// TypeError 2271: (203-228): Built-in binary operator / cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.
+// TypeError 2271: (89-114): Built-in binary operator + cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.
+// TypeError 2271: (128-153): Built-in binary operator - cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.
+// TypeError 2271: (167-192): Built-in binary operator * cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.
+// TypeError 2271: (206-231): Built-in binary operator / cannot be applied to types saddress and saddress. Arithmetic operations on addresses are not supported. Convert to integer first before using them.

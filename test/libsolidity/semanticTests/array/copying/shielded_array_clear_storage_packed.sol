@@ -8,9 +8,9 @@ contract C {
         y[0] = suint128(23);
         x = y;
         assembly { sstore(x.slot, 4) }
-        assert(x[0] == suint128(23));
-        assert(x[2] == suint128(0));
-        assert(x[3] == suint128(0));
+        assert(bool(x[0] == suint128(23)));
+        assert(bool(x[2] == suint128(0)));
+        assert(bool(x[3] == suint128(0)));
         return uint128(x[1]);
     }
 
@@ -20,9 +20,9 @@ contract C {
         y[0] = suint64(23);
         x1 = y;
         assembly { sstore(x1.slot, 4) }
-        assert(x1[0] == suint64(23));
-        assert(x1[2] == suint64(0));
-        assert(x1[3] == suint64(0));
+        assert(bool(x1[0] == suint64(23)));
+        assert(bool(x1[2] == suint64(0)));
+        assert(bool(x1[3] == suint64(0)));
         return uint64(x1[1]);
     }
 
@@ -32,9 +32,9 @@ contract C {
         y[0] = suint120(23);
         x2 = y;
         assembly { sstore(x2.slot, 4) }
-        assert(x2[0] == suint120(23));
-        assert(x2[2] == suint120(0));
-        assert(x2[3] == suint120(0));
+        assert(bool(x2[0] == suint120(23)));
+        assert(bool(x2[2] == suint120(0)));
+        assert(bool(x2[3] == suint120(0)));
         return uint120(x2[1]);
     }
 }

@@ -13,7 +13,7 @@ contract C {
             cstore(x.slot, 7)
             off := x.offset
         }
-        assert(off == suint(0));
+        assert(bool(off == suint(0)));
         return true;
     }
 
