@@ -1284,6 +1284,8 @@ public:
 	unsigned storageBytes() const override { return underlyingType().storageBytes(); }
 
 	bool isValueType() const override { return true; }
+	bool isShielded() const override;
+	bool containsShieldedType() const override;
 	bool nameable() const override
 	{
 		solAssert(underlyingType().nameable(), "");

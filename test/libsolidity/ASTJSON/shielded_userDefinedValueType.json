@@ -235,14 +235,13 @@
         },
         {
           "constant": false,
-          "functionSelector": "97682884",
           "id": 26,
           "mutability": "mutable",
           "name": "m",
-          "nameLocation": "207:1:1",
+          "nameLocation": "209:1:1",
           "nodeType": "VariableDeclaration",
           "scope": 27,
-          "src": "171:37:1",
+          "src": "171:39:1",
           "stateVariable": true,
           "storageLocation": "default",
           "typeDescriptions": {
@@ -302,14 +301,14 @@
               }
             }
           },
-          "visibility": "public"
+          "visibility": "internal"
         }
       ],
       "scope": 28,
-      "src": "97:114:1",
+      "src": "97:116:1",
       "usedErrors": [],
       "usedEvents": []
     }
   ],
-  "src": "0:212:1"
+  "src": "0:214:1"
 }
