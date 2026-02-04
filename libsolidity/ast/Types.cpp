@@ -1210,10 +1210,13 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 
 		// Shift and exp are not symmetric, so it does not make sense to swap
 		// the types as below. As an exception, we always use uint here.
+		bool otherIsShielded = _other->category() == Category::ShieldedInteger;
 		if (TokenTraits::isShiftOp(_operator))
 		{
 			if (!isValidShiftAndAmountType(_operator, *_other))
 				return nullptr;
+			if (otherIsShielded)
+				return isNegative() ? TypeProvider::shieldedInt256() : TypeProvider::shieldedUint256();
 			return isNegative() ? TypeProvider::int256() : TypeProvider::uint256();
 		}
 		else if (Token::Exp == _operator)
@@ -1231,6 +1234,8 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 			else if (dynamic_cast<FixedPointType const*>(_other))
 				return TypeResult::err("Exponent is fractional.");
 
+			if (otherIsShielded)
+				return isNegative() ? TypeProvider::shieldedInt256() : TypeProvider::shieldedUint256();
 			return isNegative() ? TypeProvider::int256() : TypeProvider::uint256();
 		}
 		else
