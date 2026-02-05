@@ -168,6 +168,12 @@ TypePointers TypeChecker::typeCheckABIDecodeAndRetrieveReturnType(FunctionCall c
 					typeArgument->location(),
 					"Decoding type " + actualType->humanReadableName() + " not supported."
 				);
+			else if (actualType->containsShieldedType())
+				m_errorReporter.typeError(
+					4851_error,
+					typeArgument->location(),
+					"Shielded types cannot be ABI encoded."
+				);
 
 			if (auto referenceType = dynamic_cast<ReferenceType const*>(actualType))
 			{
@@ -2424,6 +2430,12 @@ void TypeChecker::typeCheckABIEncodeFunctions(
 				arguments[i]->location(),
 				"This type cannot be encoded."
 			);
+		else if (argType->containsShieldedType())
+			m_errorReporter.typeError(
+				3648_error,
+				arguments[i]->location(),
+				"Shielded types cannot be ABI encoded."
+			);
 	}
 }
 
@@ -2576,6 +2588,12 @@ void TypeChecker::typeCheckABIEncodeCallFunction(FunctionCall const& _functionCa
 				externalFunctionType->parameterTypes()[i]->humanReadableName() +
 				"\"" +
 				(result.message().empty() ?  "." : ": " + result.message())
+			);
+		else if (argType.containsShieldedType())
+			m_errorReporter.typeError(
+				3648_error,
+				callArguments[i]->location(),
+				"Shielded types cannot be ABI encoded."
 			);
 	}
 }
