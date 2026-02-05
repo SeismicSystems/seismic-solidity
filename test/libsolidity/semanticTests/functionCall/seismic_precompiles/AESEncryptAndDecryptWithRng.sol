@@ -20,7 +20,7 @@ contract AES {
     function encryptAndStore() public {
         address AESEncryptAddr = address(0x66);
 
-        bytes memory input = abi.encodePacked(AES_KEY, NONCE, PLAINTEXT);
+        bytes memory input = abi.encodePacked(AES_KEY, uint96(NONCE), PLAINTEXT);
 
         (bool success, bytes memory output) = AESEncryptAddr.staticcall(input);
         require(success, "Precompile encryption call failed");
@@ -34,7 +34,7 @@ contract AES {
 
         address AESDecryptAddr = address(0x67);
 
-        bytes memory input = abi.encodePacked(AES_KEY, NONCE, encryptedData);
+        bytes memory input = abi.encodePacked(AES_KEY, uint96(NONCE), encryptedData);
 
         (bool success, bytes memory output) = AESDecryptAddr.staticcall(input);
         require(success, "Precompile decryption call failed");
