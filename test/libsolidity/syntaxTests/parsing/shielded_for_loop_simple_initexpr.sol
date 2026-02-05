@@ -8,6 +8,7 @@ contract test {
 }
 // ----
 // Warning 9660: (62-85): Literals converted to shielded integers will leak during contract deployment.
+// Warning 5765: (103-116): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
 // Warning 4283: (118-121): Shielded integer increment can leak information. A revert due to overflow reveals range information about the operand.
 // Warning 5740: (118-121): Unreachable code.
 // Warning 5740: (160-168): Unreachable code.
