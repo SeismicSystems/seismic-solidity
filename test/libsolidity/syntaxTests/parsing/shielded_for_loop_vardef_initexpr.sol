@@ -7,6 +7,7 @@ contract test {
 }
 // ----
 // Warning 9660: (67-88): Literals converted to shielded integers will leak during contract deployment.
+// Warning 4283: (105-108): Shielded integer increment can leak information. A revert due to overflow reveals range information about the operand.
 // Warning 5740: (105-108): Unreachable code.
 // Warning 5740: (147-155): Unreachable code.
 // Warning 5667: (33-43): Unused function parameter. Remove or comment out the variable name to silence this warning.
