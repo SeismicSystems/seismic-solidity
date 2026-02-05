@@ -1457,7 +1457,7 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 			}
 		)")
 		("extractLength", extractByteArrayLengthFunction())
-		("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+		("loadOpcode", _type.baseType()->isShielded() ? "cload" : "sload")
 		("decreaseSize", decreaseByteArraySizeFunction(_type))
 		("increaseSize", increaseByteArraySizeFunction(_type))
 		.render();
@@ -1562,7 +1562,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 		("maxArrayLength", (u256(1) << 64).str())
 		("dataPosition", arrayDataAreaFunction(_type))
 		("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-		("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
+		("storeOpcode", _type.baseType()->isShielded() ? "cstore" : "sstore")
 		.render();
 	});
 }
@@ -1583,8 +1583,8 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-			("storeOpcode", _type.category() == Type::Category::ShieldedInteger ? "cstore" : "sstore")
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("storeOpcode", _type.baseType()->isShielded() ? "cstore" : "sstore")
+			("loadOpcode", _type.baseType()->isShielded() ? "cload" : "sload")
 			.render();
 	});
 }
@@ -1694,7 +1694,7 @@ std::string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("indexAccessNoChecks", longByteArrayStorageIndexAccessNoCheckFunction())
-			("loadOpcode", _type.category() == Type::Category::ShieldedInteger ? "cload" : "sload")
+			("loadOpcode", _type.baseType()->isShielded() ? "cload" : "sload")
 			("setToZero", storageSetToZeroFunction(*_type.baseType(), VariableDeclaration::Location::Unspecified))
 			.render();
 	});
