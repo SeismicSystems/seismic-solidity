@@ -2959,6 +2959,23 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 				);
 		}
 	}
+
+	// Check for shielded types in require/assert conditions - these leak information via control flow
+	if (
+		(_functionType->kind() == FunctionType::Kind::Require ||
+		 _functionType->kind() == FunctionType::Kind::Assert) &&
+		!arguments.empty()
+	)
+	{
+		Type const* condType = type(*paramArgMap[0]);
+		if (condType->category() == Type::Category::ShieldedBool)
+			m_errorReporter.warning(
+				5765_error,
+				paramArgMap[0]->location(),
+				"Using shielded types in branching conditions can leak information through "
+				"observable execution patterns such as gas costs, state changes, and execution traces."
+			);
+	}
 }
 
 bool TypeChecker::visit(FunctionCall const& _functionCall)
@@ -4639,11 +4656,21 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 
 bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 	_expression.accept(*this);
-    Type const* condType = type(_expression);
-    if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
-        return true;
-    else
-        return expectType(_expression, *TypeProvider::boolean());
+	Type const* condType = type(_expression);
+	if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
+	{
+		// Warn about information leakage when shielded types are used in branching conditions
+		if (condType->category() == Type::Category::ShieldedBool)
+			m_errorReporter.warning(
+				5765_error,
+				_expression.location(),
+				"Using shielded types in branching conditions can leak information through "
+				"observable execution patterns such as gas costs, state changes, and execution traces."
+			);
+		return true;
+	}
+	else
+		return expectType(_expression, *TypeProvider::boolean());
 }
 
 
