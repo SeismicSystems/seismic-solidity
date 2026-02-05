@@ -1419,6 +1419,8 @@ BoolResult StringLiteralType::isImplicitlyConvertibleTo(Type const& _convertTo) 
 {
 	if (auto fixedBytes = dynamic_cast<FixedBytesType const*>(&_convertTo))
 	{
+		if (dynamic_cast<ShieldedFixedBytesType const*>(&_convertTo))
+			return false;
 		if (static_cast<size_t>(fixedBytes->numBytes()) < m_value.size())
 			return BoolResult::err("Literal is larger than the type.");
 		return true;
@@ -1439,6 +1441,17 @@ BoolResult StringLiteralType::isImplicitlyConvertibleTo(Type const& _convertTo) 
 	}
 	else
 		return false;
+}
+
+BoolResult StringLiteralType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (auto fixedBytes = dynamic_cast<FixedBytesType const*>(&_convertTo))
+	{
+		if (static_cast<size_t>(fixedBytes->numBytes()) < m_value.size())
+			return BoolResult::err("Literal is larger than the type.");
+		return true;
+	}
+	return isImplicitlyConvertibleTo(_convertTo);
 }
 
 std::string StringLiteralType::richIdentifier() const
