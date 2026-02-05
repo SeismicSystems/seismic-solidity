@@ -1681,6 +1681,19 @@ bool TypeChecker::visit(Assignment const& _assignment)
 	return false;
 }
 
+bool TypeChecker::visit(Block const& _block)
+{
+	if (_block.unchecked())
+		++m_insideUncheckedBlock;
+	return true;
+}
+
+void TypeChecker::endVisit(Block const& _block)
+{
+	if (_block.unchecked())
+		--m_insideUncheckedBlock;
+}
+
 bool TypeChecker::visit(TupleExpression const& _tuple)
 {
 	_tuple.annotation().isConstant = false;
@@ -1852,6 +1865,26 @@ bool TypeChecker::visit(UnaryOperation const& _operation)
 		(!_operation.userDefinedFunctionType() || _operation.userDefinedFunctionType()->isPure());
 	_operation.annotation().isLValue = false;
 
+	// Warn about increment/decrement on shielded integers - overflow/underflow checks leak information
+	// Only warn outside of unchecked blocks, since unchecked arithmetic doesn't revert on overflow
+	if (
+		(op == Token::Inc || op == Token::Dec) &&
+		operandType->category() == Type::Category::ShieldedInteger &&
+		m_insideUncheckedBlock == 0
+	)
+	{
+		std::string operation = op == Token::Inc ? "increment" : "decrement";
+		m_errorReporter.warning(
+			4283_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to overflow reveals range information about the operand.",
+				operation
+			)
+		);
+	}
+
 	return false;
 }
 
@@ -1981,6 +2014,53 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 				"in the next breaking release."
 			);
 		}
+	}
+
+	// Warn about division/modulo on shielded integers - revert on zero divisor leaks information
+	if (
+		(_operation.getOperator() == Token::Div || _operation.getOperator() == Token::Mod) &&
+		commonType->category() == Type::Category::ShieldedInteger
+	)
+	{
+		std::string operation = _operation.getOperator() == Token::Div ? "division" : "modulo";
+		m_errorReporter.warning(
+			4281_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to division by zero reveals that the divisor is zero.",
+				operation
+			)
+		);
+	}
+
+	// Warn about overflow-checked arithmetic on shielded integers - revert on overflow leaks range info
+	// Only warn outside of unchecked blocks, since unchecked arithmetic doesn't revert on overflow
+	if (
+		(_operation.getOperator() == Token::Add ||
+		 _operation.getOperator() == Token::Sub ||
+		 _operation.getOperator() == Token::Mul) &&
+		commonType->category() == Type::Category::ShieldedInteger &&
+		m_insideUncheckedBlock == 0
+	)
+	{
+		std::string operation;
+		switch (_operation.getOperator())
+		{
+		case Token::Add: operation = "addition"; break;
+		case Token::Sub: operation = "subtraction"; break;
+		case Token::Mul: operation = "multiplication"; break;
+		default: solAssert(false, "Unexpected operator");
+		}
+		m_errorReporter.warning(
+			4282_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to overflow reveals range information about the operands.",
+				operation
+			)
+		);
 	}
 
 	if (_operation.getOperator() == Token::Exp || _operation.getOperator() == Token::SHL)
