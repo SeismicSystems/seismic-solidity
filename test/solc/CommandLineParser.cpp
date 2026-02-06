@@ -118,8 +118,7 @@ BOOST_AUTO_TEST_CASE(cli_mode_options)
 			"--output-dir=/tmp/out",
 			"--overwrite",
 			"--evm-version=spuriousDragon",
-			"--via-ir",
-			"--experimental-via-ir",
+			// NOTE: --via-ir and --experimental-via-ir removed (via-ir pipeline disabled)
 			"--revert-strings=strip",
 			"--debug-info=location",
 			"--pretty-json",
@@ -180,7 +179,7 @@ BOOST_AUTO_TEST_CASE(cli_mode_options)
 		expectedOptions.output.dir = "/tmp/out";
 		expectedOptions.output.overwriteFiles = true;
 		expectedOptions.output.evmVersion = EVMVersion::spuriousDragon();
-		expectedOptions.output.viaIR = true;
+		expectedOptions.output.viaIR = false;
 		expectedOptions.output.revertStrings = RevertStrings::Strip;
 		expectedOptions.output.debugInfoSelection = DebugInfoSelection::fromString("location");
 		expectedOptions.formatting.json = JsonFormat{JsonFormat::Pretty, 7};
@@ -260,12 +259,15 @@ BOOST_AUTO_TEST_CASE(no_import_callback)
 	}
 }
 
+// NOTE: via_ir_options test skipped (via-ir pipeline disabled)
+#if 0
 BOOST_AUTO_TEST_CASE(via_ir_options)
 {
 	BOOST_TEST(!parseCommandLine({"solc", "contract.sol"}).output.viaIR);
 	for (std::string viaIrOption: {"--via-ir", "--experimental-via-ir"})
 		BOOST_TEST(parseCommandLine({"solc", viaIrOption, "contract.sol"}).output.viaIR);
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(assembly_mode_options)
 {
@@ -628,6 +630,8 @@ BOOST_AUTO_TEST_CASE(invalid_optimizer_sequence_without_optimize)
 	}
 }
 
+// NOTE: ethdebug test skipped (requires --via-ir which is disabled)
+#if 0
 BOOST_AUTO_TEST_CASE(ethdebug)
 {
 	CommandLineOptions commandLineOptions = parseCommandLine({"solc", "contract.sol", "--debug-info", "ethdebug", "--ethdebug", "--via-ir"});
@@ -664,6 +668,7 @@ BOOST_AUTO_TEST_CASE(ethdebug)
 	BOOST_CHECK_EQUAL(commandLineOptions.output.debugInfoSelection.has_value(), true);
 	BOOST_CHECK_EQUAL(commandLineOptions.output.debugInfoSelection->ethdebug, true);
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 
