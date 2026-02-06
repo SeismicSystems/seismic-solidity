@@ -7,7 +7,7 @@ contract C {
         suint128[] memory y = new suint128[](1);
         y[0] = suint128(23);
         x = y;
-        assembly { sstore(x.slot, 4) }
+        assembly { cstore(x.slot, 4) }
         assert(bool(x[0] == suint128(23)));
         assert(bool(x[2] == suint128(0)));
         assert(bool(x[3] == suint128(0)));
@@ -19,7 +19,7 @@ contract C {
         suint64[] memory y = new suint64[](1);
         y[0] = suint64(23);
         x1 = y;
-        assembly { sstore(x1.slot, 4) }
+        assembly { cstore(x1.slot, 4) }
         assert(bool(x1[0] == suint64(23)));
         assert(bool(x1[2] == suint64(0)));
         assert(bool(x1[3] == suint64(0)));
@@ -31,7 +31,7 @@ contract C {
         suint120[] memory y = new suint120[](1);
         y[0] = suint120(23);
         x2 = y;
-        assembly { sstore(x2.slot, 4) }
+        assembly { cstore(x2.slot, 4) }
         assert(bool(x2[0] == suint120(23)));
         assert(bool(x2[2] == suint120(0)));
         assert(bool(x2[3] == suint120(0)));

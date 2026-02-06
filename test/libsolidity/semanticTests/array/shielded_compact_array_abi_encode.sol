@@ -13,15 +13,15 @@ contract C {
     }
 
     function getFlags() public view returns (bool[] memory) {
-        bool[] memory result = new bool[](flags.length);
-        for (uint i = 0; i < flags.length; i++) {
+        bool[] memory result = new bool[](uint(flags.length));
+        for (uint i = 0; i < uint(flags.length); i++) {
             result[i] = bool(flags[i]);
         }
         return result;
     }
 
     function getLength() public view returns (uint256) {
-        return flags.length;
+        return uint256(flags.length);
     }
 }
 // ----
