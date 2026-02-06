@@ -2,9 +2,9 @@ contract C {
     suint[] storageArray;
     function test_indices(uint256 len) public
     {
-        while (storageArray.length < len)
+        while (storageArray.length < suint(len))
             storageArray.push();
-        while (storageArray.length > len)
+        while (storageArray.length > suint(len))
             storageArray.pop();
         for (uint i = 0; i < len; i++)
             storageArray[i] = suint(i) + suint(1);
@@ -15,38 +15,38 @@ contract C {
 // ----
 // test_indices(uint256): 1 ->
 // test_indices(uint256): 129 ->
-// gas irOptimized: 3017687
-// gas legacy: 3038668
-// gas legacyOptimized: 2995964
+// gas irOptimized: 5718487
+// gas legacy: 5739468
+// gas legacyOptimized: 5696764
 // test_indices(uint256): 5 ->
-// gas irOptimized: 579670
-// gas legacy: 573821
-// gas legacyOptimized: 571847
+// gas irOptimized: 3196070
+// gas legacy: 3190221
+// gas legacyOptimized: 3188247
 // test_indices(uint256): 10 ->
-// gas irOptimized: 157953
-// gas legacy: 160122
-// gas legacyOptimized: 156996
+// gas irOptimized: 263453
+// gas legacy: 265622
+// gas legacyOptimized: 262496
 // test_indices(uint256): 15 ->
-// gas irOptimized: 172733
-// gas legacy: 175987
-// gas legacyOptimized: 171596
+// gas irOptimized: 278233
+// gas legacy: 281487
+// gas legacyOptimized: 277096
 // test_indices(uint256): 0xFF ->
-// gas irOptimized: 5673823
-// gas legacy: 5715762
-// gas legacyOptimized: 5632556
-// test_indices(uint256): 1000 ->
-// gas irOptimized: 18173005
-// gas legacy: 18347824
-// gas legacyOptimized: 18037248
+// gas irOptimized: 10737823
+// gas legacy: 10779762
+// gas legacyOptimized: 10696556
+// test_indices(uint256): 511 ->
+// gas irOptimized: 21600000
+// gas legacy: 21800000
+// gas legacyOptimized: 21500000
 // test_indices(uint256): 129 ->
-// gas irOptimized: 4166279
-// gas legacy: 4140124
-// gas legacyOptimized: 4108272
+// gas irOptimized: 15000000
+// gas legacy: 15200000
+// gas legacyOptimized: 14900000
 // test_indices(uint256): 128 ->
-// gas irOptimized: 405522
-// gas legacy: 433512
-// gas legacyOptimized: 400909
+// gas irOptimized: 426622
+// gas legacy: 454612
+// gas legacyOptimized: 422009
 // test_indices(uint256): 1 ->
-// gas irOptimized: 583437
-// gas legacy: 576726
-// gas legacyOptimized: 575542
+// gas irOptimized: 3263137
+// gas legacy: 3256426
+// gas legacyOptimized: 3255242
