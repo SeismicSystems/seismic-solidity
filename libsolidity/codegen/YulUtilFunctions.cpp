@@ -1319,8 +1319,7 @@ std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 		)");
 		w("functionName", functionName);
 		w("dynamic", _type.isDynamicallySized());
-		// Array length is always stored in public storage, even for shielded arrays
-		w("loadOpcode", "sload");
+		w("loadOpcode", _type.isDynamicallySized() && _type.containsShieldedType() ? "cload" : "sload");
 		if (!_type.isDynamicallySized()) w("length", toCompactHexWithPrefix(_type.length()));
 		w("memory", _type.location() == DataLocation::Memory);
 		w("storage", _type.location() == DataLocation::Storage);
@@ -1391,8 +1390,7 @@ std::string YulUtilFunctions::resizeArrayFunction(ArrayType const& _type)
 			templ("panic", panicFunction(util::PanicCode::ResourceError));
 			templ("fetchLength", arrayLengthFunction(_type));
 			templ("isDynamic", _type.isDynamicallySized());
-			// Array length is always stored in public storage, even for shielded arrays
-			templ("storeOpcode", "sstore");
+			templ("storeOpcode", _type.containsShieldedType() ? "cstore" : "sstore");
 			bool isMappingBase = _type.baseType()->category() == Type::Category::Mapping;
 			templ("needsClearing", !isMappingBase);
 			if (!isMappingBase)
@@ -1641,9 +1639,10 @@ std::string YulUtilFunctions::storageArrayPopFunction(ArrayType const& _type)
 				let newLen := sub(oldLen, 1)
 				let slot, offset := <indexAccess>(array, newLen)
 				<?+setToZero><setToZero>(slot, offset)</+setToZero>
-				sstore(array, newLen)
+				<storeOpcode>(array, newLen)
 			})")
 			("functionName", functionName)
+			("storeOpcode", _type.containsShieldedType() ? "cstore" : "sstore")
 			("panic", panicFunction(PanicCode::EmptyArrayPop))
 			("fetchLength", arrayLengthFunction(_type))
 			("indexAccess", storageArrayIndexAccessFunction(_type))
@@ -1757,13 +1756,12 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 				</isByteArrayOrString>
 			})")
 			("functionName", functionName)
-			// Array length is always stored in public storage, even for shielded arrays
-			("storeOpcode", "sstore")
+			("storeOpcode", _type.containsShieldedType() ? "cstore" : "sstore")
 			("values", _fromType->sizeOnStack() == 0 ? "" : ", " + suffixedVariableNameList("value", 0, _fromType->sizeOnStack()))
 			("panic", panicFunction(PanicCode::ResourceError))
 			("extractByteArrayLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
 			("dataAreaFunction", arrayDataAreaFunction(_type))
-			("loadOpcode", "sload")
+			("loadOpcode", _type.containsShieldedType() ? "cload" : "sload")
 			("isByteArrayOrString", _type.isByteArrayOrString())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
 			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType(), VariableDeclaration::Location::Unspecified))
@@ -1797,9 +1795,8 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 			("isBytes", _type.isByteArrayOrString())
 			("increaseBytesSize", _type.isByteArrayOrString() ? increaseByteArraySizeFunction(_type) : "")
 			("extractLength", _type.isByteArrayOrString() ? extractByteArrayLengthFunction() : "")
-			// Array length is always stored in public storage, even for shielded arrays
-			("loadOpcode", "sload")
-			("storeOpcode", "sstore")
+			("loadOpcode", _type.containsShieldedType() ? "cload" : "sload")
+			("storeOpcode", _type.containsShieldedType() ? "cstore" : "sstore")
 			("panic", panicFunction(PanicCode::ResourceError))
 			("fetchLength", arrayLengthFunction(_type))
 			("indexAccess", storageArrayIndexAccessFunction(_type))
