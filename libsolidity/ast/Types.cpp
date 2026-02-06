@@ -2165,7 +2165,10 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 	MemberList::MemberMap members;
 	if (!isString())
 	{
-		members.emplace_back("length", TypeProvider::uint256());
+		if (isDynamicallySized() && containsShieldedType())
+			members.emplace_back("length", TypeProvider::shieldedUint256());
+		else
+			members.emplace_back("length", TypeProvider::uint256());
 		if (isDynamicallySized() && location() == DataLocation::Storage)
 		{
 			Type const* thisAsPointer = TypeProvider::withLocation(this, location(), true);
