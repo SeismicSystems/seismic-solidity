@@ -86,9 +86,12 @@ jobs:
       - name: Run soltest
         run: ./scripts/soltest.sh
 
+      # TODO: Remove the hardcoded commit checkout once we merge the --skip-via-ir flag into the seismic branch of seismic-revm
       - name: Clone seismic-revm repo
         run: |
           git clone https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
+          cd /tmp/seismic-revm
+          git checkout b0d6010e26e365c41cb3eb05eba774e2510e861d
           echo "SEISMIC_REVM_PATH=/tmp/seismic-revm" >> $GITHUB_ENV
           echo "seismic-revm cloned to: /tmp/seismic-revm"
       - uses: Swatinem/rust-cache@v2
@@ -108,7 +111,7 @@ jobs:
           [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
           [ -x "$SEISMIC_REVME_EXEC" ] || { echo "Error: revme executable not found at $SEISMIC_REVME_EXEC"; exit 1; }
           SEMANTIC_TESTS_DIR="$GITHUB_WORKSPACE/test/libsolidity/semanticTests"
-          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" 2>&1
+          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" --skip-via-ir 2>&1
       - name: Run semantic tests (with optimizer)
         run: |
           set -euo pipefail
@@ -116,7 +119,9 @@ jobs:
           [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
           [ -x "$SEISMIC_REVME_EXEC" ] || { echo "Error: revme executable not found at $SEISMIC_REVME_EXEC"; exit 1; }
           SEMANTIC_TESTS_DIR="$GITHUB_WORKSPACE/test/libsolidity/semanticTests"
-          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" --optimize --optimizer-runs 200 2>&1
+          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" --optimize --optimizer-runs 200 --skip-via-ir 2>&1
+      # TODO: Add semantic test runs with --via-ir and --via-ir --optimize --optimizer-runs 200
+      # once the via-ir pipeline is re-enabled. Ideally run all 4 variants in parallel.
 
       # Save caches only on push to target branches (after PR merge)
       # Delete old caches first since GitHub caches are immutable
