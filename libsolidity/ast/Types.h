@@ -506,6 +506,10 @@ public:
 	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 
+	/// Only code and codehash are allowed on shielded addresses.
+	/// For other members, cast to address first.
+	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
+
 	StateMutability stateMutability(void) const { return AddressType::stateMutability(); }
 };
 
@@ -723,6 +727,7 @@ public:
 	Category category() const override { return Category::StringLiteral; }
 
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult binaryOperatorResult(Token, Type const*) const override
 	{
 		return nullptr;
@@ -1284,6 +1289,8 @@ public:
 	unsigned storageBytes() const override { return underlyingType().storageBytes(); }
 
 	bool isValueType() const override { return true; }
+	bool isShielded() const override;
+	bool containsShieldedType() const override;
 	bool nameable() const override
 	{
 		solAssert(underlyingType().nameable(), "");

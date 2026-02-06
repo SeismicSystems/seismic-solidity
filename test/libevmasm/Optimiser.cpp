@@ -194,17 +194,16 @@ BOOST_AUTO_TEST_CASE(cse_assign_immutable_breaks)
 	BOOST_REQUIRE(cse.feedItems(input.begin(), input.end(), false) == input.begin() + 2);
 }
 
+// SEISMIC NOTE: In Seismic Solidity, SLOAD has side effects (can revert on confidential storage access).
+// CSE stops at SLOAD, so we use fullCSE and just check output is not empty.
 BOOST_AUTO_TEST_CASE(cse_intermediate_swap)
 {
-	evmasm::KnownState state;
-	evmasm::CommonSubexpressionEliminator cse(state);
 	AssemblyItems input{
 		Instruction::SWAP1, Instruction::POP, Instruction::ADD, u256(0), Instruction::SWAP1,
 		Instruction::SLOAD, Instruction::SWAP1, u256(100), Instruction::EXP, Instruction::SWAP1,
 		Instruction::DIV, u256(0xff), Instruction::AND
 	};
-	BOOST_REQUIRE(cse.feedItems(input.begin(), input.end(), false) == input.end());
-	AssemblyItems output = cse.getOptimizedItems();
+	AssemblyItems output = fullCSE(input);
 	BOOST_CHECK(!output.empty());
 }
 
@@ -391,6 +390,7 @@ BOOST_AUTO_TEST_CASE(cse_storage)
 		u256(0),
 		Instruction::SSTORE
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(0),
 		Instruction::DUP1,
@@ -398,6 +398,20 @@ BOOST_AUTO_TEST_CASE(cse_storage)
 		Instruction::DUP1,
 		Instruction::ADD,
 		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+	*/
+
+	// With Seismic Solidity SLOAD having side effects, CSE cannot optimize across SLOADs,
+	// so we use checkFullCSE which handles CSE stopping at side-effect instructions,
+	// to at least do constant folding.
+	checkFullCSE(input, {
+		u256(0),
+		Instruction::SLOAD,
+		u256(0),
+		Instruction::SLOAD,
+		Instruction::ADD,
+		u256(0),
 		Instruction::SSTORE
 	});
 }
@@ -437,12 +451,17 @@ BOOST_AUTO_TEST_CASE(cse_noninterleaved_storage)
 		Instruction::DUP3,
 		Instruction::SSTORE
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(8),
 		Instruction::DUP2,
 		Instruction::SSTORE,
 		u256(7)
 	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it
+	checkFullCSE(input, input);
 }
 
 BOOST_AUTO_TEST_CASE(shielded_cse_noninterleaved_storage)
@@ -480,7 +499,11 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage)
 		Instruction::DUP3,
 		Instruction::SSTORE // store different value to "DUP1"
 	};
+	/* Upstream code does this
 	checkCSE(input, input);
+	*/
+	// Seismic Solidity requires FullCSE since SLOAD has side effects
+	checkFullCSE(input, input);
 }
 
 BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage)
@@ -515,12 +538,27 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_same_value)
 		Instruction::DUP3,
 		Instruction::SSTORE // store same value to "DUP1"
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(7),
 		Instruction::DUP2,
 		Instruction::SSTORE,
 		Instruction::DUP2,
 		Instruction::SLOAD
+	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it.
+	// But constant folding still happens (6 + 1 = 7).
+	checkFullCSE(input, {
+		u256(7),
+		Instruction::DUP2,
+		Instruction::SSTORE,
+		Instruction::DUP2,
+		Instruction::SLOAD,
+		u256(7),
+		Instruction::DUP3,
+		Instruction::SSTORE
 	});
 }
 
@@ -563,6 +601,7 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_at_known_location)
 		u256(1),
 		Instruction::SSTORE // store different value at 1
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(2),
 		Instruction::SLOAD,
@@ -570,6 +609,10 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_at_known_location)
 		u256(1),
 		Instruction::SSTORE
 	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it
+	checkFullCSE(input, input);
 }
 
 BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_at_known_location)
@@ -615,6 +658,7 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_at_known_location_offset)
 		Instruction::ADD,
 		Instruction::SSTORE // store different value at "DUP1"+1
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(2),
 		Instruction::DUP2,
@@ -626,6 +670,10 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_at_known_location_offset)
 		Instruction::ADD,
 		Instruction::SSTORE
 	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it
+	checkFullCSE(input, input);
 }
 
 BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_at_known_location_offset)
@@ -905,6 +953,10 @@ BOOST_AUTO_TEST_CASE(cse_equality_on_initially_known_stack)
 	BOOST_CHECK(find(output.begin(), output.end(), AssemblyItem(u256(1))) != output.end());
 }
 
+// Commenting out this test, but keeping here for documenting how seismic solidity semantics
+// differ from normal solidity. Because SLOAD has side effects, StackTooDeepException on
+// sequence access simply can't occur anymore because CSE stops at SLOAD before
+// it can try to access previous sequences.
 BOOST_AUTO_TEST_CASE(cse_access_previous_sequence)
 {
 	// Tests that the code generator detects whether it tries to access SLOAD instructions
@@ -924,7 +976,7 @@ BOOST_AUTO_TEST_CASE(cse_access_previous_sequence)
 		u256(0),
 		Instruction::SLOAD,
 	};
-	BOOST_CHECK_THROW(CSE(input, state), StackTooDeepException);
+	// BOOST_CHECK_THROW(CSE(input, state), StackTooDeepException);
 	// @todo for now, this throws an exception, but it should recover to the following
 	// (or an even better version) at some point:
 	// 0, SLOAD, 1, ADD, SSTORE, 0 SLOAD
@@ -1881,6 +1933,11 @@ BOOST_AUTO_TEST_CASE(cse_verbatim_mload)
 	checkFullCSE(input, input);
 }
 
+// SEISMIC NOTE: In Seismic Solidity, SLOAD has side effects (can revert on confidential storage access).
+// Therefore two SLOADs from the same slot cannot be combined into one SLOAD + DUP.
+// Note that this is generally not true since the only revert possible from an SLOAD is from attempting
+// to read from a confidential slot, so reading the same slot twice should be optimizable.
+// However we have not implemented such an analysis yet, so we conservatively assume SLOAD has generic side effects.
 BOOST_AUTO_TEST_CASE(cse_sload_verbatim_dup)
 {
 	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
@@ -1892,6 +1949,7 @@ BOOST_AUTO_TEST_CASE(cse_sload_verbatim_dup)
 		verbatim
 	};
 
+	/* Upstream code does this
 	AssemblyItems output{
 		u256(0),
 		Instruction::SLOAD,
@@ -1901,6 +1959,9 @@ BOOST_AUTO_TEST_CASE(cse_sload_verbatim_dup)
 
 	checkCSE(input, output);
 	checkFullCSE(input, output);
+	*/
+	// With SLOAD having side effects, the two SLOADs cannot be combined
+	checkFullCSE(input, input);
 }
 
 BOOST_AUTO_TEST_CASE(shielded_cse_sload_verbatim_dup)
@@ -2520,6 +2581,112 @@ BOOST_AUTO_TEST_CASE(inliner_invalid)
 	);
 }
 
+
+BOOST_AUTO_TEST_CASE(cse_sstore_then_cload_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// CLOAD can read from public storage, so optimizer eliminates CLOAD and keeps 0x42 on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_then_sload_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::SLOAD
+	};
+	// Optimizer does stack manipulation but keeps SLOAD (doesn't replace with CSTORE value)
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::SWAP1,
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		Instruction::SLOAD
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_sstore_cload_different_slots_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(1),
+		Instruction::CLOAD
+	};
+	checkCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_sload_different_slots_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(1),
+		Instruction::SLOAD
+	};
+	checkCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_sstore_sload_same_slot_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::SLOAD
+	};
+	/* Upstream code does this
+	// Optimizer eliminates SLOAD and keeps value on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+	*/
+
+	// In Seismic Solidity, with SLOAD having side effects, it cannot be eliminated
+	checkFullCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_cload_same_slot_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// Optimizer eliminates CLOAD and keeps value on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::CSTORE
+	});
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -750,7 +750,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 							for { } lt(add(itemCounter, sub(<itemsPerSlot>, 1)), length)
 										{ itemCounter := add(itemCounter, <itemsPerSlot>) }
 							{
-								let data := sload(srcPtr)
+								let data := <loadOpcode>(srcPtr)
 								<#items>
 									<encodeToMemoryFun>(<extractFromSlot>(data), pos)
 									pos := add(pos, <stride>)
@@ -760,7 +760,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 						}
 						// Handle the last (not necessarily full) slot specially
 						if <useSpill> {
-							let data := sload(srcPtr)
+							let data := <loadOpcode>(srcPtr)
 							<#items>
 								if <inRange> {
 									<encodeToMemoryFun>(<extractFromSlot>(data), pos)
@@ -781,6 +781,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 			templ("lengthFun", m_utils.arrayLengthFunction(_from));
 			templ("storeLength", arrayStoreLengthForEncodingFunction(_to, _options));
 			templ("dataArea", m_utils.arrayDataAreaFunction(_from));
+			templ("loadOpcode", _from.baseType()->isShielded() ? "cload" : "sload");
 			// We skip the loop for arrays that fit a single slot.
 			if (_from.isDynamicallySized() || _from.length() >= itemsPerSlot)
 				templ("useLoop", "1");
@@ -894,7 +895,8 @@ std::string ABIFunctions::abiEncodingFunctionStruct(
 					{
 						if (storageSlotOffset != previousSlotOffset)
 						{
-							members.back()["preprocess"] = "slotValue := sload(add(value, " + toCompactHexWithPrefix(storageSlotOffset) + "))";
+							std::string loadOpcode = memberTypeFrom->isShielded() ? "cload" : "sload";
+							members.back()["preprocess"] = "slotValue := " + loadOpcode + "(add(value, " + toCompactHexWithPrefix(storageSlotOffset) + "))";
 							previousSlotOffset = storageSlotOffset;
 						}
 						members.back()["retrieveValue"] = m_utils.extractFromStorageValue(*memberTypeFrom, intraSlotOffset) + "(slotValue)";

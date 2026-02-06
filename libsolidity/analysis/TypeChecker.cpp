@@ -30,6 +30,7 @@
 #include <libyul/AsmAnalysis.h>
 #include <libyul/AsmAnalysisInfo.h>
 #include <libyul/AST.h>
+#include <libyul/Utilities.h>
 
 #include <liblangutil/ErrorReporter.h>
 
@@ -166,6 +167,12 @@ TypePointers TypeChecker::typeCheckABIDecodeAndRetrieveReturnType(FunctionCall c
 					9611_error,
 					typeArgument->location(),
 					"Decoding type " + actualType->humanReadableName() + " not supported."
+				);
+			else if (actualType->containsShieldedType())
+				m_errorReporter.typeError(
+					4851_error,
+					typeArgument->location(),
+					"Shielded types cannot be ABI encoded."
 				);
 
 			if (auto referenceType = dynamic_cast<ReferenceType const*>(actualType))
@@ -365,6 +372,17 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			);
 		else if (functionIsExternallyVisible)
 		{
+			// Check for shielded return types in public/external functions.
+			// Note that constructors can't have return types so the second clause
+			// in functionIsExternallyVisible (non-abstract constructor) does not apply here.
+			if (_var.isReturnParameter() && type(_var)->containsShieldedType())
+				m_errorReporter.typeError(
+					7492_error,
+					_var.location(),
+					"Shielded objects cannot be returned from public or external functions. "
+					"Use internal or private functions or cast to an unshielded type."
+				);
+
 			auto iType = type(_var)->interfaceType(_function.libraryFunction());
 
 			if (!iType)
@@ -843,6 +861,19 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 							return false;
 						}
 					}
+					// Track if the variable is shielded for storage operation validation
+					if (suffix == "slot")
+					{
+						// For dynamic arrays, .slot contains the length (not shielded)
+						// The actual shielded elements are stored at keccak256(slot) + index
+						// For other types, .slot contains the actual shielded data
+						// Note: if we ever change the semantics of the length slot and also make it shielded, then we'd need to change this.
+						if (auto const* arrayType = dynamic_cast<ArrayType const*>(var->type());
+						arrayType && arrayType->isDynamicallySized())
+						identifierInfo.isShieldedStorage = false;
+						else
+							identifierInfo.isShieldedStorage = var->type()->isShielded() || var->type()->containsShieldedType();
+					}
 				}
 				else if (
 					auto const* arrayType = dynamic_cast<ArrayType const*>(var->type());
@@ -955,7 +986,142 @@ bool TypeChecker::visit(InlineAssembly const& _inlineAssembly)
 	_inlineAssembly.annotation().hasMemoryEffects =
 		lvalueAccessToMemoryVariable ||
 		(analyzer.sideEffects().memory != yul::SideEffects::None);
+
+	validateShieldedStorageOps(_inlineAssembly);
+
 	return false;
+}
+
+void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssembly)
+{
+	auto const& externalRefs = _inlineAssembly.annotation().externalReferences;
+
+	// Track storage operations: slot key -> (isShielded, location, funcName)
+	struct StorageOp {
+		bool isShielded;
+		langutil::SourceLocation location;
+		std::string funcName;
+	};
+	std::map<std::string, std::vector<StorageOp>> storageOps;
+
+	// Helper to get a string key for a slot expression
+	auto getSlotKey = [](yul::Expression const& _expr) -> std::optional<std::string> {
+		if (auto const* lit = std::get_if<yul::Literal>(&_expr))
+		{
+			if (lit->kind == yul::LiteralKind::Number)
+				return "lit:" + lit->value.value().str();
+		}
+		else if (auto const* ident = std::get_if<yul::Identifier>(&_expr))
+		{
+			return "var:" + ident->name.str();
+		}
+		return std::nullopt;
+	};
+
+	// Helper to check and record a storage operation
+	auto checkStorageOp = [&](yul::FunctionCall const* funCall) {
+		std::string_view funcName = yul::resolveFunctionName(funCall->functionName, _inlineAssembly.dialect());
+		bool isShieldedOp = (funcName == "cstore" || funcName == "cload");
+		bool isNonShieldedOp = (funcName == "sstore" || funcName == "sload");
+
+		if ((isShieldedOp || isNonShieldedOp) && !funCall->arguments.empty())
+		{
+			auto const& slotExpr = funCall->arguments.front();
+
+			// Check for external identifier referencing shielded variable with wrong op
+			if (isNonShieldedOp)
+			{
+				if (auto const* slotIdent = std::get_if<yul::Identifier>(&slotExpr))
+				{
+					auto it = externalRefs.find(slotIdent);
+					if (it != externalRefs.end() && it->second.isShieldedStorage)
+					{
+						m_errorReporter.typeError(
+							5765_error,
+							nativeLocationOf(*funCall),
+							std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
+							(funcName == "sstore" ? "cstore" : "cload") + "() instead."
+						);
+					}
+				}
+			}
+
+			// Track for same-slot conflict detection
+			if (auto slotKey = getSlotKey(slotExpr))
+			{
+				storageOps[*slotKey].push_back({isShieldedOp, nativeLocationOf(*funCall), std::string(funcName)});
+			}
+		}
+	};
+
+	std::function<void(yul::Block const&)> collectStorageOps = [&](yul::Block const& _block) {
+		for (auto const& statement : _block.statements)
+		{
+			std::visit(util::GenericVisitor{
+				[&](yul::ExpressionStatement const& _exprStmt) {
+					if (auto const* funCall = std::get_if<yul::FunctionCall>(&_exprStmt.expression))
+						checkStorageOp(funCall);
+				},
+				[&](yul::VariableDeclaration const& _varDecl) {
+					if (_varDecl.value)
+						if (auto const* funCall = std::get_if<yul::FunctionCall>(_varDecl.value.get()))
+							checkStorageOp(funCall);
+				},
+				[&](yul::Assignment const& _assignment) {
+					if (_assignment.value)
+						if (auto const* funCall = std::get_if<yul::FunctionCall>(_assignment.value.get()))
+							checkStorageOp(funCall);
+				},
+				[&](yul::If const& _if) {
+					collectStorageOps(_if.body);
+				},
+				[&](yul::Switch const& _switch) {
+					for (auto const& _case : _switch.cases)
+						collectStorageOps(_case.body);
+				},
+				[&](yul::ForLoop const& _forLoop) {
+					collectStorageOps(_forLoop.pre);
+					collectStorageOps(_forLoop.body);
+					collectStorageOps(_forLoop.post);
+				},
+				[&](yul::Block const& _nestedBlock) {
+					collectStorageOps(_nestedBlock);
+				},
+				[&](yul::FunctionDefinition const& _funDef) {
+					collectStorageOps(_funDef.body);
+				},
+				[](auto const&) {}
+			}, statement);
+		}
+	};
+	collectStorageOps(_inlineAssembly.operations().root());
+
+	// Check for conflicts: cstore makes a slot private, after which sstore/sload will fail
+	// Note: cload can read from any slot (public or private), so it doesn't conflict
+	for (auto const& [slotKey, ops] : storageOps)
+	{
+		StorageOp const* firstCstore = nullptr;
+
+		for (auto const& op : ops)
+		{
+			if (op.funcName == "cstore" && !firstCstore)
+			{
+				firstCstore = &op;
+			}
+			else if (firstCstore && (op.funcName == "sstore" || op.funcName == "sload"))
+			{
+				// cstore was called before sstore/sload on the same slot
+				// cstore makes the slot private, and sstore/sload cannot access private slots
+				m_errorReporter.typeError(
+					5768_error,
+					op.location,
+					"Cannot use " + op.funcName + "() on a slot that was previously written with cstore(). "
+					"cstore() makes the slot private, and " + op.funcName + "() cannot access private storage. "
+					"Use " + (op.funcName == "sstore" ? "cstore" : "cload") + "() instead."
+				);
+			}
+		}
+	}
 }
 
 bool TypeChecker::visit(IfStatement const& _ifStatement)
@@ -1327,52 +1493,9 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
-		if (auto funcCall = dynamic_cast<FunctionCall const*>(_statement.initialValue()))
-		{
-			auto const& args = funcCall->arguments();
-			if (!args.empty())
-			{
-				if (auto literal = dynamic_cast<Literal const*>(args.front().get()))
-				{
-					if (var.annotation().type->category()==Type::Category::ShieldedBool)
-					{
-						std::string val = literal->value();
-						if (val == "true" || val == "false")
-							m_errorReporter.warning(
-							9661_error,
-							_statement.location(),
-							"Bool Literals converted to shielded bools will leak during contract deployment."
-							);
-					}
-					else if (literal->looksLikeAddress() && var.annotation().type->category()==Type::Category::ShieldedAddress)
-					{
-						if (literal->passesAddressChecksum()) {
-							m_errorReporter.warning(
-							9662_error,
-							_statement.location(),
-							"Address Literals converted to shielded addresses will leak during contract deployment."
-							);
-						}
-					}
-					else if (args.front()->annotation().type->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
-					{
-						m_errorReporter.warning(
-						9660_error,
-						_statement.location(),
-						"Literals converted to shielded integers will leak during contract deployment."
-					);
-					}
-					else if (args.front()->annotation().type->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
-					{
-						m_errorReporter.warning(
-						1457_error,
-						_statement.location(),
-						"Enums converted to shielded integers will leak during contract deployment."
-					);
-					}
-				}
-			}
-		}
+		// Check for literals being converted to shielded types (including nested in structs/arrays)
+		if (_statement.initialValue() && var.annotation().type)
+			checkShieldedLiteralWarning(*_statement.initialValue(), *var.annotation().type, _statement.location());
 	}
 
 	if (valueTypes.size() != variables.size())
@@ -1558,6 +1681,19 @@ bool TypeChecker::visit(Assignment const& _assignment)
 	return false;
 }
 
+bool TypeChecker::visit(Block const& _block)
+{
+	if (_block.unchecked())
+		++m_insideUncheckedBlock;
+	return true;
+}
+
+void TypeChecker::endVisit(Block const& _block)
+{
+	if (_block.unchecked())
+		--m_insideUncheckedBlock;
+}
+
 bool TypeChecker::visit(TupleExpression const& _tuple)
 {
 	_tuple.annotation().isConstant = false;
@@ -1729,6 +1865,26 @@ bool TypeChecker::visit(UnaryOperation const& _operation)
 		(!_operation.userDefinedFunctionType() || _operation.userDefinedFunctionType()->isPure());
 	_operation.annotation().isLValue = false;
 
+	// Warn about increment/decrement on shielded integers - overflow/underflow checks leak information
+	// Only warn outside of unchecked blocks, since unchecked arithmetic doesn't revert on overflow
+	if (
+		(op == Token::Inc || op == Token::Dec) &&
+		operandType->category() == Type::Category::ShieldedInteger &&
+		m_insideUncheckedBlock == 0
+	)
+	{
+		std::string operation = op == Token::Inc ? "increment" : "decrement";
+		m_errorReporter.warning(
+			4283_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to overflow reveals range information about the operand.",
+				operation
+			)
+		);
+	}
+
 	return false;
 }
 
@@ -1792,7 +1948,9 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 	Type const* resultType = nullptr;
 	if (TokenTraits::isCompareOp(_operation.getOperator()))
 	{
-		if (commonType->category() == Type::Category::ShieldedBool)
+		// Comparisons involving any shielded operands yield a shielded boolean
+		// to preserve confidentiality of the comparison result.
+		if (commonType->isShielded())
 			resultType = TypeProvider::shieldedBoolean();
 		else
 			resultType = TypeProvider::boolean();
@@ -1856,6 +2014,53 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 				"in the next breaking release."
 			);
 		}
+	}
+
+	// Warn about division/modulo on shielded integers - revert on zero divisor leaks information
+	if (
+		(_operation.getOperator() == Token::Div || _operation.getOperator() == Token::Mod) &&
+		commonType->category() == Type::Category::ShieldedInteger
+	)
+	{
+		std::string operation = _operation.getOperator() == Token::Div ? "division" : "modulo";
+		m_errorReporter.warning(
+			4281_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to division by zero reveals that the divisor is zero.",
+				operation
+			)
+		);
+	}
+
+	// Warn about overflow-checked arithmetic on shielded integers - revert on overflow leaks range info
+	// Only warn outside of unchecked blocks, since unchecked arithmetic doesn't revert on overflow
+	if (
+		(_operation.getOperator() == Token::Add ||
+		 _operation.getOperator() == Token::Sub ||
+		 _operation.getOperator() == Token::Mul) &&
+		commonType->category() == Type::Category::ShieldedInteger &&
+		m_insideUncheckedBlock == 0
+	)
+	{
+		std::string operation;
+		switch (_operation.getOperator())
+		{
+		case Token::Add: operation = "addition"; break;
+		case Token::Sub: operation = "subtraction"; break;
+		case Token::Mul: operation = "multiplication"; break;
+		default: solAssert(false, "Unexpected operator");
+		}
+		m_errorReporter.warning(
+			4282_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to overflow reveals range information about the operands.",
+				operation
+			)
+		);
 	}
 
 	if (_operation.getOperator() == Token::Exp || _operation.getOperator() == Token::SHL)
@@ -2264,6 +2469,12 @@ void TypeChecker::typeCheckABIEncodeFunctions(
 				arguments[i]->location(),
 				"This type cannot be encoded."
 			);
+		else if (argType->containsShieldedType())
+			m_errorReporter.typeError(
+				3648_error,
+				arguments[i]->location(),
+				"Shielded types cannot be ABI encoded."
+			);
 	}
 }
 
@@ -2416,6 +2627,12 @@ void TypeChecker::typeCheckABIEncodeCallFunction(FunctionCall const& _functionCa
 				externalFunctionType->parameterTypes()[i]->humanReadableName() +
 				"\"" +
 				(result.message().empty() ?  "." : ": " + result.message())
+			);
+		else if (argType.containsShieldedType())
+			m_errorReporter.typeError(
+				3648_error,
+				callArguments[i]->location(),
+				"Shielded types cannot be ABI encoded."
 			);
 	}
 }
@@ -2741,6 +2958,23 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 					"Use \"pragma abicoder v2;\" to enable the feature."
 				);
 		}
+	}
+
+	// Check for shielded types in require/assert conditions - these leak information via control flow
+	if (
+		(_functionType->kind() == FunctionType::Kind::Require ||
+		 _functionType->kind() == FunctionType::Kind::Assert) &&
+		!arguments.empty()
+	)
+	{
+		Type const* condType = type(*paramArgMap[0]);
+		if (condType->category() == Type::Category::ShieldedBool)
+			m_errorReporter.warning(
+				5765_error,
+				paramArgMap[0]->location(),
+				"Using shielded types in branching conditions can leak information through "
+				"observable execution patterns such as gas costs, state changes, and execution traces."
+			);
 	}
 }
 
@@ -3239,11 +3473,28 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 						return { 3125_error, errorMsg };
 					}
 			}
-			else if (auto const* addressType = dynamic_cast<AddressType const*>(exprType))
+			else if (exprType->category() == Type::Category::ShieldedAddress)
+			{
+				// Shielded addresses only expose code and codehash.
+				// For other address members, suggest casting to address.
+				for (MemberList::Member const& addressMember: TypeProvider::payableAddress()->nativeMembers(nullptr))
+					if (addressMember.name == memberName)
+					{
+						auto const* var = dynamic_cast<Identifier const*>(&_memberAccess.expression());
+						std::string varName = var ? var->name() : "...";
+						errorMsg += " Cast to address first: \"address(" + varName + ")." + memberName + "\".";
+						return { 3125_error, errorMsg };
+					}
+			}
+			else if (exprType->category() == Type::Category::Address)
 			{
 				// Trigger error when using send or transfer with a non-payable fallback function.
+				// Note: ShieldedAddressType inherits from AddressType but has its own category,
+				// so this only matches regular address types.
 				if (memberName == "send" || memberName == "transfer")
 				{
+					auto const* addressType = dynamic_cast<AddressType const*>(exprType);
+					solAssert(addressType, "");
 					solAssert(
 						addressType->stateMutability() != StateMutability::Payable,
 						"Expected address not-payable as members were not found"
@@ -3494,7 +3745,7 @@ bool TypeChecker::visit(IndexAccess const& _access)
 		{
 			// Always expect uint256 for array indices (this processes the expression)
 			expectType(*index, *TypeProvider::uint256());
-			
+
 			// Check if index type is shielded and reject it
 			if (type(*index)->isShielded())
 			{
@@ -3504,7 +3755,7 @@ bool TypeChecker::visit(IndexAccess const& _access)
 					"Shielded types are not allowed as array indices."
 				);
 			}
-			
+
 			if (!m_errorReporter.hasErrors())
 			{
 				if (auto numberType = dynamic_cast<RationalNumberType const*>(type(*index)))
@@ -4167,6 +4418,150 @@ void TypeChecker::endVisit(UsingForDirective const& _usingFor)
 	}
 }
 
+void TypeChecker::checkLiteralToShielded(
+	Expression const& _expression,
+	Type const& _targetType,
+	langutil::SourceLocation const& _location
+)
+{
+	auto literal = dynamic_cast<Literal const*>(&_expression);
+	if (!literal)
+		return;
+
+	if (_targetType.category() == Type::Category::ShieldedBool)
+	{
+		std::string val = literal->value();
+		if (val == "true" || val == "false")
+			m_errorReporter.warning(
+				9661_error,
+				_location,
+				"Bool Literals converted to shielded bools will leak during contract deployment."
+			);
+	}
+	else if (literal->looksLikeAddress() && _targetType.category() == Type::Category::ShieldedAddress)
+	{
+		if (literal->passesAddressChecksum())
+			m_errorReporter.warning(
+				9662_error,
+				_location,
+				"Address Literals converted to shielded addresses will leak during contract deployment."
+			);
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			9660_error,
+			_location,
+			"Literals converted to shielded integers will leak during contract deployment."
+		);
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::Enum &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			1457_error,
+			_location,
+			"Enums converted to shielded integers will leak during contract deployment."
+		);
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedFixedBytes
+	)
+	{
+		m_errorReporter.warning(
+			9663_error,
+			_location,
+			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
+		);
+	}
+}
+
+void TypeChecker::checkShieldedLiteralWarning(
+	Expression const& _expression,
+	Type const& _targetType,
+	langutil::SourceLocation const& _location
+)
+{
+	// Handle array literals: [suint(1), suint(2)]
+	if (auto tupleExpr = dynamic_cast<TupleExpression const*>(&_expression))
+	{
+		if (tupleExpr->isInlineArray())
+		{
+			// Get the base type of the array
+			if (auto arrayType = dynamic_cast<ArrayType const*>(&_targetType))
+			{
+				Type const* baseType = arrayType->baseType();
+				for (auto const& component : tupleExpr->components())
+					if (component)
+						checkShieldedLiteralWarning(*component, *baseType, _location);
+			}
+		}
+		return;
+	}
+
+	auto funcCall = dynamic_cast<FunctionCall const*>(&_expression);
+	if (!funcCall)
+		return;
+
+	auto const& args = funcCall->arguments();
+
+	// Direct conversion to a shielded type - check all arguments for literals
+	if (
+		_targetType.category() == Type::Category::ShieldedBool ||
+		_targetType.category() == Type::Category::ShieldedAddress ||
+		_targetType.category() == Type::Category::ShieldedInteger ||
+		_targetType.category() == Type::Category::ShieldedFixedBytes
+	)
+	{
+		for (auto const& arg : args)
+			if (arg)
+				checkLiteralToShielded(*arg, _targetType, _location);
+		return;
+	}
+
+	// Struct constructor - recursively check each member
+	if (auto structType = dynamic_cast<StructType const*>(&_targetType))
+	{
+		auto const& members = structType->structDefinition().members();
+
+		// Named arguments: S({field: value})
+		if (!funcCall->names().empty())
+		{
+			for (size_t i = 0; i < funcCall->names().size() && i < args.size(); ++i)
+			{
+				for (auto const& member : members)
+				{
+					if (
+						member->name() == *funcCall->names()[i] &&
+						args[i] &&
+						member->annotation().type
+					)
+					{
+						checkShieldedLiteralWarning(*args[i], *member->annotation().type, _location);
+						break;
+					}
+				}
+			}
+		}
+		// Positional arguments: S(value1, value2)
+		else
+		{
+			for (size_t i = 0; i < args.size() && i < members.size(); ++i)
+				if (args[i] && members[i]->annotation().type)
+					checkShieldedLiteralWarning(*args[i], *members[i]->annotation().type, _location);
+		}
+	}
+}
+
 void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _callable)
 {
 	std::string kind = dynamic_cast<EventDefinition const*>(&_callable) ? "event" : "error";
@@ -4261,11 +4656,21 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 
 bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 	_expression.accept(*this);
-    Type const* condType = type(_expression);
-    if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
-        return true;
-    else
-        return expectType(_expression, *TypeProvider::boolean());
+	Type const* condType = type(_expression);
+	if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
+	{
+		// Warn about information leakage when shielded types are used in branching conditions
+		if (condType->category() == Type::Category::ShieldedBool)
+			m_errorReporter.warning(
+				5765_error,
+				_expression.location(),
+				"Using shielded types in branching conditions can leak information through "
+				"observable execution patterns such as gas costs, state changes, and execution traces."
+			);
+		return true;
+	}
+	else
+		return expectType(_expression, *TypeProvider::boolean());
 }
 
 

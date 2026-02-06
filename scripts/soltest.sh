@@ -53,7 +53,8 @@ do
 			BOOST_OPTIONS+=(-t "$1")
 			;;
 		--show-progress | -p)
-			BOOST_OPTIONS+=("$1")
+            # boost only recognizes --show-progress, not -p
+			BOOST_OPTIONS+=("--show-progress")
 			;;
 		*)
 			SOLTEST_OPTIONS+=("$1")

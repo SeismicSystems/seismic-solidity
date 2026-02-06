@@ -17,10 +17,10 @@ contract C {
 // bytecodeFormat: legacy
 // ----
 // creation:
-//   codeDepositCost: 25600
-//   executionCost: 73
-//   totalCost: 25673
+//   codeDepositCost: 28000
+//   executionCost: 79
+//   totalCost: 28079
 // external:
-//   readX(): 2288
+//   readX(): 2322
 //   resetX(): 5114
 //   setX(uint256): 22309
