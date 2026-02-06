@@ -32,9 +32,9 @@ contract C {
     }
 
     function toUnshielded(suint8[][] memory arr) internal pure returns (uint8[][] memory) {
-        uint8[][] memory result = new uint8[][](arr.length);
-        for (uint256 i = 0; i < arr.length; i++) {
-            uint256 innerLen = arr[i].length;
+        uint8[][] memory result = new uint8[][](uint256(arr.length));
+        for (uint256 i = 0; i < uint256(arr.length); i++) {
+            uint256 innerLen = uint256(arr[i].length);
             result[i] = new uint8[](innerLen);
             for (uint256 j = 0; j < innerLen; j++) {
                 result[i][j] = uint8(arr[i][j]);

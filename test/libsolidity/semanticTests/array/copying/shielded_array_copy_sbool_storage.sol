@@ -12,7 +12,7 @@ contract C {
     }
 
     function getLengthB() public view returns (uint256) {
-        return b.length;
+        return uint256(b.length);
     }
 
     function getB(uint256 i) public view returns (bool) {
