@@ -6,13 +6,13 @@ contract C {
         data.push(suint(123));
         delete data;
         assembly {
-            ret := sload(data.slot)
+            ret := cload(data.slot)
         }
     }
 
     function val() public returns (uint ret) {
         assembly {
-            sstore(0, 2)
+            cstore(0, 2)
             mstore(0, 0)
             cstore(keccak256(0, 32), 234)
             cstore(add(keccak256(0, 32), 1), 123)

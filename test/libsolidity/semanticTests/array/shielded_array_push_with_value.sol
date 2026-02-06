@@ -8,7 +8,7 @@ contract C {
     }
 
     function getLength() public view returns (uint256) {
-        return data.length;
+        return uint256(data.length);
     }
 
     function getValue(uint256 i) public view returns (uint256) {

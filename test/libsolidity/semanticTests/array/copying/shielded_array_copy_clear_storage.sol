@@ -5,9 +5,9 @@ contract C {
         suint256[] memory y = new suint256[](1);
         y[0] = suint(23);
         x = y;
-        assembly { sstore(x.slot, 4) }
-        assert(x[1] == suint(0));
-        assert(x[2] == suint(0));
+        assembly { cstore(x.slot, 4) }
+        assert(bool(x[1] == suint(0)));
+        assert(bool(x[2] == suint(0)));
         return uint(x[3]);
     }
 }
