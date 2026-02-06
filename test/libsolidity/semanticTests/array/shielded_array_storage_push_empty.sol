@@ -1,7 +1,7 @@
 contract C {
     suint256[] storageArray;
     function pushEmpty(uint256 len) public {
-        while(storageArray.length < len)
+        while(storageArray.length < suint(len))
             storageArray.push();
 
         for (uint i = 0; i < len; i++)

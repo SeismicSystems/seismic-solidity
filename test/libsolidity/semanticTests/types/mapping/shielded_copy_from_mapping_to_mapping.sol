@@ -34,9 +34,9 @@ contract C {
     }
 
     function toUnshielded(S memory s) internal pure returns (SUnshielded memory) {
-        uint8[][] memory y = new uint8[][](s.y.length);
-        for (uint256 i = 0; i < s.y.length; i++) {
-            uint256 innerLen = s.y[i].length;
+        uint8[][] memory y = new uint8[][](uint256(s.y.length));
+        for (uint256 i = 0; i < uint256(s.y.length); i++) {
+            uint256 innerLen = uint256(s.y[i].length);
             y[i] = new uint8[](innerLen);
             for (uint256 j = 0; j < innerLen; j++) {
                 y[i][j] = uint8(s.y[i][j]);
