@@ -1903,8 +1903,6 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 
 	std::string functionName = "clear_struct_storage_" + _type.identifier();
 
-	bool isShielded = _type.containsShieldedType();
-
 	return m_functionCollector.createFunction(functionName, [&] {
 		MemberList::MemberMap structMembers = _type.nativeMembers(nullptr);
 		std::vector<std::map<std::string, std::string>> memberSetValues;
@@ -1916,13 +1914,21 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 				continue;
 			if (member.type->storageBytes() < 32)
 			{
+				// All shielded types have storageBytes() == 32, so only non-shielded
+				// types can reach this branch. Use sstore accordingly. If a future
+				// shielded type with storageBytes() < 32 is introduced, this assert
+				// will catch it so the opcode selection can be updated.
+				solAssert(
+					!member.type->isShielded(),
+					"Shielded type with storageBytes() < 32 requires cstore, not sstore"
+				);
 				auto const& slotDiff = _type.storageOffsetsOfMember(member.name).first;
 				if (!slotsCleared.count(slotDiff))
 				{
 					memberSetValues.emplace_back().emplace("clearMember", Whiskers(R"(
 						<storeOpcode>(add(slot, <memberSlotDiff>), 0)
 					)")
-					("storeOpcode", isShielded ? "cstore" : "sstore")
+					("storeOpcode", "sstore")
 					("memberSlotDiff", slotDiff.str())
 					.render()
 				);
