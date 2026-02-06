@@ -933,7 +933,7 @@ void CompilerUtils::convertType(
 		}
 		else if (targetTypeCategory == Type::Category::Enum)
 		{
-			solAssert((stackTypeCategory != Type::Category::Address || stackTypeCategory != Type::Category::ShieldedAddress), "Invalid conversion to EnumType requested.");
+			solAssert((stackTypeCategory != Type::Category::Address && stackTypeCategory != Type::Category::ShieldedAddress), "Invalid conversion to EnumType requested.");
 			solAssert(_typeOnStack.mobileType());
 			// just clean
 			convertType(_typeOnStack, *_typeOnStack.mobileType(), true);
