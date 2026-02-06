@@ -8,7 +8,7 @@ This documentation highlights the differences from Cancun's Ethereum version to 
 
 Indeed, this work wouldn’t have been possible without an incredible, nearly decade-long effort to build Solidity. As such, we strongly encourage the reader to explore their [work](https://github.com/ethereum/solidity/tree/develop) and [documentation](https://docs.soliditylang.org/en/latest/).
 
-This is **experimental** software, thread with caution.
+This is **experimental** software, tread with caution.
 
 - - -
 
@@ -161,7 +161,7 @@ contract ShieldedStorage {
 
 *   Shielded types **cannot** be emitted in events, as this would expose confidential data.
 
-*   **Currently**: Although native event encryption isn'y supported, developers may use the encrypt and decrypt precompiles at addresses 102/103 (see [example](https://github.com/SeismicSystems/seismic-solidity/blob/seismic/test/seismic_example/encrypted_logs.sol)) to secure event data.
+*   **Currently**: Although native event encryption isn't supported, developers may use the encrypt and decrypt precompiles at addresses 102/103 (see [example](https://github.com/SeismicSystems/seismic-solidity/blob/seismic/test/seismic_example/encrypted_logs.sol)) to secure event data.
 
 *   **Future Improvements**: We plan to support encrypted events, enabling the emission of shielded types without compromising confidentiality or developer experience.
 
@@ -226,7 +226,7 @@ We introduce two new EVM instructions to handle confidential storage:
     *    The index should be a Shielded Integer.
     *    The declared length should be a Shielded Integer.
     *    The returned length is a Shielded Integer.
-    *    Pushed values should be consistant with the shielded array underlying type.
+    *    Pushed values should be consistent with the shielded array underlying type.
 
 ### 6.2 Limitations
 
@@ -262,7 +262,7 @@ The upstream repository lives [here](https://github.com/ethereum/solidity/tree/d
 
 You can view all of our changes vs. upstream on this [pull request](https://github.com/SeismicSystems/seismic-solidity/pull/27). The sole purpose of this PR is display our diff; it will never be merged in to the main branch of this repo.
 
-## 9\. Feedback
+## 10\. Feedback
 
 We welcome your feedback on this documentation. If you have suggestions or encounter any issues, please contact our support team or contribute to our documentation repository.
 
