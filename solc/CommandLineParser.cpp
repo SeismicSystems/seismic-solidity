@@ -1487,6 +1487,12 @@ void CommandLineParser::processArgs()
 		m_args.count(g_strModelCheckerTimeout);
 	m_options.output.viaIR = (m_args.count(g_strExperimentalViaIR) > 0 || m_args.count(g_strViaIR) > 0);
 
+	if (m_options.output.viaIR)
+		solThrow(
+			CommandLineValidationError,
+			"The --via-ir pipeline is not currently supported. Support for --via-ir is planned for a future release."
+		);
+
 	solAssert(
 		m_options.input.mode == InputMode::Compiler ||
 		m_options.input.mode == InputMode::CompilerWithASTImport ||

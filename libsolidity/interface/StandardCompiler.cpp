@@ -819,6 +819,8 @@ std::variant<StandardCompiler::InputsAndSettings, Json> StandardCompiler::parseI
 		if (!settings["viaIR"].is_boolean())
 			return formatFatalError(Error::Type::JSONError, "\"settings.viaIR\" must be a Boolean.");
 		ret.viaIR = settings["viaIR"].get<bool>();
+		if (ret.viaIR)
+			return formatFatalError(Error::Type::JSONError, "The via-IR pipeline is not currently supported. Support for via-IR is planned for a future release.");
 	}
 
 	if (settings.contains("evmVersion"))
