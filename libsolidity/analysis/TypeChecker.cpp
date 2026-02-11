@@ -2183,7 +2183,10 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 					);
 				else
 					solAssert(
-						argArrayType->isByteArray() && resultType->category() == Type::Category::FixedBytes,
+						argArrayType->isByteArray() && (
+							resultType->category() == Type::Category::FixedBytes ||
+							resultType->category() == Type::Category::ShieldedFixedBytes
+						),
 						""
 					);
 			}

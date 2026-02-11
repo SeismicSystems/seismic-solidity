@@ -443,12 +443,13 @@ void ArrayUtils::copyArrayToMemory(ArrayType const& _sourceType, bool _padToWord
 		// Special case for tightly-stored byte arrays
 		if (_sourceType.isByteArrayOrString())
 		{
+			auto const loadOp = _sourceType.containsShieldedType() ? Instruction::CLOAD : Instruction::SLOAD;
 			// stack here: memory_offset storage_offset length
 			m_context << Instruction::DUP1 << u256(31) << Instruction::LT;
 			evmasm::AssemblyItem longByteArray = m_context.appendConditionalJump();
 			// store the short byte array (discard lower-order byte)
 			m_context << u256(0x100) << Instruction::DUP1;
-			m_context << Instruction::DUP4 << Instruction::SLOAD;
+			m_context << Instruction::DUP4 << loadOp;
 			m_context << Instruction::DIV << Instruction::MUL;
 			m_context << Instruction::DUP4 << Instruction::MSTORE;
 			// stack here: memory_offset storage_offset length
@@ -487,7 +488,7 @@ void ArrayUtils::copyArrayToMemory(ArrayType const& _sourceType, bool _padToWord
 		if (_sourceType.isByteArrayOrString())
 		{
 			// Packed both in storage and memory.
-			m_context << Instruction::DUP2 << Instruction::SLOAD;
+			m_context << Instruction::DUP2 << (_sourceType.containsShieldedType() ? Instruction::CLOAD : Instruction::SLOAD);
 			m_context << Instruction::DUP2 << Instruction::MSTORE;
 			// increment storage_data_offset by 1
 			m_context << Instruction::SWAP1 << u256(1) << Instruction::ADD;
@@ -644,7 +645,7 @@ void ArrayUtils::clearDynamicArray(ArrayType const& _type) const
 		<< Instruction::SWAP1;
 	// stack: data_pos_end data_pos
 	if (_type.storageStride() < 32)
-		clearStorageLoop(TypeProvider::uint256());
+		clearStorageLoop(_type.containsShieldedType() ? TypeProvider::shieldedUint256() : TypeProvider::uint256());
 	else
 		clearStorageLoop(_type.baseType());
 	// cleanup
@@ -679,10 +680,12 @@ void ArrayUtils::resizeDynamicArray(ArrayType const& _typeIn) const
 			// Special case for short byte arrays, they are stored together with their length
 			if (_type.isByteArrayOrString())
 			{
+				auto const s_loadOp = _type.containsShieldedType() ? Instruction::CLOAD : Instruction::SLOAD;
+				auto const s_storeOp = _type.containsShieldedType() ? Instruction::CSTORE : Instruction::SSTORE;
 				evmasm::AssemblyItem regularPath = _context.newTag();
 				// We start by a large case-distinction about the old and new length of the byte array.
 
-				_context << Instruction::DUP3 << Instruction::SLOAD;
+				_context << Instruction::DUP3 << s_loadOp;
 				// stack: ref new_length current_length ref_value
 
 				solAssert(_context.stackHeight() - stackHeightStart == 4 - 2, "3");
@@ -706,7 +709,7 @@ void ArrayUtils::resizeDynamicArray(ArrayType const& _typeIn) const
 				_context << Instruction::DUP3 << Instruction::DUP1 << Instruction::ADD;
 				_context << Instruction::OR;
 				// Store.
-				_context << Instruction::DUP4 << Instruction::SSTORE;
+				_context << Instruction::DUP4 << s_storeOp;
 				solAssert(_context.stackHeight() - stackHeightStart == 3 - 2, "3");
 				_context.appendJumpTo(resizeEnd);
 
@@ -721,13 +724,13 @@ void ArrayUtils::resizeDynamicArray(ArrayType const& _typeIn) const
 				// Store at data location.
 				_context << Instruction::DUP4;
 				CompilerUtils(_context).computeHashStatic();
-				_context << Instruction::SSTORE;
+				_context << s_storeOp;
 				// stack: ref new_length current_length
 				// Store new length: Compute 2*length + 1 and store it.
 				_context << Instruction::DUP2 << Instruction::DUP1 << Instruction::ADD;
 				_context << u256(1) << Instruction::ADD;
 				// stack: ref new_length current_length 2*new_length+1
-				_context << Instruction::DUP4 << Instruction::SSTORE;
+				_context << Instruction::DUP4 << s_storeOp;
 				solAssert(_context.stackHeight() - stackHeightStart == 3 - 2, "3");
 				_context.appendJumpTo(resizeEnd);
 
@@ -745,13 +748,15 @@ void ArrayUtils::resizeDynamicArray(ArrayType const& _typeIn) const
 				solAssert(_context.stackHeight() - stackHeightStart == 4 - 2, "3");
 				_context << Instruction::POP << Instruction::DUP3;
 				CompilerUtils(_context).computeHashStatic();
-				_context << Instruction::DUP1 << Instruction::SLOAD << Instruction::SWAP1;
+				_context << Instruction::DUP1 << s_loadOp << Instruction::SWAP1;
 				// stack: ref new_length current_length first_word data_location
 				_context << Instruction::DUP3;
 				ArrayUtils(_context).convertLengthToSize(_type);
 				_context << Instruction::DUP2 << Instruction::ADD << Instruction::SWAP1;
 				// stack: ref new_length current_length first_word data_location_end data_location
-				ArrayUtils(_context).clearStorageLoop(TypeProvider::uint256());
+				ArrayUtils(_context).clearStorageLoop(
+					_type.containsShieldedType() ? TypeProvider::shieldedUint256() : TypeProvider::uint256()
+				);
 				_context << Instruction::POP;
 				// stack: ref new_length current_length first_word
 				solAssert(_context.stackHeight() - stackHeightStart == 4 - 2, "3");
@@ -793,7 +798,9 @@ void ArrayUtils::resizeDynamicArray(ArrayType const& _typeIn) const
 			_context << Instruction::SWAP2 << Instruction::ADD;
 			// stack: ref new_length delete_end delete_start
 			if (_type.storageStride() < 32)
-				ArrayUtils(_context).clearStorageLoop(TypeProvider::uint256());
+				ArrayUtils(_context).clearStorageLoop(
+					_type.containsShieldedType() ? TypeProvider::shieldedUint256() : TypeProvider::uint256()
+				);
 			else
 				ArrayUtils(_context).clearStorageLoop(_type.baseType());
 
@@ -821,24 +828,35 @@ void ArrayUtils::incrementDynamicArraySize(ArrayType const& _type) const
 		// lowest-order byte (we actually use a mask with fewer bits) must
 		// be (31*2+0) = 62
 
-		m_context << Instruction::DUP1 << Instruction::SLOAD << Instruction::DUP1;
+		bool isShielded = _type.containsShieldedType();
+		m_context << Instruction::DUP1 << (isShielded ? Instruction::CLOAD : Instruction::SLOAD) << Instruction::DUP1;
 		m_context.callYulFunction(m_context.utilFunctions().extractByteArrayLengthFunction(), 1, 1);
-		m_context.appendInlineAssembly(R"({
-			// We have to copy if length is exactly 31, because that marks
-			// the transition between in-place and out-of-place storage.
-			switch length
-			case 31
-			{
-				mstore(0, ref)
-				let data_area := keccak256(0, 0x20)
-				sstore(data_area, and(data, not(0xff)))
-				// Set old length in new format (31 * 2 + 1)
-				data := 63
-			}
-			sstore(ref, add(data, 2))
-			// return new length in ref
-			ref := add(length, 1)
-		})", {"ref", "data", "length"});
+		if (isShielded)
+			m_context.appendInlineAssembly(R"({
+				switch length
+				case 31
+				{
+					mstore(0, ref)
+					let data_area := keccak256(0, 0x20)
+					cstore(data_area, and(data, not(0xff)))
+					data := 63
+				}
+				cstore(ref, add(data, 2))
+				ref := add(length, 1)
+			})", {"ref", "data", "length"});
+		else
+			m_context.appendInlineAssembly(R"({
+				switch length
+				case 31
+				{
+					mstore(0, ref)
+					let data_area := keccak256(0, 0x20)
+					sstore(data_area, and(data, not(0xff)))
+					data := 63
+				}
+				sstore(ref, add(data, 2))
+				ref := add(length, 1)
+			})", {"ref", "data", "length"});
 		m_context << Instruction::POP << Instruction::POP;
 	}
 	else
@@ -867,7 +885,8 @@ void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
 
 	if (_type.isByteArrayOrString())
 	{
-		m_context << Instruction::DUP1 << Instruction::SLOAD << Instruction::DUP1;
+		bool isShielded = _type.containsShieldedType();
+		m_context << Instruction::DUP1 << (isShielded ? Instruction::CLOAD : Instruction::SLOAD) << Instruction::DUP1;
 		m_context.callYulFunction(m_context.utilFunctions().extractByteArrayLengthFunction(), 1, 1);
 		util::Whiskers code(R"({
 			if iszero(length) {
@@ -890,8 +909,8 @@ void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
 				switch length
 				case 32
 				{
-					let data := sload(slot)
-					sstore(slot, 0)
+					let data := <loadOp>(slot)
+					<storeOp>(slot, 0)
 					data := and(data, not(0xff))
 					slot_value := or(data, 62)
 				}
@@ -899,22 +918,24 @@ void ArrayUtils::popStorageArrayElement(ArrayType const& _type) const
 				{
 					let offset_inside_slot := and(sub(length, 1), 0x1f)
 					slot := add(slot, div(sub(length, 1), 32))
-					let data := sload(slot)
+					let data := <loadOp>(slot)
 
 					// Zero-out the suffix of the byte array by masking it.
 					// ((1<<(8 * (32 - offset))) - 1)
 					let mask := sub(exp(0x100, sub(32, offset_inside_slot)), 1)
 					data := and(not(mask), data)
-					sstore(slot, data)
+					<storeOp>(slot, data)
 
 					// Reduce the length by 1
 					slot_value := sub(slot_value, 2)
 				}
 			}
-			sstore(ref, slot_value)
+			<storeOp>(ref, slot_value)
 		})");
 		code("panicSelector", util::selectorFromSignatureU256("Panic(uint256)").str());
 		code("emptyArrayPop", std::to_string(unsigned(util::PanicCode::EmptyArrayPop)));
+		code("loadOp", isShielded ? "cload" : "sload");
+		code("storeOp", isShielded ? "cstore" : "sstore");
 		m_context.appendInlineAssembly(code.render(), {"ref", "slot_value", "length"});
 		m_context << Instruction::POP << Instruction::POP << Instruction::POP;
 	}
@@ -1115,7 +1136,7 @@ void ArrayUtils::accessIndex(ArrayType const& _arrayType, bool _doBoundsCheck, b
 		{
 			// Special case of short byte arrays.
 			m_context << Instruction::SWAP1;
-			m_context << Instruction::DUP2 << Instruction::SLOAD;
+			m_context << Instruction::DUP2 << (_arrayType.containsShieldedType() ? Instruction::CLOAD : Instruction::SLOAD);
 			m_context << u256(1) << Instruction::AND << Instruction::ISZERO;
 			// No action needed for short byte arrays.
 			m_context.appendConditionalJumpTo(endTag);

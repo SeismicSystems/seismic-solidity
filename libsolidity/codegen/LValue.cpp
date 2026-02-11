@@ -547,29 +547,33 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 	}
 }
 
-StorageByteArrayElement::StorageByteArrayElement(CompilerContext& _compilerContext):
-	LValue(_compilerContext, TypeProvider::byte())
+StorageByteArrayElement::StorageByteArrayElement(CompilerContext& _compilerContext, bool _isShielded):
+	LValue(_compilerContext, _isShielded ? TypeProvider::shieldedByte() : TypeProvider::byte()),
+	m_isShielded(_isShielded)
 {
 }
 
 void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove) const
 {
+	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
 	// stack: ref byte_number
 	if (_remove)
-		m_context << Instruction::SWAP1 << Instruction::SLOAD
+		m_context << Instruction::SWAP1 << loadInstruction
 			<< Instruction::SWAP1 << Instruction::BYTE;
 	else
-		m_context << Instruction::DUP2 << Instruction::SLOAD
+		m_context << Instruction::DUP2 << loadInstruction
 			<< Instruction::DUP2 << Instruction::BYTE;
 	m_context << (u256(1) << (256 - 8)) << Instruction::MUL;
 }
 
 void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, bool _move) const
 {
+	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
+	auto const storeInstruction = m_isShielded ? Instruction::CSTORE : Instruction::SSTORE;
 	// stack: value ref byte_number
 	m_context << u256(31) << Instruction::SUB << u256(0x100) << Instruction::EXP;
 	// stack: value ref (1<<(8*(31-byte_number)))
-	m_context << Instruction::DUP2 << Instruction::SLOAD;
+	m_context << Instruction::DUP2 << loadInstruction;
 	// stack: value ref (1<<(8*(31-byte_number))) old_full_value
 	// clear byte in old value
 	m_context << Instruction::DUP2 << u256(0xff) << Instruction::MUL
@@ -579,24 +583,26 @@ void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, boo
 	m_context << (u256(1) << (256 - 8)) << Instruction::DUP5 << Instruction::DIV
 		<< Instruction::MUL << Instruction::OR;
 	// stack: value ref new_full_value
-	m_context << Instruction::SWAP1 << Instruction::SSTORE;
+	m_context << Instruction::SWAP1 << storeInstruction;
 	if (_move)
 		m_context << Instruction::POP;
 }
 
 void StorageByteArrayElement::setToZero(SourceLocation const&, bool _removeReference) const
 {
+	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
+	auto const storeInstruction = m_isShielded ? Instruction::CSTORE : Instruction::SSTORE;
 	// stack: ref byte_number
 	solAssert(_removeReference, "");
 	m_context << u256(31) << Instruction::SUB << u256(0x100) << Instruction::EXP;
 	// stack: ref (1<<(8*(31-byte_number)))
-	m_context << Instruction::DUP2 << Instruction::SLOAD;
+	m_context << Instruction::DUP2 << loadInstruction;
 	// stack: ref (1<<(8*(31-byte_number))) old_full_value
 	// clear byte in old value
 	m_context << Instruction::SWAP1 << u256(0xff) << Instruction::MUL;
 	m_context << Instruction::NOT << Instruction::AND;
 	// stack: ref old_full_value_with_cleared_byte
-	m_context << Instruction::SWAP1 << Instruction::SSTORE;
+	m_context << Instruction::SWAP1 << storeInstruction;
 }
 
 TupleObject::TupleObject(
