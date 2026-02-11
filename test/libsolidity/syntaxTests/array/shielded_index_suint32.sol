@@ -7,6 +7,7 @@ contract C {
     }
 }
 // ----
+// Warning 9665: (17-30): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // Warning 9660: (74-98): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 7407: (124-127): Type suint32 is not implicitly convertible to expected type uint256.
 // TypeError 5910: (124-127): Shielded types are not allowed as array indices.
