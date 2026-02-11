@@ -585,6 +585,21 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		}
 	}
 
+	// Warn about dynamic shielded array length observability via gas costs
+	if (_variable.isStateVariable())
+	{
+		if (auto arrayType = dynamic_cast<ArrayType const*>(varType))
+		{
+			if (arrayType->isDynamicallySized() && arrayType->baseType()->containsShieldedType())
+				m_errorReporter.warning(
+					9665_error,
+					_variable.location(),
+					"Dynamic arrays with shielded element types store their length confidentially, "
+					"but an upper bound on the length may still be observable through gas cost analysis."
+				);
+		}
+	}
+
 	bool isStructMemberDeclaration = dynamic_cast<StructDefinition const*>(_variable.scope()) != nullptr;
 	if (isStructMemberDeclaration)
 		return false;
