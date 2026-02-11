@@ -21,6 +21,7 @@ contract C {
     }
 }
 // ----
+// Warning 9665: (17-30): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // TypeError 9553: (324-326): Invalid type for argument in function call. Invalid implicit conversion from saddress[] storage ref to address[] memory requested.
 // TypeError 9553: (414-415): Invalid type for argument in function call. Invalid implicit conversion from address[] storage ref to saddress[] memory requested.
 // TypeError 9553: (640-646): Invalid type for argument in function call. Invalid implicit conversion from saddress[] memory to address[] memory requested.
