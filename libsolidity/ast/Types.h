@@ -1003,8 +1003,12 @@ public:
 	BoolResult validForLocation(DataLocation _loc) const override;
 
 	/// @returns true if this is a byte array.
+	/// NOTE: Byte arrays (bytes) and strings assume non-shielded base types.
+	/// If shielded dynamic bytes are added in the future, these helpers and their
+	/// callers (e.g. stride calculations, storage layout) must be revisited.
 	bool isByteArray() const { return m_arrayKind == ArrayKind::Bytes; }
-	/// @returns true if this is a byte array or a string
+	/// @returns true if this is a byte array or a string.
+	/// @see isByteArray() for the shielded-type assumption.
 	bool isByteArrayOrString() const { return m_arrayKind != ArrayKind::Ordinary; }
 	/// @returns true if this is a string
 	bool isString() const { return m_arrayKind == ArrayKind::String; }

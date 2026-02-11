@@ -184,6 +184,13 @@ private:
 		langutil::SourceLocation const& _location
 	);
 
+	/// Checks if msg.value is being assigned to a shielded type and emits a warning,
+	/// since msg.value is always publicly visible on-chain.
+	void checkMsgValueToShielded(
+		Expression const& _expression,
+		Type const& _targetType
+	);
+
 	/// @returns the referenced declaration and throws on error.
 	Declaration const& dereference(Identifier const& _identifier) const;
 	/// @returns the referenced declaration and throws on error.

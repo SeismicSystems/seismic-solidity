@@ -585,6 +585,21 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		}
 	}
 
+	// Warn about dynamic shielded array length observability via gas costs
+	if (_variable.isStateVariable())
+	{
+		if (auto arrayType = dynamic_cast<ArrayType const*>(varType))
+		{
+			if (arrayType->isDynamicallySized() && arrayType->baseType()->containsShieldedType())
+				m_errorReporter.warning(
+					9665_error,
+					_variable.location(),
+					"Dynamic arrays with shielded element types store their length confidentially, "
+					"but an upper bound on the length may still be observable through gas cost analysis."
+				);
+		}
+	}
+
 	bool isStructMemberDeclaration = dynamic_cast<StructDefinition const*>(_variable.scope()) != nullptr;
 	if (isStructMemberDeclaration)
 		return false;
@@ -1496,6 +1511,9 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 		// Check for literals being converted to shielded types (including nested in structs/arrays)
 		if (_statement.initialValue() && var.annotation().type)
 			checkShieldedLiteralWarning(*_statement.initialValue(), *var.annotation().type, _statement.location());
+		// Check for msg.value being assigned to a shielded type
+		if (_statement.initialValue() && var.annotation().type)
+			checkMsgValueToShielded(*_statement.initialValue(), *var.annotation().type);
 	}
 
 	if (valueTypes.size() != variables.size())
@@ -4571,6 +4589,45 @@ void TypeChecker::checkShieldedLiteralWarning(
 				if (args[i] && members[i]->annotation().type)
 					checkShieldedLiteralWarning(*args[i], *members[i]->annotation().type, _location);
 		}
+	}
+}
+
+void TypeChecker::checkMsgValueToShielded(
+	Expression const& _expression,
+	Type const& _targetType
+)
+{
+	// Only warn if target type is or contains a shielded type
+	if (!_targetType.isShielded() && !_targetType.containsShieldedType())
+		return;
+
+	// Check if expression is msg.value directly
+	if (auto memberAccess = dynamic_cast<MemberAccess const*>(&_expression))
+	{
+		if (memberAccess->memberName() == "value")
+		{
+			if (auto identifier = dynamic_cast<Identifier const*>(&memberAccess->expression()))
+			{
+				if (identifier->name() == "msg")
+				{
+					m_errorReporter.warning(
+						9664_error,
+						memberAccess->location(),
+						"msg.value is always publicly visible on-chain. "
+						"Assigning it to a shielded type does not hide the transaction value from observers."
+					);
+					return;
+				}
+			}
+		}
+	}
+
+	// Recurse into type conversion arguments: suint256(msg.value)
+	if (auto funcCall = dynamic_cast<FunctionCall const*>(&_expression))
+	{
+		for (auto const& arg : funcCall->arguments())
+			if (arg)
+				checkMsgValueToShielded(*arg, _targetType);
 	}
 }
 
