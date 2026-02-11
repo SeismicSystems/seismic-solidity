@@ -87,9 +87,25 @@ The compiler warns when it detects literals being directly converted to shielded
 types. To keep values confidential, pass them as encrypted constructor arguments
 or set them via a post-deployment transaction.
 
-## 7. Shielded Dynamic Bytes
+## 7. Shielded Dynamic Bytes (`sbytes`)
 
-Shielded dynamic `bytes` and `string` types are **not supported**. The byte-array
-and string helpers (`isByteArrayOrString()`) assume non-shielded base types. If
-support for shielded dynamic bytes is added in the future, these helpers will need
-to be updated.
+The `sbytes` type is a dynamic shielded byte array. It uses the same packed storage
+encoding as `bytes` (32 bytes per slot, short/long encoding) but stores all data —
+including the array length — in confidential storage via `cstore`/`cload`.
+
+```solidity
+sbytes data;
+data.push(sbytes1(0x42));  // push a shielded byte
+sbytes1 val = data[0];     // read a shielded byte
+suint256 len = data.length; // length is shielded (suint256)
+```
+
+**Privacy note:** Like other dynamic shielded arrays, an upper bound on the length
+may still be observable through gas cost analysis (see Section 2).
+
+**Limitations:**
+- `sbytes` cannot be used in public state variables, public/external function
+  parameters or return values, events, or errors.
+- `sbytes` cannot be ABI-encoded.
+- `sbytes` is not convertible to/from `bytes` or `string`.
+- Shielded `string` (`sstring`) is **not supported**.
