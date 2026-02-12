@@ -176,14 +176,6 @@ private:
 		langutil::SourceLocation const& _location
 	);
 
-	/// Recursively checks if an expression contains literals being converted to shielded types.
-	/// Handles direct conversions, struct constructors, and other complex initializers.
-	void checkShieldedLiteralWarning(
-		Expression const& _expression,
-		Type const& _targetType,
-		langutil::SourceLocation const& _location
-	);
-
 	/// Checks if msg.value is being assigned to a shielded type and emits a warning,
 	/// since msg.value is always publicly visible on-chain.
 	void checkMsgValueToShielded(
