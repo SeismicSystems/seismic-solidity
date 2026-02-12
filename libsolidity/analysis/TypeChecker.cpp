@@ -1508,9 +1508,6 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
-		// Check for literals being converted to shielded types (including nested in structs/arrays)
-		if (_statement.initialValue() && var.annotation().type)
-			checkShieldedLiteralWarning(*_statement.initialValue(), *var.annotation().type, _statement.location());
 		// Check for msg.value being assigned to a shielded type
 		if (_statement.initialValue() && var.annotation().type)
 			checkMsgValueToShielded(*_statement.initialValue(), *var.annotation().type);
@@ -2199,6 +2196,15 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 				);
 				}
 			}
+
+			// Check for literals being converted to shielded types
+			if (
+				resultType->category() == Type::Category::ShieldedBool ||
+				resultType->category() == Type::Category::ShieldedAddress ||
+				resultType->category() == Type::Category::ShieldedInteger ||
+				resultType->category() == Type::Category::ShieldedFixedBytes
+			)
+				checkLiteralToShielded(*arguments.front(), *resultType, _functionCall.location());
 		}
 		else
 		{
@@ -4512,83 +4518,6 @@ void TypeChecker::checkLiteralToShielded(
 			_location,
 			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
 		);
-	}
-}
-
-void TypeChecker::checkShieldedLiteralWarning(
-	Expression const& _expression,
-	Type const& _targetType,
-	langutil::SourceLocation const& _location
-)
-{
-	// Handle array literals: [suint(1), suint(2)]
-	if (auto tupleExpr = dynamic_cast<TupleExpression const*>(&_expression))
-	{
-		if (tupleExpr->isInlineArray())
-		{
-			// Get the base type of the array
-			if (auto arrayType = dynamic_cast<ArrayType const*>(&_targetType))
-			{
-				Type const* baseType = arrayType->baseType();
-				for (auto const& component : tupleExpr->components())
-					if (component)
-						checkShieldedLiteralWarning(*component, *baseType, _location);
-			}
-		}
-		return;
-	}
-
-	auto funcCall = dynamic_cast<FunctionCall const*>(&_expression);
-	if (!funcCall)
-		return;
-
-	auto const& args = funcCall->arguments();
-
-	// Direct conversion to a shielded type - check all arguments for literals
-	if (
-		_targetType.category() == Type::Category::ShieldedBool ||
-		_targetType.category() == Type::Category::ShieldedAddress ||
-		_targetType.category() == Type::Category::ShieldedInteger ||
-		_targetType.category() == Type::Category::ShieldedFixedBytes
-	)
-	{
-		for (auto const& arg : args)
-			if (arg)
-				checkLiteralToShielded(*arg, _targetType, _location);
-		return;
-	}
-
-	// Struct constructor - recursively check each member
-	if (auto structType = dynamic_cast<StructType const*>(&_targetType))
-	{
-		auto const& members = structType->structDefinition().members();
-
-		// Named arguments: S({field: value})
-		if (!funcCall->names().empty())
-		{
-			for (size_t i = 0; i < funcCall->names().size() && i < args.size(); ++i)
-			{
-				for (auto const& member : members)
-				{
-					if (
-						member->name() == *funcCall->names()[i] &&
-						args[i] &&
-						member->annotation().type
-					)
-					{
-						checkShieldedLiteralWarning(*args[i], *member->annotation().type, _location);
-						break;
-					}
-				}
-			}
-		}
-		// Positional arguments: S(value1, value2)
-		else
-		{
-			for (size_t i = 0; i < args.size() && i < members.size(); ++i)
-				if (args[i] && members[i]->annotation().type)
-					checkShieldedLiteralWarning(*args[i], *members[i]->annotation().type, _location);
-		}
 	}
 }
 
