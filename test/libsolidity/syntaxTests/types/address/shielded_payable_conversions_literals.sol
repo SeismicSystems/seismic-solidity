@@ -11,3 +11,4 @@ contract C {
     }
 }
 // ----
+// Warning 9662: (181-233): Address Literals converted to shielded addresses will leak during contract deployment.
