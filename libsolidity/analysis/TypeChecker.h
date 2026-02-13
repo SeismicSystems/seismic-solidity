@@ -166,6 +166,21 @@ private:
 
 	void checkErrorAndEventParameters(CallableDeclaration const& _callable);
 
+	/// Checks if a literal expression is being converted to a shielded type and emits a warning.
+	/// This is the core check that matches the original warning logic.
+	void checkLiteralToShielded(
+		Expression const& _expression,
+		Type const& _targetType,
+		langutil::SourceLocation const& _location
+	);
+
+	/// Checks if msg.value is being assigned to a shielded type and emits a warning,
+	/// since msg.value is always publicly visible on-chain.
+	void checkMsgValueToShielded(
+		Expression const& _expression,
+		Type const& _targetType
+	);
+
 	/// @returns the referenced declaration and throws on error.
 	Declaration const& dereference(Identifier const& _identifier) const;
 	/// @returns the referenced declaration and throws on error.
