@@ -1,0 +1,232 @@
+
+======= input.sol:Blah =======
+EVM assembly:
+    /* "input.sol":60:165  contract Blah {... */
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  revert(0x00, 0x00)
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+        /* "input.sol":60:165  contract Blah {... */
+      mstore(0x40, 0x80)
+      callvalue
+      dup1
+      iszero
+      tag_1
+      jumpi
+      revert(0x00, 0x00)
+    tag_1:
+      pop
+      jumpi(tag_2, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0xf8a8fd6d
+      eq
+      tag_3
+      jumpi
+    tag_2:
+      revert(0x00, 0x00)
+        /* "input.sol":97:163  function test() external {... */
+    tag_3:
+      tag_4
+      tag_5
+      jump	// in
+    tag_4:
+      stop
+    tag_5:
+        /* "input.sol":132:136  data */
+      0x00
+        /* "input.sol":150:154  0x42 */
+      0x42
+        /* "input.sol":142:155  sbytes1(0x42) */
+      0xf8
+      shl
+        /* "input.sol":132:156  data.push(sbytes1(0x42)) */
+      swap1
+      dup1
+      dup1
+      cload
+      dup1
+      tag_7
+      swap1
+      tag_8
+      jump	// in
+    tag_7:
+      dup1
+      0x1f
+      dup2
+      sub
+      tag_9
+      jumpi
+      dup4
+      0x00
+      mstore
+      keccak256(0x00, 0x20)
+      not(0xff)
+      dup5
+      and
+      dup2
+      cstore
+      0x3f
+      swap4
+      pop
+      pop
+    tag_9:
+      pop
+      0x02
+      dup3
+      add
+      dup4
+      cstore
+      0x01
+      dup2
+      add
+      swap3
+      pop
+      pop
+      pop
+      0x01
+      swap1
+      sub
+      dup2
+      cload
+      0x01
+      and
+      iszero
+      tag_11
+      jumpi
+      swap1
+      0x00
+      mstore
+      keccak256(0x00, 0x20)
+      add
+      0x00
+    tag_11:
+      swap1
+      swap2
+      swap1
+      swap2
+      swap1
+      swap2
+      0x1f
+      sub
+      0x0100
+      exp
+      dup2
+      cload
+      dup2
+      0xff
+      mul
+      not
+      and
+      swap1
+      0x0100000000000000000000000000000000000000000000000000000000000000
+      dup5
+      div
+      mul
+      or
+      swap1
+      cstore
+      pop
+        /* "input.sol":97:163  function test() external {... */
+      jump	// out
+        /* "#utility.yul":7:187   */
+    tag_12:
+        /* "#utility.yul":55:132   */
+      0x4e487b7100000000000000000000000000000000000000000000000000000000
+        /* "#utility.yul":52:53   */
+      0x00
+        /* "#utility.yul":45:133   */
+      mstore
+        /* "#utility.yul":152:156   */
+      0x22
+        /* "#utility.yul":149:150   */
+      0x04
+        /* "#utility.yul":142:157   */
+      mstore
+        /* "#utility.yul":176:180   */
+      0x24
+        /* "#utility.yul":173:174   */
+      0x00
+        /* "#utility.yul":166:181   */
+      revert
+        /* "#utility.yul":193:513   */
+    tag_8:
+        /* "#utility.yul":237:243   */
+      0x00
+        /* "#utility.yul":274:275   */
+      0x02
+        /* "#utility.yul":268:272   */
+      dup3
+        /* "#utility.yul":264:276   */
+      div
+        /* "#utility.yul":254:276   */
+      swap1
+      pop
+        /* "#utility.yul":321:322   */
+      0x01
+        /* "#utility.yul":315:319   */
+      dup3
+        /* "#utility.yul":311:323   */
+      and
+        /* "#utility.yul":342:360   */
+      dup1
+        /* "#utility.yul":332:413   */
+      tag_16
+      jumpi
+        /* "#utility.yul":398:402   */
+      0x7f
+        /* "#utility.yul":390:396   */
+      dup3
+        /* "#utility.yul":386:403   */
+      and
+        /* "#utility.yul":376:403   */
+      swap2
+      pop
+        /* "#utility.yul":332:413   */
+    tag_16:
+        /* "#utility.yul":460:462   */
+      0x20
+        /* "#utility.yul":452:458   */
+      dup3
+        /* "#utility.yul":449:463   */
+      lt
+        /* "#utility.yul":429:447   */
+      dup2
+        /* "#utility.yul":426:464   */
+      sub
+        /* "#utility.yul":423:507   */
+      tag_17
+      jumpi
+        /* "#utility.yul":479:497   */
+      tag_18
+      tag_12
+      jump	// in
+    tag_18:
+        /* "#utility.yul":423:507   */
+    tag_17:
+        /* "#utility.yul":244:513   */
+      pop
+        /* "#utility.yul":193:513   */
+      swap2
+      swap1
+      pop
+      jump	// out
+
+    auxdata: <AUXDATA REMOVED>
+}
+
