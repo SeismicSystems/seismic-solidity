@@ -1852,6 +1852,13 @@ ArrayType::ArrayType(DataLocation _location, bool _isString):
 {
 }
 
+ArrayType::ArrayType(DataLocation _location, ShieldedByteArrayTag):
+	ReferenceType(_location),
+	m_arrayKind(ArrayKind::Bytes),
+	m_baseType{TypeProvider::shieldedByte()}
+{
+}
+
 void ArrayType::clearCache() const
 {
 	Type::clearCache();
@@ -1904,9 +1911,18 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
 		return true;
-	// allow conversion bytes <-> std::string and bytes -> bytesNN
+	// allow: bytes -> bytesNN, sbytes -> sbytesNN, sbytes <-> bytes
+	// block: sbytes -> bytesNN, bytes -> sbytesNN (cross-shielding)
 	if (_convertTo.category() != category())
-		return isByteArray() && _convertTo.category() == Type::Category::FixedBytes;
+	{
+		if (!isByteArray())
+			return false;
+		if (_convertTo.category() == Type::Category::FixedBytes)
+			return !baseType()->isShielded();
+		if (_convertTo.category() == Type::Category::ShieldedFixedBytes)
+			return baseType()->isShielded();
+		return false;
+	}
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);
 	if (convertTo.location() != location())
 		return false;
@@ -1920,6 +1936,8 @@ std::string ArrayType::richIdentifier() const
 	std::string id;
 	if (isString())
 		id = "t_string";
+	else if (isByteArray() && baseType()->isShielded())
+		id = "t_sbytes";
 	else if (isByteArrayOrString())
 		id = "t_bytes";
 	else
@@ -2096,6 +2114,8 @@ std::string ArrayType::toString(bool _withoutDataLocation) const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -2115,6 +2135,8 @@ std::string ArrayType::humanReadableName() const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -2133,6 +2155,8 @@ std::string ArrayType::canonicalName() const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
