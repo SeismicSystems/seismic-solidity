@@ -546,7 +546,11 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 		bool isPointer = !_variable.isStateVariable();
 		type = TypeProvider::withLocation(ref, typeLoc, isPointer);
 	}
-	if ( (_variable.isConstant() || _variable.immutable()) && (type->isShielded()))
+	bool hasShieldedContent = type->isShielded();
+	if (!hasShieldedContent)
+		if (auto const* arrayType = dynamic_cast<ArrayType const*>(type))
+			hasShieldedContent = arrayType->baseType()->isShielded();
+	if ((_variable.isConstant() || _variable.immutable()) && hasShieldedContent)
 		m_errorReporter.declarationError(7491_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
 
 	if (_variable.isConstant() && !type->isValueType())
