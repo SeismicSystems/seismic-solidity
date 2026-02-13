@@ -1493,52 +1493,9 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 					result.message()
 				);
 		}
-		if (auto funcCall = dynamic_cast<FunctionCall const*>(_statement.initialValue()))
-		{
-			auto const& args = funcCall->arguments();
-			if (!args.empty())
-			{
-				if (auto literal = dynamic_cast<Literal const*>(args.front().get()))
-				{
-					if (var.annotation().type->category()==Type::Category::ShieldedBool)
-					{
-						std::string val = literal->value();
-						if (val == "true" || val == "false")
-							m_errorReporter.warning(
-							9661_error,
-							_statement.location(),
-							"Bool Literals converted to shielded bools will leak during contract deployment."
-							);
-					}
-					else if (literal->looksLikeAddress() && var.annotation().type->category()==Type::Category::ShieldedAddress)
-					{
-						if (literal->passesAddressChecksum()) {
-							m_errorReporter.warning(
-							9662_error,
-							_statement.location(),
-							"Address Literals converted to shielded addresses will leak during contract deployment."
-							);
-						}
-					}
-					else if (args.front()->annotation().type->category()==Type::Category::RationalNumber && var.annotation().type->category()==Type::Category::ShieldedInteger)
-					{
-						m_errorReporter.warning(
-						9660_error,
-						_statement.location(),
-						"Literals converted to shielded integers will leak during contract deployment."
-					);
-					}
-					else if (args.front()->annotation().type->category()==Type::Category::Enum && var.annotation().type->category()==Type::Category::ShieldedInteger)
-					{
-						m_errorReporter.warning(
-						1457_error,
-						_statement.location(),
-						"Enums converted to shielded integers will leak during contract deployment."
-					);
-					}
-				}
-			}
-		}
+		// Check for msg.value being assigned to a shielded type
+		if (_statement.initialValue() && var.annotation().type)
+			checkMsgValueToShielded(*_statement.initialValue(), *var.annotation().type);
 	}
 
 	if (valueTypes.size() != variables.size())
@@ -2142,6 +2099,15 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 				);
 				}
 			}
+
+			// Check for literals being converted to shielded types
+			if (
+				resultType->category() == Type::Category::ShieldedBool ||
+				resultType->category() == Type::Category::ShieldedAddress ||
+				resultType->category() == Type::Category::ShieldedInteger ||
+				resultType->category() == Type::Category::ShieldedFixedBytes
+			)
+				checkLiteralToShielded(*arguments.front(), *resultType, _functionCall.location());
 		}
 		else
 		{
@@ -4406,6 +4372,120 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 				"This type is only supported in ABI coder v2. "
 				"Use \"pragma abicoder v2;\" to enable the feature."
 			);
+	}
+}
+
+void TypeChecker::checkLiteralToShielded(
+	Expression const& _expression,
+	Type const& _targetType,
+	langutil::SourceLocation const& _location
+)
+{
+	// Cases that only need annotation().type, not a Literal AST node.
+	// This covers constant expressions (BinaryOperation, UnaryOperation, etc.)
+	// that fold to RationalNumber or Enum types.
+	if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			9660_error,
+			_location,
+			"Literals converted to shielded integers will leak during contract deployment."
+		);
+		return;
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::Enum &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			1457_error,
+			_location,
+			"Enums converted to shielded integers will leak during contract deployment."
+		);
+		return;
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedFixedBytes
+	)
+	{
+		m_errorReporter.warning(
+			9663_error,
+			_location,
+			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
+		);
+		return;
+	}
+
+	// Cases that need the actual Literal AST node for value inspection.
+	auto literal = dynamic_cast<Literal const*>(&_expression);
+	if (!literal)
+		return;
+
+	if (_targetType.category() == Type::Category::ShieldedBool)
+	{
+		std::string val = literal->value();
+		if (val == "true" || val == "false")
+			m_errorReporter.warning(
+				9661_error,
+				_location,
+				"Bool Literals converted to shielded bools will leak during contract deployment."
+			);
+	}
+	else if (literal->looksLikeAddress() && _targetType.category() == Type::Category::ShieldedAddress)
+	{
+		if (literal->passesAddressChecksum())
+			m_errorReporter.warning(
+				9662_error,
+				_location,
+				"Address Literals converted to shielded addresses will leak during contract deployment."
+			);
+	}
+}
+
+void TypeChecker::checkMsgValueToShielded(
+	Expression const& _expression,
+	Type const& _targetType
+)
+{
+	// Only warn if target type is or contains a shielded type
+	if (!_targetType.isShielded() && !_targetType.containsShieldedType())
+		return;
+
+	// Check if expression is msg.value directly
+	if (auto memberAccess = dynamic_cast<MemberAccess const*>(&_expression))
+	{
+		if (memberAccess->memberName() == "value")
+		{
+			if (auto identifier = dynamic_cast<Identifier const*>(&memberAccess->expression()))
+			{
+				if (identifier->name() == "msg")
+				{
+					m_errorReporter.warning(
+						9664_error,
+						memberAccess->location(),
+						"msg.value is always publicly visible on-chain. "
+						"Assigning it to a shielded type does not hide the transaction value from observers."
+					);
+					return;
+				}
+			}
+		}
+	}
+
+	// Recurse into type conversion arguments: suint256(msg.value)
+	if (auto funcCall = dynamic_cast<FunctionCall const*>(&_expression))
+	{
+		for (auto const& arg : funcCall->arguments())
+			if (arg)
+				checkMsgValueToShielded(*arg, _targetType);
 	}
 }
 
