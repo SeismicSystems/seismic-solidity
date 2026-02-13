@@ -4460,6 +4460,50 @@ void TypeChecker::checkLiteralToShielded(
 	langutil::SourceLocation const& _location
 )
 {
+	// Cases that only need annotation().type, not a Literal AST node.
+	// This covers constant expressions (BinaryOperation, UnaryOperation, etc.)
+	// that fold to RationalNumber or Enum types.
+	if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			9660_error,
+			_location,
+			"Literals converted to shielded integers will leak during contract deployment."
+		);
+		return;
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::Enum &&
+		_targetType.category() == Type::Category::ShieldedInteger
+	)
+	{
+		m_errorReporter.warning(
+			1457_error,
+			_location,
+			"Enums converted to shielded integers will leak during contract deployment."
+		);
+		return;
+	}
+	else if (
+		_expression.annotation().type &&
+		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		_targetType.category() == Type::Category::ShieldedFixedBytes
+	)
+	{
+		m_errorReporter.warning(
+			9663_error,
+			_location,
+			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
+		);
+		return;
+	}
+
+	// Cases that need the actual Literal AST node for value inspection.
 	auto literal = dynamic_cast<Literal const*>(&_expression);
 	if (!literal)
 		return;
@@ -4482,42 +4526,6 @@ void TypeChecker::checkLiteralToShielded(
 				_location,
 				"Address Literals converted to shielded addresses will leak during contract deployment."
 			);
-	}
-	else if (
-		_expression.annotation().type &&
-		_expression.annotation().type->category() == Type::Category::RationalNumber &&
-		_targetType.category() == Type::Category::ShieldedInteger
-	)
-	{
-		m_errorReporter.warning(
-			9660_error,
-			_location,
-			"Literals converted to shielded integers will leak during contract deployment."
-		);
-	}
-	else if (
-		_expression.annotation().type &&
-		_expression.annotation().type->category() == Type::Category::Enum &&
-		_targetType.category() == Type::Category::ShieldedInteger
-	)
-	{
-		m_errorReporter.warning(
-			1457_error,
-			_location,
-			"Enums converted to shielded integers will leak during contract deployment."
-		);
-	}
-	else if (
-		_expression.annotation().type &&
-		_expression.annotation().type->category() == Type::Category::RationalNumber &&
-		_targetType.category() == Type::Category::ShieldedFixedBytes
-	)
-	{
-		m_errorReporter.warning(
-			9663_error,
-			_location,
-			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
-		);
 	}
 }
 
