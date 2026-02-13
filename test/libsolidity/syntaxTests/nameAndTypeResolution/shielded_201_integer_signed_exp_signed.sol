@@ -26,6 +26,7 @@ contract test {
 // Warning 3149: (221-227): The result type of the exponentiation operation is equal to the type of the first operand (suint8) ignoring the (larger) type of the second operand (sint16) which might be unexpected. Silence this warning by either converting the first or the second operand to the type of the other.
 // TypeError 9640: (216-228): Explicit type conversion not allowed from "suint8" to "sint256".
 // Warning 9660: (281-290): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (310-318): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 2271: (305-318): Built-in binary operator ** cannot be applied to types sint16 and sint256. Exponentiation power is not allowed to be a signed shielded integer type.
 // Warning 3817: (305-318): Shielded integer exponentiation will leak the exponent value through gas cost.
 // Warning 3149: (305-318): The result type of the exponentiation operation is equal to the type of the first operand (sint16) ignoring the (larger) type of the second operand (sint256) which might be unexpected. Silence this warning by either converting the first or the second operand to the type of the other.
