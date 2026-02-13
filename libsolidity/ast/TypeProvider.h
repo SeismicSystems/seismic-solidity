@@ -75,6 +75,9 @@ public:
 	static ArrayType const* bytesStorage();
 	static ArrayType const* bytesMemory();
 	static ArrayType const* bytesCalldata();
+	static ArrayType const* shieldedBytesStorage();
+	static ArrayType const* shieldedBytesMemory();
+	static ArrayType const* shieldedBytesCalldata();
 	static ArrayType const* stringStorage();
 	static ArrayType const* stringMemory();
 
@@ -237,6 +240,9 @@ private:
 	static std::unique_ptr<ArrayType> m_bytesStorage;
 	static std::unique_ptr<ArrayType> m_bytesMemory;
 	static std::unique_ptr<ArrayType> m_bytesCalldata;
+	static std::unique_ptr<ArrayType> m_shieldedBytesStorage;
+	static std::unique_ptr<ArrayType> m_shieldedBytesMemory;
+	static std::unique_ptr<ArrayType> m_shieldedBytesCalldata;
 	static std::unique_ptr<ArrayType> m_stringStorage;
 	static std::unique_ptr<ArrayType> m_stringMemory;
 
