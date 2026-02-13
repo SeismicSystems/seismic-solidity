@@ -1108,7 +1108,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				ArrayUtils(m_context).accessIndex(*arrayType, false);
 
 				if (arrayType->isByteArrayOrString())
-					setLValue<StorageByteArrayElement>(_functionCall);
+					setLValue<StorageByteArrayElement>(_functionCall, arrayType->containsShieldedType());
 				else
 					setLValueToStorageItem(_functionCall);
 			}
@@ -1147,7 +1147,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				if (!arrayType->isByteArrayOrString())
 					StorageItem(m_context, *paramType).storeValue(*type, _functionCall.location(), true);
 				else
-					StorageByteArrayElement(m_context).storeValue(*type, _functionCall.location(), true);
+					StorageByteArrayElement(m_context, arrayType->containsShieldedType()).storeValue(*type, _functionCall.location(), true);
 			}
 			break;
 		}
@@ -2294,7 +2294,7 @@ bool ExpressionCompiler::visit(IndexAccess const& _indexAccess)
 					if (arrayType.isByteArrayOrString())
 					{
 						solAssert(!arrayType.isString(), "Index access to string is not allowed.");
-						setLValue<StorageByteArrayElement>(_indexAccess);
+						setLValue<StorageByteArrayElement>(_indexAccess, arrayType.containsShieldedType());
 					}
 					else
 						setLValueToStorageItem(_indexAccess);

@@ -2180,7 +2180,10 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 					);
 				else
 					solAssert(
-						argArrayType->isByteArray() && resultType->category() == Type::Category::FixedBytes,
+						argArrayType->isByteArray() && (
+							resultType->category() == Type::Category::FixedBytes ||
+							resultType->category() == Type::Category::ShieldedFixedBytes
+						),
 						""
 					);
 			}
@@ -4538,20 +4541,30 @@ void TypeChecker::checkMsgValueToShielded(
 	if (!_targetType.isShielded() && !_targetType.containsShieldedType())
 		return;
 
-	// Check if expression is msg.value directly
+	// Check if expression is msg.value or msg.data directly
 	if (auto memberAccess = dynamic_cast<MemberAccess const*>(&_expression))
 	{
-		if (memberAccess->memberName() == "value")
+		if (auto identifier = dynamic_cast<Identifier const*>(&memberAccess->expression()))
 		{
-			if (auto identifier = dynamic_cast<Identifier const*>(&memberAccess->expression()))
+			if (identifier->name() == "msg")
 			{
-				if (identifier->name() == "msg")
+				if (memberAccess->memberName() == "value")
 				{
 					m_errorReporter.warning(
 						9664_error,
 						memberAccess->location(),
 						"msg.value is always publicly visible on-chain. "
 						"Assigning it to a shielded type does not hide the transaction value from observers."
+					);
+					return;
+				}
+				if (memberAccess->memberName() == "data")
+				{
+					m_errorReporter.warning(
+						9666_error,
+						memberAccess->location(),
+						"msg.data is publicly visible on-chain for non-seismic transactions. "
+						"Assigning it to a shielded type does not hide the calldata from observers unless the call originates as a seismic transaction."
 					);
 					return;
 				}

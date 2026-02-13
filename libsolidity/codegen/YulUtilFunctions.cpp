@@ -1428,7 +1428,9 @@ std::string YulUtilFunctions::cleanUpStorageArrayEndFunction(ArrayType const& _t
 		)")
 		("convertToSize", arrayConvertLengthToSize(_type))
 		("dataPosition", arrayDataAreaFunction(_type))
-		("clearStorageRange", clearStorageRangeFunction(*_type.baseType()))
+		("clearStorageRange", clearStorageRangeFunction(
+			_type.baseType()->isShielded() ? *TypeProvider::shieldedUint256() : *_type.baseType()
+		))
 		("packed", _type.baseType()->storageBytes() <= 16)
 		("itemsPerSlot", std::to_string(32 / _type.baseType()->storageBytes()))
 		("storageBytes", std::to_string(_type.baseType()->storageBytes()))
@@ -1481,7 +1483,9 @@ std::string YulUtilFunctions::cleanUpDynamicByteArrayEndSlotsFunction(ArrayType 
 		)")
 		("dataLocation", arrayDataAreaFunction(_type))
 		("div32Ceil", divide32CeilFunction())
-		("clearStorageRange", clearStorageRangeFunction(*_type.baseType()))
+		("clearStorageRange", clearStorageRangeFunction(
+			_type.baseType()->isShielded() ? *TypeProvider::shieldedUint256() : *_type.baseType()
+		))
 		.render();
 	});
 }
@@ -1521,7 +1525,9 @@ std::string YulUtilFunctions::decreaseByteArraySizeFunction(ArrayType const& _ty
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("partialClearStorageSlot", partialClearStorageSlotFunction(_type))
-			("clearStorageRange", clearStorageRangeFunction(*_type.baseType()))
+			("clearStorageRange", clearStorageRangeFunction(
+				_type.baseType()->isShielded() ? *TypeProvider::shieldedUint256() : *_type.baseType()
+			))
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("div32Ceil", divide32CeilFunction())
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
@@ -2455,7 +2461,12 @@ std::string YulUtilFunctions::storageArrayIndexAccessFunction(ArrayType const& _
 		("arrayLen", arrayLengthFunction(_type))
 		("dataAreaFunc", arrayDataAreaFunction(_type))
 		("indexAccessNoChecks", longByteArrayStorageIndexAccessNoCheckFunction())
-		("multipleItemsPerSlot", _type.baseType()->storageBytes() <= 16)
+		// sbytes (shielded byte arrays) have baseType() == sbytes1 with storageBytes() == 32,
+		// but they use the same packed byte-array storage layout as regular bytes/string
+		// (multiple bytes per slot). Without this check, sbytes would incorrectly take the
+		// one-item-per-slot path. Regular bytes/string already match via storageBytes() <= 16
+		// since their baseType (bytes1) has storageBytes() == 1.
+		("multipleItemsPerSlot", _type.baseType()->storageBytes() <= 16 || (_type.isByteArray() && _type.baseType()->isShielded()))
 		("isBytesArray", _type.isByteArrayOrString())
 		("storageSize", _type.baseType()->storageSize().str())
 		("storageBytes", toString(_type.baseType()->storageBytes()))

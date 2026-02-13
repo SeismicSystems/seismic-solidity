@@ -194,7 +194,7 @@ class StorageByteArrayElement: public LValue
 {
 public:
 	/// Constructs the LValue and assumes that the storage reference is already on the stack.
-	StorageByteArrayElement(CompilerContext& _compilerContext);
+	StorageByteArrayElement(CompilerContext& _compilerContext, bool _isShielded);
 	unsigned sizeOnStack() const override { return 2; }
 	void retrieveValue(langutil::SourceLocation const& _location, bool _remove = false) const override;
 	void storeValue(
@@ -206,6 +206,8 @@ public:
 		langutil::SourceLocation const& _location = {},
 		bool _removeReference = true
 	) const override;
+private:
+	bool m_isShielded = false;
 };
 
 /**
