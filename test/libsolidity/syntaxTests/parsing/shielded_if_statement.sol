@@ -4,7 +4,8 @@ contract test {
     }
 }
 // ----
-// Warning 9660: (117-135): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (86-94): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (127-135): Literals converted to shielded integers will leak during contract deployment.
 // Warning 6321: (61-65): Unnamed return variable can remain unassigned. Add an explicit return with value to all non-reverting code paths or name the variable.
 // Warning 2072: (117-124): Unused local variable.
 // Warning 2018: (20-144): Function state mutability can be restricted to pure

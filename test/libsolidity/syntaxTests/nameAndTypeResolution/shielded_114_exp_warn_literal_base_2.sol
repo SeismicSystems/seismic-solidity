@@ -5,5 +5,6 @@ contract test {
     }
 }
 // ----
-// Warning 9660: (69-91): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (80-91): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (113-123): Literals converted to shielded integers will leak during contract deployment.
 // Warning 3817: (113-126): Shielded integer exponentiation will leak the exponent value through gas cost.

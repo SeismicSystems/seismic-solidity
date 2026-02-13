@@ -33,7 +33,14 @@ contract C {
 }
 // ----
 // TypeError 7492: (134-141): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// Warning 9663: (160-173): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // TypeError 7492: (237-245): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// Warning 9663: (264-308): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // TypeError 7492: (372-380): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// Warning 9663: (399-475): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // TypeError 7492: (599-606): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// Warning 9663: (625-638): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // TypeError 7492: (698-706): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// Warning 9663: (725-801): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 9663: (926-1002): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 9663: (1124-1200): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
