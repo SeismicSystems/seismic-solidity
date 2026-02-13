@@ -7,6 +7,6 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (73-95): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (86-95): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 7407: (120-123): Type suint8 is not implicitly convertible to expected type uint256.
 // TypeError 5910: (120-123): Shielded types are not allowed as array indices.

@@ -33,5 +33,9 @@ contract TestTernary
     }
 }
 // ----
-// Warning 9660: (113-138): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (148-171): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (127-138): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (161-171): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (591-602): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (617-627): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (876-887): Literals converted to shielded integers will leak during contract deployment.
+// Warning 9660: (906-916): Literals converted to shielded integers will leak during contract deployment.

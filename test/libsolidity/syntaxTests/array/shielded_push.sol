@@ -7,3 +7,5 @@ contract c {
         data.push(suint(3));
     }
 }
+// ----
+// Warning 9660: (148-156): Literals converted to shielded integers will leak during contract deployment.
