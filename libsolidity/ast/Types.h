@@ -959,6 +959,11 @@ public:
 	/// Constructor for a byte array ("bytes") and string.
 	explicit ArrayType(DataLocation _location, bool _isString = false);
 
+	/// Tag type for constructing shielded byte arrays.
+	struct ShieldedByteArrayTag {};
+	/// Constructor for a shielded byte array ("sbytes").
+	ArrayType(DataLocation _location, ShieldedByteArrayTag);
+
 	/// Constructor for a dynamically sized array type ("<type>[]")
 	ArrayType(DataLocation _location, Type const* _baseType):
 		ReferenceType(_location),
@@ -1001,9 +1006,12 @@ public:
 
 	BoolResult validForLocation(DataLocation _loc) const override;
 
-	/// @returns true if this is a byte array.
+	/// @returns true if this is a byte array (bytes or sbytes).
+	/// NOTE: Shielded byte arrays (sbytes) have baseType() == shieldedByte().
+	/// Use baseType()->isShielded() to distinguish sbytes from bytes.
 	bool isByteArray() const { return m_arrayKind == ArrayKind::Bytes; }
-	/// @returns true if this is a byte array or a string
+	/// @returns true if this is a byte array or a string (bytes, sbytes, or string).
+	/// @see isByteArray() for the shielded-type note.
 	bool isByteArrayOrString() const { return m_arrayKind != ArrayKind::Ordinary; }
 	/// @returns true if this is a string
 	bool isString() const { return m_arrayKind == ArrayKind::String; }
