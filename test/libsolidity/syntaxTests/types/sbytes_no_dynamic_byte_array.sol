@@ -1,6 +1,6 @@
-// Byte array helpers (resize, push, pop, transitLongToShort) only apply to
-// bytes/string. There is no shielded dynamic bytes type. sbytesN is a
-// fixed-size value type that does not route through byte array helpers.
+// Byte array helpers (resize, push, pop, transitLongToShort) apply to
+// bytes/string and sbytes. sbytesN is a fixed-size value type that does
+// not route through byte array helpers.
 contract C {
     bytes public b;
     string public s;
@@ -31,4 +31,4 @@ contract C {
     }
 }
 // ----
-// Warning 9663: (880-956): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 9663: (845-921): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
