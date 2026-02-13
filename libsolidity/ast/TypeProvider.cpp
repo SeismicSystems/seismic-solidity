@@ -34,6 +34,9 @@ InaccessibleDynamicType const TypeProvider::m_inaccessibleDynamic{};
 std::unique_ptr<ArrayType> TypeProvider::m_bytesStorage;
 std::unique_ptr<ArrayType> TypeProvider::m_bytesMemory;
 std::unique_ptr<ArrayType> TypeProvider::m_bytesCalldata;
+std::unique_ptr<ArrayType> TypeProvider::m_shieldedBytesStorage;
+std::unique_ptr<ArrayType> TypeProvider::m_shieldedBytesMemory;
+std::unique_ptr<ArrayType> TypeProvider::m_shieldedBytesCalldata;
 std::unique_ptr<ArrayType> TypeProvider::m_stringStorage;
 std::unique_ptr<ArrayType> TypeProvider::m_stringMemory;
 
@@ -291,6 +294,9 @@ void TypeProvider::reset()
 	clearCache(m_bytesStorage);
 	clearCache(m_bytesMemory);
 	clearCache(m_bytesCalldata);
+	clearCache(m_shieldedBytesStorage);
+	clearCache(m_shieldedBytesMemory);
+	clearCache(m_shieldedBytesCalldata);
 	clearCache(m_stringStorage);
 	clearCache(m_stringMemory);
 	clearCache(m_emptyTuple);
@@ -384,6 +390,8 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		return shieldedBoolean();
 	case Token::Bytes:
 		return bytesStorage();
+	case Token::SBytes:
+		return shieldedBytesStorage();
 	case Token::String:
 		return stringStorage();
 	default:
@@ -482,6 +490,27 @@ ArrayType const* TypeProvider::stringMemory()
 	if (!m_stringMemory)
 		m_stringMemory = std::make_unique<ArrayType>(DataLocation::Memory, true);
 	return m_stringMemory.get();
+}
+
+ArrayType const* TypeProvider::shieldedBytesStorage()
+{
+	if (!m_shieldedBytesStorage)
+		m_shieldedBytesStorage = std::make_unique<ArrayType>(DataLocation::Storage, ArrayType::ShieldedByteArrayTag{});
+	return m_shieldedBytesStorage.get();
+}
+
+ArrayType const* TypeProvider::shieldedBytesMemory()
+{
+	if (!m_shieldedBytesMemory)
+		m_shieldedBytesMemory = std::make_unique<ArrayType>(DataLocation::Memory, ArrayType::ShieldedByteArrayTag{});
+	return m_shieldedBytesMemory.get();
+}
+
+ArrayType const* TypeProvider::shieldedBytesCalldata()
+{
+	if (!m_shieldedBytesCalldata)
+		m_shieldedBytesCalldata = std::make_unique<ArrayType>(DataLocation::CallData, ArrayType::ShieldedByteArrayTag{});
+	return m_shieldedBytesCalldata.get();
 }
 
 Type const* TypeProvider::forLiteral(Literal const& _literal)
