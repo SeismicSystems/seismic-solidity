@@ -8,3 +8,5 @@ contract test {
     suint64 b;
 }
 // ----
+// Warning 1457: (108-142): Enums converted to shielded integers will leak during contract deployment.
+// Warning 1457: (156-182): Enums converted to shielded integers will leak during contract deployment.
