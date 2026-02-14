@@ -430,7 +430,7 @@ std::optional<Json> checkAuxiliaryInputKeys(Json const& _input)
 
 std::optional<Json> checkSettingsKeys(Json const& _input)
 {
-	static std::set<std::string> keys{"debug", "evmVersion", "eofVersion", "libraries", "metadata", "modelChecker", "optimizer", "outputSelection", "remappings", "stopAfter", "viaIR"};
+	static std::set<std::string> keys{"debug", "evmVersion", "eofVersion", "libraries", "metadata", "modelChecker", "optimizer", "outputSelection", "remappings", "stopAfter", "unsafeViaIR", "viaIR"};
 	return checkKeys(_input, keys, "settings");
 }
 
@@ -814,13 +814,21 @@ std::variant<StandardCompiler::InputsAndSettings, Json> StandardCompiler::parseI
 		ret.stopAfter = CompilerStack::State::Parsed;
 	}
 
+	bool unsafeViaIR = false;
+	if (settings.contains("unsafeViaIR"))
+	{
+		if (!settings["unsafeViaIR"].is_boolean())
+			return formatFatalError(Error::Type::JSONError, "\"settings.unsafeViaIR\" must be a Boolean.");
+		unsafeViaIR = settings["unsafeViaIR"].get<bool>();
+	}
+
 	if (settings.contains("viaIR"))
 	{
 		if (!settings["viaIR"].is_boolean())
 			return formatFatalError(Error::Type::JSONError, "\"settings.viaIR\" must be a Boolean.");
 		ret.viaIR = settings["viaIR"].get<bool>();
-		if (ret.viaIR)
-			return formatFatalError(Error::Type::JSONError, "The via-IR pipeline is not currently supported. Support for via-IR is planned for a future release.");
+		if (ret.viaIR && !unsafeViaIR)
+			return formatFatalError(Error::Type::JSONError, "The via-IR pipeline is not currently supported. Use \"unsafeViaIR\": true to bypass this check (experimental).");
 	}
 
 	if (settings.contains("evmVersion"))

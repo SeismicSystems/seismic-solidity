@@ -785,7 +785,7 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		else
 			solUnimplemented("Unary operator not yet implemented");
 	}
-	else if (resultType.category() == Type::Category::FixedBytes)
+	else if (resultType.category() == Type::Category::FixedBytes || resultType.category() == Type::Category::ShieldedFixedBytes)
 	{
 		solAssert(op == Token::BitNot, "Only bitwise negation is allowed for FixedBytes");
 		solAssert(resultType == type(_unaryOperation.subExpression()), "Result type doesn't match!");
@@ -1840,6 +1840,11 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 	case Type::Category::Integer:
 	{
 		solAssert(false, "Invalid member access to integer");
+		break;
+	}
+	case Type::Category::ShieldedInteger:
+	{
+		solAssert(false, "Invalid member access to shielded integer");
 		break;
 	}
 	case Type::Category::Address:
@@ -3081,7 +3086,9 @@ std::string IRGeneratorForStatements::binaryOperation(
 	{
 		solAssert(
 			_type.category() == Type::Category::Integer ||
-			_type.category() == Type::Category::FixedBytes,
+			_type.category() == Type::Category::ShieldedInteger ||
+			_type.category() == Type::Category::FixedBytes ||
+			_type.category() == Type::Category::ShieldedFixedBytes,
 			""
 		);
 		switch (_operator)
@@ -3223,7 +3230,12 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 
 					if (_memory.byteArrayElement)
 					{
-						solAssert(_lvalue.type == *TypeProvider::byte());
+						// For byte arrays, accept both bytes1 and sbytes1
+						solAssert(
+							_lvalue.type == *TypeProvider::byte() ||
+							_lvalue.type == *TypeProvider::shieldedFixedBytes(1),
+							"Invalid byte array element type"
+						);
 						appendCode() << "mstore8(" + _memory.address + ", byte(0, " + prepared.commaSeparatedList() + "))\n";
 					}
 					else
