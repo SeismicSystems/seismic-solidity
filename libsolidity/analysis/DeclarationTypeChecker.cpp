@@ -508,6 +508,13 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 						"Initialization of transient storage state variables is not supported."
 					);
 
+				if (_variable.typeName().annotation().type->isShielded() || _variable.typeName().annotation().type->containsShieldedType())
+					m_errorReporter.declarationError(
+						9826_error,
+						_variable.location(),
+						"Shielded types cannot be used with transient storage."
+					);
+
 				typeLoc = DataLocation::Transient;
 				break;
 			default:
@@ -546,7 +553,11 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 		bool isPointer = !_variable.isStateVariable();
 		type = TypeProvider::withLocation(ref, typeLoc, isPointer);
 	}
-	if ( (_variable.isConstant() || _variable.immutable()) && (type->isShielded()))
+	bool hasShieldedContent = type->isShielded();
+	if (!hasShieldedContent)
+		if (auto const* arrayType = dynamic_cast<ArrayType const*>(type))
+			hasShieldedContent = arrayType->baseType()->isShielded();
+	if ((_variable.isConstant() || _variable.immutable()) && hasShieldedContent)
 		m_errorReporter.declarationError(7491_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
 
 	if (_variable.isConstant() && !type->isValueType())

@@ -149,6 +149,8 @@ private:
 	bool visit(Conditional const& _conditional) override;
 	bool visit(Assignment const& _assignment) override;
 	bool visit(TupleExpression const& _tuple) override;
+	bool visit(Block const& _block) override;
+	void endVisit(Block const& _block) override;
 	void endVisit(BinaryOperation const& _operation) override;
 	bool visit(UnaryOperation const& _operation) override;
 	bool visit(FunctionCall const& _functionCall) override;
@@ -174,12 +176,11 @@ private:
 		langutil::SourceLocation const& _location
 	);
 
-	/// Recursively checks if an expression contains literals being converted to shielded types.
-	/// Handles direct conversions, struct constructors, and other complex initializers.
-	void checkShieldedLiteralWarning(
+	/// Checks if msg.value is being assigned to a shielded type and emits a warning,
+	/// since msg.value is always publicly visible on-chain.
+	void checkMsgValueToShielded(
 		Expression const& _expression,
-		Type const& _targetType,
-		langutil::SourceLocation const& _location
+		Type const& _targetType
 	);
 
 	/// @returns the referenced declaration and throws on error.
@@ -214,6 +215,8 @@ private:
 
 	SourceUnit const* m_currentSourceUnit = nullptr;
 	ContractDefinition const* m_currentContract = nullptr;
+	/// Tracks nesting depth of unchecked blocks
+	unsigned m_insideUncheckedBlock = 0;
 
 	langutil::EVMVersion m_evmVersion;
 	std::optional<uint8_t> m_eofVersion;
