@@ -49,6 +49,7 @@ static std::string const g_strEVM = "evm";
 static std::string const g_strEVMVersion = "evm-version";
 static std::string const g_strEOFVersion = "experimental-eof-version";
 static std::string const g_strViaIR = "via-ir";
+static std::string const g_strUnsafeViaIR = "unsafe-via-ir";
 static std::string const g_strExperimentalViaIR = "experimental-via-ir";
 static std::string const g_strGas = "gas";
 static std::string const g_strHelp = "help";
@@ -641,6 +642,10 @@ General Information)").c_str(),
 		(
 			g_strViaIR.c_str(),
 			"Turn on compilation mode via the IR."
+		)
+		(
+			g_strUnsafeViaIR.c_str(),
+			"Allow via-IR pipeline (experimental, shielded type support incomplete)."
 		)
 		(
 			g_strRevertStrings.c_str(),
@@ -1487,10 +1492,10 @@ void CommandLineParser::processArgs()
 		m_args.count(g_strModelCheckerTimeout);
 	m_options.output.viaIR = (m_args.count(g_strExperimentalViaIR) > 0 || m_args.count(g_strViaIR) > 0);
 
-	if (m_options.output.viaIR)
+	if (m_options.output.viaIR && !(m_args.count(g_strUnsafeViaIR) > 0))
 		solThrow(
 			CommandLineValidationError,
-			"The --via-ir pipeline is not currently supported. Support for --via-ir is planned for a future release."
+			"The --via-ir pipeline is not currently supported. Use --unsafe-via-ir to bypass this check (experimental)."
 		);
 
 	solAssert(
