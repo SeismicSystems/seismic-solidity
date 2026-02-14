@@ -1827,6 +1827,16 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		solAssert(false, "Invalid member access to integer");
 		break;
 	}
+	case Type::Category::ShieldedInteger:
+	{
+		solAssert(false, "Invalid member access to shielded integer");
+		break;
+	}
+	case Type::Category::ShieldedBool:
+	{
+		solAssert(false, "Invalid member access to shielded bool");
+		break;
+	}
 	case Type::Category::ShieldedAddress:
 		if (member == "code")
 		{
