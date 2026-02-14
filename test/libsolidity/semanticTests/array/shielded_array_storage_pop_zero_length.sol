@@ -5,7 +5,7 @@ contract C {
     }
 }
 // ====
-// EVMVersion: >=petersburg
+// EVMVersion: >=mercury
 // ----
 // popEmpty() -> FAILURE, hex"4e487b71", 0x31
 
