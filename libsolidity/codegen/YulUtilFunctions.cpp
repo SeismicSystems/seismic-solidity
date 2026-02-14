@@ -408,6 +408,7 @@ std::string YulUtilFunctions::leftAlignFunction(Type const& _type)
 			solAssert(false, "Left align requested for non-value type.");
 			break;
 		case Type::Category::FixedBytes:
+		case Type::Category::ShieldedFixedBytes:
 			templ("body", "aligned := value");
 			break;
 		case Type::Category::Contract:
@@ -555,7 +556,7 @@ std::string YulUtilFunctions::shiftRightSignedFunctionDynamic()
 std::string YulUtilFunctions::typedShiftLeftFunction(Type const& _type, Type const& _amountType)
 {
 	solUnimplementedAssert(_type.category() != Type::Category::FixedPoint, "Not yet implemented - FixedPointType.");
-	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::Integer|| _type.category() == Type::Category::ShieldedInteger, "");
+	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::ShieldedFixedBytes || _type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	solAssert(_amountType.category() == Type::Category::Integer|| _amountType.category() == Type::Category::ShieldedInteger , "");
 	solAssert(!dynamic_cast<IntegerType const&>(_amountType).isSigned(), "");
 	std::string const functionName = "shift_left_" + _type.identifier() + "_" + _amountType.identifier();
@@ -578,7 +579,7 @@ std::string YulUtilFunctions::typedShiftLeftFunction(Type const& _type, Type con
 std::string YulUtilFunctions::typedShiftRightFunction(Type const& _type, Type const& _amountType)
 {
 	solUnimplementedAssert(_type.category() != Type::Category::FixedPoint, "Not yet implemented - FixedPointType.");
-	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
+	solAssert(_type.category() == Type::Category::FixedBytes || _type.category() == Type::Category::ShieldedFixedBytes || _type.category() == Type::Category::Integer || _type.category() == Type::Category::ShieldedInteger, "");
 	solAssert(_amountType.category() == Type::Category::Integer|| _amountType.category() == Type::Category::ShieldedInteger, "");
 	solAssert(!dynamic_cast<IntegerType const&>(_amountType).isSigned(), "");
 	IntegerType const* integerType = dynamic_cast<IntegerType const*>(&_type);
@@ -1902,8 +1903,6 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 
 	std::string functionName = "clear_struct_storage_" + _type.identifier();
 
-	bool isShielded = _type.containsShieldedType();
-
 	return m_functionCollector.createFunction(functionName, [&] {
 		MemberList::MemberMap structMembers = _type.nativeMembers(nullptr);
 		std::vector<std::map<std::string, std::string>> memberSetValues;
@@ -1915,13 +1914,21 @@ std::string YulUtilFunctions::clearStorageStructFunction(StructType const& _type
 				continue;
 			if (member.type->storageBytes() < 32)
 			{
+				// All shielded types have storageBytes() == 32, so only non-shielded
+				// types can reach this branch. Use sstore accordingly. If a future
+				// shielded type with storageBytes() < 32 is introduced, this assert
+				// will catch it so the opcode selection can be updated.
+				solAssert(
+					!member.type->isShielded(),
+					"Shielded type with storageBytes() < 32 requires cstore, not sstore"
+				);
 				auto const& slotDiff = _type.storageOffsetsOfMember(member.name).first;
 				if (!slotsCleared.count(slotDiff))
 				{
 					memberSetValues.emplace_back().emplace("clearMember", Whiskers(R"(
 						<storeOpcode>(add(slot, <memberSlotDiff>), 0)
 					)")
-					("storeOpcode", isShielded ? "cstore" : "sstore")
+					("storeOpcode", "sstore")
 					("memberSlotDiff", slotDiff.str())
 					.render()
 				);
@@ -2971,6 +2978,11 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			solAssert(_toType.storageBytes() <= 32, "Invalid storage bytes size.");
 			solAssert(_toType.storageBytes() > 0, "Invalid storage bytes size.");
 
+			// For ShieldedFixedBytesType in packed storage, use numBytes() instead of storageBytes()
+			unsigned byteSize = _toType.storageBytes();
+			if (ShieldedFixedBytesType const* shieldedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(&_toType))
+				byteSize = shieldedBytesType->numBytes();
+
 			return Whiskers(R"(
 				function <functionName>(slot, <offset><fromValues>) {
 					let <toValues> := <convert>(<fromValues>)
@@ -2981,8 +2993,8 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("functionName", functionName)
 			("update",
 				_offset.has_value() ?
-					updateByteSliceFunction(_toType.storageBytes(), *_offset) :
-					updateByteSliceFunctionDynamic(_toType.storageBytes())
+					updateByteSliceFunction(byteSize, *_offset) :
+					updateByteSliceFunctionDynamic(byteSize)
 			)
 			("offset", _offset.has_value() ? "" : "offset, ")
 			("convert", conversionFunction(_fromType, _toType))
@@ -3174,6 +3186,14 @@ std::string YulUtilFunctions::cleanupFromStorageFunction(Type const& _type)
 		if (_type.category() == Type::Category::UserDefinedValueType)
 			encodingType = _type.encodingType();
 		unsigned storageBytes = encodingType->storageBytes();
+
+		// For ShieldedFixedBytesType in packed storage (e.g., sbytes dynamic arrays),
+		// use numBytes() instead of storageBytes() to get the actual byte count.
+		// storageBytes() returns 32 for all shielded types (due to cload/cstore),
+		// but when extracted from packed storage, they need to be treated by their actual size.
+		if (ShieldedFixedBytesType const* shieldedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(encodingType))
+			storageBytes = shieldedBytesType->numBytes();
+
 		if (IntegerType const* intType = dynamic_cast<IntegerType const*>(encodingType))
 			if (intType->isSigned() && storageBytes != 32)
 			{
@@ -3220,7 +3240,14 @@ std::string YulUtilFunctions::prepareStoreFunction(Type const& _type)
 			)");
 			templ("functionName", functionName);
 			if (_type.leftAligned())
-				templ("actualPrepare", shiftRightFunction(256 - 8 * _type.storageBytes()) + "(value)");
+			{
+				// For ShieldedFixedBytesType, use numBytes() instead of storageBytes()
+				// to get the actual byte count for proper shift calculation.
+				unsigned shiftBytes = _type.storageBytes();
+				if (ShieldedFixedBytesType const* shieldedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(&_type))
+					shiftBytes = shieldedBytesType->numBytes();
+				templ("actualPrepare", shiftRightFunction(256 - 8 * shiftBytes) + "(value)");
+			}
 			else
 				templ("actualPrepare", "value");
 			return templ.render();
@@ -3655,6 +3682,16 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 					Whiskers("converted := <convert>(value)")
 						("convert", conversionFunction(_from, IntegerType(160)))
 						.render();
+			else if (toCategory == Type::Category::ShieldedFixedBytes)
+			{
+				// FixedBytes to ShieldedFixedBytes (same size)
+				ShieldedFixedBytesType const& to = dynamic_cast<ShieldedFixedBytesType const&>(_to);
+				solAssert(from.numBytes() == to.numBytes(), "Invalid conversion between bytes and sbytes of different sizes.");
+				body =
+					Whiskers("converted := <clean>(value)")
+					("clean", cleanupFunction(to))
+					.render();
+			}
 			else
 			{
 				solAssert(toCategory == Type::Category::FixedBytes, "Invalid type conversion requested.");
