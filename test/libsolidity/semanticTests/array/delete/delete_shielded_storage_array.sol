@@ -6,20 +6,20 @@ contract C {
         data.push(suint(123));
         delete data;
         assembly {
-            ret := sload(data.slot)
+            ret := cload(data.slot)
         }
     }
 
     function val() public returns (uint ret) {
         assembly {
-            sstore(0, 2)
+            cstore(0, 2)
             mstore(0, 0)
             cstore(keccak256(0, 32), 234)
             cstore(add(keccak256(0, 32), 1), 123)
         }
 
-        assert(data[0] == suint(234));
-        assert(data[1] == suint(123));
+        assert(bool(data[0] == suint(234)));
+        assert(bool(data[1] == suint(123)));
 
         delete data;
 

@@ -543,7 +543,7 @@ TypeResult AddressType::binaryOperatorResult(Token _operator, Type const* _other
 
 bool AddressType::operator==(Type const& _other) const
 {
-	if (_other.category() != Category::Address && _other.category() != Category::ShieldedAddress)
+	if (_other.category() != category())
 		return false;
 	AddressType const& other = dynamic_cast<AddressType const&>(_other);
 	return other.m_stateMutability == m_stateMutability;
@@ -567,6 +567,16 @@ MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 		members.emplace_back(MemberList::Member{"transfer", TypeProvider::function(strings{"uint"}, strings(), FunctionType::Kind::Transfer, StateMutability::NonPayable)});
 	}
 	return members;
+}
+
+MemberList::MemberMap ShieldedAddressType::nativeMembers(ASTNode const*) const
+{
+	// Only code and codehash are allowed on shielded addresses.
+	// For balance, call, delegatecall, staticcall, send, transfer: cast to address first.
+	return MemberList::MemberMap{
+		{"code", TypeProvider::array(DataLocation::Memory)},
+		{"codehash", TypeProvider::fixedBytes(32)}
+	};
 }
 
 std::string ShieldedAddressType::richIdentifier() const
@@ -1210,10 +1220,13 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 
 		// Shift and exp are not symmetric, so it does not make sense to swap
 		// the types as below. As an exception, we always use uint here.
+		bool otherIsShielded = _other->category() == Category::ShieldedInteger;
 		if (TokenTraits::isShiftOp(_operator))
 		{
 			if (!isValidShiftAndAmountType(_operator, *_other))
 				return nullptr;
+			if (otherIsShielded)
+				return isNegative() ? TypeProvider::shieldedInt256() : TypeProvider::shieldedUint256();
 			return isNegative() ? TypeProvider::int256() : TypeProvider::uint256();
 		}
 		else if (Token::Exp == _operator)
@@ -1231,6 +1244,8 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 			else if (dynamic_cast<FixedPointType const*>(_other))
 				return TypeResult::err("Exponent is fractional.");
 
+			if (otherIsShielded)
+				return isNegative() ? TypeProvider::shieldedInt256() : TypeProvider::shieldedUint256();
 			return isNegative() ? TypeProvider::int256() : TypeProvider::uint256();
 		}
 		else
@@ -1414,6 +1429,8 @@ BoolResult StringLiteralType::isImplicitlyConvertibleTo(Type const& _convertTo) 
 {
 	if (auto fixedBytes = dynamic_cast<FixedBytesType const*>(&_convertTo))
 	{
+		if (dynamic_cast<ShieldedFixedBytesType const*>(&_convertTo))
+			return false;
 		if (static_cast<size_t>(fixedBytes->numBytes()) < m_value.size())
 			return BoolResult::err("Literal is larger than the type.");
 		return true;
@@ -1434,6 +1451,17 @@ BoolResult StringLiteralType::isImplicitlyConvertibleTo(Type const& _convertTo) 
 	}
 	else
 		return false;
+}
+
+BoolResult StringLiteralType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (auto fixedBytes = dynamic_cast<FixedBytesType const*>(&_convertTo))
+	{
+		if (static_cast<size_t>(fixedBytes->numBytes()) < m_value.size())
+			return BoolResult::err("Literal is larger than the type.");
+		return true;
+	}
+	return isImplicitlyConvertibleTo(_convertTo);
 }
 
 std::string StringLiteralType::richIdentifier() const
@@ -1824,6 +1852,13 @@ ArrayType::ArrayType(DataLocation _location, bool _isString):
 {
 }
 
+ArrayType::ArrayType(DataLocation _location, ShieldedByteArrayTag):
+	ReferenceType(_location),
+	m_arrayKind(ArrayKind::Bytes),
+	m_baseType{TypeProvider::shieldedByte()}
+{
+}
+
 void ArrayType::clearCache() const
 {
 	Type::clearCache();
@@ -1876,9 +1911,18 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
 		return true;
-	// allow conversion bytes <-> std::string and bytes -> bytesNN
+	// allow: bytes -> bytesNN, sbytes -> sbytesNN, sbytes <-> bytes
+	// block: sbytes -> bytesNN, bytes -> sbytesNN (cross-shielding)
 	if (_convertTo.category() != category())
-		return isByteArray() && _convertTo.category() == Type::Category::FixedBytes;
+	{
+		if (!isByteArray())
+			return false;
+		if (_convertTo.category() == Type::Category::FixedBytes)
+			return !baseType()->isShielded();
+		if (_convertTo.category() == Type::Category::ShieldedFixedBytes)
+			return baseType()->isShielded();
+		return false;
+	}
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);
 	if (convertTo.location() != location())
 		return false;
@@ -1892,6 +1936,8 @@ std::string ArrayType::richIdentifier() const
 	std::string id;
 	if (isString())
 		id = "t_string";
+	else if (isByteArray() && baseType()->isShielded())
+		id = "t_sbytes";
 	else if (isByteArrayOrString())
 		id = "t_bytes";
 	else
@@ -2068,6 +2114,8 @@ std::string ArrayType::toString(bool _withoutDataLocation) const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -2087,6 +2135,8 @@ std::string ArrayType::humanReadableName() const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -2105,6 +2155,8 @@ std::string ArrayType::canonicalName() const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -2137,7 +2189,10 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 	MemberList::MemberMap members;
 	if (!isString())
 	{
-		members.emplace_back("length", TypeProvider::uint256());
+		if (isDynamicallySized() && containsShieldedType())
+			members.emplace_back("length", TypeProvider::shieldedUint256());
+		else
+			members.emplace_back("length", TypeProvider::uint256());
 		if (isDynamicallySized() && location() == DataLocation::Storage)
 		{
 			Type const* thisAsPointer = TypeProvider::withLocation(this, location(), true);
@@ -2911,6 +2966,22 @@ Type const& UserDefinedValueType::underlyingType() const
 	solAssert(type, "");
 	solAssert(type->category() != Category::UserDefinedValueType, "");
 	return *type;
+}
+
+bool UserDefinedValueType::isShielded() const
+{
+	Type const* type = m_definition.underlyingType()->annotation().type;
+	if (!type)
+		return false;
+	return type->isShielded();
+}
+
+bool UserDefinedValueType::containsShieldedType() const
+{
+	Type const* type = m_definition.underlyingType()->annotation().type;
+	if (!type)
+		return false;
+	return type->containsShieldedType();
 }
 
 Declaration const* UserDefinedValueType::typeDefinition() const

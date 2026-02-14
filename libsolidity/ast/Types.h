@@ -506,6 +506,10 @@ public:
 	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 
+	/// Only code and codehash are allowed on shielded addresses.
+	/// For other members, cast to address first.
+	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
+
 	StateMutability stateMutability(void) const { return AddressType::stateMutability(); }
 };
 
@@ -723,6 +727,7 @@ public:
 	Category category() const override { return Category::StringLiteral; }
 
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult binaryOperatorResult(Token, Type const*) const override
 	{
 		return nullptr;
@@ -955,6 +960,11 @@ public:
 	/// Constructor for a byte array ("bytes") and string.
 	explicit ArrayType(DataLocation _location, bool _isString = false);
 
+	/// Tag type for constructing shielded byte arrays.
+	struct ShieldedByteArrayTag {};
+	/// Constructor for a shielded byte array ("sbytes").
+	ArrayType(DataLocation _location, ShieldedByteArrayTag);
+
 	/// Constructor for a dynamically sized array type ("<type>[]")
 	ArrayType(DataLocation _location, Type const* _baseType):
 		ReferenceType(_location),
@@ -997,9 +1007,12 @@ public:
 
 	BoolResult validForLocation(DataLocation _loc) const override;
 
-	/// @returns true if this is a byte array.
+	/// @returns true if this is a byte array (bytes or sbytes).
+	/// NOTE: Shielded byte arrays (sbytes) have baseType() == shieldedByte().
+	/// Use baseType()->isShielded() to distinguish sbytes from bytes.
 	bool isByteArray() const { return m_arrayKind == ArrayKind::Bytes; }
-	/// @returns true if this is a byte array or a string
+	/// @returns true if this is a byte array or a string (bytes, sbytes, or string).
+	/// @see isByteArray() for the shielded-type note.
 	bool isByteArrayOrString() const { return m_arrayKind != ArrayKind::Ordinary; }
 	/// @returns true if this is a string
 	bool isString() const { return m_arrayKind == ArrayKind::String; }
@@ -1284,6 +1297,8 @@ public:
 	unsigned storageBytes() const override { return underlyingType().storageBytes(); }
 
 	bool isValueType() const override { return true; }
+	bool isShielded() const override;
+	bool containsShieldedType() const override;
 	bool nameable() const override
 	{
 		solAssert(underlyingType().nameable(), "");

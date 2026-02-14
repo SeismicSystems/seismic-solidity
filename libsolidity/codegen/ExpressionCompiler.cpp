@@ -1108,7 +1108,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				ArrayUtils(m_context).accessIndex(*arrayType, false);
 
 				if (arrayType->isByteArrayOrString())
-					setLValue<StorageByteArrayElement>(_functionCall);
+					setLValue<StorageByteArrayElement>(_functionCall, arrayType->containsShieldedType());
 				else
 					setLValueToStorageItem(_functionCall);
 			}
@@ -1147,7 +1147,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				if (!arrayType->isByteArrayOrString())
 					StorageItem(m_context, *paramType).storeValue(*type, _functionCall.location(), true);
 				else
-					StorageByteArrayElement(m_context).storeValue(*type, _functionCall.location(), true);
+					StorageByteArrayElement(m_context, arrayType->containsShieldedType()).storeValue(*type, _functionCall.location(), true);
 			}
 			break;
 		}
@@ -1827,6 +1827,16 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		solAssert(false, "Invalid member access to integer");
 		break;
 	}
+	case Type::Category::ShieldedInteger:
+	{
+		solAssert(false, "Invalid member access to shielded integer");
+		break;
+	}
+	case Type::Category::ShieldedBool:
+	{
+		solAssert(false, "Invalid member access to shielded bool");
+		break;
+	}
 	case Type::Category::ShieldedAddress:
 		if (member == "code")
 		{
@@ -2294,7 +2304,7 @@ bool ExpressionCompiler::visit(IndexAccess const& _indexAccess)
 					if (arrayType.isByteArrayOrString())
 					{
 						solAssert(!arrayType.isString(), "Index access to string is not allowed.");
-						setLValue<StorageByteArrayElement>(_indexAccess);
+						setLValue<StorageByteArrayElement>(_indexAccess, arrayType.containsShieldedType());
 					}
 					else
 						setLValueToStorageItem(_indexAccess);
@@ -3082,7 +3092,7 @@ bool ExpressionCompiler::cleanupNeededForOp(Type::Category _type, Token _op, Ari
 		return true;
 	else if (
 		_arithmetic == Arithmetic::Wrapping &&
-		_type == Type::Category::Integer &&
+		(_type == Type::Category::Integer || _type == Type::Category::ShieldedInteger) &&
 		(_op == Token::Div || _op == Token::Mod || _op == Token::Exp)
 	)
 		// We need cleanup for EXP because 0**0 == 1, but 0**0x100 == 0
