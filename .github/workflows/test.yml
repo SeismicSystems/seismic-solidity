@@ -91,7 +91,7 @@ jobs:
         run: |
           git clone https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
           cd /tmp/seismic-revm
-          git checkout b0d6010e26e365c41cb3eb05eba774e2510e861d
+          git checkout e962e2174e097e69284cf9cbbbf7bc15e5d718cf
           echo "SEISMIC_REVM_PATH=/tmp/seismic-revm" >> $GITHUB_ENV
           echo "seismic-revm cloned to: /tmp/seismic-revm"
       - uses: Swatinem/rust-cache@v2
@@ -104,24 +104,50 @@ jobs:
           cargo build -p revme
           echo "SEISMIC_REVME_EXEC=$SEISMIC_REVM_PATH/target/debug/revme" >> $GITHUB_ENV
 
-      - name: Run semantic tests (no optimizer)
+      - name: Setup semantic test environment
         run: |
-          set -euo pipefail
           SSOLC_EXEC="$GITHUB_WORKSPACE/build/solc/solc"
           [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
           [ -x "$SEISMIC_REVME_EXEC" ] || { echo "Error: revme executable not found at $SEISMIC_REVME_EXEC"; exit 1; }
-          SEMANTIC_TESTS_DIR="$GITHUB_WORKSPACE/test/libsolidity/semanticTests"
-          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" --skip-via-ir 2>&1
-      - name: Run semantic tests (with optimizer)
+          echo "SSOLC_EXEC=$SSOLC_EXEC" >> $GITHUB_ENV
+          echo "SEMANTIC_TESTS_DIR=$GITHUB_WORKSPACE/test/libsolidity/semanticTests" >> $GITHUB_ENV
+
+          # Create a bash function for running semantic tests and export it
+          cat >> $GITHUB_ENV << 'SCRIPT_EOF'
+          RUN_SEMANTIC_TESTS<<EOF
+          run_semantic_tests() {
+            RUST_LOG=info \
+            RUST_BACKTRACE=1 \
+            $SEISMIC_REVME_EXEC semantics \
+              --keep-going \
+              -s "$SSOLC_EXEC" \
+              -t "$SEMANTIC_TESTS_DIR" \
+              --unsafe-via-ir \
+              "$@" \
+              2>&1
+          }
+          EOF
+          SCRIPT_EOF
+      - name: Run semantic tests (no optimizer, no IR)
         run: |
           set -euo pipefail
-          SSOLC_EXEC="$GITHUB_WORKSPACE/build/solc/solc"
-          [ -x "$SSOLC_EXEC" ] || { echo "Error: solc not found at $SSOLC_EXEC"; exit 1; }
-          [ -x "$SEISMIC_REVME_EXEC" ] || { echo "Error: revme executable not found at $SEISMIC_REVME_EXEC"; exit 1; }
-          SEMANTIC_TESTS_DIR="$GITHUB_WORKSPACE/test/libsolidity/semanticTests"
-          RUST_LOG=info RUST_BACKTRACE=1 $SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t "$SEMANTIC_TESTS_DIR" --optimize --optimizer-runs 200 --skip-via-ir 2>&1
-      # TODO: Add semantic test runs with --via-ir and --via-ir --optimize --optimizer-runs 200
-      # once the via-ir pipeline is re-enabled. Ideally run all 4 variants in parallel.
+          eval "$RUN_SEMANTIC_TESTS"
+          run_semantic_tests
+      - name: Run semantic tests (with optimizer, no IR)
+        run: |
+          set -euo pipefail
+          eval "$RUN_SEMANTIC_TESTS"
+          run_semantic_tests --optimize --optimizer-runs 200
+      - name: Run semantic tests (no optimizer, --via-ir)
+        run: |
+          set -euo pipefail
+          eval "$RUN_SEMANTIC_TESTS"
+          run_semantic_tests --via-ir
+      - name: Run semantic tests (with optimizer, --via-ir)
+        run: |
+          set -euo pipefail
+          eval "$RUN_SEMANTIC_TESTS"
+          run_semantic_tests --via-ir --optimize --optimizer-runs 200
 
       # Save caches only on push to target branches (after PR merge)
       # Delete old caches first since GitHub caches are immutable
