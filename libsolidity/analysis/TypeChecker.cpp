@@ -3718,6 +3718,18 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 					_memberAccess.location(),
 					"Since the VM version paris, \"difficulty\" was replaced by \"prevrandao\", which now returns a random number based on the beacon chain."
 				);
+			else if (memberName == "timestamp_ms" && !m_evmVersion.hasTimestampMs())
+				m_errorReporter.typeError(
+					4521_error,
+					_memberAccess.location(),
+					"\"timestamp_ms\" is not supported by the VM version."
+				);
+			else if (memberName == "timestamp_seconds" && !m_evmVersion.hasTimestampMs())
+				m_errorReporter.typeError(
+					8743_error,
+					_memberAccess.location(),
+					"\"timestamp_seconds\" is not supported by the VM version."
+				);
 		}
 	}
 
