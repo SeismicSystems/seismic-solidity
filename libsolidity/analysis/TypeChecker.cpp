@@ -552,7 +552,52 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 					"Type " + varType->humanReadableName() + " is only valid in storage because it contains a (nested) mapping."
 				);
 	}
-	else if (_variable.visibility() >= Visibility::Public)
+
+	// Validate EVM version for shielded types
+	// Check all variables: state storage, local, immutable, constant
+	bool shouldCheckShieldedTypes = false;
+	if (_variable.immutable())
+	{
+		// Immutables must be value types (error 6377 if not)
+		// Only check if it's actually a value type to avoid assertion failures
+		shouldCheckShieldedTypes = varType->isValueType();
+	}
+	else if (_variable.isConstant())
+	{
+		// Constants are always value types, safe to check
+		shouldCheckShieldedTypes = true;
+	}
+	else if (_variable.isStateVariable())
+	{
+		// Regular state storage variables
+		shouldCheckShieldedTypes = true;
+	}
+	else if (_variable.referenceLocation() == VariableDeclaration::Location::Storage)
+	{
+		// Local storage references/pointers
+		shouldCheckShieldedTypes = true;
+	}
+	else if (varType->isValueType())
+	{
+		// Local value-type variables (stack/memory)
+		shouldCheckShieldedTypes = true;
+	}
+
+	if (shouldCheckShieldedTypes && varType->containsShieldedType())
+	{
+		if (!m_evmVersion.supportShieldedStorage())
+		{
+			m_errorReporter.typeError(
+				9978_error,
+				_variable.location(),
+				"Shielded types (suint, sbool, saddress, sbytes, etc.) require the Mercury EVM version or later. "
+				"The current EVM version \"" + m_evmVersion.name() + "\" does not support shielded types. "
+				"Use \"--evm-version mercury\" to enable shielded type support."
+			);
+		}
+	}
+
+	if (_variable.isStateVariable() && _variable.visibility() >= Visibility::Public)
 	{
 		if (varType->containsShieldedType())
         {
