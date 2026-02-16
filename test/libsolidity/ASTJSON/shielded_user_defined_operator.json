@@ -361,7 +361,7 @@
           "body": {
             "id": 47,
             "nodeType": "Block",
-            "src": "209:30:1",
+            "src": "211:30:1",
             "statements": [
               {
                 "expression": {
@@ -385,14 +385,14 @@
                     "nodeType": "UnaryOperation",
                     "operator": "-",
                     "prefix": true,
-                    "src": "226:2:1",
+                    "src": "228:2:1",
                     "subExpression": {
                       "id": 42,
                       "name": "a",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
                       "referencedDeclaration": 33,
-                      "src": "227:1:1",
+                      "src": "229:1:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_userDefinedValueType$_I8_$2",
                         "typeString": "I8"
@@ -411,13 +411,13 @@
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
                     "referencedDeclaration": 36,
-                    "src": "231:1:1",
+                    "src": "233:1:1",
                     "typeDescriptions": {
                       "typeIdentifier": "t_userDefinedValueType$_I8_$2",
                       "typeString": "I8"
                     }
                   },
-                  "src": "226:6:1",
+                  "src": "228:6:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_userDefinedValueType$_I8_$2",
                     "typeString": "I8"
@@ -426,11 +426,10 @@
                 "functionReturnParameters": 41,
                 "id": 46,
                 "nodeType": "Return",
-                "src": "219:13:1"
+                "src": "221:13:1"
               }
             ]
           },
-          "functionSelector": "c7cc07ab",
           "id": 48,
           "implemented": true,
           "kind": "function",
@@ -531,7 +530,7 @@
                 "nameLocation": "-1:-1:-1",
                 "nodeType": "VariableDeclaration",
                 "scope": 48,
-                "src": "205:2:1",
+                "src": "207:2:1",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -545,14 +544,14 @@
                     "id": 38,
                     "name": "I8",
                     "nameLocations": [
-                      "205:2:1"
+                      "207:2:1"
                     ],
                     "nodeType": "IdentifierPath",
                     "referencedDeclaration": 2,
-                    "src": "205:2:1"
+                    "src": "207:2:1"
                   },
                   "referencedDeclaration": 2,
-                  "src": "205:2:1",
+                  "src": "207:2:1",
                   "typeDescriptions": {
                     "typeIdentifier": "t_userDefinedValueType$_I8_$2",
                     "typeString": "I8"
@@ -561,20 +560,20 @@
                 "visibility": "internal"
               }
             ],
-            "src": "204:4:1"
+            "src": "206:4:1"
           },
           "scope": 49,
-          "src": "161:78:1",
+          "src": "161:80:1",
           "stateMutability": "pure",
           "virtual": false,
-          "visibility": "public"
+          "visibility": "internal"
         }
       ],
       "scope": 50,
-      "src": "144:97:1",
+      "src": "144:99:1",
       "usedErrors": [],
       "usedEvents": []
     }
   ],
-  "src": "0:242:1"
+  "src": "0:244:1"
 }

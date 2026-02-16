@@ -230,8 +230,9 @@ We introduce two new EVM instructions to handle confidential storage:
 
 ### 6.2 Limitations
 
-*   Currently, shielded arrays only work with the shielded types (`suint`, `sint`, `saddress` and `sbool`).
-*   Shielded `bytes` or `string` arrays are **not yet supported**.
+*   Shielded arrays work with shielded types (`suint`, `sint`, `saddress`, `sbool`).
+*   `sbytes` is supported as a dynamic shielded byte array with packed encoding (uses `cstore`/`cload`).
+*   Shielded `string` (`sstring`) is **not yet supported**.
 *   It is very likely that some of our intermediary representation is not strictly correct, which would lead into less optimized code as IR is fundamental to optimization passes.
 
 ### 6.3 Mappings

@@ -259,7 +259,14 @@ static std::map<Instruction, InstructionInfo> const c_instructionInfo =
 	{Instruction::MLOAD,          {"MLOAD",           0,  1,   1,  true,       Tier::VeryLow}},
 	{Instruction::MSTORE,         {"MSTORE",          0,  2,   0,  true,       Tier::VeryLow}},
 	{Instruction::MSTORE8,        {"MSTORE8",         0,  2,   0,  true,       Tier::VeryLow}},
-	{Instruction::SLOAD,          {"SLOAD",           0,  1,   1,  false,      Tier::Special}},
+	// We mark SLOAD as having side effects because SLOAD can potentially revert when accessing confidential storage.
+	// This is to make sure that optimizers (peephole, CSE, etc) do not move or eliminate SLOAD instructions incorrectly.
+	// Note that this is a VERY conservative approach, that can lead to much less optimal code.
+	// For example afaiu it would prevent 2 SLOADs of the same storage slot from becoming a single SLOAD followed by a DUP.
+	// In theory, reverts are very different from general side effects, since they abort execution rather than modifying state.
+	// Notice that DIV, MOD, SDIV, etc. are not marked as having side effects, even though they can revert on division by zero.
+	// If we benchmark and find that this conservative approach has too high a cost, we should consider more refined approaches.
+	{Instruction::SLOAD,          {"SLOAD",           0,  1,   1,  true,      Tier::Special}},
 	{Instruction::SSTORE,         {"SSTORE",          0,  2,   0,  true,       Tier::Special}},
 	{Instruction::TLOAD,          {"TLOAD",           0,  1,   1,  false,      Tier::WarmAccess}},
 	{Instruction::TSTORE,         {"TSTORE",          0,  2,   0,  true,       Tier::WarmAccess}},
