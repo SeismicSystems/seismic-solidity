@@ -83,6 +83,8 @@ public:
 	virtual std::optional<BuiltinHandle> memoryLoadFunctionHandle() const { return std::nullopt; }
 	virtual std::optional<BuiltinHandle> storageStoreFunctionHandle() const { return std::nullopt; }
 	virtual std::optional<BuiltinHandle> storageLoadFunctionHandle() const { return std::nullopt; }
+	virtual std::optional<BuiltinHandle> confidentialStorageStoreFunctionHandle() const { return std::nullopt; }
+	virtual std::optional<BuiltinHandle> confidentialStorageLoadFunctionHandle() const { return std::nullopt; }
 	virtual std::optional<BuiltinHandle> hashFunctionHandle() const { return std::nullopt; }
 
 	Literal zeroLiteral() const;
