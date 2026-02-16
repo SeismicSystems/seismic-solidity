@@ -5,13 +5,11 @@ on:
   push:
     branches:
       - seismic
-      - veridise-audit
+      - merge-audits-2
   pull_request:
     branches:
-      # NOTE: seismic temporarily removed to avoid duplicate builds from veridise-audit→seismic PR.
-      # Re-enable after veridise-audit merges to seismic.
-      # - seismic
-      - veridise-audit
+      - seismic
+      - merge-audits-2
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

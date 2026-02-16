@@ -108,6 +108,7 @@ public:
 	std::map<YulName, AssignedValue> const& allValues() const { return m_state.value; }
 	std::optional<YulName> storageValue(YulName _key) const;
 	std::optional<YulName> memoryValue(YulName _key) const;
+	std::optional<YulName> confidentialStorageValue(YulName _key) const;
 	std::optional<YulName> keccakValue(YulName _start, YulName _length) const;
 
 protected:
@@ -141,7 +142,8 @@ protected:
 	enum class StoreLoadLocation {
 		Memory = 0,
 		Storage = 1,
-		Last = Storage
+		ConfidentialStorage = 2,
+		Last = ConfidentialStorage
 	};
 
 	/// Checks if the statement is sstore(a, b) / mstore(a, b)
@@ -172,6 +174,7 @@ private:
 	{
 		std::unordered_map<YulName, YulName> storage;
 		std::unordered_map<YulName, YulName> memory;
+		std::unordered_map<YulName, YulName> confidentialStorage;
 		/// If keccak[s, l] = y then y := keccak256(s, l) occurs in the code.
 		std::map<std::pair<YulName, YulName>, YulName> keccak;
 	};

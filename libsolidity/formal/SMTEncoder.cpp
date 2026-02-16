@@ -1420,13 +1420,20 @@ bool SMTEncoder::visit(MemberAccess const& _memberAccess)
 			// TODO remove this for 0.9.0
 			if (name == "block" && memberName == "difficulty")
 				memberName = "prevrandao";
+			if (name == "block" && memberName == "timestamp_seconds")
+				memberName = "timestamp";
 
 			defineExpr(_memberAccess, state().txMember(name + "." + memberName));
 		}
 		else if (auto magicType = dynamic_cast<MagicType const*>(exprType))
 		{
 			if (magicType->kind() == MagicType::Kind::Block)
-				defineExpr(_memberAccess, state().txMember("block." + _memberAccess.memberName()));
+			{
+				auto memberName = _memberAccess.memberName();
+				if (memberName == "timestamp_seconds")
+					memberName = "timestamp";
+				defineExpr(_memberAccess, state().txMember("block." + memberName));
+			}
 			else if (magicType->kind() == MagicType::Kind::Message)
 				defineExpr(_memberAccess, state().txMember("msg." + _memberAccess.memberName()));
 			else if (magicType->kind() == MagicType::Kind::Transaction)

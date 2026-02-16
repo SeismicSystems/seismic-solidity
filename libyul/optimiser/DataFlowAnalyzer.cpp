@@ -57,6 +57,8 @@ DataFlowAnalyzer::DataFlowAnalyzer(
 		m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::Memory)] = _dialect.memoryLoadFunctionHandle();
 		m_storeFunctionName[static_cast<unsigned>(StoreLoadLocation::Storage)] = _dialect.storageStoreFunctionHandle();
 		m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::Storage)] = _dialect.storageLoadFunctionHandle();
+		m_storeFunctionName[static_cast<unsigned>(StoreLoadLocation::ConfidentialStorage)] = _dialect.confidentialStorageStoreFunctionHandle();
+		m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::ConfidentialStorage)] = _dialect.confidentialStorageLoadFunctionHandle();
 	}
 }
 
@@ -84,6 +86,22 @@ void DataFlowAnalyzer::operator()(ExpressionStatement& _statement)
 			// TODO erase keccak knowledge, but in a more clever way
 			m_state.environment.keccak = {};
 			m_state.environment.memory[vars->first] = vars->second;
+			return;
+		}
+		else if (auto vars = isSimpleStore(StoreLoadLocation::ConfidentialStorage, _statement))
+		{
+			ASTModifier::operator()(_statement);
+			std::erase_if(m_state.environment.confidentialStorage, mapTuple([&](auto&& key, auto&& value) {
+				return
+					!m_knowledgeBase.knownToBeDifferent(vars->first, key) &&
+					vars->second != value;
+			}));
+			m_state.environment.confidentialStorage[vars->first] = vars->second;
+			// cstore claims a slot, invalidating regular storage for the same key
+			// because in Seismic EVM a subsequent sload on that key would fail.
+			std::erase_if(m_state.environment.storage, mapTuple([&](auto&& key, auto&& /* value */) {
+				return !m_knowledgeBase.knownToBeDifferent(vars->first, key);
+			}));
 			return;
 		}
 	}
@@ -241,6 +259,14 @@ std::optional<YulName> DataFlowAnalyzer::keccakValue(YulName _start, YulName _le
 		return std::nullopt;
 }
 
+std::optional<YulName> DataFlowAnalyzer::confidentialStorageValue(YulName _key) const
+{
+	if (YulName const* value = valueOrNullptr(m_state.environment.confidentialStorage, _key))
+		return *value;
+	else
+		return std::nullopt;
+}
+
 void DataFlowAnalyzer::handleAssignment(std::set<YulName> const& _variables, Expression* _value, bool _isDeclaration)
 {
 	if (!_isDeclaration)
@@ -273,6 +299,10 @@ void DataFlowAnalyzer::handleAssignment(std::set<YulName> const& _variables, Exp
 			m_state.environment.storage.erase(name);
 			// assignment to slot contents denoted by "name"
 			std::erase_if(m_state.environment.storage, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
+			// assignment to confidential storage slot denoted by "name"
+			m_state.environment.confidentialStorage.erase(name);
+			// assignment to confidential storage slot contents denoted by "name"
+			std::erase_if(m_state.environment.confidentialStorage, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
 			// assignment to slot denoted by "name"
 			m_state.environment.memory.erase(name);
 			// assignment to slot contents denoted by "name"
@@ -295,6 +325,8 @@ void DataFlowAnalyzer::handleAssignment(std::set<YulName> const& _variables, Exp
 				m_state.environment.memory[*key] = variable;
 			else if (auto key = isSimpleLoad(StoreLoadLocation::Storage, *_value))
 				m_state.environment.storage[*key] = variable;
+			else if (auto key = isSimpleLoad(StoreLoadLocation::ConfidentialStorage, *_value))
+				m_state.environment.confidentialStorage[*key] = variable;
 			else if (auto arguments = isKeccak(*_value))
 				m_state.environment.keccak[*arguments] = variable;
 		}
@@ -338,6 +370,7 @@ void DataFlowAnalyzer::clearValues(std::set<YulName> const& _variablesToClear)
 		return _variablesToClear.count(key) || _variablesToClear.count(value);
 	});
 	std::erase_if(m_state.environment.storage, eraseCondition);
+	std::erase_if(m_state.environment.confidentialStorage, eraseCondition);
 	std::erase_if(m_state.environment.memory, eraseCondition);
 	std::erase_if(m_state.environment.keccak, [&_variablesToClear](auto&& _item) {
 		return
@@ -374,7 +407,10 @@ void DataFlowAnalyzer::clearKnowledgeIfInvalidated(Block const& _block)
 		return;
 	SideEffectsCollector sideEffects(m_dialect, _block, &m_functionSideEffects);
 	if (sideEffects.invalidatesStorage())
+	{
 		m_state.environment.storage.clear();
+		m_state.environment.confidentialStorage.clear();
+	}
 	if (sideEffects.invalidatesMemory())
 	{
 		m_state.environment.memory.clear();
@@ -388,7 +424,10 @@ void DataFlowAnalyzer::clearKnowledgeIfInvalidated(Expression const& _expr)
 		return;
 	SideEffectsCollector sideEffects(m_dialect, _expr, &m_functionSideEffects);
 	if (sideEffects.invalidatesStorage())
+	{
 		m_state.environment.storage.clear();
+		m_state.environment.confidentialStorage.clear();
+	}
 	if (sideEffects.invalidatesMemory())
 	{
 		m_state.environment.memory.clear();
@@ -465,6 +504,7 @@ void DataFlowAnalyzer::joinKnowledge(Environment const& _olderEnvironment)
 	if (!m_analyzeStores)
 		return;
 	joinKnowledgeHelper(m_state.environment.storage, _olderEnvironment.storage);
+	joinKnowledgeHelper(m_state.environment.confidentialStorage, _olderEnvironment.confidentialStorage);
 	joinKnowledgeHelper(m_state.environment.memory, _olderEnvironment.memory);
 	std::erase_if(m_state.environment.keccak, mapTuple([&_olderEnvironment](auto&& key, auto&& currentValue) {
 		YulName const* oldValue = valueOrNullptr(_olderEnvironment.keccak, key);
