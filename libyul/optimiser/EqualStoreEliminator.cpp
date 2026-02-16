@@ -63,6 +63,12 @@ void EqualStoreEliminator::visit(Statement& _statement)
 				if (*currentValue == vars->second)
 					m_pendingRemovals.insert(&_statement);
 		}
+		else if (auto vars = isSimpleStore(StoreLoadLocation::ConfidentialStorage, *expression))
+		{
+			if (std::optional<YulName> currentValue = confidentialStorageValue(vars->first))
+				if (*currentValue == vars->second)
+					m_pendingRemovals.insert(&_statement);
+		}
 	}
 
 	DataFlowAnalyzer::visit(_statement);

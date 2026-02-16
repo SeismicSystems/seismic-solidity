@@ -258,6 +258,8 @@ EVMDialect::EVMDialect(langutil::EVMVersion _evmVersion, std::optional<uint8_t> 
 	m_memoryLoadFunction = EVMDialect::findBuiltin("mload");
 	m_storageStoreFunction = EVMDialect::findBuiltin("sstore");
 	m_storageLoadFunction = EVMDialect::findBuiltin("sload");
+	m_confidentialStorageStoreFunction = EVMDialect::findBuiltin("cstore");
+	m_confidentialStorageLoadFunction = EVMDialect::findBuiltin("cload");
 	m_hashFunction = EVMDialect::findBuiltin("keccak256");
 
 	m_auxiliaryBuiltinHandles.add = EVMDialect::findBuiltin("add");
