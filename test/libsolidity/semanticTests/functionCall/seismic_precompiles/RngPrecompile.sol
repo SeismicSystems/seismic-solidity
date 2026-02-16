@@ -40,6 +40,6 @@ contract SEISMICRNG {
 // EVMVersion: >=mercury
 // ====
 // ----
-// seismicRng() -> 0xfc45f09fec6bfa9b89d01864356ac1113a504a717fb155a1b82dd5ef685feb8a
-// seismicRng() -> 0xfc45f09fec6bfa9b89d01864356ac1113a504a717fb155a1b82dd5ef685feb8a 
-// seismicRngPers(bytes32): 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef -> 0xcde7fca4bbc86bcfb3acc70d4243e1aa67786379174b6056c8fc07f3572403da 
+// seismicRng() -> 0xde6078a23295753e0223fae218f0713b0e8066a2152b0d37b7a63f800c95e333
+// seismicRng() -> 0xde6078a23295753e0223fae218f0713b0e8066a2152b0d37b7a63f800c95e333 
+// seismicRngPers(bytes32): 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef -> 0x75fa8226f64596e3a8bd64b3c1e2aefecb8248e2203551139bacbc64447b69ac 
