@@ -16,10 +16,10 @@ C++ project using CMake. The output binary is `build/solc/solc` (branded as `sso
 # Dependencies
 brew install cmake boost
 
-# Build (Debug, no pedantic warnings)
+# Build
 mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DPEDANTIC=OFF
-cmake --build . --config Debug -j $(sysctl -n hw.ncpu)
+cmake ..
+make -j$(sysctl -n hw.ncpu)
 ```
 
 ### Linux (Ubuntu)
@@ -31,8 +31,8 @@ sudo apt-get install -y build-essential cmake python3 zlib1g-dev libboost-all-de
 
 # Build
 mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DPEDANTIC=OFF
-cmake --build . --config Debug -j $(nproc)
+cmake ..
+make -j$(nproc)
 ```
 
 ### Verify
@@ -47,7 +47,7 @@ build/solc/solc --version
 
 ### Unit tests (soltest)
 
-Runs 7969 Boost test cases. Excludes semantic tests by default.
+Runs Boost C++ unit tests (excludes semantic tests by default).
 
 ```bash
 ./scripts/soltest.sh
@@ -61,16 +61,69 @@ Filter to specific tests:
 
 ### Semantic tests (requires seismic-revm)
 
-Semantic tests run via `revme` from [seismic-revm](https://github.com/SeismicSystems/seismic-revm). CI clones and builds it automatically. To run locally:
+Semantic tests run via `revme` from [seismic-revm](https://github.com/SeismicSystems/seismic-revm). Semantic test commands must be run from within the seismic-revm repo. All Seismic repos live as siblings under a shared workspace directory (see the workspace CLAUDE.md one level up for the full layout). Replace `<solidity-repo-root>` with the absolute path to your seismic-solidity checkout (e.g. for git worktrees, use the worktree path) and `<seismic-revm-repo-root>` with the absolute path to your seismic-revm checkout.
+
+All configurations use `--unsafe-via-ir` to bypass a compile-time restriction — this does not force all tests through the via-IR pipeline.
+
+**Without optimizer, without --via-ir:**
 
 ```bash
-git clone https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
-cd /tmp/seismic-revm && cargo build -p revme
-SEISMIC_REVME_EXEC=/tmp/seismic-revm/target/debug/revme
-SSOLC_EXEC=$(pwd)/build/solc/solc
-
-$SEISMIC_REVME_EXEC semantics --keep-going -s "$SSOLC_EXEC" -t test/libsolidity/semanticTests
+cd <seismic-revm-repo-root> && cargo run -p revme -- semantics \
+  --keep-going --unsafe-via-ir \
+  -s "<solidity-repo-root>/build/solc/solc" \
+  -t "<solidity-repo-root>/test/libsolidity/semanticTests"
 ```
+
+**With optimizer, without --via-ir:**
+
+```bash
+cd <seismic-revm-repo-root> && cargo run -p revme -- semantics \
+  --keep-going --unsafe-via-ir \
+  --optimize --optimizer-runs 200 \
+  -s "<solidity-repo-root>/build/solc/solc" \
+  -t "<solidity-repo-root>/test/libsolidity/semanticTests"
+```
+
+**Without optimizer, with --via-ir:**
+
+```bash
+cd <seismic-revm-repo-root> && cargo run -p revme -- semantics \
+  --keep-going --unsafe-via-ir --via-ir \
+  -s "<solidity-repo-root>/build/solc/solc" \
+  -t "<solidity-repo-root>/test/libsolidity/semanticTests"
+```
+
+**With optimizer, with --via-ir:**
+
+```bash
+cd <seismic-revm-repo-root> && cargo run -p revme -- semantics \
+  --keep-going --unsafe-via-ir --via-ir \
+  --optimize --optimizer-runs 200 \
+  -s "<solidity-repo-root>/build/solc/solc" \
+  -t "<solidity-repo-root>/test/libsolidity/semanticTests"
+```
+
+Some tests may only fail with the optimizer enabled or disabled. Test both configurations when debugging issues.
+
+### Interactive test expectation tool (isoltest)
+
+`isoltest` manages syntax/analysis test expectations. Build it from the build directory:
+
+```bash
+cd build && make -j$(nproc) isoltest
+```
+
+**Always** pass `--no-semantic-tests` — semantic tests are run via `revme`, not isoltest.
+
+```bash
+# Run specific test(s)
+build/test/tools/isoltest --no-semantic-tests -t "syntaxTests/types/shielded_*"
+
+# Run all syntax tests
+build/test/tools/isoltest --no-semantic-tests -t "syntaxTests/*"
+```
+
+`--accept-updates` can batch-fix test expectations, but **never run it without explicit approval** — it silently rewrites every failing test's expected output, which can mask regressions. Always review changes via `git diff` afterward.
 
 ### Quick compile check
 
@@ -149,7 +202,6 @@ GitHub Actions (`.github/workflows/`):
 | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ld: warning: object file ... was built for newer 'macOS' version`               | Harmless linker warning from Boost on macOS. Safe to ignore.                                                                                |
 | `cmake` can't find Boost                                                         | On macOS: `brew install boost`. On Linux: `sudo apt-get install libboost-all-dev`.                                                          |
-| 7 test failures in `syntaxTests` re: Warning 9328 (`block.timestamp` randomness) | Known issue from `e25f9a2cb` commit. Test expectation files need updating to include the new warning. Does not affect compiler correctness. |
 | Semantic tests skipped by `soltest.sh`                                           | By design — `soltest.sh` passes `--no-semantic-tests`. Semantic tests require `seismic-revm`'s `revme` binary.                              |
 | Build very slow on macOS with `-j $(sysctl -n hw.ncpu)`                          | CI uses `-j 2` for macOS. Try fewer jobs if memory-constrained.                                                                             |
 | `PEDANTIC=ON` causes build warnings-as-errors                                    | Use `-DPEDANTIC=OFF` for local development.                                                                                                 |
