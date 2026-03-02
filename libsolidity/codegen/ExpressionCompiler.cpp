@@ -1076,6 +1076,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		case FunctionType::Kind::SeismicAESGCMEncrypt:
 		case FunctionType::Kind::SeismicAESGCMDecrypt:
 		case FunctionType::Kind::SeismicHKDF:
+		case FunctionType::Kind::SeismicSecp256k1Sign:
 		{
 			_functionCall.expression().accept(*this);
 			static std::map<FunctionType::Kind, u256> const contractAddresses{
@@ -1085,7 +1086,8 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				{FunctionType::Kind::SeismicECDH, 0x65},
 				{FunctionType::Kind::SeismicAESGCMEncrypt, 0x66},
 				{FunctionType::Kind::SeismicAESGCMDecrypt, 0x67},
-				{FunctionType::Kind::SeismicHKDF, 0x68}
+				{FunctionType::Kind::SeismicHKDF, 0x68},
+				{FunctionType::Kind::SeismicSecp256k1Sign, 0x69}
 			};
 			m_context << contractAddresses.at(function.kind());
 			for (unsigned i = function.sizeOnStack(); i > 0; --i)
@@ -3057,7 +3059,8 @@ void ExpressionCompiler::appendExternalFunctionCall(
 	}
 	else if (
 		funKind == FunctionType::Kind::SeismicAESGCMEncrypt ||
-		funKind == FunctionType::Kind::SeismicAESGCMDecrypt
+		funKind == FunctionType::Kind::SeismicAESGCMDecrypt ||
+		funKind == FunctionType::Kind::SeismicSecp256k1Sign
 	)
 	{
 		// Precompile returns raw bytes; wrap into a bytes memory array.
