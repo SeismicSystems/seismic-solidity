@@ -3409,6 +3409,7 @@ std::string FunctionType::richIdentifier() const
 	case Kind::ABIDecode: id += "abidecode"; break;
 	case Kind::BlobHash: id += "blobhash"; break;
 	case Kind::MetaType: id += "metatype"; break;
+	case Kind::SeismicRNG: id += "seismicrng"; break;
 	}
 	id += "_" + stateMutabilityToString(m_stateMutability);
 	id += identifierList(m_parameterTypes) + "returns" + identifierList(m_returnParameterTypes);
@@ -3923,6 +3924,7 @@ bool FunctionType::isBareCall() const
 	case Kind::ECRecover:
 	case Kind::SHA256:
 	case Kind::RIPEMD160:
+	case Kind::SeismicRNG:
 		return true;
 	default:
 		return false;
@@ -4117,6 +4119,7 @@ bool FunctionType::padArguments() const
 	case Kind::RIPEMD160:
 	case Kind::KECCAK256:
 	case Kind::ABIEncodePacked:
+	case Kind::SeismicRNG:
 		return false;
 	default:
 		return true;

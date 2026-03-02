@@ -62,7 +62,13 @@ int magicVariableToID(std::string const& _name)
 		{"tx", -26},
 		{"type", -27},
 		{"this", -28},
-		{"blobhash", -29}
+		{"blobhash", -29},
+		{"rng8", -30},
+		{"rng16", -31},
+		{"rng32", -32},
+		{"rng64", -33},
+		{"rng128", -34},
+		{"rng256", -35}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
@@ -117,6 +123,14 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 		magicVariableDeclarations.push_back(
 			magicVarDecl("blobhash", TypeProvider::function(strings{"uint256"}, strings{"bytes32"}, FunctionType::Kind::BlobHash, StateMutability::View))
 		);
+
+	// Seismic RNG precompile built-in functions
+	magicVariableDeclarations.push_back(magicVarDecl("rng8",   TypeProvider::function(strings{}, strings{"suint8"},   FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng16",  TypeProvider::function(strings{}, strings{"suint16"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng32",  TypeProvider::function(strings{}, strings{"suint32"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng64",  TypeProvider::function(strings{}, strings{"suint64"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng128", TypeProvider::function(strings{}, strings{"suint128"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng256", TypeProvider::function(strings{}, strings{"suint256"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
 
 	return magicVariableDeclarations;
 }

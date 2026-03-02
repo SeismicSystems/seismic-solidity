@@ -1434,6 +1434,7 @@ public:
 		/// (i.e. when accessed directly via the name of the containing contract).
 		/// Cannot be called.
 		Declaration,
+		SeismicRNG,             ///< STATICCALL to RNG precompile (0x64)
 	};
 	struct Options
 	{
