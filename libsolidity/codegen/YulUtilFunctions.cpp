@@ -4502,7 +4502,31 @@ std::string YulUtilFunctions::zeroValueFunction(Type const& _type, bool _splitFu
 
 std::string YulUtilFunctions::storageSetToZeroFunction(Type const& _type, VariableDeclaration::Location _location)
 {
-	std::string const functionName = "storage_set_to_zero_" + _type.identifier();
+	// SEISMIC: Cherry-picked fix for TransientStorageClearingHelperCollision (SOL-2026-1)
+	// from upstream commit 12ede4f26 (Solidity 0.8.34).
+	// When both persistent and transient storage variables of the same type are
+	// cleared (via `delete`), the IR codegen must generate distinct helper functions
+	// for each storage domain. Without this prefix, a name collision causes one
+	// domain's clear to use the wrong opcode (sstore vs tstore).
+	// See: https://www.soliditylang.org/blog/2026/02/18/solidity-0.8.34-release-announcement/
+	// See: https://x.com/solidity_lang/status/2024181650155065848
+	// TODO(seismic): Remove this comment block after merging upstream Solidity >= 0.8.34
+	solAssert(
+		_location == VariableDeclaration::Location::Transient ||
+		_location == VariableDeclaration::Location::Unspecified,
+		"Invalid location for the storage_set_to_zero function"
+	);
+
+	if (dynamic_cast<ReferenceType const*>(&_type))
+		solAssert(
+			_location == VariableDeclaration::Location::Unspecified &&
+			_type.dataStoredIn(DataLocation::Storage)
+		);
+
+	std::string const functionName =
+		(_location == VariableDeclaration::Location::Transient ? "transient_"s : "") +
+		"storage_set_to_zero_" +
+		_type.identifier();
 
 	return m_functionCollector.createFunction(functionName, [&]() {
 		if (_type.isValueType())
