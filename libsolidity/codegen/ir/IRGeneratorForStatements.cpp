@@ -1770,6 +1770,50 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		appendCode() << templ.render();
 		break;
 	}
+	case FunctionType::Kind::SeismicECDH:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x65, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), 0x65, <pos>, sub(<end>, <pos>), 0, 32)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if eq(returndatasize(), 32) { returndatacopy(0, 0, 32) }
+			</eof>
+			let <retVar> := mload(0)
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
 	default:
 		solUnimplemented("FunctionKind " + toString(static_cast<int>(functionType->kind())) + " not yet implemented");
 	}

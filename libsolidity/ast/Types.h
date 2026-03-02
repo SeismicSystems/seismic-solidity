@@ -1435,6 +1435,7 @@ public:
 		/// Cannot be called.
 		Declaration,
 		SeismicRNG,             ///< STATICCALL to RNG precompile (0x64)
+		SeismicECDH,            ///< STATICCALL to ECDH precompile (0x65)
 	};
 	struct Options
 	{
