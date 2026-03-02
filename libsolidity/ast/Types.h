@@ -1436,6 +1436,8 @@ public:
 		Declaration,
 		SeismicRNG,             ///< STATICCALL to RNG precompile (0x64)
 		SeismicECDH,            ///< STATICCALL to ECDH precompile (0x65)
+		SeismicAESGCMEncrypt,   ///< STATICCALL to AES-GCM encrypt precompile (0x66)
+		SeismicAESGCMDecrypt,   ///< STATICCALL to AES-GCM decrypt precompile (0x67)
 	};
 	struct Options
 	{
