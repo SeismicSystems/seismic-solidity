@@ -1086,6 +1086,50 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 			appendExternalFunctionCall(function, arguments, false);
 			break;
 		}
+		case FunctionType::Kind::SeismicRNG:
+		{
+			solAssert(!_functionCall.annotation().tryCall, "");
+			solAssert(function.returnParameterTypes().size() == 1);
+
+			auto const& retType = *function.returnParameterTypes()[0];
+			auto const* shieldedType = dynamic_cast<ShieldedIntegerType const*>(&retType);
+			solAssert(shieldedType);
+			unsigned byteWidth = shieldedType->numBits() / 8;
+			unsigned shiftBits = (32 - byteWidth) * 8;
+
+			// Store uint32(byteWidth) big-endian at the free memory pointer
+			utils().fetchFreeMemoryPointer();
+			// Stack: fmp
+			m_context << u256(byteWidth) << u256(224) << Instruction::SHL;
+			// Stack: fmp shl_val
+			m_context << Instruction::DUP2 << Instruction::MSTORE;
+			// Stack: fmp (stored shl_val at fmp)
+
+			// Clear output scratch space at memory[0]
+			m_context << u256(0) << u256(0) << Instruction::MSTORE;
+
+			// STATICCALL(gas, 0x64, fmp, 4, 0, byteWidth)
+			m_context << u256(byteWidth) << u256(0); // retSize, retOffset
+			m_context << u256(4); // argSize
+			m_context << Instruction::DUP4; // argOffset = fmp
+			m_context << u256(0x64); // precompile address
+			m_context << Instruction::GAS;
+			m_context << Instruction::STATICCALL;
+
+			// Check success, revert on failure
+			m_context << Instruction::ISZERO;
+			m_context.appendConditionalRevert(true);
+
+			// Pop the saved fmp
+			m_context << Instruction::POP;
+
+			// Load result from memory[0] and shift right to right-align
+			m_context << u256(0) << Instruction::MLOAD;
+			if (shiftBits > 0)
+				m_context << u256(shiftBits) << Instruction::SHR;
+
+			break;
+		}
 		case FunctionType::Kind::ArrayPush:
 		{
 			solAssert(function.hasBoundFirstArgument(), "");

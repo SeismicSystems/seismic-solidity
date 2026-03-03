@@ -1728,6 +1728,48 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 
 		break;
 	}
+	case FunctionType::Kind::SeismicRNG:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+		solAssert(functionType->returnParameterTypes().size() == 1);
+
+		auto const& retType = *functionType->returnParameterTypes()[0];
+		auto const* shieldedType = dynamic_cast<ShieldedIntegerType const*>(&retType);
+		solAssert(shieldedType);
+		unsigned byteWidth = shieldedType->numBits() / 8;
+		unsigned shiftBits = (32 - byteWidth) * 8;
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			mstore(<pos>, shl(224, <byteWidth>))
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x64, <pos>, 4))
+			<!eof>
+				let <success> := staticcall(gas(), 0x64, <pos>, 4, 0, <byteWidth>)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if gt(returndatasize(), 0) { returndatacopy(0, 0, <byteWidth>) }
+			</eof>
+			let <retVar> := <shr>(mload(0))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("byteWidth", std::to_string(byteWidth));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("shr", m_utils.shiftRightFunction(shiftBits));
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
 	default:
 		solUnimplemented("FunctionKind " + toString(static_cast<int>(functionType->kind())) + " not yet implemented");
 	}
