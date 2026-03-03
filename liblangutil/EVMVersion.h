@@ -148,6 +148,7 @@ public:
 	bool hasMcopy() const { return *this >= cancun(); }
 	bool supportsTransientStorage() const { return *this >= cancun(); }
 	bool supportShieldedStorage() const { return *this >= mercury(); }
+	bool hasTimestampMs() const { return *this >= mercury(); }
 	bool supportsEOF() const { return *this >= firstWithEOF(); }
 
 	bool hasOpcode(evmasm::Instruction _opcode, std::optional<uint8_t> _eofVersion) const;
@@ -174,11 +175,11 @@ private:
 		Mercury,
 		Osaka,
 	};
-	static auto constexpr currentVersion = Version::Prague;
+	static auto constexpr currentVersion = Version::Mercury;
 
 	constexpr EVMVersion(Version _version): m_version(_version) {}
 
-	Version m_version = Version::Mercury;
+	Version m_version = currentVersion;
 };
 
 }

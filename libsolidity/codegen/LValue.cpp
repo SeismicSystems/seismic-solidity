@@ -234,6 +234,10 @@ void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation con
 	}
 	if (!_remove)
 		CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
+	solAssert(
+		!m_dataType->isShielded() || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
 	if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
 		m_context << Instruction::POP << (IsTransient ? s_loadInstruction : Instruction::CLOAD);
 	else if (m_dataType->storageBytes() == 32)
@@ -305,6 +309,10 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 	{
 		solAssert(m_dataType->storageBytes() <= 32, "Invalid storage bytes size.");
 		solAssert(m_dataType->storageBytes() > 0, "Invalid storage bytes size.");
+		solAssert(
+			!m_dataType->isShielded() || m_context.evmVersion().supportShieldedStorage(),
+			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+		);
 		if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
 		{
 			solAssert(m_dataType->sizeOnStack() == 1, "Invalid stack size.");
@@ -509,6 +517,10 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 	else
 	{
 		solAssert(m_dataType->isValueType(), "Clearing of unsupported type requested: " + m_dataType->toString());
+		solAssert(
+			!m_dataType->isShielded() || m_context.evmVersion().supportShieldedStorage(),
+			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+		);
 		if (!_removeReference)
 			CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
 		if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
@@ -555,6 +567,10 @@ StorageByteArrayElement::StorageByteArrayElement(CompilerContext& _compilerConte
 
 void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove) const
 {
+	solAssert(
+		!m_isShielded || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
 	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
 	// stack: ref byte_number
 	if (_remove)
@@ -568,6 +584,10 @@ void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove)
 
 void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, bool _move) const
 {
+	solAssert(
+		!m_isShielded || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
 	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
 	auto const storeInstruction = m_isShielded ? Instruction::CSTORE : Instruction::SSTORE;
 	// stack: value ref byte_number
@@ -590,6 +610,10 @@ void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, boo
 
 void StorageByteArrayElement::setToZero(SourceLocation const&, bool _removeReference) const
 {
+	solAssert(
+		!m_isShielded || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
 	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
 	auto const storeInstruction = m_isShielded ? Instruction::CSTORE : Instruction::SSTORE;
 	// stack: ref byte_number
