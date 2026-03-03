@@ -88,6 +88,9 @@ public:
 		/// Length of affected area, unknown if not provided.
 		/// Unused for storage.
 		std::optional<OperationLength> length;
+		/// Whether this is a shielded/private storage operation (CSTORE/CLOAD).
+		/// Only meaningful when location == Storage.
+		bool isShieldedStorage = false;
 	};
 
 private:
@@ -115,6 +118,9 @@ private:
 	void applyOperation(Operation const& _operation);
 	bool knownUnrelated(Operation const& _op1, Operation const& _op2) const;
 	bool knownCovered(Operation const& _covered, Operation const& _covering) const;
+	/// Returns true if two operations target the same storage slot but different domains (public vs shielded).
+	/// This will cause a runtime error, so both operations must be preserved.
+	bool hasStorageDomainConflict(Operation const& _op1, Operation const& _op2) const;
 
 	void markActiveAsUsed(std::optional<Location> _onlyLocation = std::nullopt);
 	void clearActive(std::optional<Location> _onlyLocation = std::nullopt);

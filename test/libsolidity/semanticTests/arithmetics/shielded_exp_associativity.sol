@@ -12,21 +12,21 @@ contract C {
     }
 
     function test_invariant(suint a, suint b, suint c) public returns (bool) {
-        return a**b**c == a**(b**c);
+        return bool(a**b**c == a**(b**c));
     }
 
     function test_literal_mix(suint a, suint b) public returns (bool) {
         return
-            (a**suint(2)**b == a**(suint(2)**b)) &&
-            (suint(2)**a**b == suint(2)**(a**b)) &&
-            (a**b**suint(2) == a**(b**suint(2)));
+            bool(a**suint(2)**b == a**(suint(2)**b)) &&
+            bool(suint(2)**a**b == suint(2)**(a**b)) &&
+            bool(a**b**suint(2) == a**(b**suint(2)));
     }
 
     function test_other_operators(suint a, suint b) public returns (bool) {
         return
-            (a**b/suint(25) == (a**b)/suint(25)) &&
-            (a**b*suint(3)**b == (a**b)*(suint(3)**b)) &&
-            (b**a**a/b**a**b == (b**(a**a))/(b**(a**b)));
+            bool(a**b/suint(25) == (a**b)/suint(25)) &&
+            bool(a**b*suint(3)**b == (a**b)*(suint(3)**b)) &&
+            bool(b**a**a/b**a**b == (b**(a**a))/(b**(a**b)));
     }
 }
 // ----

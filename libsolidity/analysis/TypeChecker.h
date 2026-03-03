@@ -132,6 +132,11 @@ private:
 	bool visit(ErrorDefinition const& _errorDef) override;
 	void endVisit(FunctionTypeName const& _funType) override;
 	bool visit(InlineAssembly const& _inlineAssembly) override;
+	/// Validates that shielded/non-shielded storage operations (cstore/cload vs sstore/sload)
+	/// are used consistently within inline assembly. Reports errors when:
+	/// - sstore/sload is used on a shielded variable reference
+	/// - sstore/sload is used on a slot that was previously written with cstore
+	void validateShieldedStorageOps(InlineAssembly const& _inlineAssembly);
 	bool visit(IfStatement const& _ifStatement) override;
 	void endVisit(TryStatement const& _tryStatement) override;
 	bool visit(WhileStatement const& _whileStatement) override;
@@ -144,6 +149,8 @@ private:
 	bool visit(Conditional const& _conditional) override;
 	bool visit(Assignment const& _assignment) override;
 	bool visit(TupleExpression const& _tuple) override;
+	bool visit(Block const& _block) override;
+	void endVisit(Block const& _block) override;
 	void endVisit(BinaryOperation const& _operation) override;
 	bool visit(UnaryOperation const& _operation) override;
 	bool visit(FunctionCall const& _functionCall) override;
@@ -160,6 +167,21 @@ private:
 	void endVisit(UsingForDirective const& _usingForDirective) override;
 
 	void checkErrorAndEventParameters(CallableDeclaration const& _callable);
+
+	/// Checks if a literal expression is being converted to a shielded type and emits a warning.
+	/// This is the core check that matches the original warning logic.
+	void checkLiteralToShielded(
+		Expression const& _expression,
+		Type const& _targetType,
+		langutil::SourceLocation const& _location
+	);
+
+	/// Checks if msg.value is being assigned to a shielded type and emits a warning,
+	/// since msg.value is always publicly visible on-chain.
+	void checkMsgValueToShielded(
+		Expression const& _expression,
+		Type const& _targetType
+	);
 
 	/// @returns the referenced declaration and throws on error.
 	Declaration const& dereference(Identifier const& _identifier) const;
@@ -193,6 +215,8 @@ private:
 
 	SourceUnit const* m_currentSourceUnit = nullptr;
 	ContractDefinition const* m_currentContract = nullptr;
+	/// Tracks nesting depth of unchecked blocks
+	unsigned m_insideUncheckedBlock = 0;
 
 	langutil::EVMVersion m_evmVersion;
 	std::optional<uint8_t> m_eofVersion;

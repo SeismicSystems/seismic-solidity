@@ -1,3 +1,5 @@
+// SEISMIC NOTE: In Seismic Solidity, SLOAD has side effects (can revert on confidential storage access).
+// The optimizer can no longer do "dup1; sload" to reuse the 0 value. Instead it does "sload; 0x00; swap1".
 object "a" {
     code {
         let dummy := 0xAABBCCDDEEFF
@@ -32,8 +34,10 @@ object "a" {
 //     /* "source":65:66   */
 //   0x00
 //     /* "source":59:67   */
-//   dup1
 //   sload
+//     /* "source":94:95   */
+//   0x00
+//   swap1
 //     /* "source":133:225   */
 //   dup1
 //   iszero

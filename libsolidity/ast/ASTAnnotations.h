@@ -223,6 +223,9 @@ struct InlineAssemblyAnnotation: StatementAnnotation
 		/// Suffix used, one of "slot", "offset", "length", "address", "selector" or empty.
 		std::string suffix;
 		size_t valueSize = size_t(-1);
+		/// True if the referenced variable's type is shielded (e.g., suint, sbool).
+		/// Used to validate that shielded variables use cstore/cload instead of sstore/sload.
+		bool isShieldedStorage = false;
 	};
 
 	/// Mapping containing resolved references to external identifiers and their value size

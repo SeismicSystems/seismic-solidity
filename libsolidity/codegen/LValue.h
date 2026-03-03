@@ -174,6 +174,10 @@ public:
 		bool _removeReference = true
 	) const override;
 private:
+	// NOTE: when using s_sload/s_storeInstruction on shielded types,
+	//       we instead use CLOAD/CSTORE when the type is not transient.
+	// IMPORTANT to use similar pattern on any future usage these instructions.
+	// Be especially cautious about merging in upstream code that uses these
 	static constexpr evmasm::Instruction s_storeInstruction = IsTransient ? evmasm::Instruction::TSTORE : evmasm::Instruction::SSTORE;
 	static constexpr evmasm::Instruction s_loadInstruction = IsTransient ? evmasm::Instruction::TLOAD : evmasm::Instruction::SLOAD;
 };
@@ -190,7 +194,7 @@ class StorageByteArrayElement: public LValue
 {
 public:
 	/// Constructs the LValue and assumes that the storage reference is already on the stack.
-	StorageByteArrayElement(CompilerContext& _compilerContext);
+	StorageByteArrayElement(CompilerContext& _compilerContext, bool _isShielded);
 	unsigned sizeOnStack() const override { return 2; }
 	void retrieveValue(langutil::SourceLocation const& _location, bool _remove = false) const override;
 	void storeValue(
@@ -202,6 +206,8 @@ public:
 		langutil::SourceLocation const& _location = {},
 		bool _removeReference = true
 	) const override;
+private:
+	bool m_isShielded = false;
 };
 
 /**
