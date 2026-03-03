@@ -5,13 +5,9 @@ on:
   push:
     branches:
       - seismic
-      - merge-audits-2
-      - merge-audits-old-3 # NOTE: temp change to get CI running for upstream cherry-pick PR
   pull_request:
     branches:
       - seismic
-      - merge-audits-2
-      - merge-audits-old-3 # NOTE: temp change to get CI running for upstream cherry-pick PR
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
