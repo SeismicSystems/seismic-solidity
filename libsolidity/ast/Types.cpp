@@ -3410,6 +3410,7 @@ std::string FunctionType::richIdentifier() const
 	case Kind::BlobHash: id += "blobhash"; break;
 	case Kind::MetaType: id += "metatype"; break;
 	case Kind::SeismicRNG: id += "seismicrng"; break;
+	case Kind::SeismicECDH: id += "seismicecdh"; break;
 	}
 	id += "_" + stateMutabilityToString(m_stateMutability);
 	id += identifierList(m_parameterTypes) + "returns" + identifierList(m_returnParameterTypes);
@@ -3925,6 +3926,7 @@ bool FunctionType::isBareCall() const
 	case Kind::SHA256:
 	case Kind::RIPEMD160:
 	case Kind::SeismicRNG:
+	case Kind::SeismicECDH:
 		return true;
 	default:
 		return false;
@@ -4120,6 +4122,7 @@ bool FunctionType::padArguments() const
 	case Kind::KECCAK256:
 	case Kind::ABIEncodePacked:
 	case Kind::SeismicRNG:
+	case Kind::SeismicECDH:
 		return false;
 	default:
 		return true;
