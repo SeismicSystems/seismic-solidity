@@ -1438,6 +1438,7 @@ public:
 		SeismicECDH,            ///< STATICCALL to ECDH precompile (0x65)
 		SeismicAESGCMEncrypt,   ///< STATICCALL to AES-GCM encrypt precompile (0x66)
 		SeismicAESGCMDecrypt,   ///< STATICCALL to AES-GCM decrypt precompile (0x67)
+		SeismicHKDF,            ///< STATICCALL to HKDF precompile (0x68)
 	};
 	struct Options
 	{
