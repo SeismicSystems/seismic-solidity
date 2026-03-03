@@ -1439,6 +1439,7 @@ public:
 		SeismicAESGCMEncrypt,   ///< STATICCALL to AES-GCM encrypt precompile (0x66)
 		SeismicAESGCMDecrypt,   ///< STATICCALL to AES-GCM decrypt precompile (0x67)
 		SeismicHKDF,            ///< STATICCALL to HKDF precompile (0x68)
+		SeismicSecp256k1Sign,   ///< STATICCALL to secp256k1 sign precompile (0x69)
 	};
 	struct Options
 	{

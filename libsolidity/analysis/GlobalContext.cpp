@@ -72,7 +72,8 @@ int magicVariableToID(std::string const& _name)
 		{"ecdh", -36},
 		{"aes_gcm_encrypt", -37},
 		{"aes_gcm_decrypt", -38},
-		{"hkdf", -39}
+		{"hkdf", -39},
+		{"secp256k1_sign", -40}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
@@ -145,6 +146,9 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 
 	// Seismic HKDF precompile built-in function
 	magicVariableDeclarations.push_back(magicVarDecl("hkdf", TypeProvider::function(strings{"bytes memory"}, strings{"bytes32"}, FunctionType::Kind::SeismicHKDF, StateMutability::View)));
+
+	// Seismic secp256k1 sign precompile built-in function
+	magicVariableDeclarations.push_back(magicVarDecl("secp256k1_sign", TypeProvider::function(strings{"sbytes32", "bytes32"}, strings{"bytes memory"}, FunctionType::Kind::SeismicSecp256k1Sign, StateMutability::View)));
 
 	return magicVariableDeclarations;
 }
