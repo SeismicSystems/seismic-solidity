@@ -8,9 +8,7 @@ on:
       - zellic-audit
   pull_request:
     branches:
-      # NOTE: seismic temporarily removed to avoid duplicate builds from zellic-audit→seismic PR.
-      # Re-enable after zellic-audit merges to seismic.
-      # - seismic
+      - seismic
       - zellic-audit
 
 concurrency:

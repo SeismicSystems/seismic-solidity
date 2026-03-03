@@ -22,5 +22,6 @@ contract C {
     }
 }
 // ----
+// Warning 9665: (17-28): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // TypeError 7492: (406-419): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
 // TypeError 7492: (541-554): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.

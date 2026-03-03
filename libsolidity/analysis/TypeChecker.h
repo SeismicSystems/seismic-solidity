@@ -149,6 +149,8 @@ private:
 	bool visit(Conditional const& _conditional) override;
 	bool visit(Assignment const& _assignment) override;
 	bool visit(TupleExpression const& _tuple) override;
+	bool visit(Block const& _block) override;
+	void endVisit(Block const& _block) override;
 	void endVisit(BinaryOperation const& _operation) override;
 	bool visit(UnaryOperation const& _operation) override;
 	bool visit(FunctionCall const& _functionCall) override;
@@ -213,6 +215,8 @@ private:
 
 	SourceUnit const* m_currentSourceUnit = nullptr;
 	ContractDefinition const* m_currentContract = nullptr;
+	/// Tracks nesting depth of unchecked blocks
+	unsigned m_insideUncheckedBlock = 0;
 
 	langutil::EVMVersion m_evmVersion;
 	std::optional<uint8_t> m_eofVersion;

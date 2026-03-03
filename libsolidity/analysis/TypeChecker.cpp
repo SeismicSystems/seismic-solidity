@@ -630,6 +630,21 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		}
 	}
 
+	// Warn about dynamic shielded array length observability via gas costs
+	if (_variable.isStateVariable())
+	{
+		if (auto arrayType = dynamic_cast<ArrayType const*>(varType))
+		{
+			if (arrayType->isDynamicallySized() && arrayType->baseType()->containsShieldedType())
+				m_errorReporter.warning(
+					9665_error,
+					_variable.location(),
+					"Dynamic arrays with shielded element types store their length confidentially, "
+					"but an upper bound on the length may still be observable through gas cost analysis."
+				);
+		}
+	}
+
 	bool isStructMemberDeclaration = dynamic_cast<StructDefinition const*>(_variable.scope()) != nullptr;
 	if (isStructMemberDeclaration)
 		return false;
@@ -1726,6 +1741,19 @@ bool TypeChecker::visit(Assignment const& _assignment)
 	return false;
 }
 
+bool TypeChecker::visit(Block const& _block)
+{
+	if (_block.unchecked())
+		++m_insideUncheckedBlock;
+	return true;
+}
+
+void TypeChecker::endVisit(Block const& _block)
+{
+	if (_block.unchecked())
+		--m_insideUncheckedBlock;
+}
+
 bool TypeChecker::visit(TupleExpression const& _tuple)
 {
 	_tuple.annotation().isConstant = false;
@@ -1897,6 +1925,26 @@ bool TypeChecker::visit(UnaryOperation const& _operation)
 		(!_operation.userDefinedFunctionType() || _operation.userDefinedFunctionType()->isPure());
 	_operation.annotation().isLValue = false;
 
+	// Warn about increment/decrement on shielded integers - overflow/underflow checks leak information
+	// Only warn outside of unchecked blocks, since unchecked arithmetic doesn't revert on overflow
+	if (
+		(op == Token::Inc || op == Token::Dec) &&
+		operandType->category() == Type::Category::ShieldedInteger &&
+		m_insideUncheckedBlock == 0
+	)
+	{
+		std::string operation = op == Token::Inc ? "increment" : "decrement";
+		m_errorReporter.warning(
+			4283_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to overflow reveals range information about the operand.",
+				operation
+			)
+		);
+	}
+
 	return false;
 }
 
@@ -1960,7 +2008,9 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 	Type const* resultType = nullptr;
 	if (TokenTraits::isCompareOp(_operation.getOperator()))
 	{
-		if (commonType->category() == Type::Category::ShieldedBool)
+		// Comparisons involving any shielded operands yield a shielded boolean
+		// to preserve confidentiality of the comparison result.
+		if (commonType->isShielded())
 			resultType = TypeProvider::shieldedBoolean();
 		else
 			resultType = TypeProvider::boolean();
@@ -2024,6 +2074,53 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 				"in the next breaking release."
 			);
 		}
+	}
+
+	// Warn about division/modulo on shielded integers - revert on zero divisor leaks information
+	if (
+		(_operation.getOperator() == Token::Div || _operation.getOperator() == Token::Mod) &&
+		commonType->category() == Type::Category::ShieldedInteger
+	)
+	{
+		std::string operation = _operation.getOperator() == Token::Div ? "division" : "modulo";
+		m_errorReporter.warning(
+			4281_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to division by zero reveals that the divisor is zero.",
+				operation
+			)
+		);
+	}
+
+	// Warn about overflow-checked arithmetic on shielded integers - revert on overflow leaks range info
+	// Only warn outside of unchecked blocks, since unchecked arithmetic doesn't revert on overflow
+	if (
+		(_operation.getOperator() == Token::Add ||
+		 _operation.getOperator() == Token::Sub ||
+		 _operation.getOperator() == Token::Mul) &&
+		commonType->category() == Type::Category::ShieldedInteger &&
+		m_insideUncheckedBlock == 0
+	)
+	{
+		std::string operation;
+		switch (_operation.getOperator())
+		{
+		case Token::Add: operation = "addition"; break;
+		case Token::Sub: operation = "subtraction"; break;
+		case Token::Mul: operation = "multiplication"; break;
+		default: solAssert(false, "Unexpected operator");
+		}
+		m_errorReporter.warning(
+			4282_error,
+			_operation.location(),
+			fmt::format(
+				"Shielded integer {} can leak information. "
+				"A revert due to overflow reveals range information about the operands.",
+				operation
+			)
+		);
 	}
 
 	if (_operation.getOperator() == Token::Exp || _operation.getOperator() == Token::SHL)
@@ -2933,6 +3030,23 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 					"Use \"pragma abicoder v2;\" to enable the feature."
 				);
 		}
+	}
+
+	// Check for shielded types in require/assert conditions - these leak information via control flow
+	if (
+		(_functionType->kind() == FunctionType::Kind::Require ||
+		 _functionType->kind() == FunctionType::Kind::Assert) &&
+		!arguments.empty()
+	)
+	{
+		Type const* condType = type(*paramArgMap[0]);
+		if (condType->category() == Type::Category::ShieldedBool)
+			m_errorReporter.warning(
+				5765_error,
+				paramArgMap[0]->location(),
+				"Using shielded types in branching conditions can leak information through "
+				"observable execution patterns such as gas costs, state changes, and execution traces."
+			);
 	}
 }
 
@@ -4388,41 +4502,6 @@ void TypeChecker::endVisit(UsingForDirective const& _usingFor)
 	}
 }
 
-void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _callable)
-{
-	std::string kind = dynamic_cast<EventDefinition const*>(&_callable) ? "event" : "error";
-	for (ASTPointer<VariableDeclaration> const& var: _callable.parameters())
-	{
-		Type const* varType = type(*var);
-		if (varType->containsShieldedType())
-        {
-            m_errorReporter.fatalTypeError(
-                4626_error,
-                var->location(),
-                "Shielded Types are not allowed as " + kind + " parameter type."
-            );
-        }
-		if (type(*var)->containsNestedMapping())
-			m_errorReporter.fatalTypeError(
-				3448_error,
-				var->location(),
-				"Type containing a (nested) mapping is not allowed as " + kind + " parameter type."
-			);
-		if (!type(*var)->interfaceType(false))
-			m_errorReporter.typeError(3417_error, var->location(), "Internal or recursive type is not allowed as " + kind + " parameter type.");
-		if (
-			!useABICoderV2() &&
-			!typeSupportedByOldABIEncoder(*type(*var), false /* isLibrary */)
-		)
-			m_errorReporter.typeError(
-				3061_error,
-				var->location(),
-				"This type is only supported in ABI coder v2. "
-				"Use \"pragma abicoder v2;\" to enable the feature."
-			);
-	}
-}
-
 void TypeChecker::checkLiteralToShielded(
 	Expression const& _expression,
 	Type const& _targetType,
@@ -4547,6 +4626,41 @@ void TypeChecker::checkMsgValueToShielded(
 	}
 }
 
+void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _callable)
+{
+	std::string kind = dynamic_cast<EventDefinition const*>(&_callable) ? "event" : "error";
+	for (ASTPointer<VariableDeclaration> const& var: _callable.parameters())
+	{
+		Type const* varType = type(*var);
+		if (varType->containsShieldedType())
+        {
+            m_errorReporter.fatalTypeError(
+                4626_error,
+                var->location(),
+                "Shielded Types are not allowed as " + kind + " parameter type."
+            );
+        }
+		if (type(*var)->containsNestedMapping())
+			m_errorReporter.fatalTypeError(
+				3448_error,
+				var->location(),
+				"Type containing a (nested) mapping is not allowed as " + kind + " parameter type."
+			);
+		if (!type(*var)->interfaceType(false))
+			m_errorReporter.typeError(3417_error, var->location(), "Internal or recursive type is not allowed as " + kind + " parameter type.");
+		if (
+			!useABICoderV2() &&
+			!typeSupportedByOldABIEncoder(*type(*var), false /* isLibrary */)
+		)
+			m_errorReporter.typeError(
+				3061_error,
+				var->location(),
+				"This type is only supported in ABI coder v2. "
+				"Use \"pragma abicoder v2;\" to enable the feature."
+			);
+	}
+}
+
 Declaration const& TypeChecker::dereference(Identifier const& _identifier) const
 {
 	solAssert(!!_identifier.annotation().referencedDeclaration, "Declaration not stored.");
@@ -4606,11 +4720,21 @@ bool TypeChecker::expectType(Expression const& _expression, Type const& _expecte
 
 bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 	_expression.accept(*this);
-    Type const* condType = type(_expression);
-    if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
-        return true;
-    else
-        return expectType(_expression, *TypeProvider::boolean());
+	Type const* condType = type(_expression);
+	if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
+	{
+		// Warn about information leakage when shielded types are used in branching conditions
+		if (condType->category() == Type::Category::ShieldedBool)
+			m_errorReporter.warning(
+				5765_error,
+				_expression.location(),
+				"Using shielded types in branching conditions can leak information through "
+				"observable execution patterns such as gas costs, state changes, and execution traces."
+			);
+		return true;
+	}
+	else
+		return expectType(_expression, *TypeProvider::boolean());
 }
 
 

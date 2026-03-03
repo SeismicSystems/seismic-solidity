@@ -7,4 +7,3 @@ contract test {
 }
 // ----
 // Warning 9660: (85-94): Literals converted to shielded integers will leak during contract deployment.
-// TypeError 9574: (104-128): Type int256 is not implicitly convertible to expected type sint256.

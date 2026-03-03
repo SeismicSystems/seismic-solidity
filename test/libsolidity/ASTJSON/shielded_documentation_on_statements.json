@@ -198,8 +198,8 @@
                   },
                   "src": "152:13:1",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_bool",
-                    "typeString": "bool"
+                    "typeIdentifier": "t_sbool",
+                    "typeString": "sbool"
                   }
                 },
                 "id": 28,
