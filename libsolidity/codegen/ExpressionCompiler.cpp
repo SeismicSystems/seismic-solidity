@@ -1075,6 +1075,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		case FunctionType::Kind::SeismicECDH:
 		case FunctionType::Kind::SeismicAESGCMEncrypt:
 		case FunctionType::Kind::SeismicAESGCMDecrypt:
+		case FunctionType::Kind::SeismicHKDF:
 		{
 			_functionCall.expression().accept(*this);
 			static std::map<FunctionType::Kind, u256> const contractAddresses{
@@ -1083,7 +1084,8 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				{FunctionType::Kind::RIPEMD160, 3},
 				{FunctionType::Kind::SeismicECDH, 0x65},
 				{FunctionType::Kind::SeismicAESGCMEncrypt, 0x66},
-				{FunctionType::Kind::SeismicAESGCMDecrypt, 0x67}
+				{FunctionType::Kind::SeismicAESGCMDecrypt, 0x67},
+				{FunctionType::Kind::SeismicHKDF, 0x68}
 			};
 			m_context << contractAddresses.at(function.kind());
 			for (unsigned i = function.sizeOnStack(); i > 0; --i)

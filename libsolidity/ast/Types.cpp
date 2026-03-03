@@ -3413,6 +3413,7 @@ std::string FunctionType::richIdentifier() const
 	case Kind::SeismicECDH: id += "seismicecdh"; break;
 	case Kind::SeismicAESGCMEncrypt: id += "seismicaesgcmencrypt"; break;
 	case Kind::SeismicAESGCMDecrypt: id += "seismicaesgcmdecrypt"; break;
+	case Kind::SeismicHKDF: id += "seismichkdf"; break;
 	}
 	id += "_" + stateMutabilityToString(m_stateMutability);
 	id += identifierList(m_parameterTypes) + "returns" + identifierList(m_returnParameterTypes);
@@ -3931,6 +3932,7 @@ bool FunctionType::isBareCall() const
 	case Kind::SeismicECDH:
 	case Kind::SeismicAESGCMEncrypt:
 	case Kind::SeismicAESGCMDecrypt:
+	case Kind::SeismicHKDF:
 		return true;
 	default:
 		return false;
@@ -4129,6 +4131,7 @@ bool FunctionType::padArguments() const
 	case Kind::SeismicECDH:
 	case Kind::SeismicAESGCMEncrypt:
 	case Kind::SeismicAESGCMDecrypt:
+	case Kind::SeismicHKDF:
 		return false;
 	default:
 		return true;
