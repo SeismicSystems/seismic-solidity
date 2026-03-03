@@ -1814,6 +1814,56 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		appendCode() << templ.render();
 		break;
 	}
+	case FunctionType::Kind::SeismicAESGCMEncrypt:
+	case FunctionType::Kind::SeismicAESGCMDecrypt:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		unsigned address = functionType->kind() == FunctionType::Kind::SeismicAESGCMEncrypt ? 0x66 : 0x67;
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			<?eof>
+				let <success> := iszero(extstaticcall(<address>, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), <address>, <pos>, sub(<end>, <pos>), 0, 0)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			let <retVar> := <allocateUnbounded>()
+			let <rdsize> := returndatasize()
+			mstore(<retVar>, <rdsize>)
+			returndatacopy(add(<retVar>, 0x20), 0, <rdsize>)
+			<finalizeAllocation>(<retVar>, add(<rdsize>, 0x20))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("address", toString(address));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("rdsize", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+		templ("finalizeAllocation", m_utils.finalizeAllocationFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
 	default:
 		solUnimplemented("FunctionKind " + toString(static_cast<int>(functionType->kind())) + " not yet implemented");
 	}
