@@ -1296,9 +1296,10 @@ public:
 	u256 storageSize() const override { return underlyingType().storageSize(); }
 	unsigned storageBytes() const override { return underlyingType().storageBytes(); }
 
-	bool isValueType() const override { return true; }
 	bool isShielded() const override;
 	bool containsShieldedType() const override;
+
+	bool isValueType() const override { return true; }
 	bool nameable() const override
 	{
 		solAssert(underlyingType().nameable(), "");

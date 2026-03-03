@@ -1444,6 +1444,10 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 {
 	std::string functionName = "resize_array_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&](std::vector<std::string>& _args, std::vector<std::string>&) {
+		solAssert(
+			!_type.baseType()->isShielded() || m_evmVersion.supportShieldedStorage(),
+			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+		);
 		_args = {"array", "newLen"};
 		return Whiskers(R"(
 			let data := <loadOpcode>(array)
@@ -1640,6 +1644,10 @@ std::string YulUtilFunctions::storageArrayPopFunction(ArrayType const& _type)
 
 	std::string functionName = "array_pop_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
+		solAssert(
+			!_type.containsShieldedType() || m_evmVersion.supportShieldedStorage(),
+			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+		);
 		return Whiskers(R"(
 			function <functionName>(array) {
 				let oldLen := <fetchLength>(array)
@@ -1787,6 +1795,10 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 	solUnimplementedAssert(_type.baseType()->storageBytes() <= 32, "Base type is not yet implemented.");
 	std::string functionName = "array_push_zero_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&]() {
+		solAssert(
+			!_type.containsShieldedType() || m_evmVersion.supportShieldedStorage(),
+			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+		);
 		return Whiskers(R"(
 			function <functionName>(array) -> slot, offset {
 				<?isBytes>
@@ -2861,6 +2873,13 @@ std::string YulUtilFunctions::readFromStorageValueType(
 		_type.identifier();
 
 	return m_functionCollector.createFunction(functionName, [&] {
+		if (_type.isShielded() && !m_evmVersion.supportShieldedStorage())
+		{
+			solAssert(false,
+				"Shielded storage types require Mercury EVM version. "
+				"This should have been caught by type checker."
+			);
+		}
 		Whiskers templ(R"(
 			function <functionName>(slot<?dynamic>, offset</dynamic>) -> <?split>addr, selector<!split>value</split> {
 				<?split>let</split> value := <extract>(<loadOpcode>(slot)<?dynamic>, offset</dynamic>)
