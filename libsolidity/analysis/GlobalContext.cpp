@@ -69,7 +69,9 @@ int magicVariableToID(std::string const& _name)
 		{"rng64", -33},
 		{"rng128", -34},
 		{"rng256", -35},
-		{"ecdh", -36}
+		{"ecdh", -36},
+		{"aes_gcm_encrypt", -37},
+		{"aes_gcm_decrypt", -38}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
@@ -135,6 +137,10 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 
 	// Seismic ECDH precompile built-in function
 	magicVariableDeclarations.push_back(magicVarDecl("ecdh", TypeProvider::function(strings{"sbytes32", "bytes memory"}, strings{"bytes32"}, FunctionType::Kind::SeismicECDH, StateMutability::View)));
+
+	// Seismic AES-GCM encrypt/decrypt precompile built-in functions
+	magicVariableDeclarations.push_back(magicVarDecl("aes_gcm_encrypt", TypeProvider::function(strings{"sbytes32", "uint96", "bytes memory"}, strings{"bytes memory"}, FunctionType::Kind::SeismicAESGCMEncrypt, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("aes_gcm_decrypt", TypeProvider::function(strings{"sbytes32", "uint96", "bytes memory"}, strings{"bytes memory"}, FunctionType::Kind::SeismicAESGCMDecrypt, StateMutability::View)));
 
 	return magicVariableDeclarations;
 }
