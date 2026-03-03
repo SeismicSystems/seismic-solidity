@@ -8,3 +8,4 @@ contract test {
 // ----
 // Warning 9660: (85-94): Literals converted to shielded integers will leak during contract deployment.
 // Warning 3817: (121-128): Shielded integer exponentiation will leak the exponent value through gas cost.
+// TypeError 9574: (104-128): Type suint256 is not implicitly convertible to expected type uint256.

@@ -7,4 +7,5 @@ contract C {
     }
 }
 // ----
+// Warning 9665: (113-121): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // TypeError 1227: (162-168): Index range access is only supported for dynamic calldata arrays.

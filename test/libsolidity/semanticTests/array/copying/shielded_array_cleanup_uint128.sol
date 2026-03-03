@@ -8,11 +8,11 @@ contract C {
         x = y;
         assembly { cstore(x.slot, 4) }
 
-        assert(x[0] == suint128(23));
-        assert(x[1] == suint128(0));
+        assert(bool(x[0] == suint128(23)));
+        assert(bool(x[1] == suint128(0)));
 
-        assert(x[2] == suint128(0));
-        assert(x[3] == suint128(0));
+        assert(bool(x[2] == suint128(0)));
+        assert(bool(x[3] == suint128(0)));
 
         return true;
     }

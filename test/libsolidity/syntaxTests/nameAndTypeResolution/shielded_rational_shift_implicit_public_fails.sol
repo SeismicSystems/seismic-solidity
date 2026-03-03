@@ -7,3 +7,4 @@ contract test {
 }
 // ----
 // Warning 9660: (85-96): Literals converted to shielded integers will leak during contract deployment.
+// TypeError 9574: (106-129): Type suint256 is not implicitly convertible to expected type uint256.
