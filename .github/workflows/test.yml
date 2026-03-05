@@ -148,6 +148,7 @@ jobs:
           run_config "optimizer runs=1, no IR" --optimize --optimizer-runs 1
           run_config "optimizer runs=1000, no IR" --optimize --optimizer-runs 1000
           run_config "optimizer runs=1000000, no IR" --optimize --optimizer-runs 1000000
+          run_config "optimizer runs=4294967295 (uint32 max), no IR" --optimize --optimizer-runs 4294967295
 
           # With --via-ir
           run_config "no optimizer, --via-ir" --via-ir
@@ -155,6 +156,7 @@ jobs:
           run_config "optimizer runs=1, --via-ir" --via-ir --optimize --optimizer-runs 1
           run_config "optimizer runs=1000, --via-ir" --via-ir --optimize --optimizer-runs 1000
           run_config "optimizer runs=1000000, --via-ir" --via-ir --optimize --optimizer-runs 1000000
+          run_config "optimizer runs=4294967295 (uint32 max), --via-ir" --via-ir --optimize --optimizer-runs 4294967295
 
           if [ "$FAILED" -ne 0 ]; then
             echo "Some configurations failed!"
