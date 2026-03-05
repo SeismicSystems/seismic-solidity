@@ -3,6 +3,21 @@ on:
   push:
     branches:
       - seismic
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit SHA or branch to build from"
+        required: false
+        default: ""
+      tag_name:
+        description: "Tag name for the release (defaults to short SHA of the ref)"
+        required: false
+        default: ""
+      latest:
+        description: "Mark this release as the latest on GitHub"
+        type: boolean
+        required: false
+        default: false
 jobs:
   build-release:
     name: Build and Archive Binaries
@@ -12,7 +27,16 @@ jobs:
       matrix:
         # macos-14-large is macos-14 with x86_64
         # macos-latest-large is macos-latest (macos-15) with x86_64
-        os: [ubuntu-latest, ubuntu-22.04, windows-latest, macos-latest-large, macos-latest, macos-14-large, macos-14]
+        os:
+          [
+            ubuntu-latest,
+            ubuntu-22.04,
+            windows-latest,
+            macos-latest-large,
+            macos-latest,
+            macos-14-large,
+            macos-14,
+          ]
         arch: [x86_64, arm64]
         exclude:
           - os: macos-latest
@@ -28,6 +52,9 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
+          # For workflow_dispatch: uses the user-provided ref (branch/tag/SHA).
+          # For push triggers: inputs.ref is empty, so falls back to github.sha (the pushed commit).
+          ref: ${{ github.event.inputs.ref || github.sha }}
           submodules: recursive
       # Set up dependencies
       - name: Set up dependencies (Linux & macOS)
@@ -112,6 +139,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # For workflow_dispatch: uses the user-provided ref (branch/tag/SHA).
+          # For push triggers: inputs.ref is empty, so falls back to github.sha (the pushed commit).
+          ref: ${{ github.event.inputs.ref || github.sha }}
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -138,19 +169,33 @@ jobs:
           echo "Found archive files:"
           ls -la
 
-          # Use shortened SHA directly for tag and title
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          echo "Using shortened SHA: $SHORT_SHA"
+          # Resolve the actual SHA (handles branch names, tags, etc.)
+          RESOLVED_SHA=$(git rev-parse HEAD)
+          SHORT_SHA=$(echo "$RESOLVED_SHA" | cut -c1-7)
+
+          # Use provided tag_name (when workflow_dispatch'ing) or fall back to short SHA
+          TAG_NAME="${{ github.event.inputs.tag_name }}"
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="$SHORT_SHA"
+          fi
+          echo "Using tag: $TAG_NAME (commit: $RESOLVED_SHA)"
+
+          # For workflow_dispatch, use the user's choice (defaults to false).
+          # For push triggers, inputs.latest is empty so we default to true.
+          LATEST="${{ github.event.inputs.latest }}"
+          LATEST_FLAG="--latest=${LATEST:-true}"
 
           # Create release first
-          gh release create "$SHORT_SHA" \
-            --title "Release for $SHORT_SHA" \
-            --notes "Automated release for commit ${{ github.sha }}."
+          gh release create "$TAG_NAME" \
+            --title "Release $TAG_NAME" \
+            --notes "Automated release for commit $RESOLVED_SHA." \
+            --target "$RESOLVED_SHA" \
+            $LATEST_FLAG
 
           # Then upload each asset separately
           shopt -s nullglob
           for file in *.tar.gz *.zip; do
             echo "Uploading $file..."
-            gh release upload "$SHORT_SHA" "$file" --clobber
+            gh release upload "$TAG_NAME" "$file" --clobber
           done
           shopt -u nullglob

@@ -933,7 +933,7 @@ void CompilerUtils::convertType(
 		}
 		else if (targetTypeCategory == Type::Category::Enum)
 		{
-			solAssert((stackTypeCategory != Type::Category::Address || stackTypeCategory != Type::Category::ShieldedAddress), "Invalid conversion to EnumType requested.");
+			solAssert((stackTypeCategory != Type::Category::Address && stackTypeCategory != Type::Category::ShieldedAddress), "Invalid conversion to EnumType requested.");
 			solAssert(_typeOnStack.mobileType());
 			// just clean
 			convertType(_typeOnStack, *_typeOnStack.mobileType(), true);
@@ -1007,7 +1007,7 @@ void CompilerUtils::convertType(
 		auto const& literalType = dynamic_cast<StringLiteralType const&>(_typeOnStack);
 		std::string const& value = literalType.value();
 		bytesConstRef data(value);
-		if (targetTypeCategory == Type::Category::FixedBytes)
+		if (targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes)
 		{
 			unsigned const numBytes = dynamic_cast<FixedBytesType const&>(_targetType).numBytes();
 			solAssert(data.size() <= 32);

@@ -20,3 +20,7 @@ contract C {
         sb32 = sbytes32(b32);
     }
 }
+// ----
+// Warning 9663: (72-85): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 9663: (109-136): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 9663: (162-238): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.

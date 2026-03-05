@@ -62,7 +62,18 @@ int magicVariableToID(std::string const& _name)
 		{"tx", -26},
 		{"type", -27},
 		{"this", -28},
-		{"blobhash", -29}
+		{"blobhash", -29},
+		{"rng8", -30},
+		{"rng16", -31},
+		{"rng32", -32},
+		{"rng64", -33},
+		{"rng128", -34},
+		{"rng256", -35},
+		{"ecdh", -36},
+		{"aes_gcm_encrypt", -37},
+		{"aes_gcm_decrypt", -38},
+		{"hkdf", -39},
+		{"secp256k1_sign", -40}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
@@ -117,6 +128,27 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 		magicVariableDeclarations.push_back(
 			magicVarDecl("blobhash", TypeProvider::function(strings{"uint256"}, strings{"bytes32"}, FunctionType::Kind::BlobHash, StateMutability::View))
 		);
+
+	// Seismic RNG precompile built-in functions
+	magicVariableDeclarations.push_back(magicVarDecl("rng8",   TypeProvider::function(strings{}, strings{"suint8"},   FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng16",  TypeProvider::function(strings{}, strings{"suint16"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng32",  TypeProvider::function(strings{}, strings{"suint32"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng64",  TypeProvider::function(strings{}, strings{"suint64"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng128", TypeProvider::function(strings{}, strings{"suint128"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("rng256", TypeProvider::function(strings{}, strings{"suint256"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
+
+	// Seismic ECDH precompile built-in function
+	magicVariableDeclarations.push_back(magicVarDecl("ecdh", TypeProvider::function(strings{"sbytes32", "bytes memory"}, strings{"bytes32"}, FunctionType::Kind::SeismicECDH, StateMutability::View)));
+
+	// Seismic AES-GCM encrypt/decrypt precompile built-in functions
+	magicVariableDeclarations.push_back(magicVarDecl("aes_gcm_encrypt", TypeProvider::function(strings{"sbytes32", "uint96", "bytes memory"}, strings{"bytes memory"}, FunctionType::Kind::SeismicAESGCMEncrypt, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("aes_gcm_decrypt", TypeProvider::function(strings{"sbytes32", "uint96", "bytes memory"}, strings{"bytes memory"}, FunctionType::Kind::SeismicAESGCMDecrypt, StateMutability::View)));
+
+	// Seismic HKDF precompile built-in function
+	magicVariableDeclarations.push_back(magicVarDecl("hkdf", TypeProvider::function(strings{"bytes memory"}, strings{"bytes32"}, FunctionType::Kind::SeismicHKDF, StateMutability::View)));
+
+	// Seismic secp256k1 sign precompile built-in function
+	magicVariableDeclarations.push_back(magicVarDecl("secp256k1_sign", TypeProvider::function(strings{"sbytes32", "bytes32"}, strings{"bytes memory"}, FunctionType::Kind::SeismicSecp256k1Sign, StateMutability::View)));
 
 	return magicVariableDeclarations;
 }

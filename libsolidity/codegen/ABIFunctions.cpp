@@ -324,7 +324,10 @@ std::string ABIFunctions::abiEncodingFunction(
 				else
 					return abiEncodingFunctionSimpleArray(*fromArray, *toArray, _options);
 			case DataLocation::Storage:
-				if (fromArray->baseType()->storageBytes() <= 16)
+				// Check for byte arrays first (including sbytes with 32-byte storage)
+				if (fromArray->isByteArrayOrString())
+					return abiEncodingFunctionCompactStorageArray(*fromArray, *toArray, _options);
+				else if (fromArray->baseType()->storageBytes() <= 16)
 					return abiEncodingFunctionCompactStorageArray(*fromArray, *toArray, _options);
 				else
 					return abiEncodingFunctionSimpleArray(*fromArray, *toArray, _options);
@@ -692,7 +695,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 			Whiskers templ(R"(
 				// <readableTypeNameFrom> -> <readableTypeNameTo>
 				function <functionName>(value, pos) -> ret {
-					let slotValue := sload(value)
+					let slotValue := <loadOpcode>(value)
 					let length := <byteArrayLengthFunction>(slotValue)
 					pos := <storeLength>(pos, length)
 					switch and(slotValue, 1)
@@ -706,7 +709,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 						let dataPos := <arrayDataSlot>(value)
 						let i := 0
 						for { } lt(i, length) { i := add(i, 0x20) } {
-							mstore(add(pos, i), sload(dataPos))
+							mstore(add(pos, i), <loadOpcode>(dataPos))
 							dataPos := add(dataPos, 1)
 						}
 						ret := add(pos, <lengthPaddedLong>)
@@ -721,6 +724,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 			templ("lengthPaddedShort", _options.padded ? "0x20" : "length");
 			templ("lengthPaddedLong", _options.padded ? "i" : "length");
 			templ("arrayDataSlot", m_utils.arrayDataAreaFunction(_from));
+			templ("loadOpcode", _from.baseType()->isShielded() ? "cload" : "sload");
 			return templ.render();
 		}
 		else
@@ -750,7 +754,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 							for { } lt(add(itemCounter, sub(<itemsPerSlot>, 1)), length)
 										{ itemCounter := add(itemCounter, <itemsPerSlot>) }
 							{
-								let data := sload(srcPtr)
+								let data := <loadOpcode>(srcPtr)
 								<#items>
 									<encodeToMemoryFun>(<extractFromSlot>(data), pos)
 									pos := add(pos, <stride>)
@@ -760,7 +764,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 						}
 						// Handle the last (not necessarily full) slot specially
 						if <useSpill> {
-							let data := sload(srcPtr)
+							let data := <loadOpcode>(srcPtr)
 							<#items>
 								if <inRange> {
 									<encodeToMemoryFun>(<extractFromSlot>(data), pos)
@@ -781,6 +785,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 			templ("lengthFun", m_utils.arrayLengthFunction(_from));
 			templ("storeLength", arrayStoreLengthForEncodingFunction(_to, _options));
 			templ("dataArea", m_utils.arrayDataAreaFunction(_from));
+			templ("loadOpcode", _from.baseType()->isShielded() ? "cload" : "sload");
 			// We skip the loop for arrays that fit a single slot.
 			if (_from.isDynamicallySized() || _from.length() >= itemsPerSlot)
 				templ("useLoop", "1");
@@ -894,7 +899,8 @@ std::string ABIFunctions::abiEncodingFunctionStruct(
 					{
 						if (storageSlotOffset != previousSlotOffset)
 						{
-							members.back()["preprocess"] = "slotValue := sload(add(value, " + toCompactHexWithPrefix(storageSlotOffset) + "))";
+							std::string loadOpcode = memberTypeFrom->isShielded() ? "cload" : "sload";
+							members.back()["preprocess"] = "slotValue := " + loadOpcode + "(add(value, " + toCompactHexWithPrefix(storageSlotOffset) + "))";
 							previousSlotOffset = storageSlotOffset;
 						}
 						members.back()["retrieveValue"] = m_utils.extractFromStorageValue(*memberTypeFrom, intraSlotOffset) + "(slotValue)";

@@ -19,8 +19,27 @@ contract C {
         src[0] = S({y: y});
     }
 
-    function f(uint8 index) public returns (S memory) {
-        return src[index];
+    struct SUnshielded {
+        uint8[][] y;
+    }
+
+    function f(uint8 index) public returns (SUnshielded memory) {
+        // Convert shielded struct to unshielded for public return.
+        // This is all just type conversion gymnastic to be able to get an output that can be checked in the test framework.
+        // The actual point of the test is to verify the assignment logic in the constructor above.
+        return SUnshielded({y: toUnshielded(src[index].y)});
+    }
+
+    function toUnshielded(suint8[][] memory arr) internal pure returns (uint8[][] memory) {
+        uint8[][] memory result = new uint8[][](uint256(arr.length));
+        for (uint256 i = 0; i < uint256(arr.length); i++) {
+            uint256 innerLen = uint256(arr[i].length);
+            result[i] = new uint8[](innerLen);
+            for (uint256 j = 0; j < innerLen; j++) {
+                result[i][j] = uint8(arr[i][j]);
+            }
+        }
+        return result;
     }
 }
 // ----

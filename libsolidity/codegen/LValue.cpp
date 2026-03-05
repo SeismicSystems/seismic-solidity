@@ -114,7 +114,7 @@ void MemoryItem::storeValue(Type const& _sourceType, SourceLocation const&, bool
 		{
 			solAssert(m_dataType->calldataEncodedSize(false) == 1, "Invalid non-padded type.");
 			solAssert(m_dataType->category() != Type::Category::UserDefinedValueType, "");
-			if (m_dataType->category() == Type::Category::FixedBytes)
+			if (m_dataType->category() == Type::Category::FixedBytes || m_dataType->category() == Type::Category::ShieldedFixedBytes)
 				m_context << u256(0) << Instruction::BYTE;
 			m_context << Instruction::SWAP1 << Instruction::MSTORE8;
 		}
@@ -234,8 +234,12 @@ void GenericStorageItem<IsTransient>::retrieveValue(langutil::SourceLocation con
 	}
 	if (!_remove)
 		CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
+	solAssert(
+		!m_dataType->isShielded() || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
 	if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
-		m_context << Instruction::POP << Instruction::CLOAD;
+		m_context << Instruction::POP << (IsTransient ? s_loadInstruction : Instruction::CLOAD);
 	else if (m_dataType->storageBytes() == 32)
 		m_context << Instruction::POP << s_loadInstruction;
 	else
@@ -305,6 +309,10 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 	{
 		solAssert(m_dataType->storageBytes() <= 32, "Invalid storage bytes size.");
 		solAssert(m_dataType->storageBytes() > 0, "Invalid storage bytes size.");
+		solAssert(
+			!m_dataType->isShielded() || m_context.evmVersion().supportShieldedStorage(),
+			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+		);
 		if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
 		{
 			solAssert(m_dataType->sizeOnStack() == 1, "Invalid stack size.");
@@ -317,7 +325,7 @@ void GenericStorageItem<IsTransient>::storeValue(Type const& _sourceType, langut
 			utils.convertType(_sourceType, *m_dataType, true);
 			m_context << Instruction::SWAP1;
 
-			m_context << Instruction::CSTORE;
+			m_context << (IsTransient ? s_storeInstruction : Instruction::CSTORE);
 		}
 		else if (m_dataType->storageBytes() == 32)
 		{
@@ -509,14 +517,22 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 	else
 	{
 		solAssert(m_dataType->isValueType(), "Clearing of unsupported type requested: " + m_dataType->toString());
+		solAssert(
+			!m_dataType->isShielded() || m_context.evmVersion().supportShieldedStorage(),
+			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+		);
 		if (!_removeReference)
 			CompilerUtils(m_context).copyToStackTop(sizeOnStack(), sizeOnStack());
-		if (m_dataType->category() == Type::Category::ShieldedInteger && m_dataType->storageBytes() == 32)
+		if (m_dataType->isShielded() && m_dataType->storageBytes() == 32)
 		{
-			// offset should be zero. remember, shielded integers have to be 32 bytes!!
+			// offset should be zero. remember, shielded types have to be 32 bytes!!
 			m_context
 				<< Instruction::POP << u256(0)
-				<< Instruction::SWAP1 << Instruction::CSTORE;
+				<< Instruction::SWAP1 << (IsTransient ? s_storeInstruction : Instruction::CSTORE);
+		}
+		else if (m_dataType->isShielded())
+		{
+			solAssert(false, "Shielded types must occupy exactly 32 bytes in storage: " + m_dataType->toString());
 		}
 		else if (m_dataType->storageBytes() == 32)
 		{
@@ -543,29 +559,41 @@ void GenericStorageItem<IsTransient>::setToZero(langutil::SourceLocation const&,
 	}
 }
 
-StorageByteArrayElement::StorageByteArrayElement(CompilerContext& _compilerContext):
-	LValue(_compilerContext, TypeProvider::byte())
+StorageByteArrayElement::StorageByteArrayElement(CompilerContext& _compilerContext, bool _isShielded):
+	LValue(_compilerContext, _isShielded ? TypeProvider::shieldedByte() : TypeProvider::byte()),
+	m_isShielded(_isShielded)
 {
 }
 
 void StorageByteArrayElement::retrieveValue(SourceLocation const&, bool _remove) const
 {
+	solAssert(
+		!m_isShielded || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
+	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
 	// stack: ref byte_number
 	if (_remove)
-		m_context << Instruction::SWAP1 << Instruction::SLOAD
+		m_context << Instruction::SWAP1 << loadInstruction
 			<< Instruction::SWAP1 << Instruction::BYTE;
 	else
-		m_context << Instruction::DUP2 << Instruction::SLOAD
+		m_context << Instruction::DUP2 << loadInstruction
 			<< Instruction::DUP2 << Instruction::BYTE;
 	m_context << (u256(1) << (256 - 8)) << Instruction::MUL;
 }
 
 void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, bool _move) const
 {
+	solAssert(
+		!m_isShielded || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
+	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
+	auto const storeInstruction = m_isShielded ? Instruction::CSTORE : Instruction::SSTORE;
 	// stack: value ref byte_number
 	m_context << u256(31) << Instruction::SUB << u256(0x100) << Instruction::EXP;
 	// stack: value ref (1<<(8*(31-byte_number)))
-	m_context << Instruction::DUP2 << Instruction::SLOAD;
+	m_context << Instruction::DUP2 << loadInstruction;
 	// stack: value ref (1<<(8*(31-byte_number))) old_full_value
 	// clear byte in old value
 	m_context << Instruction::DUP2 << u256(0xff) << Instruction::MUL
@@ -575,24 +603,30 @@ void StorageByteArrayElement::storeValue(Type const&, SourceLocation const&, boo
 	m_context << (u256(1) << (256 - 8)) << Instruction::DUP5 << Instruction::DIV
 		<< Instruction::MUL << Instruction::OR;
 	// stack: value ref new_full_value
-	m_context << Instruction::SWAP1 << Instruction::SSTORE;
+	m_context << Instruction::SWAP1 << storeInstruction;
 	if (_move)
 		m_context << Instruction::POP;
 }
 
 void StorageByteArrayElement::setToZero(SourceLocation const&, bool _removeReference) const
 {
+	solAssert(
+		!m_isShielded || m_context.evmVersion().supportShieldedStorage(),
+		"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
+	);
+	auto const loadInstruction = m_isShielded ? Instruction::CLOAD : Instruction::SLOAD;
+	auto const storeInstruction = m_isShielded ? Instruction::CSTORE : Instruction::SSTORE;
 	// stack: ref byte_number
 	solAssert(_removeReference, "");
 	m_context << u256(31) << Instruction::SUB << u256(0x100) << Instruction::EXP;
 	// stack: ref (1<<(8*(31-byte_number)))
-	m_context << Instruction::DUP2 << Instruction::SLOAD;
+	m_context << Instruction::DUP2 << loadInstruction;
 	// stack: ref (1<<(8*(31-byte_number))) old_full_value
 	// clear byte in old value
 	m_context << Instruction::SWAP1 << u256(0xff) << Instruction::MUL;
 	m_context << Instruction::NOT << Instruction::AND;
 	// stack: ref old_full_value_with_cleared_byte
-	m_context << Instruction::SWAP1 << Instruction::SSTORE;
+	m_context << Instruction::SWAP1 << storeInstruction;
 }
 
 TupleObject::TupleObject(

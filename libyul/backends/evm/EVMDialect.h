@@ -81,6 +81,8 @@ public:
 	std::optional<BuiltinHandle> memoryLoadFunctionHandle() const override { return m_memoryLoadFunction; }
 	std::optional<BuiltinHandle> storageStoreFunctionHandle() const override { return m_storageStoreFunction; }
 	std::optional<BuiltinHandle> storageLoadFunctionHandle() const override { return m_storageLoadFunction; }
+	std::optional<BuiltinHandle> confidentialStorageStoreFunctionHandle() const override { return m_confidentialStorageStoreFunction; }
+	std::optional<BuiltinHandle> confidentialStorageLoadFunctionHandle() const override { return m_confidentialStorageLoadFunction; }
 	std::optional<BuiltinHandle> hashFunctionHandle() const override { return m_hashFunction; }
 	AuxiliaryBuiltinHandles const& auxiliaryBuiltinHandles() const { return m_auxiliaryBuiltinHandles; }
 
@@ -124,6 +126,8 @@ protected:
 	std::optional<BuiltinHandle> m_memoryLoadFunction;
 	std::optional<BuiltinHandle> m_storageStoreFunction;
 	std::optional<BuiltinHandle> m_storageLoadFunction;
+	std::optional<BuiltinHandle> m_confidentialStorageStoreFunction;
+	std::optional<BuiltinHandle> m_confidentialStorageLoadFunction;
 	std::optional<BuiltinHandle> m_hashFunction;
 	AuxiliaryBuiltinHandles m_auxiliaryBuiltinHandles;
 };

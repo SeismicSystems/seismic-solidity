@@ -1072,18 +1072,72 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		case FunctionType::Kind::ECRecover:
 		case FunctionType::Kind::SHA256:
 		case FunctionType::Kind::RIPEMD160:
+		case FunctionType::Kind::SeismicECDH:
+		case FunctionType::Kind::SeismicAESGCMEncrypt:
+		case FunctionType::Kind::SeismicAESGCMDecrypt:
+		case FunctionType::Kind::SeismicHKDF:
+		case FunctionType::Kind::SeismicSecp256k1Sign:
 		{
 			_functionCall.expression().accept(*this);
 			static std::map<FunctionType::Kind, u256> const contractAddresses{
 				{FunctionType::Kind::ECRecover, 1},
 				{FunctionType::Kind::SHA256, 2},
-				{FunctionType::Kind::RIPEMD160, 3}
+				{FunctionType::Kind::RIPEMD160, 3},
+				{FunctionType::Kind::SeismicECDH, 0x65},
+				{FunctionType::Kind::SeismicAESGCMEncrypt, 0x66},
+				{FunctionType::Kind::SeismicAESGCMDecrypt, 0x67},
+				{FunctionType::Kind::SeismicHKDF, 0x68},
+				{FunctionType::Kind::SeismicSecp256k1Sign, 0x69}
 			};
 			m_context << contractAddresses.at(function.kind());
 			for (unsigned i = function.sizeOnStack(); i > 0; --i)
 				m_context << swapInstruction(i);
 			solAssert(!_functionCall.annotation().tryCall, "");
 			appendExternalFunctionCall(function, arguments, false);
+			break;
+		}
+		case FunctionType::Kind::SeismicRNG:
+		{
+			solAssert(!_functionCall.annotation().tryCall, "");
+			solAssert(function.returnParameterTypes().size() == 1);
+
+			auto const& retType = *function.returnParameterTypes()[0];
+			auto const* shieldedType = dynamic_cast<ShieldedIntegerType const*>(&retType);
+			solAssert(shieldedType);
+			unsigned byteWidth = shieldedType->numBits() / 8;
+			unsigned shiftBits = (32 - byteWidth) * 8;
+
+			// Store uint32(byteWidth) big-endian at the free memory pointer
+			utils().fetchFreeMemoryPointer();
+			// Stack: fmp
+			m_context << u256(byteWidth) << u256(224) << Instruction::SHL;
+			// Stack: fmp shl_val
+			m_context << Instruction::DUP2 << Instruction::MSTORE;
+			// Stack: fmp (stored shl_val at fmp)
+
+			// Clear output scratch space at memory[0]
+			m_context << u256(0) << u256(0) << Instruction::MSTORE;
+
+			// STATICCALL(gas, 0x64, fmp, 4, 0, byteWidth)
+			m_context << u256(byteWidth) << u256(0); // retSize, retOffset
+			m_context << u256(4); // argSize
+			m_context << Instruction::DUP4; // argOffset = fmp
+			m_context << u256(0x64); // precompile address
+			m_context << Instruction::GAS;
+			m_context << Instruction::STATICCALL;
+
+			// Check success, revert on failure
+			m_context << Instruction::ISZERO;
+			m_context.appendConditionalRevert(true);
+
+			// Pop the saved fmp
+			m_context << Instruction::POP;
+
+			// Load result from memory[0] and shift right to right-align
+			m_context << u256(0) << Instruction::MLOAD;
+			if (shiftBits > 0)
+				m_context << u256(shiftBits) << Instruction::SHR;
+
 			break;
 		}
 		case FunctionType::Kind::ArrayPush:
@@ -1108,7 +1162,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				ArrayUtils(m_context).accessIndex(*arrayType, false);
 
 				if (arrayType->isByteArrayOrString())
-					setLValue<StorageByteArrayElement>(_functionCall);
+					setLValue<StorageByteArrayElement>(_functionCall, arrayType->containsShieldedType());
 				else
 					setLValueToStorageItem(_functionCall);
 			}
@@ -1147,7 +1201,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				if (!arrayType->isByteArrayOrString())
 					StorageItem(m_context, *paramType).storeValue(*type, _functionCall.location(), true);
 				else
-					StorageByteArrayElement(m_context).storeValue(*type, _functionCall.location(), true);
+					StorageByteArrayElement(m_context, arrayType->containsShieldedType()).storeValue(*type, _functionCall.location(), true);
 			}
 			break;
 		}
@@ -1827,6 +1881,16 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 		solAssert(false, "Invalid member access to integer");
 		break;
 	}
+	case Type::Category::ShieldedInteger:
+	{
+		solAssert(false, "Invalid member access to shielded integer");
+		break;
+	}
+	case Type::Category::ShieldedBool:
+	{
+		solAssert(false, "Invalid member access to shielded bool");
+		break;
+	}
 	case Type::Category::ShieldedAddress:
 		if (member == "code")
 		{
@@ -2294,7 +2358,7 @@ bool ExpressionCompiler::visit(IndexAccess const& _indexAccess)
 					if (arrayType.isByteArrayOrString())
 					{
 						solAssert(!arrayType.isString(), "Index access to string is not allowed.");
-						setLValue<StorageByteArrayElement>(_indexAccess);
+						setLValue<StorageByteArrayElement>(_indexAccess, arrayType.containsShieldedType());
 					}
 					else
 						setLValueToStorageItem(_indexAccess);
@@ -2993,6 +3057,15 @@ void ExpressionCompiler::appendExternalFunctionCall(
 		utils().fetchFreeMemoryPointer();
 		m_context << Instruction::SUB << Instruction::MLOAD;
 	}
+	else if (
+		funKind == FunctionType::Kind::SeismicAESGCMEncrypt ||
+		funKind == FunctionType::Kind::SeismicAESGCMDecrypt ||
+		funKind == FunctionType::Kind::SeismicSecp256k1Sign
+	)
+	{
+		// Precompile returns raw bytes; wrap into a bytes memory array.
+		utils().returnDataToArray();
+	}
 	else if (!returnTypes.empty())
 	{
 		utils().fetchFreeMemoryPointer();
@@ -3082,7 +3155,7 @@ bool ExpressionCompiler::cleanupNeededForOp(Type::Category _type, Token _op, Ari
 		return true;
 	else if (
 		_arithmetic == Arithmetic::Wrapping &&
-		_type == Type::Category::Integer &&
+		(_type == Type::Category::Integer || _type == Type::Category::ShieldedInteger) &&
 		(_op == Token::Div || _op == Token::Mod || _op == Token::Exp)
 	)
 		// We need cleanup for EXP because 0**0 == 1, but 0**0x100 == 0

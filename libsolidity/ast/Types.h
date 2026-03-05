@@ -506,6 +506,10 @@ public:
 	std::string toString(bool _withoutDataLocation) const override;
 	std::string canonicalName() const override;
 
+	/// Only code and codehash are allowed on shielded addresses.
+	/// For other members, cast to address first.
+	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
+
 	StateMutability stateMutability(void) const { return AddressType::stateMutability(); }
 };
 
@@ -723,6 +727,7 @@ public:
 	Category category() const override { return Category::StringLiteral; }
 
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult binaryOperatorResult(Token, Type const*) const override
 	{
 		return nullptr;
@@ -955,6 +960,11 @@ public:
 	/// Constructor for a byte array ("bytes") and string.
 	explicit ArrayType(DataLocation _location, bool _isString = false);
 
+	/// Tag type for constructing shielded byte arrays.
+	struct ShieldedByteArrayTag {};
+	/// Constructor for a shielded byte array ("sbytes").
+	ArrayType(DataLocation _location, ShieldedByteArrayTag);
+
 	/// Constructor for a dynamically sized array type ("<type>[]")
 	ArrayType(DataLocation _location, Type const* _baseType):
 		ReferenceType(_location),
@@ -997,9 +1007,12 @@ public:
 
 	BoolResult validForLocation(DataLocation _loc) const override;
 
-	/// @returns true if this is a byte array.
+	/// @returns true if this is a byte array (bytes or sbytes).
+	/// NOTE: Shielded byte arrays (sbytes) have baseType() == shieldedByte().
+	/// Use baseType()->isShielded() to distinguish sbytes from bytes.
 	bool isByteArray() const { return m_arrayKind == ArrayKind::Bytes; }
-	/// @returns true if this is a byte array or a string
+	/// @returns true if this is a byte array or a string (bytes, sbytes, or string).
+	/// @see isByteArray() for the shielded-type note.
 	bool isByteArrayOrString() const { return m_arrayKind != ArrayKind::Ordinary; }
 	/// @returns true if this is a string
 	bool isString() const { return m_arrayKind == ArrayKind::String; }
@@ -1283,6 +1296,9 @@ public:
 	u256 storageSize() const override { return underlyingType().storageSize(); }
 	unsigned storageBytes() const override { return underlyingType().storageBytes(); }
 
+	bool isShielded() const override;
+	bool containsShieldedType() const override;
+
 	bool isValueType() const override { return true; }
 	bool nameable() const override
 	{
@@ -1418,6 +1434,12 @@ public:
 		/// (i.e. when accessed directly via the name of the containing contract).
 		/// Cannot be called.
 		Declaration,
+		SeismicRNG,             ///< STATICCALL to RNG precompile (0x64)
+		SeismicECDH,            ///< STATICCALL to ECDH precompile (0x65)
+		SeismicAESGCMEncrypt,   ///< STATICCALL to AES-GCM encrypt precompile (0x66)
+		SeismicAESGCMDecrypt,   ///< STATICCALL to AES-GCM decrypt precompile (0x67)
+		SeismicHKDF,            ///< STATICCALL to HKDF precompile (0x68)
+		SeismicSecp256k1Sign,   ///< STATICCALL to secp256k1 sign precompile (0x69)
 	};
 	struct Options
 	{

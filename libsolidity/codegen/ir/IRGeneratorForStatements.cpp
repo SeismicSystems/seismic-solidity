@@ -785,7 +785,7 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		else
 			solUnimplemented("Unary operator not yet implemented");
 	}
-	else if (resultType.category() == Type::Category::FixedBytes)
+	else if (resultType.category() == Type::Category::FixedBytes || resultType.category() == Type::Category::ShieldedFixedBytes)
 	{
 		solAssert(op == Token::BitNot, "Only bitwise negation is allowed for FixedBytes");
 		solAssert(resultType == type(_unaryOperation.subExpression()), "Result type doesn't match!");
@@ -1728,6 +1728,232 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 
 		break;
 	}
+	case FunctionType::Kind::SeismicRNG:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+		solAssert(functionType->returnParameterTypes().size() == 1);
+
+		auto const& retType = *functionType->returnParameterTypes()[0];
+		auto const* shieldedType = dynamic_cast<ShieldedIntegerType const*>(&retType);
+		solAssert(shieldedType);
+		unsigned byteWidth = shieldedType->numBits() / 8;
+		unsigned shiftBits = (32 - byteWidth) * 8;
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			mstore(<pos>, shl(224, <byteWidth>))
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x64, <pos>, 4))
+			<!eof>
+				let <success> := staticcall(gas(), 0x64, <pos>, 4, 0, <byteWidth>)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if gt(returndatasize(), 0) { returndatacopy(0, 0, <byteWidth>) }
+			</eof>
+			let <retVar> := <shr>(mload(0))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("byteWidth", std::to_string(byteWidth));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("shr", m_utils.shiftRightFunction(shiftBits));
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicECDH:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x65, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), 0x65, <pos>, sub(<end>, <pos>), 0, 32)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if eq(returndatasize(), 32) { returndatacopy(0, 0, 32) }
+			</eof>
+			let <retVar> := mload(0)
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicAESGCMEncrypt:
+	case FunctionType::Kind::SeismicAESGCMDecrypt:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		unsigned address = functionType->kind() == FunctionType::Kind::SeismicAESGCMEncrypt ? 0x66 : 0x67;
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			<?eof>
+				let <success> := iszero(extstaticcall(<address>, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), <address>, <pos>, sub(<end>, <pos>), 0, 0)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			let <retVar> := <allocateUnbounded>()
+			let <rdsize> := returndatasize()
+			mstore(<retVar>, <rdsize>)
+			returndatacopy(add(<retVar>, 0x20), 0, <rdsize>)
+			<finalizeAllocation>(<retVar>, add(<rdsize>, 0x20))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("address", toString(address));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("rdsize", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+		templ("finalizeAllocation", m_utils.finalizeAllocationFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicHKDF:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x68, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), 0x68, <pos>, sub(<end>, <pos>), 0, 32)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if eq(returndatasize(), 32) { returndatacopy(0, 0, 32) }
+			</eof>
+			let <retVar> := mload(0)
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicSecp256k1Sign:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x69, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), 0x69, <pos>, sub(<end>, <pos>), 0, 0)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			let <retVar> := <allocateUnbounded>()
+			let <rdsize> := returndatasize()
+			mstore(<retVar>, <rdsize>)
+			returndatacopy(add(<retVar>, 0x20), 0, <rdsize>)
+			<finalizeAllocation>(<retVar>, add(<rdsize>, 0x20))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("rdsize", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+		templ("finalizeAllocation", m_utils.finalizeAllocationFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
 	default:
 		solUnimplemented("FunctionKind " + toString(static_cast<int>(functionType->kind())) + " not yet implemented");
 	}
@@ -1840,6 +2066,11 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 	case Type::Category::Integer:
 	{
 		solAssert(false, "Invalid member access to integer");
+		break;
+	}
+	case Type::Category::ShieldedInteger:
+	{
+		solAssert(false, "Invalid member access to shielded integer");
 		break;
 	}
 	case Type::Category::Address:
@@ -1971,12 +2202,12 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 		// we can ignore the kind of magic and only look at the name of the member
 		if (member == "coinbase")
 			define(_memberAccess) << "coinbase()\n";
-		else if (member == "timestamp")
+		// "timestamp_seconds" is an alias for "timestamp", allowing contract authors
+		// to be explicit about the unit when used alongside "timestamp_ms"
+		else if (member == "timestamp" || member == "timestamp_seconds")
 			define(_memberAccess) << "timestamp()\n";
 		else if (member == "timestamp_ms")
-			define(_memberAccess) << "timestamp_ms()\n";
-		else if (member == "timestamp_seconds")
-			define(_memberAccess) << "timestamp_seconds()\n";
+			define(_memberAccess) << "timestampms()\n";
 		else if (member == "difficulty" || member == "prevrandao")
 		{
 			if (m_context.evmVersion().hasPrevRandao())
@@ -3081,7 +3312,9 @@ std::string IRGeneratorForStatements::binaryOperation(
 	{
 		solAssert(
 			_type.category() == Type::Category::Integer ||
-			_type.category() == Type::Category::FixedBytes,
+			_type.category() == Type::Category::ShieldedInteger ||
+			_type.category() == Type::Category::FixedBytes ||
+			_type.category() == Type::Category::ShieldedFixedBytes,
 			""
 		);
 		switch (_operator)
@@ -3223,7 +3456,12 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 
 					if (_memory.byteArrayElement)
 					{
-						solAssert(_lvalue.type == *TypeProvider::byte());
+						// For byte arrays, accept both bytes1 and sbytes1
+						solAssert(
+							_lvalue.type == *TypeProvider::byte() ||
+							_lvalue.type == *TypeProvider::shieldedFixedBytes(1),
+							"Invalid byte array element type"
+						);
 						appendCode() << "mstore8(" + _memory.address + ", byte(0, " + prepared.commaSeparatedList() + "))\n";
 					}
 					else

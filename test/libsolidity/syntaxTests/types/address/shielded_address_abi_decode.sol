@@ -5,3 +5,4 @@ contract C {
     }
 }
 // ----
+// TypeError 4851: (130-138): Shielded types cannot be ABI encoded.
