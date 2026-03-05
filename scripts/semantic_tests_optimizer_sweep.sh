@@ -12,6 +12,8 @@ SEMANTIC_TESTS_SCRIPT="$SCRIPT_DIR/semantic_tests.sh"
 # Defaults
 WITH_VIA_IR=0
 RUNS_VALUES=()
+RANGE_MIN=""
+RANGE_MAX=""
 PASSTHROUGH_ARGS=()
 
 # Common real-world optimizer-runs values:
@@ -28,11 +30,12 @@ Usage: $(basename "$0") [options] [-- semantic_tests.sh options...]
 
 Run semantic tests across multiple optimizer-runs values.
 
-You must specify which values to test, either explicitly or via --preset.
+You must specify which values to test via --preset, --runs, or --range.
 
 Options:
   --runs V1,V2,...  Comma-separated optimizer-runs values to test
   --preset          Use common real-world values: ${PRESET_VALUES[*]}
+  --range N M       Test every integer from N to M (inclusive)
   --via-ir          Also test with --via-ir for each optimizer-runs value
   -h, --help        Show this help message
 
@@ -43,6 +46,7 @@ Examples:
   $(basename "$0") --preset
   $(basename "$0") --runs 1,200,10000
   $(basename "$0") --preset --via-ir
+  $(basename "$0") --range 1 50
   $(basename "$0") --runs 500,1000 -w /path/to/workspace
 EOF
 }
@@ -54,6 +58,9 @@ while [[ $# -gt 0 ]]; do
 			IFS=',' read -ra RUNS_VALUES <<< "$1" ;;
 		--preset)
 			RUNS_VALUES=("${PRESET_VALUES[@]}") ;;
+		--range)
+			shift; RANGE_MIN="$1"
+			shift; RANGE_MAX="$1" ;;
 		--via-ir)
 			WITH_VIA_IR=1 ;;
 		-h|--help)
@@ -64,11 +71,19 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
+# ---- Expand range if provided ---- #
+
+if [[ -n "$RANGE_MIN" && -n "$RANGE_MAX" ]]; then
+	for (( i=RANGE_MIN; i<=RANGE_MAX; i++ )); do
+		RUNS_VALUES+=("$i")
+	done
+fi
+
 # ---- Validate ---- #
 
 if [[ ${#RUNS_VALUES[@]} -eq 0 ]]; then
 	echo "Error: No optimizer-runs values specified." >&2
-	echo "Use --preset for common values or --runs V1,V2,... for explicit values." >&2
+	echo "Use --preset for common values, --runs V1,V2,... for explicit values, or --range N M." >&2
 	echo "Run with --help for usage info." >&2
 	exit 1
 fi
