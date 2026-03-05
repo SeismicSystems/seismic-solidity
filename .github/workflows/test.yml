@@ -144,15 +144,15 @@ jobs:
 
           # Without --via-ir
           run_config "no optimizer, no IR"
+          run_config "optimizer (default runs=200), no IR" --optimize
           run_config "optimizer runs=1, no IR" --optimize --optimizer-runs 1
-          run_config "optimizer runs=200, no IR" --optimize --optimizer-runs 200
           run_config "optimizer runs=1000, no IR" --optimize --optimizer-runs 1000
           run_config "optimizer runs=1000000, no IR" --optimize --optimizer-runs 1000000
 
           # With --via-ir
           run_config "no optimizer, --via-ir" --via-ir
+          run_config "optimizer (default runs=200), --via-ir" --via-ir --optimize
           run_config "optimizer runs=1, --via-ir" --via-ir --optimize --optimizer-runs 1
-          run_config "optimizer runs=200, --via-ir" --via-ir --optimize --optimizer-runs 200
           run_config "optimizer runs=1000, --via-ir" --via-ir --optimize --optimizer-runs 1000
           run_config "optimizer runs=1000000, --via-ir" --via-ir --optimize --optimizer-runs 1000000
 
