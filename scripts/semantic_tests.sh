@@ -36,10 +36,8 @@ Path resolution (in priority order):
 
 Options:
   --optimize          Pass --optimize to revme
-  --no-optimize       Do not pass --optimize (default)
   --optimizer-runs N  Pass --optimizer-runs N (implies --optimize)
-  --via-ir            Pass --via-ir to revme
-  --no-via-ir         Do not pass --via-ir (default)
+  --via-ir            Pass --via-ir (and --unsafe-via-ir) to revme
   --keep-going        Pass --keep-going to revme (default)
   --stop-early        Do NOT pass --keep-going
   -t <path>           Test directory (default: <solidity-root>/test/libsolidity/semanticTests)
@@ -64,14 +62,10 @@ while [[ $# -gt 0 ]]; do
 			shift; SOLC_BIN="$1" ;;
 		--optimize)
 			OPTIMIZE=1 ;;
-		--no-optimize)
-			OPTIMIZE=0 ;;
 		--optimizer-runs)
 			shift; OPTIMIZER_RUNS="$1"; OPTIMIZE=1 ;;
 		--via-ir)
 			VIA_IR=1 ;;
-		--no-via-ir)
-			VIA_IR=0 ;;
 		--keep-going)
 			KEEP_GOING=1 ;;
 		--stop-early)
