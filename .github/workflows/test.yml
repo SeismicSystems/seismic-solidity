@@ -124,26 +124,44 @@ jobs:
           }
           EOF
           SCRIPT_EOF
-      - name: Run semantic tests (no optimizer, no IR)
+      - name: Run semantic tests (all configurations)
         run: |
           set -euo pipefail
           eval "$RUN_SEMANTIC_TESTS"
-          run_semantic_tests
-      - name: Run semantic tests (with optimizer, no IR)
-        run: |
-          set -euo pipefail
-          eval "$RUN_SEMANTIC_TESTS"
-          run_semantic_tests --optimize --optimizer-runs 200
-      - name: Run semantic tests (no optimizer, --via-ir)
-        run: |
-          set -euo pipefail
-          eval "$RUN_SEMANTIC_TESTS"
-          run_semantic_tests --via-ir
-      - name: Run semantic tests (with optimizer, --via-ir)
-        run: |
-          set -euo pipefail
-          eval "$RUN_SEMANTIC_TESTS"
-          run_semantic_tests --via-ir --optimize --optimizer-runs 200
+
+          FAILED=0
+          run_config() {
+            local desc="$1"
+            shift
+            echo "========================================="
+            echo "Running: $desc"
+            echo "========================================="
+            if ! run_semantic_tests "$@"; then
+              echo "FAILED: $desc"
+              FAILED=1
+            fi
+          }
+
+          # Without --via-ir
+          run_config "no optimizer, no IR"
+          run_config "optimizer (default runs=200), no IR" --optimize
+          run_config "optimizer runs=1, no IR" --optimize --optimizer-runs 1
+          run_config "optimizer runs=1000, no IR" --optimize --optimizer-runs 1000
+          run_config "optimizer runs=1000000, no IR" --optimize --optimizer-runs 1000000
+          run_config "optimizer runs=4294967295 (uint32 max), no IR" --optimize --optimizer-runs 4294967295
+
+          # With --via-ir
+          run_config "no optimizer, --via-ir" --via-ir
+          run_config "optimizer (default runs=200), --via-ir" --via-ir --optimize
+          run_config "optimizer runs=1, --via-ir" --via-ir --optimize --optimizer-runs 1
+          run_config "optimizer runs=1000, --via-ir" --via-ir --optimize --optimizer-runs 1000
+          run_config "optimizer runs=1000000, --via-ir" --via-ir --optimize --optimizer-runs 1000000
+          run_config "optimizer runs=4294967295 (uint32 max), --via-ir" --via-ir --optimize --optimizer-runs 4294967295
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "Some configurations failed!"
+            exit 1
+          fi
 
       # Save caches only on push to target branches (after PR merge)
       # Delete old caches first since GitHub caches are immutable
