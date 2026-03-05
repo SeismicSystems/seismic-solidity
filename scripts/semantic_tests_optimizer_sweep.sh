@@ -17,11 +17,12 @@ RANGE_MAX=""
 PASSTHROUGH_ARGS=()
 
 # Common real-world optimizer-runs values:
-#   1        — deploy-optimized (proxies, factories)
-#   200      — Solidity default
-#   1000     — moderate runtime optimization (DeFi protocols)
-#   1000000  — heavy runtime optimization (Uniswap V3)
-PRESET_VALUES=(1 200 1000 1000000)
+#   1          — deploy-optimized (proxies, factories)
+#   200        — Solidity default
+#   1000       — moderate runtime optimization (DeFi protocols)
+#   1000000    — heavy runtime optimization (Uniswap V3)
+#   4294967295 — type(uint32).max, max optimization (Seaport/OpenSea)
+PRESET_VALUES=(1 200 1000 1000000 4294967295)
 
 function usage
 {
