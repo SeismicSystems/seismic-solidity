@@ -10,12 +10,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SEMANTIC_TESTS_SCRIPT="$SCRIPT_DIR/semantic_tests.sh"
 
 # Defaults
-NUM_RUNS=5
-RUN_ALL=0
-MIN_RUNS=1
-MAX_RUNS=200
 WITH_VIA_IR=0
+RUNS_VALUES=()
 PASSTHROUGH_ARGS=()
+
+# Common real-world optimizer-runs values:
+#   1        — deploy-optimized (proxies, factories)
+#   200      — Solidity default
+#   1000     — moderate runtime optimization (DeFi protocols)
+#   1000000  — heavy runtime optimization (Uniswap V3)
+PRESET_VALUES=(1 200 1000 1000000)
 
 function usage
 {
@@ -24,29 +28,32 @@ Usage: $(basename "$0") [options] [-- semantic_tests.sh options...]
 
 Run semantic tests across multiple optimizer-runs values.
 
+You must specify which values to test, either explicitly or via --preset.
+
 Options:
-  -n N         Pick N random optimizer-runs values from the range (default: 5)
-  --all        Run ALL values from min to max (overrides -n)
-  --min M      Lower bound of the range (default: 1)
-  --max M      Upper bound of the range (default: 200)
-  --via-ir     Also test with --via-ir for each optimizer-runs value
-  -h, --help   Show this help message
+  --runs V1,V2,...  Comma-separated optimizer-runs values to test
+  --preset          Use common real-world values: ${PRESET_VALUES[*]}
+  --via-ir          Also test with --via-ir for each optimizer-runs value
+  -h, --help        Show this help message
 
 All other arguments are passed through to semantic_tests.sh
 (e.g., -w, -s, -r, --stop-early, --solc, -t).
+
+Examples:
+  $(basename "$0") --preset
+  $(basename "$0") --runs 1,200,10000
+  $(basename "$0") --preset --via-ir
+  $(basename "$0") --runs 500,1000 -w /path/to/workspace
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
-		-n)
-			shift; NUM_RUNS="$1" ;;
-		--all)
-			RUN_ALL=1 ;;
-		--min)
-			shift; MIN_RUNS="$1" ;;
-		--max)
-			shift; MAX_RUNS="$1" ;;
+		--runs)
+			shift
+			IFS=',' read -ra RUNS_VALUES <<< "$1" ;;
+		--preset)
+			RUNS_VALUES=("${PRESET_VALUES[@]}") ;;
 		--via-ir)
 			WITH_VIA_IR=1 ;;
 		-h|--help)
@@ -57,43 +64,13 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-# ---- Build list of optimizer-runs values ---- #
+# ---- Validate ---- #
 
-if [[ "$RUN_ALL" -eq 1 ]]; then
-	RUNS_VALUES=()
-	for (( i=MIN_RUNS; i<=MAX_RUNS; i++ )); do
-		RUNS_VALUES+=("$i")
-	done
-else
-	# Pick N random values from [MIN_RUNS, MAX_RUNS]
-	RANGE=$((MAX_RUNS - MIN_RUNS + 1))
-	if [[ "$NUM_RUNS" -ge "$RANGE" ]]; then
-		# If N >= range size, just use all values
-		RUNS_VALUES=()
-		for (( i=MIN_RUNS; i<=MAX_RUNS; i++ )); do
-			RUNS_VALUES+=("$i")
-		done
-	else
-		RUNS_VALUES=()
-		# Use shuf if available, otherwise fall back to $RANDOM
-		if command -v shuf &>/dev/null; then
-			while IFS= read -r val; do
-				RUNS_VALUES+=("$val")
-			done < <(seq "$MIN_RUNS" "$MAX_RUNS" | shuf -n "$NUM_RUNS" | sort -n)
-		else
-			# Fallback: generate random values with $RANDOM
-			declare -A seen
-			while [[ ${#RUNS_VALUES[@]} -lt $NUM_RUNS ]]; do
-				val=$(( RANDOM % RANGE + MIN_RUNS ))
-				if [[ -z "${seen[$val]:-}" ]]; then
-					seen[$val]=1
-					RUNS_VALUES+=("$val")
-				fi
-			done
-			# Sort them
-			IFS=$'\n' RUNS_VALUES=($(sort -n <<<"${RUNS_VALUES[*]}")); unset IFS
-		fi
-	fi
+if [[ ${#RUNS_VALUES[@]} -eq 0 ]]; then
+	echo "Error: No optimizer-runs values specified." >&2
+	echo "Use --preset for common values or --runs V1,V2,... for explicit values." >&2
+	echo "Run with --help for usage info." >&2
+	exit 1
 fi
 
 # ---- Build list of configurations ---- #
