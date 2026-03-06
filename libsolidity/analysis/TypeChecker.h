@@ -217,6 +217,12 @@ private:
 	ContractDefinition const* m_currentContract = nullptr;
 	/// Tracks nesting depth of unchecked blocks
 	unsigned m_insideUncheckedBlock = 0;
+	/// Tracks whether we are visiting arguments of a `new` expression (constructor call).
+	/// Shielded literal warnings always fire in this context (init code leak).
+	unsigned m_insideNewExpressionArgs = 0;
+	/// Tracks whether we are visiting arguments of a non-constructor external function call.
+	/// Shielded literal warnings are suppressed here (calldata encrypted by TxSeismic).
+	unsigned m_insideExternalCallArgs = 0;
 
 	langutil::EVMVersion m_evmVersion;
 	std::optional<uint8_t> m_eofVersion;

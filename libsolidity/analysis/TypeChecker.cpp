@@ -3055,6 +3055,31 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 	std::vector<ASTPointer<Expression const>> const& arguments = _functionCall.arguments();
 	bool argumentsArePure = true;
 
+	// Track whether we are inside a `new` expression or an external call on
+	// another contract, for context-aware shielded literal warnings.
+	// A member access on a contract/interface type (e.g. token.mint(...))
+	// indicates an external call whose calldata TxSeismic encrypts.
+	// Built-in member functions (arr.push(...), addr.send(...)) are NOT
+	// external calls — the literal is still in the calling contract's bytecode.
+	bool const isNewExpr = dynamic_cast<NewExpression const*>(&_functionCall.expression()) != nullptr;
+	bool isExternalContractCall = false;
+	if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+	{
+		if (auto const* identifier = dynamic_cast<Identifier const*>(&memberAccess->expression()))
+		{
+			if (auto const* varDecl = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			{
+				// DeclarationTypeChecker sets variable types before TypeChecker runs.
+				if (varDecl->type() && dynamic_cast<ContractType const*>(varDecl->type()))
+					isExternalContractCall = true;
+			}
+		}
+	}
+	if (isNewExpr)
+		++m_insideNewExpressionArgs;
+	else if (isExternalContractCall)
+		++m_insideExternalCallArgs;
+
 	// We need to check arguments' type first as they will be needed for overload resolution.
 	for (ASTPointer<Expression const> const& argument: arguments)
 	{
@@ -3062,6 +3087,11 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 		if (!*argument->annotation().isPure)
 			argumentsArePure = false;
 	}
+
+	if (isNewExpr)
+		--m_insideNewExpressionArgs;
+	else if (isExternalContractCall)
+		--m_insideExternalCallArgs;
 
 	// Store argument types - and names if given - for overload resolution
 	{
@@ -4508,6 +4538,14 @@ void TypeChecker::checkLiteralToShielded(
 	langutil::SourceLocation const& _location
 )
 {
+	// When a literal-to-shielded conversion is an argument to an external
+	// function call (not a constructor/new), the literal travels as calldata
+	// which TxSeismic encrypts. The value is not embedded in on-chain bytecode
+	// in the callee, so the warning is a false positive. Suppress it.
+	// Inside `new` expression args the literal IS in init code, so always warn.
+	if (m_insideExternalCallArgs > 0 && m_insideNewExpressionArgs == 0)
+		return;
+
 	// Cases that only need annotation().type, not a Literal AST node.
 	// This covers constant expressions (BinaryOperation, UnaryOperation, etc.)
 	// that fold to RationalNumber or Enum types.
