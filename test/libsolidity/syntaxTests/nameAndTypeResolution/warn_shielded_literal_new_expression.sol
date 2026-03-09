@@ -10,4 +10,5 @@ contract Parent {
     }
 }
 // ----
-// Warning 5501: (239-251): Literals converted to shielded integers will leak during contract deployment.
+// Warning 5500: (138-151): Shielded types in constructor parameters are visible in deployment transaction data. Contract creation (CREATE/CREATE2) does not encrypt calldata. Consider setting shielded state via a post-deployment transaction instead.
+// Warning 9660: (239-251): Literals converted to shielded integers will leak during contract deployment.

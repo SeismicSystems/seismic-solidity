@@ -383,6 +383,18 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 					"Use internal or private functions or cast to an unshielded type."
 				);
 
+			// Warn about shielded types in constructor parameters. Contract creation
+			// uses the CREATE opcode whose input data is not encrypted by TxSeismic,
+			// so shielded constructor arguments are visible in the deployment transaction.
+			if (_function.isConstructor() && !_var.isReturnParameter() && type(_var)->containsShieldedType())
+				m_errorReporter.warning(
+					5500_error,
+					_var.location(),
+					"Shielded types in constructor parameters are visible in deployment transaction data. "
+					"Contract creation (CREATE/CREATE2) does not encrypt calldata. "
+					"Consider setting shielded state via a post-deployment transaction instead."
+				);
+
 			auto iType = type(_var)->interfaceType(_function.libraryFunction());
 
 			if (!iType)
@@ -4551,29 +4563,13 @@ void TypeChecker::checkLiteralToShielded(
 	langutil::SourceLocation const& _location
 )
 {
-	// Emit distinct warning IDs based on AST context so downstream tools
-	// (sforge/seismic-compilers) can selectively suppress warnings by file path:
-	//   Context A (new expr args)    — IDs 5501-5505: literal leaks in deployment
-	//                                  tx init code; always warn, even in tests
-	//   Context B (external call)    — IDs 5506-5510: literal in caller bytecode,
-	//                                  calldata encrypted by TxSeismic
-	//   Context C (other)            — IDs 9660-9663/1457: literal in bytecode
-	// In test/script files, B and C are suppressed (bytecode never deployed,
-	// calldata encrypted). Only A warnings are shown.
-	enum class Ctx { NewExpr, ExternalCall, Other };
-	Ctx ctx = Ctx::Other;
-	if (m_insideNewExpressionArgs > 0)
-		ctx = Ctx::NewExpr;
-	else if (m_insideExternalCallArgs > 0)
-		ctx = Ctx::ExternalCall;
-
-	// Helper to select the right warning ID per context.
-	auto pickId = [&](langutil::ErrorId _newExpr, langutil::ErrorId _extCall, langutil::ErrorId _other)
-	{
-		if (ctx == Ctx::NewExpr)     return _newExpr;
-		if (ctx == Ctx::ExternalCall) return _extCall;
-		return _other;
-	};
+	// When the literal-to-shielded conversion occurs inside an external call's
+	// arguments, emit a distinct warning ID so that downstream tools (sforge)
+	// can selectively suppress it for test/script files where the contract
+	// bytecode is never deployed on-chain and calldata is encrypted by TxSeismic.
+	// All other contexts (new-expression args, assignments, internal calls, etc.)
+	// keep the original warning IDs.
+	bool const isExternalCallArg = m_insideExternalCallArgs > 0 && m_insideNewExpressionArgs == 0;
 
 	// Cases that only need annotation().type, not a Literal AST node.
 	// This covers constant expressions (BinaryOperation, UnaryOperation, etc.)
@@ -4585,7 +4581,7 @@ void TypeChecker::checkLiteralToShielded(
 	)
 	{
 		m_errorReporter.warning(
-			pickId(5501_error, 5506_error, 9660_error),
+			isExternalCallArg ? 5506_error : 9660_error,
 			_location,
 			"Literals converted to shielded integers will leak during contract deployment."
 		);
@@ -4598,7 +4594,7 @@ void TypeChecker::checkLiteralToShielded(
 	)
 	{
 		m_errorReporter.warning(
-			pickId(5505_error, 5510_error, 1457_error),
+			isExternalCallArg ? 5510_error : 1457_error,
 			_location,
 			"Enums converted to shielded integers will leak during contract deployment."
 		);
@@ -4611,7 +4607,7 @@ void TypeChecker::checkLiteralToShielded(
 	)
 	{
 		m_errorReporter.warning(
-			pickId(5504_error, 5509_error, 9663_error),
+			isExternalCallArg ? 5509_error : 9663_error,
 			_location,
 			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
 		);
@@ -4628,7 +4624,7 @@ void TypeChecker::checkLiteralToShielded(
 		std::string val = literal->value();
 		if (val == "true" || val == "false")
 			m_errorReporter.warning(
-				pickId(5502_error, 5507_error, 9661_error),
+				isExternalCallArg ? 5507_error : 9661_error,
 				_location,
 				"Bool Literals converted to shielded bools will leak during contract deployment."
 			);
@@ -4637,7 +4633,7 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		if (literal->passesAddressChecksum())
 			m_errorReporter.warning(
-				pickId(5503_error, 5508_error, 9662_error),
+				isExternalCallArg ? 5508_error : 9662_error,
 				_location,
 				"Address Literals converted to shielded addresses will leak during contract deployment."
 			);
