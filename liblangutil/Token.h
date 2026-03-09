@@ -233,6 +233,7 @@ namespace solidity::langutil
 	K(TrueLiteral, "true", 0)                                          \
 	K(FalseLiteral, "false", 0)                                        \
 	T(Number, nullptr, 0)                                              \
+	T(ShieldedNumber, nullptr, 0)                                      \
 	T(StringLiteral, nullptr, 0)                                       \
 	T(UnicodeStringLiteral, nullptr, 0)                                \
 	T(HexStringLiteral, nullptr, 0)                                    \

@@ -1030,7 +1030,7 @@ ASTString Literal::valueWithoutUnderscores() const
 
 bool Literal::isHexNumber() const
 {
-	if (token() != Token::Number)
+	if (token() != Token::Number && token() != Token::ShieldedNumber)
 		return false;
 	return boost::starts_with(value(), "0x");
 }

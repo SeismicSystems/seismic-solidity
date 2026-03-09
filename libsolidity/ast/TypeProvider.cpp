@@ -521,6 +521,7 @@ Type const* TypeProvider::forLiteral(Literal const& _literal)
 	case Token::FalseLiteral:
 		return boolean();
 	case Token::Number:
+	case Token::ShieldedNumber:
 		return rationalNumber(_literal);
 	case Token::StringLiteral:
 	case Token::UnicodeStringLiteral:
@@ -533,7 +534,8 @@ Type const* TypeProvider::forLiteral(Literal const& _literal)
 
 RationalNumberType const* TypeProvider::rationalNumber(Literal const& _literal)
 {
-	solAssert(_literal.token() == Token::Number, "");
+	solAssert(_literal.token() == Token::Number || _literal.token() == Token::ShieldedNumber, "");
+	bool isShielded = _literal.token() == Token::ShieldedNumber;
 	std::tuple<bool, rational> validLiteral = RationalNumberType::isValidLiteral(_literal);
 	if (std::get<0>(validLiteral))
 	{
@@ -545,7 +547,7 @@ RationalNumberType const* TypeProvider::rationalNumber(Literal const& _literal)
 				compatibleBytesType = fixedBytes(static_cast<unsigned>(digitCount / 2));
 		}
 
-		return rationalNumber(std::get<1>(validLiteral), compatibleBytesType);
+		return rationalNumber(std::get<1>(validLiteral), compatibleBytesType, isShielded);
 	}
 	return nullptr;
 }
@@ -657,9 +659,9 @@ FunctionType const* TypeProvider::function(
 	);
 }
 
-RationalNumberType const* TypeProvider::rationalNumber(rational const& _value, Type const* _compatibleBytesType)
+RationalNumberType const* TypeProvider::rationalNumber(rational const& _value, Type const* _compatibleBytesType, bool _shielded)
 {
-	return createAndGet<RationalNumberType>(_value, _compatibleBytesType);
+	return createAndGet<RationalNumberType>(_value, _compatibleBytesType, _shielded);
 }
 
 ArrayType const* TypeProvider::array(DataLocation _location, bool _isString)
