@@ -10,4 +10,4 @@ contract Parent {
     }
 }
 // ----
-// Warning 9660: (239-251): Literals converted to shielded integers will leak during contract deployment.
+// Warning 5501: (239-251): Literals converted to shielded integers will leak during contract deployment.

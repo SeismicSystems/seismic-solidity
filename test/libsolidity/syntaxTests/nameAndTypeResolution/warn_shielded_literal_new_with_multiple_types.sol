@@ -11,5 +11,5 @@ contract Parent {
     }
 }
 // ----
-// Warning 9660: (258-270): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9661: (272-283): Bool Literals converted to shielded bools will leak during contract deployment.
+// Warning 5501: (258-270): Literals converted to shielded integers will leak during contract deployment.
+// Warning 5502: (272-283): Bool Literals converted to shielded bools will leak during contract deployment.
