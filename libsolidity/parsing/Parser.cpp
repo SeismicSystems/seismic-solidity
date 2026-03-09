@@ -2379,6 +2379,7 @@ ASTPointer<Expression> Parser::parseLiteral()
 	case Token::TrueLiteral:
 	case Token::FalseLiteral:
 	case Token::Number:
+	case Token::ShieldedNumber:
 	{
 		nodeFactory.markEndPosition();
 		advance();
@@ -2414,6 +2415,12 @@ ASTPointer<Expression> Parser::parseLiteral()
 		return nodeFactory.createNode<Literal>(initialToken, std::move(value), subDenomination);
 	}
 
+	if (initialToken == Token::ShieldedNumber && (
+		TokenTraits::isEtherSubdenomination(m_scanner->currentToken()) ||
+		TokenTraits::isTimeSubdenomination(m_scanner->currentToken())
+	))
+		fatalParserError(9832_error, "Shielded number literals cannot be used with unit denominations.");
+
 	return nodeFactory.createNode<Literal>(initialToken, std::move(value), Literal::SubDenomination::None);
 }
 
@@ -2429,6 +2436,7 @@ ASTPointer<Expression> Parser::parsePrimaryExpression()
 	case Token::TrueLiteral:
 	case Token::FalseLiteral:
 	case Token::Number:
+	case Token::ShieldedNumber:
 	case Token::StringLiteral:
 	case Token::UnicodeStringLiteral:
 	case Token::HexStringLiteral:

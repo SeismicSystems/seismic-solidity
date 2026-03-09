@@ -656,8 +656,8 @@ private:
 class RationalNumberType: public Type
 {
 public:
-	explicit RationalNumberType(rational _value, Type const* _compatibleBytesType = nullptr):
-		m_value(std::move(_value)), m_compatibleBytesType(_compatibleBytesType)
+	explicit RationalNumberType(rational _value, Type const* _compatibleBytesType = nullptr, bool _shielded = false):
+		m_value(std::move(_value)), m_compatibleBytesType(_compatibleBytesType), m_shielded(_shielded)
 	{}
 
 	Category category() const override { return Category::RationalNumber; }
@@ -683,6 +683,8 @@ public:
 
 	/// @returns the smallest integer type that can hold the value or an empty pointer if not possible.
 	IntegerType const* integerType() const;
+	/// @returns the smallest shielded integer type that can hold the value or an empty pointer if not possible.
+	ShieldedIntegerType const* shieldedIntegerType() const;
 	/// @returns the smallest fixed type that can hold the value or incurs the least precision loss,
 	/// unless the value was truncated, then a suitable type will be chosen to indicate such event.
 	/// If the integer part does not fit, returns an empty pointer.
@@ -697,6 +699,9 @@ public:
 	/// @returns true if the value is zero.
 	bool isZero() const { return m_value == 0; }
 
+	/// @returns true if the literal was written with the shielded suffix (e.g. 1s).
+	bool isShielded() const { return m_shielded; }
+
 	/// @returns true if the literal is a valid integer.
 	static std::tuple<bool, rational> isValidLiteral(Literal const& _literal);
 
@@ -706,6 +711,9 @@ private:
 	/// Bytes type to which the rational can be implicitly converted.
 	/// Empty for all rationals that are not directly parsed from hex literals.
 	Type const* m_compatibleBytesType;
+
+	/// Whether this rational was written with the shielded suffix (e.g. 1s).
+	bool m_shielded = false;
 
 	/// @returns true if the literal is a valid rational number.
 	static std::tuple<bool, rational> parseRational(std::string const& _value);

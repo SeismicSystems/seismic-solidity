@@ -1017,6 +1017,15 @@ Token Scanner::scanNumber(char _charSeen)
 			return setError(ScannerError::IllegalExponent);
 		scanDecimalDigits();
 	}
+	// Check for shielded literal suffix 's'.
+	// Only treat as suffix if 's' is not followed by an identifier character
+	// (so that e.g. `1seconds` still errors as expected).
+	if (m_char == 's' && (m_source.isPastEndOfInput(1) || !isIdentifierPart(m_source.get(1))))
+	{
+		advance(); // consume the 's'
+		literal.complete();
+		return Token::ShieldedNumber;
+	}
 	// The source character immediately following a numeric literal must
 	// not be an identifier start or a decimal digit; see ECMA-262
 	// section 7.8.3, page 17 (note that we read only one decimal digit

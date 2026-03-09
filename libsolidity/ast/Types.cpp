@@ -1136,13 +1136,26 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	{
 	case Category::Integer:
 	{
+		if (m_shielded)
+			return BoolResult::err("Shielded number literal cannot be implicitly converted to non-shielded type.");
 		if (isFractional())
 			return false;
 		IntegerType const& targetType = dynamic_cast<IntegerType const&>(_convertTo);
 		return fitsIntegerType(m_value.numerator(), targetType);
 	}
+	case Category::ShieldedInteger:
+	{
+		if (!m_shielded)
+			return false;
+		if (isFractional())
+			return false;
+		ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		return fitsIntegerType(m_value.numerator(), targetType);
+	}
 	case Category::FixedPoint:
 	{
+		if (m_shielded)
+			return BoolResult::err("Shielded number literal cannot be implicitly converted to non-shielded type.");
 		FixedPointType const& targetType = dynamic_cast<FixedPointType const&>(_convertTo);
 		// Store a negative number into an unsigned.
 		if (isNegative() && !targetType.isSigned())
@@ -1156,6 +1169,8 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 		return fitsIntoBits(value.numerator(), targetType.numBits(), targetType.isSigned());
 	}
 	case Category::FixedBytes:
+		if (m_shielded)
+			return BoolResult::err("Shielded number literal cannot be implicitly converted to non-shielded type.");
 		return (m_value == rational(0)) || (m_compatibleBytesType && *m_compatibleBytesType == _convertTo);
 	default:
 		return false;
@@ -1204,7 +1219,7 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 TypeResult RationalNumberType::unaryOperatorResult(Token _operator) const
 {
 	if (std::optional<rational> value = ConstantEvaluator::evaluateUnaryOperator(_operator, m_value))
-		return TypeResult{TypeProvider::rationalNumber(*value)};
+		return TypeResult{TypeProvider::rationalNumber(*value, nullptr, m_shielded)};
 	else
 		return nullptr;
 }
@@ -1277,7 +1292,11 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 		if (value->numerator() != 0 && std::max(boost::multiprecision::msb(abs(value->numerator())), boost::multiprecision::msb(abs(value->denominator()))) > 4096)
 			return TypeResult::err("Precision of rational constants is limited to 4096 bits.");
 
-		return TypeResult{TypeProvider::rationalNumber(*value)};
+		// Mixed shielded/non-shielded arithmetic between rationals is not allowed.
+		if (m_shielded != other.m_shielded)
+			return nullptr;
+
+		return TypeResult{TypeProvider::rationalNumber(*value, nullptr, m_shielded)};
 	}
 	else
 		return nullptr;
@@ -1289,10 +1308,11 @@ std::string RationalNumberType::richIdentifier() const
 	// but let just make it deterministic here.
 	bigint numerator = abs(m_value.numerator());
 	bigint denominator = abs(m_value.denominator());
+	std::string prefix = m_shielded ? "t_shielded_rational_" : "t_rational_";
 	if (m_value < 0)
-		return "t_rational_minus_" + numerator.str() + "_by_" + denominator.str();
+		return prefix + "minus_" + numerator.str() + "_by_" + denominator.str();
 	else
-		return "t_rational_" + numerator.str() + "_by_" + denominator.str();
+		return prefix + numerator.str() + "_by_" + denominator.str();
 }
 
 bool RationalNumberType::operator==(Type const& _other) const
@@ -1300,7 +1320,7 @@ bool RationalNumberType::operator==(Type const& _other) const
 	if (_other.category() != category())
 		return false;
 	RationalNumberType const& other = dynamic_cast<RationalNumberType const&>(_other);
-	return m_value == other.m_value;
+	return m_value == other.m_value && m_shielded == other.m_shielded;
 }
 
 std::string RationalNumberType::bigintToReadableString(bigint const& _num)
@@ -1316,12 +1336,13 @@ std::string RationalNumberType::bigintToReadableString(bigint const& _num)
 
 std::string RationalNumberType::toString(bool) const
 {
+	std::string prefix = m_shielded ? "shielded_" : "";
 	if (!isFractional())
-		return "int_const " + bigintToReadableString(m_value.numerator());
+		return prefix + "int_const " + bigintToReadableString(m_value.numerator());
 
 	std::string numerator = bigintToReadableString(m_value.numerator());
 	std::string denominator = bigintToReadableString(m_value.denominator());
-	return "rational_const " + numerator + " / " + denominator;
+	return prefix + "rational_const " + numerator + " / " + denominator;
 }
 
 u256 RationalNumberType::literalValue(Literal const*) const
@@ -1356,7 +1377,7 @@ u256 RationalNumberType::literalValue(Literal const*) const
 Type const* RationalNumberType::mobileType() const
 {
 	if (!isFractional())
-		return integerType();
+		return m_shielded ? static_cast<Type const*>(shieldedIntegerType()) : integerType();
 	else
 		return fixedPointType();
 }
@@ -1374,6 +1395,22 @@ IntegerType const* RationalNumberType::integerType() const
 		return TypeProvider::integer(
 			std::max(numberEncodingSize(value), 1u) * 8,
 			negative ? IntegerType::Modifier::Signed : IntegerType::Modifier::Unsigned
+		);
+}
+
+ShieldedIntegerType const* RationalNumberType::shieldedIntegerType() const
+{
+	solAssert(!isFractional(), "shieldedIntegerType() called for fractional number.");
+	bigint value = m_value.numerator();
+	bool negative = (value < 0);
+	if (negative)
+		value = ((0 - value) - 1) << 1;
+	if (value > u256(-1))
+		return nullptr;
+	else
+		return TypeProvider::shieldedInteger(
+			std::max(numberEncodingSize(value), 1u) * 8,
+			negative ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
 		);
 }
 

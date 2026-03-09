@@ -4275,6 +4275,14 @@ void TypeChecker::endVisit(Literal const& _literal)
 			"You can use an expression of the form \"0x1234 * 1 days\" instead."
 		);
 
+	if (_literal.token() == Token::ShieldedNumber)
+		m_errorReporter.warning(
+			9660_error,
+			_literal.location(),
+			"Shielded number literals are converted to shielded integers whose values "
+			"will be visible in contract creation code during deployment."
+		);
+
 	if (_literal.subDenomination() == Literal::SubDenomination::Year)
 		m_errorReporter.typeError(
 			4820_error,
