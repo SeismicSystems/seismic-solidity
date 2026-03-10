@@ -1,4 +1,4 @@
-// Adapted from: operators/shifts/shift_negative_constant_right.sol
+// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/operators/shifts/shift_negative_constant_right.sol
 contract C {
     sint256 private a = sint256(-0x4200 >> 8);
     function a_val() public returns (int256) {

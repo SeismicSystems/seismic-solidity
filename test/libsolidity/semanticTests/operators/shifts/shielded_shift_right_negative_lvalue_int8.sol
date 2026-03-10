@@ -1,4 +1,4 @@
-// Adapted from: operators/shifts/shift_right_negative_lvalue_int8.sol
+// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/operators/shifts/shift_right_negative_lvalue_int8.sol
 contract C {
     function f(sint8 a, suint8 b) public returns (int256) {
         return int256(a >> b);

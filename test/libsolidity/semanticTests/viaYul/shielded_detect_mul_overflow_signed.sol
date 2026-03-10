@@ -1,4 +1,4 @@
-// Adapted from: viaYul/detect_mul_overflow_signed.sol
+// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/viaYul/detect_mul_overflow_signed.sol
 contract C {
     function f(sint256 a, sint256 b) public pure returns (int256 x) {
         x = int256(a * b);
