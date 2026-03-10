@@ -1,4 +1,4 @@
-// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/exponentiation/signed_base.sol
+// Adapted from: test/libsolidity/semanticTests/exponentiation/signed_base.sol
 contract test {
     function f() public pure returns (int, int) {
         sint32 x = sint32(-3);

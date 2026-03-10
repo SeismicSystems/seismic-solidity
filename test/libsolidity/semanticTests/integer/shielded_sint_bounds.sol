@@ -1,4 +1,4 @@
-// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/integer/int.sol
+// Adapted from: test/libsolidity/semanticTests/integer/int.sol
 contract test {
 
     function intMinA() public pure returns (bool) {

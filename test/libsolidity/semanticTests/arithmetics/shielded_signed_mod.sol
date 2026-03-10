@@ -1,4 +1,4 @@
-// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/arithmetics/signed_mod.sol
+// Adapted from: test/libsolidity/semanticTests/arithmetics/signed_mod.sol
 contract C {
     function f(sint256 a, sint256 b) public pure returns (int256) {
         return int256(a % b);

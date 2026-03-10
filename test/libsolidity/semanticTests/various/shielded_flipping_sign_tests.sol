@@ -1,4 +1,4 @@
-// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/various/flipping_sign_tests.sol
+// Adapted from: test/libsolidity/semanticTests/various/flipping_sign_tests.sol
 contract test {
     function f() public pure returns (bool) {
         sint256 x = sint256(int256(-2**255));

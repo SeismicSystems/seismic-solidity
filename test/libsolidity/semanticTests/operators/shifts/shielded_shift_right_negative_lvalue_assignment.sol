@@ -1,4 +1,4 @@
-// Adapted from: https://github.com/argotorg/solidity/blob/develop/test/libsolidity/semanticTests/operators/shifts/shift_right_negative_lvalue_assignment.sol
+// Adapted from: test/libsolidity/semanticTests/operators/shifts/shift_right_negative_lvalue_assignment.sol
 contract C {
     function f(sint256 a, suint256 b) public returns (int256) {
         a >>= b;
