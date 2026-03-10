@@ -1,3 +1,4 @@
+// Adapted from: operators/shifts/shift_right_negative_literal.sol
 contract C {
     function f1() public pure returns (bool) {
         return (-4266 >> 0) == -4266;

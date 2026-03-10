@@ -1,3 +1,4 @@
+// New test: checked sint16 addition with signed overflow
 pragma abicoder v2;
 contract C {
     function f(sint16 a, sint16 b) public returns (int16) {

@@ -1,3 +1,4 @@
+// New test: sint type conversions (sign extension, truncation, sint<->int)
 contract C {
     function signExtension() public pure returns (int256) {
         sint8 small = sint8(-1);

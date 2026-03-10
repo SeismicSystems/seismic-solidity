@@ -1,3 +1,4 @@
+// Adapted from: operators/shifts/shift_right_negative_lvalue_int16.sol
 contract C {
     function f(sint16 a, suint16 b) public returns (int256) {
         return int256(a >> b);

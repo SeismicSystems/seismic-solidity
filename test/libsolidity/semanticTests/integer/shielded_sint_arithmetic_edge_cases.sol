@@ -1,3 +1,4 @@
+// New test: sint arithmetic overflow edge cases (mul, div, sub)
 contract C {
     function mulOverflow() public returns (bool) {
         sint8 a = type(sint8).min;

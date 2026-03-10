@@ -1,3 +1,4 @@
+// New test: sint storage read/write via cstore/cload with sign extension
 contract C {
     sint8 private s8;
     sint16 private s16;

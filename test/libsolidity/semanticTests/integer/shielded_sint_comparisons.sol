@@ -1,3 +1,4 @@
+// New test: sint comparison operators across negative/positive/zero/min/max
 contract C {
     function testLt() public pure returns (bool, bool, bool) {
         sint256 neg = sint256(-10);

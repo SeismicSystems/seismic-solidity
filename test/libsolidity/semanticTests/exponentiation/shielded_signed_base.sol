@@ -1,3 +1,4 @@
+// Adapted from: exponentiation/signed_base.sol
 contract test {
     function f() public pure returns (int, int) {
         sint32 x = sint32(-3);

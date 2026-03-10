@@ -1,3 +1,4 @@
+// Adapted from: operators/shifts/shift_right_negative_lvalue_int32.sol
 contract C {
     function f(sint32 a, suint32 b) public returns (int256) {
         return int256(a >> b);
