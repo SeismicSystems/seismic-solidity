@@ -82,12 +82,9 @@ jobs:
       - name: Run soltest
         run: ./scripts/soltest.sh
 
-      # TODO: Remove the hardcoded commit checkout once we merge the --skip-via-ir flag into the seismic branch of seismic-revm
       - name: Clone seismic-revm repo
         run: |
-          git clone https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
-          cd /tmp/seismic-revm
-          git checkout e962e2174e097e69284cf9cbbbf7bc15e5d718cf
+          git clone --branch seismic https://github.com/SeismicSystems/seismic-revm.git /tmp/seismic-revm
           echo "SEISMIC_REVM_PATH=/tmp/seismic-revm" >> $GITHUB_ENV
           echo "seismic-revm cloned to: /tmp/seismic-revm"
       - uses: Swatinem/rust-cache@v2
