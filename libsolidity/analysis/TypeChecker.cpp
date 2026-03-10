@@ -392,7 +392,8 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 					_var.location(),
 					"Shielded types in constructor parameters are visible in deployment transaction data. "
 					"Contract creation (CREATE/CREATE2) does not encrypt calldata. "
-					"Consider setting shielded state via a post-deployment transaction instead."
+					"Consider setting shielded state via a post-deployment transaction instead. "
+					"This is expected to be fixed in a future release."
 				);
 
 			auto iType = type(_var)->interfaceType(_function.libraryFunction());
@@ -4579,6 +4580,10 @@ void TypeChecker::checkLiteralToShielded(
 			return _extCall;
 		return _other;
 	};
+	bool const isNewExprArg = m_insideNewExpressionArgs > 0;
+	std::string const newExprSuffix =
+		" Contract creation (CREATE/CREATE2) does not encrypt calldata."
+		" This is expected to be fixed in a future release.";
 
 	// Cases that only need annotation().type, not a Literal AST node.
 	// This covers constant expressions (BinaryOperation, UnaryOperation, etc.)
@@ -4589,10 +4594,11 @@ void TypeChecker::checkLiteralToShielded(
 		_targetType.category() == Type::Category::ShieldedInteger
 	)
 	{
+		std::string msg = "Literals converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
 			pickId(5501_error, 5506_error, 9660_error),
 			_location,
-			"Literals converted to shielded integers will leak during contract deployment."
+			isNewExprArg ? msg + newExprSuffix : msg
 		);
 		return;
 	}
@@ -4602,10 +4608,11 @@ void TypeChecker::checkLiteralToShielded(
 		_targetType.category() == Type::Category::ShieldedInteger
 	)
 	{
+		std::string msg = "Enums converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
 			pickId(5505_error, 5510_error, 1457_error),
 			_location,
-			"Enums converted to shielded integers will leak during contract deployment."
+			isNewExprArg ? msg + newExprSuffix : msg
 		);
 		return;
 	}
@@ -4615,10 +4622,11 @@ void TypeChecker::checkLiteralToShielded(
 		_targetType.category() == Type::Category::ShieldedFixedBytes
 	)
 	{
+		std::string msg = "FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.";
 		m_errorReporter.warning(
 			pickId(5504_error, 5509_error, 9663_error),
 			_location,
-			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
+			isNewExprArg ? msg + newExprSuffix : msg
 		);
 		return;
 	}
@@ -4632,20 +4640,26 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string val = literal->value();
 		if (val == "true" || val == "false")
+		{
+			std::string msg = "Bool Literals converted to shielded bools will leak during contract deployment.";
 			m_errorReporter.warning(
 				pickId(5502_error, 5507_error, 9661_error),
 				_location,
-				"Bool Literals converted to shielded bools will leak during contract deployment."
+				isNewExprArg ? msg + newExprSuffix : msg
 			);
+		}
 	}
 	else if (literal->looksLikeAddress() && _targetType.category() == Type::Category::ShieldedAddress)
 	{
 		if (literal->passesAddressChecksum())
+		{
+			std::string msg = "Address Literals converted to shielded addresses will leak during contract deployment.";
 			m_errorReporter.warning(
 				pickId(5503_error, 5508_error, 9662_error),
 				_location,
-				"Address Literals converted to shielded addresses will leak during contract deployment."
+				isNewExprArg ? msg + newExprSuffix : msg
 			);
+		}
 	}
 }
 
