@@ -383,6 +383,19 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 					"Use internal or private functions or cast to an unshielded type."
 				);
 
+			// Warn about shielded types in constructor parameters. Contract creation
+			// uses the CREATE opcode whose input data is not encrypted by TxSeismic,
+			// so shielded constructor arguments are visible in the deployment transaction.
+			if (_function.isConstructor() && !_var.isReturnParameter() && type(_var)->containsShieldedType())
+				m_errorReporter.warning(
+					5500_error,
+					_var.location(),
+					"Shielded types in constructor parameters are visible in deployment transaction data. "
+					"Contract creation (CREATE/CREATE2) does not encrypt calldata. "
+					"Consider setting shielded state via a post-deployment transaction instead. "
+					"This is expected to be fixed in a future release."
+				);
+
 			auto iType = type(_var)->interfaceType(_function.libraryFunction());
 
 			if (!iType)
@@ -3055,6 +3068,44 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 	std::vector<ASTPointer<Expression const>> const& arguments = _functionCall.arguments();
 	bool argumentsArePure = true;
 
+	// Track whether we are inside a `new` expression or an external call on
+	// another contract, for context-aware shielded literal warnings.
+	// A member access on a contract/interface type (e.g. token.mint(...))
+	// indicates an external call whose calldata TxSeismic encrypts.
+	// Built-in member functions (arr.push(...), addr.send(...)) are NOT
+	// external calls — the literal is still in the calling contract's bytecode.
+	bool const isNewExpr = dynamic_cast<NewExpression const*>(&_functionCall.expression()) != nullptr;
+	bool isExternalContractCall = false;
+	if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+	{
+		// Check if the member access target is a contract/interface type.
+		// This covers: contractVar.f(), interfaceVar.f(), this.f()
+		// The expression's annotation().type is set during the recursive accept()
+		// that already happened (arguments are visited before the callee expression
+		// in the original code, but the expression type may already be resolved).
+		// For state variables of contract type, check via the declaration.
+		// For `this`, check the expression's type annotation directly.
+		if (auto const* identifier = dynamic_cast<Identifier const*>(&memberAccess->expression()))
+		{
+			if (auto const* varDecl = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			{
+				if (varDecl->type() && dynamic_cast<ContractType const*>(varDecl->type()))
+					isExternalContractCall = true;
+			}
+			else if (auto const* magicVar = dynamic_cast<MagicVariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			{
+				// `this` is a MagicVariableDeclaration whose type is ContractType.
+				(void)magicVar;
+				if (identifier->name() == "this")
+					isExternalContractCall = true;
+			}
+		}
+	}
+	if (isNewExpr)
+		++m_insideNewExpressionArgs;
+	else if (isExternalContractCall)
+		++m_insideExternalCallArgs;
+
 	// We need to check arguments' type first as they will be needed for overload resolution.
 	for (ASTPointer<Expression const> const& argument: arguments)
 	{
@@ -3062,6 +3113,11 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 		if (!*argument->annotation().isPure)
 			argumentsArePure = false;
 	}
+
+	if (isNewExpr)
+		--m_insideNewExpressionArgs;
+	else if (isExternalContractCall)
+		--m_insideExternalCallArgs;
 
 	// Store argument types - and names if given - for overload resolution
 	{
@@ -4508,6 +4564,27 @@ void TypeChecker::checkLiteralToShielded(
 	langutil::SourceLocation const& _location
 )
 {
+	// Emit distinct warning IDs based on AST context so downstream tools
+	// (sforge/seismic-compilers) can selectively suppress warnings by file path:
+	//   new(...)  args — IDs 5501-5505: child contract gets deployed via CREATE,
+	//                    literal leaks in init code; show even in test/script
+	//   ext call  args — IDs 5506-5510: literal in caller bytecode, calldata
+	//                    encrypted by TxSeismic; suppress in test/script
+	//   other          — IDs 9660-9663/1457: literal in bytecode; suppress in
+	//                    test/script (bytecode never deployed)
+	auto pickId = [&](langutil::ErrorId _newExpr, langutil::ErrorId _extCall, langutil::ErrorId _other)
+	{
+		if (m_insideNewExpressionArgs > 0)
+			return _newExpr;
+		if (m_insideExternalCallArgs > 0)
+			return _extCall;
+		return _other;
+	};
+	bool const isNewExprArg = m_insideNewExpressionArgs > 0;
+	std::string const newExprSuffix =
+		" Contract creation (CREATE/CREATE2) does not encrypt calldata."
+		" This is expected to be fixed in a future release.";
+
 	// Cases that only need annotation().type, not a Literal AST node.
 	// This covers constant expressions (BinaryOperation, UnaryOperation, etc.)
 	// that fold to RationalNumber or Enum types.
@@ -4517,10 +4594,11 @@ void TypeChecker::checkLiteralToShielded(
 		_targetType.category() == Type::Category::ShieldedInteger
 	)
 	{
+		std::string msg = "Literals converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
-			9660_error,
+			pickId(5501_error, 5506_error, 9660_error),
 			_location,
-			"Literals converted to shielded integers will leak during contract deployment."
+			isNewExprArg ? msg + newExprSuffix : msg
 		);
 		return;
 	}
@@ -4530,10 +4608,11 @@ void TypeChecker::checkLiteralToShielded(
 		_targetType.category() == Type::Category::ShieldedInteger
 	)
 	{
+		std::string msg = "Enums converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
-			1457_error,
+			pickId(5505_error, 5510_error, 1457_error),
 			_location,
-			"Enums converted to shielded integers will leak during contract deployment."
+			isNewExprArg ? msg + newExprSuffix : msg
 		);
 		return;
 	}
@@ -4543,10 +4622,11 @@ void TypeChecker::checkLiteralToShielded(
 		_targetType.category() == Type::Category::ShieldedFixedBytes
 	)
 	{
+		std::string msg = "FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.";
 		m_errorReporter.warning(
-			9663_error,
+			pickId(5504_error, 5509_error, 9663_error),
 			_location,
-			"FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment."
+			isNewExprArg ? msg + newExprSuffix : msg
 		);
 		return;
 	}
@@ -4560,20 +4640,26 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string val = literal->value();
 		if (val == "true" || val == "false")
+		{
+			std::string msg = "Bool Literals converted to shielded bools will leak during contract deployment.";
 			m_errorReporter.warning(
-				9661_error,
+				pickId(5502_error, 5507_error, 9661_error),
 				_location,
-				"Bool Literals converted to shielded bools will leak during contract deployment."
+				isNewExprArg ? msg + newExprSuffix : msg
 			);
+		}
 	}
 	else if (literal->looksLikeAddress() && _targetType.category() == Type::Category::ShieldedAddress)
 	{
 		if (literal->passesAddressChecksum())
+		{
+			std::string msg = "Address Literals converted to shielded addresses will leak during contract deployment.";
 			m_errorReporter.warning(
-				9662_error,
+				pickId(5503_error, 5508_error, 9662_error),
 				_location,
-				"Address Literals converted to shielded addresses will leak during contract deployment."
+				isNewExprArg ? msg + newExprSuffix : msg
 			);
+		}
 	}
 }
 
