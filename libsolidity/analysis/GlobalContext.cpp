@@ -108,8 +108,9 @@ int magicVariableToID(std::string const& _name)
 		{"sync_rng16", -234},
 		{"sync_rng32", -235},
 		{"sync_rng64", -236},
-		{"sync_rng128", -237},
-		{"sync_rng256", -238}
+		{"sync_rng96", -237},
+		{"sync_rng128", -238},
+		{"sync_rng256", -239}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
@@ -170,6 +171,7 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng16",  TypeProvider::function(strings{}, strings{"suint16"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng32",  TypeProvider::function(strings{}, strings{"suint32"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng64",  TypeProvider::function(strings{}, strings{"suint64"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+	magicVariableDeclarations.push_back(magicVarDecl("sync_rng96",  TypeProvider::function(strings{}, strings{"suint96"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng128", TypeProvider::function(strings{}, strings{"suint128"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng256", TypeProvider::function(strings{}, strings{"suint256"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
 

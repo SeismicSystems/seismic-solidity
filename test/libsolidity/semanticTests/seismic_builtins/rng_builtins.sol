@@ -17,6 +17,11 @@ contract RngBuiltins {
         return val >= 2**98 && val <= type(uint128).max - 2**98;
     }
 
+    function testRng96() public view returns (bool) {
+        uint128 val = uint128(sync_rng96());
+        return val >= 2**66 && val <= 2**96 - 1 - 2**66;
+    }
+
     function testRng64() public view returns (bool) {
         uint64 val = uint64(sync_rng64());
         return val >= 2**34 && val <= type(uint64).max - 2**34;
@@ -51,6 +56,7 @@ contract RngBuiltins {
 // ----
 // testRng256() -> true
 // testRng128() -> true
+// testRng96() -> true
 // testRng64() -> true
 // testRng32() -> true
 // testRng16() -> true
