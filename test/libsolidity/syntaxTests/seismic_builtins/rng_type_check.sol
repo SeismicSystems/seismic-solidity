@@ -7,9 +7,10 @@ contract C {
         suint16 b = sync_rng16();
         suint32 c = sync_rng32();
         suint64 d = sync_rng64();
+        suint96 e2 = sync_rng96();
         suint128 e = sync_rng128();
         suint256 g = sync_rng256();
-        a; b; c; d; e; g;
+        a; b; c; d; e2; e; g;
     }
 }
 // ----
