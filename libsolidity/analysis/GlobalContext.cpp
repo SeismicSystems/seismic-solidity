@@ -108,9 +108,9 @@ int magicVariableToID(std::string const& _name)
 		{"sync_rng16", -234},
 		{"sync_rng32", -235},
 		{"sync_rng64", -236},
-		{"sync_rng128", -237},
-		{"sync_rng256", -238},
-		{"sync_rng96", -239}
+		{"sync_rng96", -237},
+		{"sync_rng128", -238},
+		{"sync_rng256", -239}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
