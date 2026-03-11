@@ -1737,10 +1737,20 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		solAssert(functionType->returnParameterTypes().size() == 1);
 
 		auto const& retType = *functionType->returnParameterTypes()[0];
-		auto const* shieldedType = dynamic_cast<ShieldedIntegerType const*>(&retType);
-		solAssert(shieldedType);
-		unsigned byteWidth = shieldedType->numBits() / 8;
-		unsigned shiftBits = (32 - byteWidth) * 8;
+		unsigned byteWidth;
+		unsigned shiftBits;
+		if (auto const* shieldedIntType = dynamic_cast<ShieldedIntegerType const*>(&retType))
+		{
+			byteWidth = shieldedIntType->numBits() / 8;
+			shiftBits = (32 - byteWidth) * 8;
+		}
+		else if (auto const* shieldedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(&retType))
+		{
+			byteWidth = shieldedBytesType->numBytes();
+			shiftBits = 0; // bytes types are left-aligned, no shift needed
+		}
+		else
+			solAssert(false, "SeismicRNG: unexpected return type");
 
 		Whiskers templ(R"(
 			let <pos> := <allocateUnbounded>()
