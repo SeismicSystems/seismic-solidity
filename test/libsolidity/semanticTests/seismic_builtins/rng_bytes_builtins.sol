@@ -2,191 +2,191 @@
 pragma solidity ^0.8.0;
 
 contract RngBytesBuiltins {
-    // Each test verifies the sync_rng_bN call succeeds and the result looks random.
-    // For N-byte types (N >= 4): check that the value is neither all-zero nor all-ones.
-    // P(false positive) ≈ 2 * 2^(-N*8) which is negligible for N >= 4.
+    // Each test casts sync_rng_bN() → bytesN → uintN*8, then checks randomness.
+    // For N*8 >= 30 bits: check val in [2^(N*8-30), max - 2^(N*8-30)].
+    // P(false positive) ≈ 2 * 2^(-30) ≈ 2e-9 per test.
     // For smaller types: combine multiple samples.
 
-    function testRngB32() public view returns (bool) {
-        bytes32 val = bytes32(sync_rng_b32());
-        return val != bytes32(0) && val != bytes32(type(uint256).max);
-    }
-
-    function testRngB16() public view returns (bool) {
-        bytes16 val = bytes16(sync_rng_b16());
-        return val != bytes16(0) && val != bytes16(type(uint128).max);
-    }
-
-    function testRngB8() public view returns (bool) {
-        bytes8 val = bytes8(sync_rng_b8());
-        return val != bytes8(0) && val != bytes8(type(uint64).max);
-    }
-
-    function testRngB4() public view returns (bool) {
-        bytes4 val = bytes4(sync_rng_b4());
-        return val != bytes4(0) && val != bytes4(type(uint32).max);
+    function testRngB1() public view returns (bool) {
+        // 8 bits: four samples, check not all-zero and not all-ones.
+        uint8 a = uint8(bytes1(sync_rng_b1()));
+        uint8 b = uint8(bytes1(sync_rng_b1()));
+        uint8 c = uint8(bytes1(sync_rng_b1()));
+        uint8 d = uint8(bytes1(sync_rng_b1()));
+        return (a | b | c | d) > 0 && (a & b & c & d) < type(uint8).max;
     }
 
     function testRngB2() public view returns (bool) {
-        // 2 bytes: two samples, check not all-zero and not all-ones.
-        bytes2 a = bytes2(sync_rng_b2());
-        bytes2 b = bytes2(sync_rng_b2());
-        return (a | b) > bytes2(0) && (a & b) < bytes2(type(uint16).max);
-    }
-
-    function testRngB1() public view returns (bool) {
-        // 1 byte: four samples, check not all-zero and not all-ones.
-        bytes1 a = bytes1(sync_rng_b1());
-        bytes1 b = bytes1(sync_rng_b1());
-        bytes1 c = bytes1(sync_rng_b1());
-        bytes1 d = bytes1(sync_rng_b1());
-        return (a | b | c | d) > bytes1(0) && (a & b & c & d) < bytes1(type(uint8).max);
+        // 16 bits: two samples, check not all-zero and not all-ones.
+        uint16 a = uint16(bytes2(sync_rng_b2()));
+        uint16 b = uint16(bytes2(sync_rng_b2()));
+        return (a | b) > 0 && (a & b) < type(uint16).max;
     }
 
     function testRngB3() public view returns (bool) {
-        bytes3 val = bytes3(sync_rng_b3());
-        return val != bytes3(0) && val != bytes3(type(uint24).max);
+        // 24 bits: two samples, check not all-zero and not all-ones.
+        uint24 a = uint24(bytes3(sync_rng_b3()));
+        uint24 b = uint24(bytes3(sync_rng_b3()));
+        return (a | b) > 0 && (a & b) < type(uint24).max;
+    }
+
+    function testRngB4() public view returns (bool) {
+        uint32 val = uint32(bytes4(sync_rng_b4()));
+        return val >= 4 && val <= type(uint32).max - 4;
     }
 
     function testRngB5() public view returns (bool) {
-        bytes5 val = bytes5(sync_rng_b5());
-        return val != bytes5(0) && val != bytes5(type(uint40).max);
+        uint40 val = uint40(bytes5(sync_rng_b5()));
+        return val >= 2**10 && val <= type(uint40).max - 2**10;
     }
 
     function testRngB6() public view returns (bool) {
-        bytes6 val = bytes6(sync_rng_b6());
-        return val != bytes6(0) && val != bytes6(type(uint48).max);
+        uint48 val = uint48(bytes6(sync_rng_b6()));
+        return val >= 2**18 && val <= type(uint48).max - 2**18;
     }
 
     function testRngB7() public view returns (bool) {
-        bytes7 val = bytes7(sync_rng_b7());
-        return val != bytes7(0) && val != bytes7(type(uint56).max);
+        uint56 val = uint56(bytes7(sync_rng_b7()));
+        return val >= 2**26 && val <= type(uint56).max - 2**26;
+    }
+
+    function testRngB8() public view returns (bool) {
+        uint64 val = uint64(bytes8(sync_rng_b8()));
+        return val >= 2**34 && val <= type(uint64).max - 2**34;
     }
 
     function testRngB9() public view returns (bool) {
-        bytes9 val = bytes9(sync_rng_b9());
-        return val != bytes9(0) && val != bytes9(type(uint72).max);
+        uint72 val = uint72(bytes9(sync_rng_b9()));
+        return val >= 2**42 && val <= type(uint72).max - 2**42;
     }
 
     function testRngB10() public view returns (bool) {
-        bytes10 val = bytes10(sync_rng_b10());
-        return val != bytes10(0) && val != bytes10(type(uint80).max);
+        uint80 val = uint80(bytes10(sync_rng_b10()));
+        return val >= 2**50 && val <= type(uint80).max - 2**50;
     }
 
     function testRngB11() public view returns (bool) {
-        bytes11 val = bytes11(sync_rng_b11());
-        return val != bytes11(0) && val != bytes11(type(uint88).max);
+        uint88 val = uint88(bytes11(sync_rng_b11()));
+        return val >= 2**58 && val <= type(uint88).max - 2**58;
     }
 
     function testRngB12() public view returns (bool) {
-        bytes12 val = bytes12(sync_rng_b12());
-        return val != bytes12(0) && val != bytes12(type(uint96).max);
+        uint96 val = uint96(bytes12(sync_rng_b12()));
+        return val >= 2**66 && val <= type(uint96).max - 2**66;
     }
 
     function testRngB13() public view returns (bool) {
-        bytes13 val = bytes13(sync_rng_b13());
-        return val != bytes13(0) && val != bytes13(type(uint104).max);
+        uint104 val = uint104(bytes13(sync_rng_b13()));
+        return val >= 2**74 && val <= type(uint104).max - 2**74;
     }
 
     function testRngB14() public view returns (bool) {
-        bytes14 val = bytes14(sync_rng_b14());
-        return val != bytes14(0) && val != bytes14(type(uint112).max);
+        uint112 val = uint112(bytes14(sync_rng_b14()));
+        return val >= 2**82 && val <= type(uint112).max - 2**82;
     }
 
     function testRngB15() public view returns (bool) {
-        bytes15 val = bytes15(sync_rng_b15());
-        return val != bytes15(0) && val != bytes15(type(uint120).max);
+        uint120 val = uint120(bytes15(sync_rng_b15()));
+        return val >= 2**90 && val <= type(uint120).max - 2**90;
+    }
+
+    function testRngB16() public view returns (bool) {
+        uint128 val = uint128(bytes16(sync_rng_b16()));
+        return val >= 2**98 && val <= type(uint128).max - 2**98;
     }
 
     function testRngB17() public view returns (bool) {
-        bytes17 val = bytes17(sync_rng_b17());
-        return val != bytes17(0) && val != bytes17(type(uint136).max);
+        uint136 val = uint136(bytes17(sync_rng_b17()));
+        return val >= 2**106 && val <= type(uint136).max - 2**106;
     }
 
     function testRngB18() public view returns (bool) {
-        bytes18 val = bytes18(sync_rng_b18());
-        return val != bytes18(0) && val != bytes18(type(uint144).max);
+        uint144 val = uint144(bytes18(sync_rng_b18()));
+        return val >= 2**114 && val <= type(uint144).max - 2**114;
     }
 
     function testRngB19() public view returns (bool) {
-        bytes19 val = bytes19(sync_rng_b19());
-        return val != bytes19(0) && val != bytes19(type(uint152).max);
+        uint152 val = uint152(bytes19(sync_rng_b19()));
+        return val >= 2**122 && val <= type(uint152).max - 2**122;
     }
 
     function testRngB20() public view returns (bool) {
-        bytes20 val = bytes20(sync_rng_b20());
-        return val != bytes20(0) && val != bytes20(type(uint160).max);
+        uint160 val = uint160(bytes20(sync_rng_b20()));
+        return val >= 2**130 && val <= type(uint160).max - 2**130;
     }
 
     function testRngB21() public view returns (bool) {
-        bytes21 val = bytes21(sync_rng_b21());
-        return val != bytes21(0) && val != bytes21(type(uint168).max);
+        uint168 val = uint168(bytes21(sync_rng_b21()));
+        return val >= 2**138 && val <= type(uint168).max - 2**138;
     }
 
     function testRngB22() public view returns (bool) {
-        bytes22 val = bytes22(sync_rng_b22());
-        return val != bytes22(0) && val != bytes22(type(uint176).max);
+        uint176 val = uint176(bytes22(sync_rng_b22()));
+        return val >= 2**146 && val <= type(uint176).max - 2**146;
     }
 
     function testRngB23() public view returns (bool) {
-        bytes23 val = bytes23(sync_rng_b23());
-        return val != bytes23(0) && val != bytes23(type(uint184).max);
+        uint184 val = uint184(bytes23(sync_rng_b23()));
+        return val >= 2**154 && val <= type(uint184).max - 2**154;
     }
 
     function testRngB24() public view returns (bool) {
-        bytes24 val = bytes24(sync_rng_b24());
-        return val != bytes24(0) && val != bytes24(type(uint192).max);
+        uint192 val = uint192(bytes24(sync_rng_b24()));
+        return val >= 2**162 && val <= type(uint192).max - 2**162;
     }
 
     function testRngB25() public view returns (bool) {
-        bytes25 val = bytes25(sync_rng_b25());
-        return val != bytes25(0) && val != bytes25(type(uint200).max);
+        uint200 val = uint200(bytes25(sync_rng_b25()));
+        return val >= 2**170 && val <= type(uint200).max - 2**170;
     }
 
     function testRngB26() public view returns (bool) {
-        bytes26 val = bytes26(sync_rng_b26());
-        return val != bytes26(0) && val != bytes26(type(uint208).max);
+        uint208 val = uint208(bytes26(sync_rng_b26()));
+        return val >= 2**178 && val <= type(uint208).max - 2**178;
     }
 
     function testRngB27() public view returns (bool) {
-        bytes27 val = bytes27(sync_rng_b27());
-        return val != bytes27(0) && val != bytes27(type(uint216).max);
+        uint216 val = uint216(bytes27(sync_rng_b27()));
+        return val >= 2**186 && val <= type(uint216).max - 2**186;
     }
 
     function testRngB28() public view returns (bool) {
-        bytes28 val = bytes28(sync_rng_b28());
-        return val != bytes28(0) && val != bytes28(type(uint224).max);
+        uint224 val = uint224(bytes28(sync_rng_b28()));
+        return val >= 2**194 && val <= type(uint224).max - 2**194;
     }
 
     function testRngB29() public view returns (bool) {
-        bytes29 val = bytes29(sync_rng_b29());
-        return val != bytes29(0) && val != bytes29(type(uint232).max);
+        uint232 val = uint232(bytes29(sync_rng_b29()));
+        return val >= 2**202 && val <= type(uint232).max - 2**202;
     }
 
     function testRngB30() public view returns (bool) {
-        bytes30 val = bytes30(sync_rng_b30());
-        return val != bytes30(0) && val != bytes30(type(uint240).max);
+        uint240 val = uint240(bytes30(sync_rng_b30()));
+        return val >= 2**210 && val <= type(uint240).max - 2**210;
     }
 
     function testRngB31() public view returns (bool) {
-        bytes31 val = bytes31(sync_rng_b31());
-        return val != bytes31(0) && val != bytes31(type(uint248).max);
+        uint248 val = uint248(bytes31(sync_rng_b31()));
+        return val >= 2**218 && val <= type(uint248).max - 2**218;
+    }
+
+    function testRngB32() public view returns (bool) {
+        uint256 val = uint256(bytes32(sync_rng_b32()));
+        return val >= 2**226 && val <= type(uint256).max - 2**226;
     }
 }
 // ====
 // EVMVersion: >=mercury
 // ====
 // ----
-// testRngB32() -> true
-// testRngB16() -> true
-// testRngB8() -> true
-// testRngB4() -> true
-// testRngB2() -> true
 // testRngB1() -> true
+// testRngB2() -> true
 // testRngB3() -> true
+// testRngB4() -> true
 // testRngB5() -> true
 // testRngB6() -> true
 // testRngB7() -> true
+// testRngB8() -> true
 // testRngB9() -> true
 // testRngB10() -> true
 // testRngB11() -> true
@@ -194,6 +194,7 @@ contract RngBytesBuiltins {
 // testRngB13() -> true
 // testRngB14() -> true
 // testRngB15() -> true
+// testRngB16() -> true
 // testRngB17() -> true
 // testRngB18() -> true
 // testRngB19() -> true
@@ -209,3 +210,4 @@ contract RngBytesBuiltins {
 // testRngB29() -> true
 // testRngB30() -> true
 // testRngB31() -> true
+// testRngB32() -> true
