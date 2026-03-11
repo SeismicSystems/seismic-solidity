@@ -73,7 +73,39 @@ int magicVariableToID(std::string const& _name)
 		{"aes_gcm_encrypt", -37},
 		{"aes_gcm_decrypt", -38},
 		{"hkdf", -39},
-		{"secp256k1_sign", -40}
+		{"secp256k1_sign", -40},
+		{"sync_rng_b1", -41},
+		{"sync_rng_b2", -42},
+		{"sync_rng_b3", -43},
+		{"sync_rng_b4", -44},
+		{"sync_rng_b5", -45},
+		{"sync_rng_b6", -46},
+		{"sync_rng_b7", -47},
+		{"sync_rng_b8", -48},
+		{"sync_rng_b9", -49},
+		{"sync_rng_b10", -50},
+		{"sync_rng_b11", -51},
+		{"sync_rng_b12", -52},
+		{"sync_rng_b13", -53},
+		{"sync_rng_b14", -54},
+		{"sync_rng_b15", -55},
+		{"sync_rng_b16", -56},
+		{"sync_rng_b17", -57},
+		{"sync_rng_b18", -58},
+		{"sync_rng_b19", -59},
+		{"sync_rng_b20", -60},
+		{"sync_rng_b21", -61},
+		{"sync_rng_b22", -62},
+		{"sync_rng_b23", -63},
+		{"sync_rng_b24", -64},
+		{"sync_rng_b25", -65},
+		{"sync_rng_b26", -66},
+		{"sync_rng_b27", -67},
+		{"sync_rng_b28", -68},
+		{"sync_rng_b29", -69},
+		{"sync_rng_b30", -70},
+		{"sync_rng_b31", -71},
+		{"sync_rng_b32", -72}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
@@ -136,6 +168,13 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng64",  TypeProvider::function(strings{}, strings{"suint64"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng128", TypeProvider::function(strings{}, strings{"suint128"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
 	magicVariableDeclarations.push_back(magicVarDecl("sync_rng256", TypeProvider::function(strings{}, strings{"suint256"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
+
+	// Seismic RNG precompile built-in functions for shielded fixed bytes
+	for (unsigned i = 1; i <= 32; ++i)
+		magicVariableDeclarations.push_back(magicVarDecl(
+			"sync_rng_b" + std::to_string(i),
+			TypeProvider::function(strings{}, strings{"sbytes" + std::to_string(i)}, FunctionType::Kind::SeismicRNG, StateMutability::View)
+		));
 
 	// Seismic ECDH precompile built-in function
 	magicVariableDeclarations.push_back(magicVarDecl("ecdh", TypeProvider::function(strings{"sbytes32", "bytes memory"}, strings{"bytes32"}, FunctionType::Kind::SeismicECDH, StateMutability::View)));
