@@ -4,5 +4,5 @@ contract TestMsgValueShielded {
     }
 }
 // ----
-// Warning 9664: (96-105): msg.value is always publicly visible on-chain. Assigning it to a shielded type does not hide the transaction value from observers.
+// Warning 10306: (96-105): msg.value is always publicly visible on-chain. Assigning it to a shielded type does not hide the transaction value from observers.
 // Warning 2072: (74-84): Unused local variable.

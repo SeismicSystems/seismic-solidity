@@ -4689,7 +4689,7 @@ void TypeChecker::checkMsgValueToShielded(
 				if (memberAccess->memberName() == "value")
 				{
 					m_errorReporter.warning(
-						9664_error,
+						10306_error,
 						memberAccess->location(),
 						"msg.value is always publicly visible on-chain. "
 						"Assigning it to a shielded type does not hide the transaction value from observers."
