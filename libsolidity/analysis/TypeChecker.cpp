@@ -4728,7 +4728,7 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 		if (varType->containsShieldedType())
         {
             m_errorReporter.fatalTypeError(
-                4626_error,
+                10107_error,
                 var->location(),
                 "Shielded Types are not allowed as " + kind + " parameter type."
             );
