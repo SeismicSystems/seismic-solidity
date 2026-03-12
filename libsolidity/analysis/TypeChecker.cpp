@@ -2152,7 +2152,7 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		}
 		if (_operation.getOperator() == Token::Exp && rightType->category() == Type::Category::ShieldedInteger) {
 			m_errorReporter.warning(
-				3817_error,
+				10304_error,
 				_operation.location(),
 				fmt::format(
 					"Shielded integer exponentiation will leak the exponent value through gas cost."

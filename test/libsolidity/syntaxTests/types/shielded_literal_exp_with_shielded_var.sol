@@ -15,4 +15,4 @@ contract C {
 // Warning 9667: (193-195): Shielded number literals will leak during contract deployment.
 // Warning 9667: (261-263): Shielded number literals will leak during contract deployment.
 // Warning 9667: (321-323): Shielded number literals will leak during contract deployment.
-// Warning 3817: (321-331): Shielded integer exponentiation will leak the exponent value through gas cost.
+// Warning 10304: (321-331): Shielded integer exponentiation will leak the exponent value through gas cost.
