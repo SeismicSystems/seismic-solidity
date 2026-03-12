@@ -7,5 +7,5 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (132-211): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (132-211): Shielded number literals will leak during contract deployment.
 // TypeError 7407: (132-211): Type shielded_int_const 1157...(70 digits omitted)...9936 is not implicitly convertible to expected type suint256. Literal is too large to fit in suint256.

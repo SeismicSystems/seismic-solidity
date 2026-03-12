@@ -12,12 +12,12 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (215-217): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (220-222): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (238-240): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (244-246): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (262-264): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (268-270): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (350-352): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (355-357): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (215-217): Shielded number literals will leak during contract deployment.
+// Warning 9667: (220-222): Shielded number literals will leak during contract deployment.
+// Warning 9667: (238-240): Shielded number literals will leak during contract deployment.
+// Warning 9667: (244-246): Shielded number literals will leak during contract deployment.
+// Warning 9667: (262-264): Shielded number literals will leak during contract deployment.
+// Warning 9667: (268-270): Shielded number literals will leak during contract deployment.
+// Warning 9667: (350-352): Shielded number literals will leak during contract deployment.
+// Warning 9667: (355-357): Shielded number literals will leak during contract deployment.
 // TypeError 9574: (340-358): Type sbool is not implicitly convertible to expected type bool.

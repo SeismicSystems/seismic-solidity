@@ -4277,10 +4277,9 @@ void TypeChecker::endVisit(Literal const& _literal)
 
 	if (_literal.token() == Token::ShieldedNumber)
 		m_errorReporter.warning(
-			9660_error,
+			9667_error,
 			_literal.location(),
-			"Shielded number literals are converted to shielded integers whose values "
-			"will be visible in contract creation code during deployment."
+			"Shielded number literals will leak during contract deployment."
 		);
 
 	if (_literal.subDenomination() == Literal::SubDenomination::Year)

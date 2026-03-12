@@ -24,15 +24,15 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (234-238): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (252-258): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (272-283): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (297-317): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (331-371): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (385-463): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (522-526): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (541-547): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (562-573): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (588-608): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (623-663): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (678-756): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (234-238): Shielded number literals will leak during contract deployment.
+// Warning 9667: (252-258): Shielded number literals will leak during contract deployment.
+// Warning 9667: (272-283): Shielded number literals will leak during contract deployment.
+// Warning 9667: (297-317): Shielded number literals will leak during contract deployment.
+// Warning 9667: (331-371): Shielded number literals will leak during contract deployment.
+// Warning 9667: (385-463): Shielded number literals will leak during contract deployment.
+// Warning 9667: (522-526): Shielded number literals will leak during contract deployment.
+// Warning 9667: (541-547): Shielded number literals will leak during contract deployment.
+// Warning 9667: (562-573): Shielded number literals will leak during contract deployment.
+// Warning 9667: (588-608): Shielded number literals will leak during contract deployment.
+// Warning 9667: (623-663): Shielded number literals will leak during contract deployment.
+// Warning 9667: (678-756): Shielded number literals will leak during contract deployment.

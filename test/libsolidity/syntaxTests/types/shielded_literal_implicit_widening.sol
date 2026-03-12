@@ -14,10 +14,10 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (188-190): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (207-211): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (228-234): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (252-254): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (273-275): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (293-297): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (316-320): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (188-190): Shielded number literals will leak during contract deployment.
+// Warning 9667: (207-211): Shielded number literals will leak during contract deployment.
+// Warning 9667: (228-234): Shielded number literals will leak during contract deployment.
+// Warning 9667: (252-254): Shielded number literals will leak during contract deployment.
+// Warning 9667: (273-275): Shielded number literals will leak during contract deployment.
+// Warning 9667: (293-297): Shielded number literals will leak during contract deployment.
+// Warning 9667: (316-320): Shielded number literals will leak during contract deployment.
