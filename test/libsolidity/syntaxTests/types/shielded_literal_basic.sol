@@ -23,11 +23,11 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (166-169): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (183-187): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (202-204): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (251-256): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (310-316): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (379-383): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (429-431): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (434-436): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (166-169): Shielded number literals will leak during contract deployment.
+// Warning 9667: (183-187): Shielded number literals will leak during contract deployment.
+// Warning 9667: (202-204): Shielded number literals will leak during contract deployment.
+// Warning 9667: (251-256): Shielded number literals will leak during contract deployment.
+// Warning 9667: (310-316): Shielded number literals will leak during contract deployment.
+// Warning 9667: (379-383): Shielded number literals will leak during contract deployment.
+// Warning 9667: (429-431): Shielded number literals will leak during contract deployment.
+// Warning 9667: (434-436): Shielded number literals will leak during contract deployment.

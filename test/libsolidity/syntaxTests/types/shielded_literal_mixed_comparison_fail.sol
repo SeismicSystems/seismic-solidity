@@ -7,11 +7,11 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (130-132): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (130-132): Shielded number literals will leak during contract deployment.
 // TypeError 2271: (130-137): Built-in binary operator == cannot be applied to types shielded_int_const 1 and int_const 1.
 // TypeError 9574: (120-138): Type sbool is not implicitly convertible to expected type bool.
-// Warning 9660: (162-164): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (162-164): Shielded number literals will leak during contract deployment.
 // TypeError 2271: (158-164): Built-in binary operator > cannot be applied to types int_const 2 and shielded_int_const 1.
-// Warning 9660: (185-187): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (185-187): Shielded number literals will leak during contract deployment.
 // TypeError 2271: (185-192): Built-in binary operator != cannot be applied to types shielded_int_const 1 and int_const 2.
 // TypeError 9574: (175-193): Type sbool is not implicitly convertible to expected type bool.

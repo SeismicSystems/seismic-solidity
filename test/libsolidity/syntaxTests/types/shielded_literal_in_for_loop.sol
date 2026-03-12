@@ -10,10 +10,10 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (128-130): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (158-160): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (166-169): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (128-130): Shielded number literals will leak during contract deployment.
+// Warning 9667: (158-160): Shielded number literals will leak during contract deployment.
+// Warning 9667: (166-169): Shielded number literals will leak during contract deployment.
 // Warning 5765: (162-169): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
-// Warning 9660: (179-181): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (179-181): Shielded number literals will leak during contract deployment.
 // Warning 4282: (175-181): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 4282: (201-206): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.

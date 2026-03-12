@@ -8,8 +8,8 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (227-230): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (320-323): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (227-230): Shielded number literals will leak during contract deployment.
+// Warning 9667: (320-323): Shielded number literals will leak during contract deployment.
 // Warning 2072: (207-216): Unused local variable.
 // Warning 2072: (298-308): Unused local variable.
 // Warning 2018: (116-331): Function state mutability can be restricted to pure

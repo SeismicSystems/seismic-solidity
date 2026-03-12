@@ -10,11 +10,11 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (126-129): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (150-154): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (177-181): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (202-206): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
-// Warning 9660: (245-247): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (126-129): Shielded number literals will leak during contract deployment.
+// Warning 9667: (150-154): Shielded number literals will leak during contract deployment.
+// Warning 9667: (177-181): Shielded number literals will leak during contract deployment.
+// Warning 9667: (202-206): Shielded number literals will leak during contract deployment.
+// Warning 9667: (245-247): Shielded number literals will leak during contract deployment.
 // Warning 2072: (113-123): Unused local variable.
 // Warning 2072: (139-147): Unused local variable.
 // Warning 2072: (164-173): Unused local variable.

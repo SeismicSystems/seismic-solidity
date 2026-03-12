@@ -10,6 +10,6 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (183-185): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (183-185): Shielded number literals will leak during contract deployment.
 // TypeError 7407: (182-185): Type shielded_int_const -1 is not implicitly convertible to expected type suint256. Cannot implicitly convert signed literal to unsigned type.
-// Warning 9660: (266-269): Shielded number literals are converted to shielded integers whose values will be visible in contract creation code during deployment.
+// Warning 9667: (266-269): Shielded number literals will leak during contract deployment.
