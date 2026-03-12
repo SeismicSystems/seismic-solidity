@@ -79,7 +79,7 @@ def fix_ids_in_source_file(file_name, id_to_count, available_ids):
         error_id = m.group(0)[0:underscore_pos]
 
         # incorrect id or id has a duplicate somewhere
-        if not in_comment(source, m.start()) and (len(error_id) != 4 or error_id[0] == "0" or id_to_count[error_id] > 1):
+        if not in_comment(source, m.start()) and (len(error_id) not in (4, 5) or error_id[0] == "0" or id_to_count[error_id] > 1):
             assert error_id in id_to_count
             new_id = get_next_id(available_ids)
             assert new_id not in id_to_count
@@ -381,8 +381,8 @@ def main(argv):
 
     ok = True
     for error_id in sorted(source_id_to_file_names):
-        if len(error_id) != 4:
-            print(f"ID {error_id} length != 4")
+        if len(error_id) not in (4, 5):
+            print(f"ID {error_id} length not in (4, 5)")
             ok = False
         if error_id[0] == "0":
             print(f"ID {error_id} starts with zero")
