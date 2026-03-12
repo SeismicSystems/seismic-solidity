@@ -1110,7 +1110,7 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 					if (it != externalRefs.end() && it->second.isShieldedStorage)
 					{
 						m_errorReporter.typeError(
-							5765_error,
+							10308_error,
 							nativeLocationOf(*funCall),
 							std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
 							(funcName == "sstore" ? "cstore" : "cload") + "() instead."
@@ -3055,7 +3055,7 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 		Type const* condType = type(*paramArgMap[0]);
 		if (condType->category() == Type::Category::ShieldedBool)
 			m_errorReporter.warning(
-				5765_error,
+				10310_error,
 				paramArgMap[0]->location(),
 				"Using shielded types in branching conditions can leak information through "
 				"observable execution patterns such as gas costs, state changes, and execution traces."
@@ -4819,7 +4819,7 @@ bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 		// Warn about information leakage when shielded types are used in branching conditions
 		if (condType->category() == Type::Category::ShieldedBool)
 			m_errorReporter.warning(
-				5765_error,
+				10311_error,
 				_expression.location(),
 				"Using shielded types in branching conditions can leak information through "
 				"observable execution patterns such as gas costs, state changes, and execution traces."
