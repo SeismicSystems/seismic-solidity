@@ -4699,7 +4699,7 @@ void TypeChecker::checkMsgValueToShielded(
 				if (memberAccess->memberName() == "data")
 				{
 					m_errorReporter.warning(
-						9666_error,
+						10307_error,
 						memberAccess->location(),
 						"msg.data is publicly visible on-chain for non-seismic transactions. "
 						"Assigning it to a shielded type does not hide the calldata from observers unless the call originates as a seismic transaction."
