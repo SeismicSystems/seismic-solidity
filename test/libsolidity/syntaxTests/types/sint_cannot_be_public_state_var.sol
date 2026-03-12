@@ -3,4 +3,4 @@ contract C {
     sint256 public x;
 }
 // ----
-// TypeError 7091: (89-105): Shielded Types are not supported for public state variables.
+// TypeError 10101: (89-105): Shielded Types are not supported for public state variables.

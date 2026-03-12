@@ -6,4 +6,4 @@ contract C {
     Data public a;
 }
 // ----
-// TypeError 7091: (141-154): Shielded Types are not supported for public state variables.
+// TypeError 10101: (141-154): Shielded Types are not supported for public state variables.

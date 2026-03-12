@@ -614,7 +614,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 	{
 		if (varType->containsShieldedType())
         {
-			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded Types are not supported for public state variables.");
+			m_errorReporter.typeError(10101_error, _variable.location(), "Shielded Types are not supported for public state variables.");
         }
 		FunctionType getter(_variable);
 		if (!useABICoderV2())
