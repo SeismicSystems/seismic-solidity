@@ -125,8 +125,8 @@ def find_files(top_dir, sub_dirs, extensions):
 
 def find_ids_in_test_file(file_name):
     source = read_file(file_name)
-    pattern = r"^// (.*Error|Warning|Info) \d\d\d\d:"
-    return {m.group(0)[-5:-1] for m in re.finditer(pattern, source, flags=re.MULTILINE)}
+    pattern = r"^// (.*Error|Warning|Info) (\d{4,5}):"
+    return {m.group(2) for m in re.finditer(pattern, source, flags=re.MULTILINE)}
 
 
 def find_ids_in_test_files(file_names):
@@ -140,8 +140,8 @@ def find_ids_in_test_files(file_names):
 
 def find_ids_in_cmdline_test_err(file_name):
     source = read_file(file_name)
-    pattern = r' \(\d\d\d\d\):'
-    return {m.group(0)[-6:-2] for m in re.finditer(pattern, source, flags=re.MULTILINE)}
+    pattern = r' \((\d{4,5})\):'
+    return {m.group(1) for m in re.finditer(pattern, source, flags=re.MULTILINE)}
 
 
 def print_ids(ids):
