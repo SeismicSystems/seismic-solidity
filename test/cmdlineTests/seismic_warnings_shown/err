@@ -4,15 +4,21 @@ Warning: Shielded number literals will leak during contract deployment.
 4 |     suint256 private x = 42s;
   |                          ^^^
 
-Warning: Shielded number literals will leak during contract deployment.
- --> input.sol:5:24:
+Warning: Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+ --> input.sol:5:5:
   |
-5 |     suint8 private y = 255s;
-  |                        ^^^^
+5 |     suint256[] private arr;
+  |     ^^^^^^^^^^^^^^^^^^^^^^
 
-Warning: Shielded number literals will leak during contract deployment.
- --> input.sol:6:26:
+Warning: Shielded types in constructor parameters are visible in deployment transaction data. Contract creation (CREATE/CREATE2) does not encrypt calldata. Consider setting shielded state via a post-deployment transaction instead. This is expected to be fixed in a future release.
+ --> input.sol:6:17:
   |
-6 |     sint256 private z = -100s;
-  |                          ^^^^
+6 |     constructor(suint256 _val) {
+  |                 ^^^^^^^^^^^^^
+
+Warning: Literals converted to shielded integers will leak during contract deployment.
+ --> input.sol:8:13:
+  |
+8 |         x = suint256(7);
+  |             ^^^^^^^^^^^
 

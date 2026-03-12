@@ -2,6 +2,9 @@
 pragma solidity >=0.0;
 contract C {
     suint256 private x = 42s;
-    suint8 private y = 255s;
-    sint256 private z = -100s;
+    suint256[] private arr;
+    constructor(suint256 _val) {
+        x = _val;
+        x = suint256(7);
+    }
 }
