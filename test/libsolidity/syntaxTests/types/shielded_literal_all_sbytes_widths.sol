@@ -16,9 +16,9 @@ contract C {
     }
 }
 // ----
-// Warning 9663: (197-210): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
-// Warning 9663: (224-239): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
-// Warning 9663: (253-272): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
-// Warning 9663: (286-313): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
-// Warning 9663: (327-371): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
-// Warning 9663: (385-461): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (197-210): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (224-239): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (253-272): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (286-313): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (327-371): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (385-461): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.

@@ -9,5 +9,5 @@ contract TestShieldedForConditionSbytes {
     }
 }
 // ----
-// Warning 5765: (138-143): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10311: (138-143): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
 // Warning 2018: (46-230): Function state mutability can be restricted to pure
