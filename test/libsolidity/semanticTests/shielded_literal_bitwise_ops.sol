@@ -16,9 +16,11 @@ contract C {
         return uint(x);
     }
 
-    function testNot() public returns (int256) {
-        sint8 a = ~0s;
-        return int(int8(a));
+    function testNot() public returns (uint256) {
+        // ~0s is shielded_int_const -1 (same as ~0 being int_const -1 upstream)
+        // Must use typed NOT: ~suint8(0s) to get 255
+        suint8 a = ~suint8(0s);
+        return uint(uint8(a));
     }
 
     function testChained() public returns (uint256) {
@@ -30,5 +32,5 @@ contract C {
 // testAnd() -> 0x0f
 // testOr() -> 0xff
 // testXor() -> 0xf0
-// testNot() -> -1
+// testNot() -> 0xff
 // testChained() -> 0xff
