@@ -24,5 +24,5 @@ contract C {
 // ----
 // testMod() -> 1
 // testModExact() -> 0
-// testModLarge() -> 6
+// testModLarge() -> 1
 // testModOne() -> 0

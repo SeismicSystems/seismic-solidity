@@ -11,7 +11,8 @@ contract C {
         arr.push(10s);
         arr.push(20s);
         arr.push(30s);
-        return (uint(arr[0]), uint(arr[1]), uint(arr[2]));
+        // arr[0] is 42 from testPush; indices 1,2,3 are from this call
+        return (uint(arr[1]), uint(arr[2]), uint(arr[3]));
     }
 
     function testFixedArray() public returns (uint256, uint256, uint256) {

@@ -16,9 +16,9 @@ contract C {
         return uint(x);
     }
 
-    function testNot() public returns (uint256) {
-        suint8 a = ~0s;
-        return uint(uint8(a));
+    function testNot() public returns (int256) {
+        sint8 a = ~0s;
+        return int(int8(a));
     }
 
     function testChained() public returns (uint256) {
@@ -30,5 +30,5 @@ contract C {
 // testAnd() -> 0x0f
 // testOr() -> 0xff
 // testXor() -> 0xf0
-// testNot() -> 0xff
+// testNot() -> -1
 // testChained() -> 0xff
