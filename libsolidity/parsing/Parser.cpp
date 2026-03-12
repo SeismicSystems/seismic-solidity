@@ -2419,7 +2419,7 @@ ASTPointer<Expression> Parser::parseLiteral()
 		TokenTraits::isEtherSubdenomination(m_scanner->currentToken()) ||
 		TokenTraits::isTimeSubdenomination(m_scanner->currentToken())
 	))
-		fatalParserError(9832_error, "Shielded number literals cannot be used with unit denominations.");
+		fatalParserError(10207_error, "Shielded number literals cannot be used with unit denominations.");
 
 	return nodeFactory.createNode<Literal>(initialToken, std::move(value), Literal::SubDenomination::None);
 }
