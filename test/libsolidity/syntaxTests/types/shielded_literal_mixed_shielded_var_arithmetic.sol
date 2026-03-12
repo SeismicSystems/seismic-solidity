@@ -21,6 +21,6 @@ contract C {
 // Warning 9667: (252-254): Shielded number literals will leak during contract deployment.
 // Warning 10301: (248-254): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 9667: (272-274): Shielded number literals will leak during contract deployment.
-// Warning 4281: (268-274): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.
+// Warning 10303: (268-274): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.
 // Warning 9667: (292-294): Shielded number literals will leak during contract deployment.
-// Warning 4281: (288-294): Shielded integer modulo can leak information. A revert due to division by zero reveals that the divisor is zero.
+// Warning 10303: (288-294): Shielded integer modulo can leak information. A revert due to division by zero reveals that the divisor is zero.

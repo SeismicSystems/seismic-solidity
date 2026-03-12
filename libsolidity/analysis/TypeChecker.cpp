@@ -2097,7 +2097,7 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 	{
 		std::string operation = _operation.getOperator() == Token::Div ? "division" : "modulo";
 		m_errorReporter.warning(
-			4281_error,
+			10303_error,
 			_operation.location(),
 			fmt::format(
 				"Shielded integer {} can leak information. "

@@ -49,6 +49,6 @@ contract TestTernary
 // Warning 10301: (856-924): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 10301: (941-984): Shielded integer subtraction can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 10301: (1000-1043): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4281: (1059-1102): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.
+// Warning 10303: (1059-1102): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.
 // Warning 10301: (1119-1252): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 10301: (1268-1311): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
