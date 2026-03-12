@@ -3,4 +3,4 @@ contract C {
     mapping(suint256 => uint256) private m;
 }
 // ----
-// TypeError 7804: (78-86): Shielded types are not allowed as mapping keys.
+// TypeError 10109: (78-86): Shielded types are not allowed as mapping keys.

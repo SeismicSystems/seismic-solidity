@@ -13,10 +13,10 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (81-84): Shielded number literals will leak during contract deployment.
-// Warning 9667: (172-175): Shielded number literals will leak during contract deployment.
-// Warning 5765: (167-175): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
-// Warning 9667: (195-198): Shielded number literals will leak during contract deployment.
-// Warning 9667: (226-228): Shielded number literals will leak during contract deployment.
-// Warning 5765: (222-228): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
-// Warning 9667: (248-250): Shielded number literals will leak during contract deployment.
+// Warning 10416: (81-84): Shielded number literals will leak during contract deployment.
+// Warning 10416: (172-175): Shielded number literals will leak during contract deployment.
+// Warning 10311: (167-175): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10416: (195-198): Shielded number literals will leak during contract deployment.
+// Warning 10416: (226-228): Shielded number literals will leak during contract deployment.
+// Warning 10311: (222-228): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10416: (248-250): Shielded number literals will leak during contract deployment.

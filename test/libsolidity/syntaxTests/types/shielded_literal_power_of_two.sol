@@ -17,14 +17,14 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (127-129): Shielded number literals will leak during contract deployment.
-// Warning 9667: (143-145): Shielded number literals will leak during contract deployment.
-// Warning 9667: (159-161): Shielded number literals will leak during contract deployment.
-// Warning 9667: (175-177): Shielded number literals will leak during contract deployment.
-// Warning 9667: (191-194): Shielded number literals will leak during contract deployment.
-// Warning 9667: (208-211): Shielded number literals will leak during contract deployment.
-// Warning 9667: (225-228): Shielded number literals will leak during contract deployment.
-// Warning 9667: (242-246): Shielded number literals will leak during contract deployment.
-// Warning 9667: (260-264): Shielded number literals will leak during contract deployment.
-// Warning 9667: (278-283): Shielded number literals will leak during contract deployment.
-// Warning 9667: (297-305): Shielded number literals will leak during contract deployment.
+// Warning 10416: (127-129): Shielded number literals will leak during contract deployment.
+// Warning 10416: (143-145): Shielded number literals will leak during contract deployment.
+// Warning 10416: (159-161): Shielded number literals will leak during contract deployment.
+// Warning 10416: (175-177): Shielded number literals will leak during contract deployment.
+// Warning 10416: (191-194): Shielded number literals will leak during contract deployment.
+// Warning 10416: (208-211): Shielded number literals will leak during contract deployment.
+// Warning 10416: (225-228): Shielded number literals will leak during contract deployment.
+// Warning 10416: (242-246): Shielded number literals will leak during contract deployment.
+// Warning 10416: (260-264): Shielded number literals will leak during contract deployment.
+// Warning 10416: (278-283): Shielded number literals will leak during contract deployment.
+// Warning 10416: (297-305): Shielded number literals will leak during contract deployment.

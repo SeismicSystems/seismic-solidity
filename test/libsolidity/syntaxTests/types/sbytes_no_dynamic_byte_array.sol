@@ -31,4 +31,4 @@ contract C {
     }
 }
 // ----
-// Warning 9663: (845-921): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (845-921): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.

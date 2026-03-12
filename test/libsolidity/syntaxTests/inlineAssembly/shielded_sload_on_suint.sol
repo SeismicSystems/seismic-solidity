@@ -7,4 +7,4 @@ contract C {
     }
 }
 // ----
-// TypeError 5765: (112-125): Cannot use sload() on shielded storage variable. Use cload() instead.
+// TypeError 10308: (112-125): Cannot use sload() on shielded storage variable. Use cload() instead.

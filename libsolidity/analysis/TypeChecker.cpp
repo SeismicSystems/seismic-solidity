@@ -170,7 +170,7 @@ TypePointers TypeChecker::typeCheckABIDecodeAndRetrieveReturnType(FunctionCall c
 				);
 			else if (actualType->containsShieldedType())
 				m_errorReporter.typeError(
-					4851_error,
+					10201_error,
 					typeArgument->location(),
 					"Shielded types cannot be ABI encoded."
 				);
@@ -377,7 +377,7 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			// in functionIsExternallyVisible (non-abstract constructor) does not apply here.
 			if (_var.isReturnParameter() && type(_var)->containsShieldedType())
 				m_errorReporter.typeError(
-					7492_error,
+					10102_error,
 					_var.location(),
 					"Shielded objects cannot be returned from public or external functions. "
 					"Use internal or private functions or cast to an unshielded type."
@@ -388,7 +388,7 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			// so shielded constructor arguments are visible in the deployment transaction.
 			if (_function.isConstructor() && !_var.isReturnParameter() && type(_var)->containsShieldedType())
 				m_errorReporter.warning(
-					5500_error,
+					10103_error,
 					_var.location(),
 					"Shielded types in constructor parameters are visible in deployment transaction data. "
 					"Contract creation (CREATE/CREATE2) does not encrypt calldata. "
@@ -601,7 +601,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		if (!m_evmVersion.supportShieldedStorage())
 		{
 			m_errorReporter.typeError(
-				9978_error,
+				10001_error,
 				_variable.location(),
 				"Shielded types (suint, sbool, saddress, sbytes, etc.) require the Mercury EVM version or later. "
 				"The current EVM version \"" + m_evmVersion.name() + "\" does not support shielded types. "
@@ -614,7 +614,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 	{
 		if (varType->containsShieldedType())
         {
-			m_errorReporter.typeError(7091_error, _variable.location(), "Shielded Types are not supported for public state variables.");
+			m_errorReporter.typeError(10101_error, _variable.location(), "Shielded Types are not supported for public state variables.");
         }
 		FunctionType getter(_variable);
 		if (!useABICoderV2())
@@ -650,7 +650,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		{
 			if (arrayType->isDynamicallySized() && arrayType->baseType()->containsShieldedType())
 				m_errorReporter.warning(
-					9665_error,
+					10305_error,
 					_variable.location(),
 					"Dynamic arrays with shielded element types store their length confidentially, "
 					"but an upper bound on the length may still be observable through gas cost analysis."
@@ -1110,7 +1110,7 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 					if (it != externalRefs.end() && it->second.isShieldedStorage)
 					{
 						m_errorReporter.typeError(
-							5765_error,
+							10308_error,
 							nativeLocationOf(*funCall),
 							std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
 							(funcName == "sstore" ? "cstore" : "cload") + "() instead."
@@ -1186,7 +1186,7 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 				// cstore was called before sstore/sload on the same slot
 				// cstore makes the slot private, and sstore/sload cannot access private slots
 				m_errorReporter.typeError(
-					5768_error,
+					10309_error,
 					op.location,
 					"Cannot use " + op.funcName + "() on a slot that was previously written with cstore(). "
 					"cstore() makes the slot private, and " + op.funcName + "() cannot access private storage. "
@@ -1948,7 +1948,7 @@ bool TypeChecker::visit(UnaryOperation const& _operation)
 	{
 		std::string operation = op == Token::Inc ? "increment" : "decrement";
 		m_errorReporter.warning(
-			4283_error,
+			10302_error,
 			_operation.location(),
 			fmt::format(
 				"Shielded integer {} can leak information. "
@@ -2097,7 +2097,7 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 	{
 		std::string operation = _operation.getOperator() == Token::Div ? "division" : "modulo";
 		m_errorReporter.warning(
-			4281_error,
+			10303_error,
 			_operation.location(),
 			fmt::format(
 				"Shielded integer {} can leak information. "
@@ -2126,7 +2126,7 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		default: solAssert(false, "Unexpected operator");
 		}
 		m_errorReporter.warning(
-			4282_error,
+			10301_error,
 			_operation.location(),
 			fmt::format(
 				"Shielded integer {} can leak information. "
@@ -2152,7 +2152,7 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		}
 		if (_operation.getOperator() == Token::Exp && rightType->category() == Type::Category::ShieldedInteger) {
 			m_errorReporter.warning(
-				3817_error,
+				10304_error,
 				_operation.location(),
 				fmt::format(
 					"Shielded integer exponentiation will leak the exponent value through gas cost."
@@ -2250,7 +2250,7 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 				if (argType->category() == Type::Category::ShieldedAddress)
 				{
 				m_errorReporter.typeError(
-					7399_error,
+					10204_error,
 					_functionCall.location(),
 					ssl,
 					"Instantiating a contract with a saddress is not yet supported"
@@ -2556,7 +2556,7 @@ void TypeChecker::typeCheckABIEncodeFunctions(
 			);
 		else if (argType->containsShieldedType())
 			m_errorReporter.typeError(
-				3648_error,
+				10202_error,
 				arguments[i]->location(),
 				"Shielded types cannot be ABI encoded."
 			);
@@ -2715,7 +2715,7 @@ void TypeChecker::typeCheckABIEncodeCallFunction(FunctionCall const& _functionCa
 			);
 		else if (argType.containsShieldedType())
 			m_errorReporter.typeError(
-				3648_error,
+				10203_error,
 				callArguments[i]->location(),
 				"Shielded types cannot be ABI encoded."
 			);
@@ -3055,7 +3055,7 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 		Type const* condType = type(*paramArgMap[0]);
 		if (condType->category() == Type::Category::ShieldedBool)
 			m_errorReporter.warning(
-				5765_error,
+				10310_error,
 				paramArgMap[0]->location(),
 				"Using shielded types in branching conditions can leak information through "
 				"observable execution patterns such as gas costs, state changes, and execution traces."
@@ -3556,10 +3556,10 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 			if (auto const* arrayType = dynamic_cast<ArrayType const*>(exprType)) {
 				if (memberName == "push") {
 					if (arrayType->containsShieldedType() && !annotation.arguments.value().types.front()->isShielded()) {
-						return { 4254_error, "Cannot push a non-shielded type to a shielded array" };
+						return { 10205_error, "Cannot push a non-shielded type to a shielded array" };
 					}
 					else if (!arrayType->containsShieldedType() && annotation.arguments.value().types.front()->isShielded()) {
-						return { 8878_error, "Cannot push a shielded type to a non-shielded array" };
+						return { 10206_error, "Cannot push a shielded type to a non-shielded array" };
 					}
 				}
 			}
@@ -3611,7 +3611,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 						auto const* var = dynamic_cast<Identifier const*>(&_memberAccess.expression());
 						std::string varName = var ? var->name() : "...";
 						errorMsg += " Cast to address first: \"address(" + varName + ")." + memberName + "\".";
-						return { 3125_error, errorMsg };
+						return { 10208_error, errorMsg };
 					}
 			}
 			else if (exprType->category() == Type::Category::Address)
@@ -3821,13 +3821,13 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 				);
 			else if (memberName == "timestamp_ms" && !m_evmVersion.hasTimestampMs())
 				m_errorReporter.typeError(
-					4521_error,
+					10004_error,
 					_memberAccess.location(),
 					"\"timestamp_ms\" is not supported by the VM version."
 				);
 			else if (memberName == "timestamp_seconds" && !m_evmVersion.hasTimestampMs())
 				m_errorReporter.typeError(
-					8743_error,
+					10003_error,
 					_memberAccess.location(),
 					"\"timestamp_seconds\" is not supported by the VM version."
 				);
@@ -3890,7 +3890,7 @@ bool TypeChecker::visit(IndexAccess const& _access)
 			if (type(*index)->isShielded())
 			{
 				m_errorReporter.fatalTypeError(
-					5910_error,
+					10106_error,
 					index->location(),
 					"Shielded types are not allowed as array indices."
 				);
@@ -4277,7 +4277,7 @@ void TypeChecker::endVisit(Literal const& _literal)
 
 	if (_literal.token() == Token::ShieldedNumber)
 		m_errorReporter.warning(
-			9667_error,
+			10416_error,
 			_literal.location(),
 			"Shielded number literals will leak during contract deployment."
 		);
@@ -4603,7 +4603,7 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string msg = "Literals converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
-			pickId(5501_error, 5506_error, 9660_error),
+			pickId(10401_error, 10402_error, 10403_error),
 			_location,
 			isNewExprArg ? msg + newExprSuffix : msg
 		);
@@ -4617,7 +4617,7 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string msg = "Enums converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
-			pickId(5505_error, 5510_error, 1457_error),
+			pickId(10413_error, 10414_error, 10415_error),
 			_location,
 			isNewExprArg ? msg + newExprSuffix : msg
 		);
@@ -4631,7 +4631,7 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string msg = "FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.";
 		m_errorReporter.warning(
-			pickId(5504_error, 5509_error, 9663_error),
+			pickId(10410_error, 10411_error, 10412_error),
 			_location,
 			isNewExprArg ? msg + newExprSuffix : msg
 		);
@@ -4650,7 +4650,7 @@ void TypeChecker::checkLiteralToShielded(
 		{
 			std::string msg = "Bool Literals converted to shielded bools will leak during contract deployment.";
 			m_errorReporter.warning(
-				pickId(5502_error, 5507_error, 9661_error),
+				pickId(10404_error, 10405_error, 10406_error),
 				_location,
 				isNewExprArg ? msg + newExprSuffix : msg
 			);
@@ -4662,7 +4662,7 @@ void TypeChecker::checkLiteralToShielded(
 		{
 			std::string msg = "Address Literals converted to shielded addresses will leak during contract deployment.";
 			m_errorReporter.warning(
-				pickId(5503_error, 5508_error, 9662_error),
+				pickId(10407_error, 10408_error, 10409_error),
 				_location,
 				isNewExprArg ? msg + newExprSuffix : msg
 			);
@@ -4689,7 +4689,7 @@ void TypeChecker::checkMsgValueToShielded(
 				if (memberAccess->memberName() == "value")
 				{
 					m_errorReporter.warning(
-						9664_error,
+						10306_error,
 						memberAccess->location(),
 						"msg.value is always publicly visible on-chain. "
 						"Assigning it to a shielded type does not hide the transaction value from observers."
@@ -4699,7 +4699,7 @@ void TypeChecker::checkMsgValueToShielded(
 				if (memberAccess->memberName() == "data")
 				{
 					m_errorReporter.warning(
-						9666_error,
+						10307_error,
 						memberAccess->location(),
 						"msg.data is publicly visible on-chain for non-seismic transactions. "
 						"Assigning it to a shielded type does not hide the calldata from observers unless the call originates as a seismic transaction."
@@ -4728,7 +4728,7 @@ void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _calla
 		if (varType->containsShieldedType())
         {
             m_errorReporter.fatalTypeError(
-                4626_error,
+                10107_error,
                 var->location(),
                 "Shielded Types are not allowed as " + kind + " parameter type."
             );
@@ -4819,7 +4819,7 @@ bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 		// Warn about information leakage when shielded types are used in branching conditions
 		if (condType->category() == Type::Category::ShieldedBool)
 			m_errorReporter.warning(
-				5765_error,
+				10311_error,
 				_expression.location(),
 				"Using shielded types in branching conditions can leak information through "
 				"observable execution patterns such as gas costs, state changes, and execution traces."

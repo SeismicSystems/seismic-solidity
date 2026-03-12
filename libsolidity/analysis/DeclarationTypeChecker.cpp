@@ -66,7 +66,7 @@ bool DeclarationTypeChecker::visit(ElementaryTypeName const& _typeName)
 					);
 				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
 					m_errorReporter.typeError(
-						2311_error,
+						10108_error,
 						_typeName.location(),
 						"Shielded address types can only be payable or non-payable."
 					);
@@ -272,7 +272,7 @@ void DeclarationTypeChecker::endVisit(Mapping const& _mapping)
 				m_errorReporter.fatalTypeError(
 					7804_error,
 					typeName->location(),
-					"Only non-shielded elementary types, user defined value types, contract types or enums are allowed as mapping keys."
+					"Only elementary types, user defined value types, contract types or enums are allowed as mapping keys."
 				);
 				break;
 		}
@@ -286,7 +286,7 @@ void DeclarationTypeChecker::endVisit(Mapping const& _mapping)
 	if (keyType->isShielded())
 	{
 		m_errorReporter.fatalTypeError(
-			7804_error,
+			10109_error,
 			_mapping.keyType().location(),
 			"Shielded types are not allowed as mapping keys."
 		);
@@ -510,7 +510,7 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 
 				if (_variable.typeName().annotation().type->isShielded() || _variable.typeName().annotation().type->containsShieldedType())
 					m_errorReporter.declarationError(
-						9826_error,
+						10105_error,
 						_variable.location(),
 						"Shielded types cannot be used with transient storage."
 					);
@@ -558,7 +558,7 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 		if (auto const* arrayType = dynamic_cast<ArrayType const*>(type))
 			hasShieldedContent = arrayType->baseType()->isShielded();
 	if ((_variable.isConstant() || _variable.immutable()) && hasShieldedContent)
-		m_errorReporter.declarationError(7491_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
+		m_errorReporter.declarationError(10104_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
 
 	if (_variable.isConstant() && !type->isValueType())
 	{

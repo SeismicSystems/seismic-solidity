@@ -10,7 +10,7 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (163-165): Shielded number literals will leak during contract deployment.
+// Warning 10416: (163-165): Shielded number literals will leak during contract deployment.
 // TypeError 7407: (163-165): Type shielded_int_const 0 is not implicitly convertible to expected type saddress.
-// Warning 9667: (237-239): Shielded number literals will leak during contract deployment.
+// Warning 10416: (237-239): Shielded number literals will leak during contract deployment.
 // TypeError 7407: (237-239): Type shielded_int_const 1 is not implicitly convertible to expected type sbool.

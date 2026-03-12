@@ -9,5 +9,5 @@ contract TestShieldedTernaryCondition {
 }
 
 // ----
-// Warning 5765: (108-109): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
-// Warning 5765: (209-214): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10311: (108-109): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10311: (209-214): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.

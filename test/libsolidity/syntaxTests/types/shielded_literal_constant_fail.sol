@@ -3,4 +3,4 @@ contract C {
     suint256 private constant X = 42s;
 }
 // ----
-// DeclarationError 7491: (58-91): Shielded objects cannot be set to constant or immutable.
+// DeclarationError 10104: (58-91): Shielded objects cannot be set to constant or immutable.

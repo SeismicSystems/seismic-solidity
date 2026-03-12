@@ -1,4 +1,4 @@
-// this.f() is an external call — emits context B warning (5506)
+// this.f() is an external call — emits context B warning (10402)
 contract C {
     function setVal(suint256 x) external {}
 
@@ -7,4 +7,4 @@ contract C {
     }
 }
 // ----
-// Warning 5506: (176-188): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (177-189): Literals converted to shielded integers will leak during contract deployment.

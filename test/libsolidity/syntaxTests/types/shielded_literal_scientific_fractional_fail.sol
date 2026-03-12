@@ -8,5 +8,5 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (203-208): Shielded number literals will leak during contract deployment.
+// Warning 10416: (203-208): Shielded number literals will leak during contract deployment.
 // TypeError 2326: (203-208): Type shielded_rational_const 1 / 10 is not implicitly convertible to expected type suint256. Try converting to type ufixed8x1 or use an explicit conversion.

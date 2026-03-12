@@ -17,10 +17,10 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (196-198): Shielded number literals will leak during contract deployment.
-// Warning 9667: (212-216): Shielded number literals will leak during contract deployment.
-// Warning 9667: (230-236): Shielded number literals will leak during contract deployment.
-// Warning 9667: (250-257): Shielded number literals will leak during contract deployment.
-// Warning 9667: (271-281): Shielded number literals will leak during contract deployment.
-// Warning 9667: (295-300): Shielded number literals will leak during contract deployment.
-// Warning 9667: (314-316): Shielded number literals will leak during contract deployment.
+// Warning 10416: (196-198): Shielded number literals will leak during contract deployment.
+// Warning 10416: (212-216): Shielded number literals will leak during contract deployment.
+// Warning 10416: (230-236): Shielded number literals will leak during contract deployment.
+// Warning 10416: (250-257): Shielded number literals will leak during contract deployment.
+// Warning 10416: (271-281): Shielded number literals will leak during contract deployment.
+// Warning 10416: (295-300): Shielded number literals will leak during contract deployment.
+// Warning 10416: (314-316): Shielded number literals will leak during contract deployment.

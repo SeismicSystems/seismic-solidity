@@ -5,4 +5,4 @@ contract test {
     }
 }
 // ----
-// Warning 9662: (85-137): Address Literals converted to shielded addresses will leak during contract deployment.
+// Warning 10409: (85-137): Address Literals converted to shielded addresses will leak during contract deployment.

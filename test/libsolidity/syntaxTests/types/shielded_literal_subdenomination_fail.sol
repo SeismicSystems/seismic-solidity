@@ -7,4 +7,4 @@ contract C {
     }
 }
 // ----
-// ParserError 9832: (151-156): Shielded number literals cannot be used with unit denominations.
+// ParserError 10207: (151-156): Shielded number literals cannot be used with unit denominations.

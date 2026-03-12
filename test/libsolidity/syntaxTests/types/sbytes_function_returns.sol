@@ -23,9 +23,9 @@ contract C {
 }
 
 // ----
-// Warning 9663: (91-104): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
-// Warning 9663: (195-222): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
-// Warning 9663: (315-391): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (91-104): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (195-222): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (315-391): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // Warning 2072: (448-459): Unused local variable.
 // Warning 2072: (487-498): Unused local variable.
 // Warning 2072: (526-539): Unused local variable.

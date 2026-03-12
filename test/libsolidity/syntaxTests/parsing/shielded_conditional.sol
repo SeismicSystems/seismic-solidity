@@ -21,10 +21,10 @@ contract TestSbool {
 }
 
 // ----
-// Warning 5765: (81-82): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
-// Warning 5765: (227-228): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
-// Warning 9661: (304-315): Bool Literals converted to shielded bools will leak during contract deployment.
-// Warning 5765: (332-333): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10311: (81-82): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10311: (227-228): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10406: (304-315): Bool Literals converted to shielded bools will leak during contract deployment.
+// Warning 10311: (332-333): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
 // Warning 2018: (25-162): Function state mutability can be restricted to pure
 // Warning 2018: (168-243): Function state mutability can be restricted to pure
 // Warning 2018: (249-394): Function state mutability can be restricted to pure

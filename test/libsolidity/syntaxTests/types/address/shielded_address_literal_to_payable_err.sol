@@ -5,6 +5,6 @@ contract C {
     }
 }
 // ----
-// Warning 9662: (73-125): Address Literals converted to shielded addresses will leak during contract deployment.
+// Warning 10409: (73-125): Address Literals converted to shielded addresses will leak during contract deployment.
 // TypeError 9574: (52-125): Type saddress is not implicitly convertible to expected type saddress payable.
 // TypeError 9574: (135-198): Type address is not implicitly convertible to expected type saddress payable.

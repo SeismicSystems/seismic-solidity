@@ -10,7 +10,7 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (229-231): Shielded number literals will leak during contract deployment.
+// Warning 10416: (229-231): Shielded number literals will leak during contract deployment.
 // TypeError 2271: (225-231): Built-in binary operator + cannot be applied to types uint256 and shielded_int_const 1.
-// Warning 9667: (249-251): Shielded number literals will leak during contract deployment.
+// Warning 10416: (249-251): Shielded number literals will leak during contract deployment.
 // TypeError 2271: (245-251): Built-in binary operator * cannot be applied to types uint256 and shielded_int_const 2.

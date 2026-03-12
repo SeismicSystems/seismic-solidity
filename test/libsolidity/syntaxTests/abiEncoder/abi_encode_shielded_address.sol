@@ -5,4 +5,4 @@ contract C {
     }
 }
 // ----
-// TypeError 3648: (97-98): Shielded types cannot be ABI encoded.
+// TypeError 10202: (97-98): Shielded types cannot be ABI encoded.

@@ -10,4 +10,4 @@ contract InstantiationFail {
     }
 }
 // ----
-// TypeError 7399: (234-266): Instantiating a contract with a saddress is not yet supported
+// TypeError 10204: (234-266): Instantiating a contract with a saddress is not yet supported

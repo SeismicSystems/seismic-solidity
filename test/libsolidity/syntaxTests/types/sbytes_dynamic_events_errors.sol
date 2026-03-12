@@ -9,4 +9,4 @@ contract C {
     }
 }
 // ----
-// TypeError 4626: (33-44): Shielded Types are not allowed as event parameter type.
+// TypeError 10107: (33-44): Shielded Types are not allowed as event parameter type.
