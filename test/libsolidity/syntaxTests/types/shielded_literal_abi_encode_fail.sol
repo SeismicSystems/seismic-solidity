@@ -5,5 +5,5 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (136-139): Shielded number literals will leak during contract deployment.
+// Warning 10416: (136-139): Shielded number literals will leak during contract deployment.
 // TypeError 10202: (136-139): Shielded types cannot be ABI encoded.

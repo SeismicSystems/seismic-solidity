@@ -14,8 +14,8 @@ contract C {
 }
 // ----
 // Warning 10305: (17-39): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
-// Warning 9667: (173-176): Shielded number literals will leak during contract deployment.
-// Warning 9667: (196-198): Shielded number literals will leak during contract deployment.
-// Warning 9667: (265-267): Shielded number literals will leak during contract deployment.
-// Warning 9667: (292-294): Shielded number literals will leak during contract deployment.
-// Warning 9667: (319-323): Shielded number literals will leak during contract deployment.
+// Warning 10416: (173-176): Shielded number literals will leak during contract deployment.
+// Warning 10416: (196-198): Shielded number literals will leak during contract deployment.
+// Warning 10416: (265-267): Shielded number literals will leak during contract deployment.
+// Warning 10416: (292-294): Shielded number literals will leak during contract deployment.
+// Warning 10416: (319-323): Shielded number literals will leak during contract deployment.

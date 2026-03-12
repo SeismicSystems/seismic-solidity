@@ -1,4 +1,4 @@
-// Multiple external call targets — both emit context B warnings (5506)
+// Multiple external call targets — both emit context B warnings (10402)
 contract TokenA {
     function transfer(suint256 amount) external {}
 }
@@ -16,5 +16,5 @@ contract Router {
     }
 }
 // ----
-// Warning 5506: (314-327): Literals converted to shielded integers will leak during contract deployment.
-// Warning 5506: (349-362): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (314-327): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (349-362): Literals converted to shielded integers will leak during contract deployment.

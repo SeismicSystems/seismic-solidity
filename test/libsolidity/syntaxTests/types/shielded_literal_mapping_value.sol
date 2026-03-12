@@ -9,6 +9,6 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (156-159): Shielded number literals will leak during contract deployment.
-// Warning 9667: (176-178): Shielded number literals will leak during contract deployment.
-// Warning 9667: (195-202): Shielded number literals will leak during contract deployment.
+// Warning 10416: (156-159): Shielded number literals will leak during contract deployment.
+// Warning 10416: (176-178): Shielded number literals will leak during contract deployment.
+// Warning 10416: (195-202): Shielded number literals will leak during contract deployment.

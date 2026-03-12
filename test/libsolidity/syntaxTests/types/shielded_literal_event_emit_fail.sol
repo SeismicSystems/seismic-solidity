@@ -7,5 +7,5 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (186-189): Shielded number literals will leak during contract deployment.
+// Warning 10416: (186-189): Shielded number literals will leak during contract deployment.
 // TypeError 9553: (186-189): Invalid type for argument in function call. Invalid implicit conversion from shielded_int_const 42 to uint256 requested. Shielded number literal cannot be implicitly converted to non-shielded type.

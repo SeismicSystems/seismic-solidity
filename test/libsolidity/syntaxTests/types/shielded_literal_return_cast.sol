@@ -10,7 +10,7 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (168-171): Shielded number literals will leak during contract deployment.
+// Warning 10416: (168-171): Shielded number literals will leak during contract deployment.
 // TypeError 9640: (160-172): Explicit type conversion not allowed from "shielded_int_const 42" to "uint256".
-// Warning 9667: (319-322): Shielded number literals will leak during contract deployment.
+// Warning 10416: (319-322): Shielded number literals will leak during contract deployment.
 // TypeError 6359: (319-322): Return argument type shielded_int_const 42 is not implicitly convertible to expected type (type of first return variable) uint256. Shielded number literal cannot be implicitly converted to non-shielded type.

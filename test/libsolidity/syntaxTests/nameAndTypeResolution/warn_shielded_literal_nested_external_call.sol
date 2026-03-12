@@ -1,4 +1,4 @@
-// Nested external calls — both emit context B warnings (5506)
+// Nested external calls — both emit context B warnings (10402)
 contract A {
     function doSomething(suint256 x) external {}
 }
@@ -18,5 +18,5 @@ contract Caller {
     }
 }
 // ----
-// Warning 5506: (403-414): Literals converted to shielded integers will leak during contract deployment.
-// Warning 5506: (434-446): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (403-414): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (434-446): Literals converted to shielded integers will leak during contract deployment.

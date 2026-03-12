@@ -1,4 +1,4 @@
-// External call with saddress literal — emits context B warning (5508)
+// External call with saddress literal — emits context B warning (10408)
 contract Target {
     function setVal(saddress x) external {}
 }
@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 5508: (219-271): Address Literals converted to shielded addresses will leak during contract deployment.
+// Warning 10408: (219-271): Address Literals converted to shielded addresses will leak during contract deployment.

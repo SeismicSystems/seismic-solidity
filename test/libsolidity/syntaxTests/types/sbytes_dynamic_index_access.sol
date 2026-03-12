@@ -16,5 +16,5 @@ contract C {
 }
 // ----
 // Warning 10305: (17-28): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
-// Warning 9663: (174-187): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10412: (174-187): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // Warning 2072: (291-302): Unused local variable.

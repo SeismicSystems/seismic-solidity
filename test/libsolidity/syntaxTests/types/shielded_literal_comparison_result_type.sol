@@ -12,12 +12,12 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (215-217): Shielded number literals will leak during contract deployment.
-// Warning 9667: (220-222): Shielded number literals will leak during contract deployment.
-// Warning 9667: (238-240): Shielded number literals will leak during contract deployment.
-// Warning 9667: (244-246): Shielded number literals will leak during contract deployment.
-// Warning 9667: (262-264): Shielded number literals will leak during contract deployment.
-// Warning 9667: (268-270): Shielded number literals will leak during contract deployment.
-// Warning 9667: (350-352): Shielded number literals will leak during contract deployment.
-// Warning 9667: (355-357): Shielded number literals will leak during contract deployment.
+// Warning 10416: (215-217): Shielded number literals will leak during contract deployment.
+// Warning 10416: (220-222): Shielded number literals will leak during contract deployment.
+// Warning 10416: (238-240): Shielded number literals will leak during contract deployment.
+// Warning 10416: (244-246): Shielded number literals will leak during contract deployment.
+// Warning 10416: (262-264): Shielded number literals will leak during contract deployment.
+// Warning 10416: (268-270): Shielded number literals will leak during contract deployment.
+// Warning 10416: (350-352): Shielded number literals will leak during contract deployment.
+// Warning 10416: (355-357): Shielded number literals will leak during contract deployment.
 // TypeError 9574: (340-358): Type sbool is not implicitly convertible to expected type bool.

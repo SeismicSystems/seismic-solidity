@@ -8,5 +8,5 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (227-270): Shielded number literals will leak during contract deployment.
+// Warning 10416: (227-270): Shielded number literals will leak during contract deployment.
 // TypeError 7407: (227-270): Type address is not implicitly convertible to expected type suint256.

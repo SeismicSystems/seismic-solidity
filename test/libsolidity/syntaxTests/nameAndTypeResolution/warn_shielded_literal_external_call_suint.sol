@@ -1,4 +1,4 @@
-// External call with suint literal — emits context B warning (5506)
+// External call with suint literal — emits context B warning (10402)
 contract Target {
     function setVal(suint256 x) external {}
 }
@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 5506: (216-228): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (216-228): Literals converted to shielded integers will leak during contract deployment.

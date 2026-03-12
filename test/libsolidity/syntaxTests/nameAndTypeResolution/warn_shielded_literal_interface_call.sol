@@ -1,4 +1,4 @@
-// Call through interface — emits context B warning (5506)
+// Call through interface — emits context B warning (10402)
 interface ITarget {
     function setVal(suint256 x) external;
 }
@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 5506: (207-219): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (207-219): Literals converted to shielded integers will leak during contract deployment.

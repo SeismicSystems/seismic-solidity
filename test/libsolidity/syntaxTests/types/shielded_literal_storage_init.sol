@@ -6,7 +6,7 @@ contract C {
     sint8 private w = -128s;
 }
 // ----
-// Warning 9667: (100-103): Shielded number literals will leak during contract deployment.
-// Warning 9667: (128-132): Shielded number literals will leak during contract deployment.
-// Warning 9667: (159-163): Shielded number literals will leak during contract deployment.
-// Warning 9667: (188-192): Shielded number literals will leak during contract deployment.
+// Warning 10416: (100-103): Shielded number literals will leak during contract deployment.
+// Warning 10416: (128-132): Shielded number literals will leak during contract deployment.
+// Warning 10416: (159-163): Shielded number literals will leak during contract deployment.
+// Warning 10416: (188-192): Shielded number literals will leak during contract deployment.

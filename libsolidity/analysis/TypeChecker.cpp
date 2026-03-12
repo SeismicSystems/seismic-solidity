@@ -4277,7 +4277,7 @@ void TypeChecker::endVisit(Literal const& _literal)
 
 	if (_literal.token() == Token::ShieldedNumber)
 		m_errorReporter.warning(
-			9667_error,
+			10416_error,
 			_literal.location(),
 			"Shielded number literals will leak during contract deployment."
 		);
@@ -4603,7 +4603,7 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string msg = "Literals converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
-			pickId(5501_error, 5506_error, 9660_error),
+			pickId(10401_error, 10402_error, 10403_error),
 			_location,
 			isNewExprArg ? msg + newExprSuffix : msg
 		);
@@ -4617,7 +4617,7 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string msg = "Enums converted to shielded integers will leak during contract deployment.";
 		m_errorReporter.warning(
-			pickId(5505_error, 5510_error, 1457_error),
+			pickId(10413_error, 10414_error, 10415_error),
 			_location,
 			isNewExprArg ? msg + newExprSuffix : msg
 		);
@@ -4631,7 +4631,7 @@ void TypeChecker::checkLiteralToShielded(
 	{
 		std::string msg = "FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.";
 		m_errorReporter.warning(
-			pickId(5504_error, 5509_error, 9663_error),
+			pickId(10410_error, 10411_error, 10412_error),
 			_location,
 			isNewExprArg ? msg + newExprSuffix : msg
 		);
@@ -4650,7 +4650,7 @@ void TypeChecker::checkLiteralToShielded(
 		{
 			std::string msg = "Bool Literals converted to shielded bools will leak during contract deployment.";
 			m_errorReporter.warning(
-				pickId(5502_error, 5507_error, 9661_error),
+				pickId(10404_error, 10405_error, 10406_error),
 				_location,
 				isNewExprArg ? msg + newExprSuffix : msg
 			);
@@ -4662,7 +4662,7 @@ void TypeChecker::checkLiteralToShielded(
 		{
 			std::string msg = "Address Literals converted to shielded addresses will leak during contract deployment.";
 			m_errorReporter.warning(
-				pickId(5503_error, 5508_error, 9662_error),
+				pickId(10407_error, 10408_error, 10409_error),
 				_location,
 				isNewExprArg ? msg + newExprSuffix : msg
 			);
