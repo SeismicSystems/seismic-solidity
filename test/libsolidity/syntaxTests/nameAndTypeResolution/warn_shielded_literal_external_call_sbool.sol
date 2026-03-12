@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 10405: (213-224): Bool Literals converted to shielded bools will leak during contract deployment.
+// Warning 10405: (214-225): Bool Literals converted to shielded bools will leak during contract deployment.

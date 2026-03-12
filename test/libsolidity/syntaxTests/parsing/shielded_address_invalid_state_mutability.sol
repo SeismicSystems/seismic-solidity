@@ -38,16 +38,16 @@ saddress pure immutable f_d;
 // TypeError 10108: (188-201): Shielded address types can only be payable or non-payable.
 // TypeError 10108: (240-253): Shielded address types can only be payable or non-payable.
 // TypeError 10108: (285-298): Shielded address types can only be payable or non-payable.
-// TypeError 10108: (353-365): Address types can only be payable or non-payable.
-// TypeError 10108: (408-420): Address types can only be payable or non-payable.
+// TypeError 2311: (353-365): Address types can only be payable or non-payable.
+// TypeError 2311: (408-420): Address types can only be payable or non-payable.
 // TypeError 10108: (441-454): Shielded address types can only be payable or non-payable.
 // TypeError 10108: (477-490): Shielded address types can only be payable or non-payable.
 // TypeError 10108: (510-523): Shielded address types can only be payable or non-payable.
 // TypeError 10108: (539-552): Shielded address types can only be payable or non-payable.
 // TypeError 10108: (570-583): Shielded address types can only be payable or non-payable.
 // TypeError 10108: (601-614): Shielded address types can only be payable or non-payable.
-// TypeError 10108: (707-719): Address types can only be payable or non-payable.
-// TypeError 10108: (833-845): Address types can only be payable or non-payable.
+// TypeError 2311: (707-719): Address types can only be payable or non-payable.
+// TypeError 2311: (833-845): Address types can only be payable or non-payable.
 // TypeError 10108: (871-884): Shielded address types can only be payable or non-payable.
 // DeclarationError 10104: (871-897): Shielded objects cannot be set to constant or immutable.
 // TypeError 10108: (899-912): Shielded address types can only be payable or non-payable.

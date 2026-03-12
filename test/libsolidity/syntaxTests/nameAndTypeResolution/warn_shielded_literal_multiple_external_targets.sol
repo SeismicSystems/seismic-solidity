@@ -16,5 +16,5 @@ contract Router {
     }
 }
 // ----
-// Warning 10402: (314-327): Literals converted to shielded integers will leak during contract deployment.
-// Warning 10402: (349-362): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (315-328): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (350-363): Literals converted to shielded integers will leak during contract deployment.

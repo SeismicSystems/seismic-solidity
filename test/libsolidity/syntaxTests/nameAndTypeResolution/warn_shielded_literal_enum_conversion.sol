@@ -12,4 +12,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 10414: (252-269): Enums converted to shielded integers will leak during contract deployment.
+// Warning 10414: (253-270): Enums converted to shielded integers will leak during contract deployment.

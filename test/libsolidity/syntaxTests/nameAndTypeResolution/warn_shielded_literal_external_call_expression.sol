@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 10402: (232-247): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (233-248): Literals converted to shielded integers will leak during contract deployment.

@@ -16,6 +16,6 @@ contract Caller {
     }
 }
 // ----
-// Warning 10103: (148-159): Shielded types in constructor parameters are visible in deployment transaction data. Contract creation (CREATE/CREATE2) does not encrypt calldata. Consider setting shielded state via a post-deployment transaction instead. This is expected to be fixed in a future release.
-// Warning 10402: (323-335): Literals converted to shielded integers will leak during contract deployment.
-// Warning 10401: (356-368): Literals converted to shielded integers will leak during contract deployment. Contract creation (CREATE/CREATE2) does not encrypt calldata. This is expected to be fixed in a future release.
+// Warning 10103: (150-161): Shielded types in constructor parameters are visible in deployment transaction data. Contract creation (CREATE/CREATE2) does not encrypt calldata. Consider setting shielded state via a post-deployment transaction instead. This is expected to be fixed in a future release.
+// Warning 10402: (325-337): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10401: (358-370): Literals converted to shielded integers will leak during contract deployment. Contract creation (CREATE/CREATE2) does not encrypt calldata. This is expected to be fixed in a future release.
