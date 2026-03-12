@@ -66,7 +66,7 @@ bool DeclarationTypeChecker::visit(ElementaryTypeName const& _typeName)
 					);
 				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
 					m_errorReporter.typeError(
-						2311_error,
+						10108_error,
 						_typeName.location(),
 						"Shielded address types can only be payable or non-payable."
 					);
