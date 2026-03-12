@@ -3559,7 +3559,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 						return { 10205_error, "Cannot push a non-shielded type to a shielded array" };
 					}
 					else if (!arrayType->containsShieldedType() && annotation.arguments.value().types.front()->isShielded()) {
-						return { 8878_error, "Cannot push a shielded type to a non-shielded array" };
+						return { 10206_error, "Cannot push a shielded type to a non-shielded array" };
 					}
 				}
 			}
