@@ -6,4 +6,4 @@ contract C {
 // ====
 // EVMVersion: =cancun
 // ----
-// TypeError 8743: (74-97): "timestamp_seconds" is not supported by the VM version.
+// TypeError 10003: (74-97): "timestamp_seconds" is not supported by the VM version.
