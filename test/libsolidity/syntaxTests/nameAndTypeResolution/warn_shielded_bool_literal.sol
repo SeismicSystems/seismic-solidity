@@ -5,4 +5,4 @@ contract test {
     }
 }
 // ----
-// Warning 9661: (79-90): Bool Literals converted to shielded bools will leak during contract deployment.
+// Warning 10406: (79-90): Bool Literals converted to shielded bools will leak during contract deployment.

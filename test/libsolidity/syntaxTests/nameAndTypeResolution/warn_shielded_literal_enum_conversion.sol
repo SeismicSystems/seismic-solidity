@@ -1,4 +1,4 @@
-// Enum to shielded in external call — emits context B warning (5510)
+// Enum to shielded in external call — emits context B warning (10414)
 contract Target {
     function setVal(suint8 x) external {}
 }
@@ -12,4 +12,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 5510: (252-269): Enums converted to shielded integers will leak during contract deployment.
+// Warning 10414: (253-270): Enums converted to shielded integers will leak during contract deployment.

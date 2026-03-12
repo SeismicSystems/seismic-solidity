@@ -15,9 +15,9 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (150-159): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (244-254): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (342-353): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (150-159): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (244-254): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (342-353): Literals converted to shielded integers will leak during contract deployment.
 // Warning 2072: (201-209): Unused local variable.
 // Warning 2072: (296-305): Unused local variable.
 // Warning 2072: (397-407): Unused local variable.

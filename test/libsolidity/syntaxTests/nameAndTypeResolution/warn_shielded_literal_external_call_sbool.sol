@@ -1,4 +1,4 @@
-// External call with sbool literal — emits context B warning (5507)
+// External call with sbool literal — emits context B warning (10405)
 contract Target {
     function setVal(sbool x) external {}
 }
@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 5507: (213-224): Bool Literals converted to shielded bools will leak during contract deployment.
+// Warning 10405: (214-225): Bool Literals converted to shielded bools will leak during contract deployment.

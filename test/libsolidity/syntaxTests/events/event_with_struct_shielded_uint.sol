@@ -4,4 +4,4 @@ contract C {
     function f() public { emit e(S); }
 }
 // ----
-// TypeError 4626: (51-62): Shielded Types are not allowed as event parameter type.
+// TypeError 10107: (51-62): Shielded Types are not allowed as event parameter type.

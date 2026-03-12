@@ -12,6 +12,6 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (162-172): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (162-172): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 9574: (243-256): Type int256 is not implicitly convertible to expected type sint256.
 // TypeError 9574: (327-339): Type sint256 is not implicitly convertible to expected type int256.

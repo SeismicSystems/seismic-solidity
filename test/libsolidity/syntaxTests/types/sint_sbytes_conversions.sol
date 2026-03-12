@@ -16,12 +16,12 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (212-220): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (212-220): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 9640: (242-252): Explicit type conversion not allowed from "sint8" to "sbytes1".
 // TypeError 9640: (272-280): Explicit type conversion not allowed from "sbytes1" to "sint8".
-// Warning 9660: (302-311): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (302-311): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 9640: (333-343): Explicit type conversion not allowed from "sint16" to "sbytes2".
 // TypeError 9640: (364-373): Explicit type conversion not allowed from "sbytes2" to "sint16".
-// Warning 9660: (396-406): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (396-406): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 9640: (429-440): Explicit type conversion not allowed from "sint256" to "sbytes32".
 // TypeError 9640: (462-472): Explicit type conversion not allowed from "sbytes32" to "sint256".

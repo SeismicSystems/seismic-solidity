@@ -5,5 +5,5 @@ contract C {
     }
 }
 // ----
-// Warning 9661: (62-73): Bool Literals converted to shielded bools will leak during contract deployment.
-// TypeError 3648: (100-101): Shielded types cannot be ABI encoded.
+// Warning 10406: (62-73): Bool Literals converted to shielded bools will leak during contract deployment.
+// TypeError 10202: (100-101): Shielded types cannot be ABI encoded.

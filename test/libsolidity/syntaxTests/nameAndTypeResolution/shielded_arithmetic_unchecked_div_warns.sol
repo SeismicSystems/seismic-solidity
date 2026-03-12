@@ -8,4 +8,4 @@ contract C {
     }
 }
 // ----
-// Warning 4281: (227-232): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.
+// Warning 10303: (227-232): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.

@@ -853,7 +853,7 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 	else if ((_instr == evmasm::Instruction::TSTORE || _instr == evmasm::Instruction::TLOAD) && !m_evmVersion.supportsTransientStorage())
 		errorForVM(6243_error, "only available for Cancun-compatible");
 	else if ((_instr == evmasm::Instruction::CLOAD || _instr == evmasm::Instruction::CSTORE || _instr == evmasm::Instruction::TIMESTAMPMS) && !m_evmVersion.supportShieldedStorage())
-		errorForVM(6245_error, "only available for Mercury-compatible");
+		errorForVM(10002_error, "only available for Mercury-compatible");
 	else if (_instr == evmasm::Instruction::PC)
 		m_errorReporter.error(
 			2450_error,
@@ -912,7 +912,7 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 	))
 	{
 		m_errorReporter.typeError(
-			9132_error,
+			10110_error,
 			_location,
 			fmt::format(
 				"The \"{instruction}\" instruction is only available in Seismic legacy bytecode VM (you are currently compiling to EOF).",

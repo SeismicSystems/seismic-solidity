@@ -10,6 +10,6 @@ contract Caller {
     }
 }
 // ----
-// Warning 5506: (250-261): Literals converted to shielded integers will leak during contract deployment.
-// Warning 5507: (263-274): Bool Literals converted to shielded bools will leak during contract deployment.
-// Warning 5506: (276-288): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (250-261): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10405: (263-274): Bool Literals converted to shielded bools will leak during contract deployment.
+// Warning 10402: (276-288): Literals converted to shielded integers will leak during contract deployment.

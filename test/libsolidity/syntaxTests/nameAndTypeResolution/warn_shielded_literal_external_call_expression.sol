@@ -1,4 +1,4 @@
-// Expression in external call arg (arithmetic folded to literal) — context B (5506)
+// Expression in external call arg (arithmetic folded to literal) — context B (10402)
 contract Target {
     function setVal(suint256 x) external {}
 }
@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 5506: (232-247): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10402: (233-248): Literals converted to shielded integers will leak during contract deployment.

@@ -1,4 +1,4 @@
-// External call with sbytes4 literal — emits context B warning (5509)
+// External call with sbytes4 literal — emits context B warning (10411)
 contract Target {
     function setVal(sbytes4 x) external {}
 }
@@ -10,4 +10,4 @@ contract Caller {
     }
 }
 // ----
-// Warning 5509: (217-236): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10411: (218-237): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.

@@ -1099,13 +1099,28 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		case FunctionType::Kind::SeismicRNG:
 		{
 			solAssert(!_functionCall.annotation().tryCall, "");
+			solAssert(!function.valueSet(), "SeismicRNG: value option must not be set");
+			solAssert(!function.gasSet(), "SeismicRNG: gas option must not be set");
+			solAssert(!function.hasBoundFirstArgument(), "SeismicRNG: must not have bound first argument");
 			solAssert(function.returnParameterTypes().size() == 1);
 
 			auto const& retType = *function.returnParameterTypes()[0];
-			auto const* shieldedType = dynamic_cast<ShieldedIntegerType const*>(&retType);
-			solAssert(shieldedType);
-			unsigned byteWidth = shieldedType->numBits() / 8;
-			unsigned shiftBits = (32 - byteWidth) * 8;
+			unsigned byteWidth;
+			unsigned shiftBits;
+			if (auto const* shieldedIntType = dynamic_cast<ShieldedIntegerType const*>(&retType))
+			{
+				byteWidth = shieldedIntType->numBits() / 8;
+				shiftBits = (32 - byteWidth) * 8;
+			}
+			else if (auto const* shieldedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(&retType))
+			{
+				byteWidth = shieldedBytesType->numBytes();
+				shiftBits = 0; // bytes types are left-aligned, no shift needed
+			}
+			else
+				solAssert(false, "SeismicRNG: unexpected return type");
+
+			solAssert(byteWidth >= 1 && byteWidth <= 32, "SeismicRNG: byteWidth out of range [1, 32]");
 
 			// Store uint32(byteWidth) big-endian at the free memory pointer
 			utils().fetchFreeMemoryPointer();

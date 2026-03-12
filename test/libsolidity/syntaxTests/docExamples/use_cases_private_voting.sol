@@ -26,6 +26,6 @@ contract PrivateVoting {
 // ====
 // EVMVersion: >=mercury
 // ----
-// Warning 9661: (389-400): Bool Literals converted to shielded bools will leak during contract deployment.
-// Warning 9660: (455-466): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (508-519): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10406: (389-400): Bool Literals converted to shielded bools will leak during contract deployment.
+// Warning 10403: (455-466): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (508-519): Literals converted to shielded integers will leak during contract deployment.

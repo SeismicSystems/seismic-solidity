@@ -10,7 +10,7 @@ contract C {
     }
 }
 // ----
-// Warning 9665: (120-128): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10305: (120-128): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // Warning 2072: (171-180): Unused local variable.
 // Warning 2072: (203-212): Unused local variable.
 // Warning 2072: (235-245): Unused local variable.

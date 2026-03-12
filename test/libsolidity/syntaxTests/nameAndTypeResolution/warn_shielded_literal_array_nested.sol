@@ -9,8 +9,8 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (91-99): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (101-109): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (113-121): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (123-131): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (223-231): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (91-99): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (101-109): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (113-121): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (123-131): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (223-231): Literals converted to shielded integers will leak during contract deployment.
