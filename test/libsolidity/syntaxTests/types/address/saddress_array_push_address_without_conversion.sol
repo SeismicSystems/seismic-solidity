@@ -8,5 +8,5 @@ contract C {
     }
 }
 // ----
-// Warning 9665: (17-30): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10305: (17-30): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // TypeError 10205: (164-171): Cannot push a non-shielded type to a shielded array

@@ -15,8 +15,8 @@ contract C {
     }
 }
 // ----
-// Warning 9665: (124-132): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
-// Warning 9665: (138-146): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10305: (124-132): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10305: (138-146): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // Warning 9663: (206-216): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // Warning 9663: (218-228): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // Warning 9663: (269-279): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.

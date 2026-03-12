@@ -12,4 +12,4 @@ contract C {
     }
 }
 // ----
-// Warning 9665: (121-143): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10305: (121-143): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.

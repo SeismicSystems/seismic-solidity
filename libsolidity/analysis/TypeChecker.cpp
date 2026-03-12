@@ -650,7 +650,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		{
 			if (arrayType->isDynamicallySized() && arrayType->baseType()->containsShieldedType())
 				m_errorReporter.warning(
-					9665_error,
+					10305_error,
 					_variable.location(),
 					"Dynamic arrays with shielded element types store their length confidentially, "
 					"but an upper bound on the length may still be observable through gas cost analysis."

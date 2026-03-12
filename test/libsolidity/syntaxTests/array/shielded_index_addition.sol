@@ -7,7 +7,7 @@ contract C {
     }
 }
 // ----
-// Warning 9665: (17-31): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10305: (17-31): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // Warning 9660: (94-105): Literals converted to shielded integers will leak during contract deployment.
 // Warning 9660: (146-157): Literals converted to shielded integers will leak during contract deployment.
 // Warning 10301: (132-157): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
