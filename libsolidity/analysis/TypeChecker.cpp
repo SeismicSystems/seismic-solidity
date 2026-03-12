@@ -601,7 +601,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		if (!m_evmVersion.supportShieldedStorage())
 		{
 			m_errorReporter.typeError(
-				9978_error,
+				10001_error,
 				_variable.location(),
 				"Shielded types (suint, sbool, saddress, sbytes, etc.) require the Mercury EVM version or later. "
 				"The current EVM version \"" + m_evmVersion.name() + "\" does not support shielded types. "
