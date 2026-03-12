@@ -3611,7 +3611,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 						auto const* var = dynamic_cast<Identifier const*>(&_memberAccess.expression());
 						std::string varName = var ? var->name() : "...";
 						errorMsg += " Cast to address first: \"address(" + varName + ")." + memberName + "\".";
-						return { 3125_error, errorMsg };
+						return { 10208_error, errorMsg };
 					}
 			}
 			else if (exprType->category() == Type::Category::Address)

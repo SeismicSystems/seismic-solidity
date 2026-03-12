@@ -5,4 +5,4 @@ contract C {
     }
 }
 // ----
-// TypeError 3125: (73-83): Member "transfer" not found or not visible after argument-dependent lookup in saddress payable. Cast to address first: "address(a).transfer".
+// TypeError 10208: (73-83): Member "transfer" not found or not visible after argument-dependent lookup in saddress payable. Cast to address first: "address(a).transfer".

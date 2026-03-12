@@ -5,4 +5,4 @@ contract C {
     }
 }
 // ----
-// TypeError 3125: (101-115): Member "delegatecall" not found or not visible after argument-dependent lookup in saddress. Cast to address first: "address(a).delegatecall".
+// TypeError 10208: (101-115): Member "delegatecall" not found or not visible after argument-dependent lookup in saddress. Cast to address first: "address(a).delegatecall".
