@@ -3821,7 +3821,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 				);
 			else if (memberName == "timestamp_ms" && !m_evmVersion.hasTimestampMs())
 				m_errorReporter.typeError(
-					4521_error,
+					10004_error,
 					_memberAccess.location(),
 					"\"timestamp_ms\" is not supported by the VM version."
 				);
