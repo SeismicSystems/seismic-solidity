@@ -1730,11 +1730,11 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 	}
 	case FunctionType::Kind::SeismicRNG:
 	{
-		solAssert(!_functionCall.annotation().tryCall);
-		solAssert(!functionType->valueSet());
-		solAssert(!functionType->gasSet());
-		solAssert(!functionType->hasBoundFirstArgument());
-		solAssert(functionType->returnParameterTypes().size() == 1);
+		solAssert(!_functionCall.annotation().tryCall, "SeismicRNG: try/catch not supported");
+		solAssert(!functionType->valueSet(), "SeismicRNG: value option must not be set");
+		solAssert(!functionType->gasSet(), "SeismicRNG: gas option must not be set");
+		solAssert(!functionType->hasBoundFirstArgument(), "SeismicRNG: must not have bound first argument");
+		solAssert(functionType->returnParameterTypes().size() == 1, "SeismicRNG: expected exactly one return type");
 
 		auto const& retType = *functionType->returnParameterTypes()[0];
 		unsigned byteWidth;
@@ -1751,6 +1751,8 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		}
 		else
 			solAssert(false, "SeismicRNG: unexpected return type");
+
+		solAssert(byteWidth >= 1 && byteWidth <= 32, "SeismicRNG: byteWidth out of range [1, 32]");
 
 		Whiskers templ(R"(
 			let <pos> := <allocateUnbounded>()

@@ -1099,6 +1099,9 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		case FunctionType::Kind::SeismicRNG:
 		{
 			solAssert(!_functionCall.annotation().tryCall, "");
+			solAssert(!function.valueSet(), "SeismicRNG: value option must not be set");
+			solAssert(!function.gasSet(), "SeismicRNG: gas option must not be set");
+			solAssert(!function.hasBoundFirstArgument(), "SeismicRNG: must not have bound first argument");
 			solAssert(function.returnParameterTypes().size() == 1);
 
 			auto const& retType = *function.returnParameterTypes()[0];
@@ -1116,6 +1119,8 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 			}
 			else
 				solAssert(false, "SeismicRNG: unexpected return type");
+
+			solAssert(byteWidth >= 1 && byteWidth <= 32, "SeismicRNG: byteWidth out of range [1, 32]");
 
 			// Store uint32(byteWidth) big-endian at the free memory pointer
 			utils().fetchFreeMemoryPointer();
