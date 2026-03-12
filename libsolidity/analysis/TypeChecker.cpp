@@ -1186,7 +1186,7 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 				// cstore was called before sstore/sload on the same slot
 				// cstore makes the slot private, and sstore/sload cannot access private slots
 				m_errorReporter.typeError(
-					5768_error,
+					10309_error,
 					op.location,
 					"Cannot use " + op.funcName + "() on a slot that was previously written with cstore(). "
 					"cstore() makes the slot private, and " + op.funcName + "() cannot access private storage. "
