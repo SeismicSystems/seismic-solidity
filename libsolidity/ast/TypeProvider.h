@@ -194,7 +194,8 @@ public:
 
 	static RationalNumberType const* rationalNumber(
 		rational const& _value,
-		Type const* _compatibleBytesType = nullptr
+		Type const* _compatibleBytesType = nullptr,
+		bool _shielded = false
 	);
 
 	static ContractType const* contract(ContractDefinition const& _contract, bool _isSuper = false);
