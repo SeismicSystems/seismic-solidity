@@ -377,7 +377,7 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			// in functionIsExternallyVisible (non-abstract constructor) does not apply here.
 			if (_var.isReturnParameter() && type(_var)->containsShieldedType())
 				m_errorReporter.typeError(
-					7492_error,
+					10102_error,
 					_var.location(),
 					"Shielded objects cannot be returned from public or external functions. "
 					"Use internal or private functions or cast to an unshielded type."
