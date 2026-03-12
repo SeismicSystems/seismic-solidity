@@ -1948,7 +1948,7 @@ bool TypeChecker::visit(UnaryOperation const& _operation)
 	{
 		std::string operation = op == Token::Inc ? "increment" : "decrement";
 		m_errorReporter.warning(
-			4283_error,
+			10302_error,
 			_operation.location(),
 			fmt::format(
 				"Shielded integer {} can leak information. "
