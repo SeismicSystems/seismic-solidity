@@ -18,6 +18,6 @@ contract C {
 // Warning 9667: (221-224): Shielded number literals will leak during contract deployment.
 // Warning 5765: (211-224): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
 // Warning 9667: (248-250): Shielded number literals will leak during contract deployment.
-// Warning 4282: (244-250): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (244-250): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 9667: (284-286): Shielded number literals will leak during contract deployment.
-// Warning 4282: (274-286): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (274-286): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.

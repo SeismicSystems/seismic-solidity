@@ -2126,7 +2126,7 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		default: solAssert(false, "Unexpected operator");
 		}
 		m_errorReporter.warning(
-			4282_error,
+			10301_error,
 			_operation.location(),
 			fmt::format(
 				"Shielded integer {} can leak information. "

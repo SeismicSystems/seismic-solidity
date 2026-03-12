@@ -22,9 +22,9 @@ contract ConfidentialAMM {
 // ====
 // EVMVersion: >=mercury
 // ----
-// Warning 4282: (507-526): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4282: (531-550): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (507-526): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (531-550): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 4281: (506-551): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.
-// Warning 4282: (664-683): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4282: (688-707): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (664-683): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (688-707): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 4281: (663-708): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.

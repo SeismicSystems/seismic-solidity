@@ -9,12 +9,12 @@ contract C {
     }
 }
 // ----
-// Warning 4282: (106-111): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4282: (136-141): Shielded integer subtraction can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4282: (166-171): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (106-111): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (136-141): Shielded integer subtraction can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (166-171): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 4281: (196-201): Shielded integer division can leak information. A revert due to division by zero reveals that the divisor is zero.
 // Warning 4281: (225-230): Shielded integer modulo can leak information. A revert due to division by zero reveals that the divisor is zero.
-// Warning 4282: (247-257): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4282: (247-264): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4282: (247-271): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
-// Warning 4282: (247-277): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (247-257): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (247-264): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (247-271): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (247-277): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
