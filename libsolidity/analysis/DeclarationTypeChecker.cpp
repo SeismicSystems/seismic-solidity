@@ -272,7 +272,7 @@ void DeclarationTypeChecker::endVisit(Mapping const& _mapping)
 				m_errorReporter.fatalTypeError(
 					7804_error,
 					typeName->location(),
-					"Only non-shielded elementary types, user defined value types, contract types or enums are allowed as mapping keys."
+					"Only elementary types, user defined value types, contract types or enums are allowed as mapping keys."
 				);
 				break;
 		}
@@ -286,7 +286,7 @@ void DeclarationTypeChecker::endVisit(Mapping const& _mapping)
 	if (keyType->isShielded())
 	{
 		m_errorReporter.fatalTypeError(
-			7804_error,
+			10109_error,
 			_mapping.keyType().location(),
 			"Shielded types are not allowed as mapping keys."
 		);
