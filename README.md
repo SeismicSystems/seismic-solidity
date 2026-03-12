@@ -34,7 +34,7 @@ This is **experimental** software, thread with caution.
     *   [6.2 Limitations](#62-limitations)
     *   [6.3 Mappings](#63-mappings)
 7.  [Best Practices](#7-best-practices)
-8.  [Compiler Warning Codes](#8-compiler-warning-codes)
+8.  [Compiler Error Codes](#8-compiler-error-codes)
 9.  [Conclusion](#9-conclusion)
 10. [Upstream](#10-upstream)
 11. [Feedback](#11-feedback)
@@ -251,9 +251,9 @@ We introduce two new EVM instructions to handle confidential storage:
 *   **Review Compiler Warnings**: Pay attention to compiler warnings related to shielded types to prevent accidental leaks.
 
 
-## 8\. Compiler Warning Codes
+## 8\. Compiler Error Codes
 
-Seismic extends the upstream Solidity compiler with new warnings and errors specific to shielded types. To keep them clearly separated from upstream codes:
+Seismic extends the upstream Solidity compiler with new errors and warnings specific to shielded types. To keep them clearly separated from upstream codes:
 
 - **Upstream Solidity** uses 4-digit codes (1000–9999).
 - **Seismic-specific** codes are 5-digit, starting at **10000**.

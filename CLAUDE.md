@@ -178,9 +178,9 @@ Shielded types are woven through the full compilation pipeline:
 - **IR generation**: `libsolidity/codegen/ir/IRGeneratorForStatements.cpp` — shielded expression handling
 - **Type checking**: `libsolidity/analysis/TypeChecker.cpp` — validation rules (no public shielded vars, no shielded constants/immutables, no shielded event params, no shielded mapping keys, no shielded array indices)
 
-## Seismic Error/Warning Codes
+## Seismic Error Codes
 
-Seismic-specific error and warning codes use **5-digit IDs in the 10000+ range**. Upstream Solidity codes are 4-digit (1000–9999). This separation is critical — the `--no-seismic-warnings` CLI flag suppresses all warnings with IDs >= 10000, so if a Seismic-specific warning is accidentally assigned a 4-digit code, it will not be suppressible.
+Seismic-specific error codes (errors and warnings) use **5-digit IDs in the 10000+ range**. Upstream Solidity codes are 4-digit (1000–9999). This separation is critical — the `--no-seismic-warnings` CLI flag suppresses all warnings with IDs >= 10000, so if a Seismic-specific warning is accidentally assigned a 4-digit code, it will not be suppressible.
 
 When adding a new error or warning:
 - **Always use a 5-digit code >= 10000** for anything Seismic-specific.
