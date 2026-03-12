@@ -125,6 +125,7 @@ BOOST_AUTO_TEST_CASE(cli_mode_options)
 			"--json-indent=7",
 			"--no-color",
 			"--error-codes",
+			"--no-seismic-warnings",
 			"--libraries="
 				"dir1/file1.sol:L=0x1234567890123456789012345678901234567890,"
 				"dir2/file2.sol:L=0x1111122222333334444455555666667777788888",
@@ -189,6 +190,7 @@ BOOST_AUTO_TEST_CASE(cli_mode_options)
 		};
 		expectedOptions.formatting.coloredOutput = false;
 		expectedOptions.formatting.withErrorIds = true;
+		expectedOptions.formatting.noSeismicWarnings = true;
 		expectedOptions.compiler.outputs = {
 			true, true, true, true, true,
 			true, true, true, true, true,
@@ -388,6 +390,7 @@ BOOST_AUTO_TEST_CASE(standard_json_mode_options)
 		"--json-indent=1",
 		"--no-color",                      // Accepted but has no effect in Standard JSON mode
 		"--error-codes",                   // Accepted but has no effect in Standard JSON mode
+		"--no-seismic-warnings",           // Accepted but has no effect in Standard JSON mode
 		"--libraries="                     // Ignored in Standard JSON mode
 			"dir1/file1.sol:L=0x1234567890123456789012345678901234567890,"
 			"dir2/file2.sol:L=0x1111122222333334444455555666667777788888",
@@ -409,6 +412,7 @@ BOOST_AUTO_TEST_CASE(standard_json_mode_options)
 	expectedOptions.formatting.json = JsonFormat {JsonFormat::Pretty, 1};
 	expectedOptions.formatting.coloredOutput = false;
 	expectedOptions.formatting.withErrorIds = true;
+	expectedOptions.formatting.noSeismicWarnings = true;
 	expectedOptions.compiler.estimateGas = true;
 	expectedOptions.compiler.combinedJsonRequests = CombinedJsonRequests{};
 	expectedOptions.compiler.combinedJsonRequests->abi = true;

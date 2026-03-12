@@ -112,6 +112,7 @@ static std::string const g_strIgnoreMissingFiles = "ignore-missing";
 static std::string const g_strColor = "color";
 static std::string const g_strNoColor = "no-color";
 static std::string const g_strErrorIds = "error-codes";
+static std::string const g_strNoSeismicWarnings = "no-seismic-warnings";
 
 /// Possible arguments to for --machine
 static std::set<std::string> const g_machineArgs
@@ -244,6 +245,7 @@ bool CommandLineOptions::operator==(CommandLineOptions const& _other) const noex
 		formatting.json == _other.formatting.json &&
 		formatting.coloredOutput == _other.formatting.coloredOutput &&
 		formatting.withErrorIds == _other.formatting.withErrorIds &&
+		formatting.noSeismicWarnings == _other.formatting.noSeismicWarnings &&
 		compiler.outputs == _other.compiler.outputs &&
 		compiler.estimateGas == _other.compiler.estimateGas &&
 		compiler.combinedJsonRequests == _other.compiler.combinedJsonRequests &&
@@ -758,6 +760,10 @@ General Information)").c_str(),
 			g_strErrorIds.c_str(),
 			"Output error codes."
 		)
+		(
+			g_strNoSeismicWarnings.c_str(),
+			"Suppress all Seismic-specific warnings (error codes >= 10000)."
+		)
 	;
 	desc.add(outputFormatting);
 
@@ -1139,6 +1145,7 @@ void CommandLineParser::processArgs()
 	}
 
 	m_options.formatting.withErrorIds = m_args.count(g_strErrorIds);
+	m_options.formatting.noSeismicWarnings = m_args.count(g_strNoSeismicWarnings);
 
 	if (m_args.count(g_strRevertStrings))
 	{
