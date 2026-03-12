@@ -1003,6 +1003,10 @@ void CommandLineInterface::compile()
 
 		for (auto const& error: m_compiler->errors())
 		{
+			if (m_options.formatting.noSeismicWarnings &&
+				error->severity() != Error::Severity::Error &&
+				error->errorId().error >= 10000)
+				continue;
 			m_hasOutput = true;
 			formatter.printErrorInformation(*error);
 		}
@@ -1335,6 +1339,10 @@ void CommandLineInterface::assembleYul(yul::YulStack::Language _language, yul::Y
 
 		for (auto const& error: stack.errors())
 		{
+			if (m_options.formatting.noSeismicWarnings &&
+				error->severity() != Error::Severity::Error &&
+				error->errorId().error >= 10000)
+				continue;
 			m_hasOutput = true;
 			formatter.printErrorInformation(*error);
 		}
