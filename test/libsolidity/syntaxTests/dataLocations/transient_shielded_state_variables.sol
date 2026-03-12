@@ -8,8 +8,8 @@ contract C {
 // ====
 // EVMVersion: >=cancun
 // ----
-// DeclarationError 9826: (17-37): Shielded types cannot be used with transient storage.
-// DeclarationError 9826: (43-62): Shielded types cannot be used with transient storage.
-// DeclarationError 9826: (68-88): Shielded types cannot be used with transient storage.
-// DeclarationError 9826: (94-111): Shielded types cannot be used with transient storage.
-// DeclarationError 9826: (117-137): Shielded types cannot be used with transient storage.
+// DeclarationError 10105: (17-37): Shielded types cannot be used with transient storage.
+// DeclarationError 10105: (43-62): Shielded types cannot be used with transient storage.
+// DeclarationError 10105: (68-88): Shielded types cannot be used with transient storage.
+// DeclarationError 10105: (94-111): Shielded types cannot be used with transient storage.
+// DeclarationError 10105: (117-137): Shielded types cannot be used with transient storage.

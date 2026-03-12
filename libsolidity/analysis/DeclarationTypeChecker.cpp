@@ -510,7 +510,7 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 
 				if (_variable.typeName().annotation().type->isShielded() || _variable.typeName().annotation().type->containsShieldedType())
 					m_errorReporter.declarationError(
-						9826_error,
+						10105_error,
 						_variable.location(),
 						"Shielded types cannot be used with transient storage."
 					);
