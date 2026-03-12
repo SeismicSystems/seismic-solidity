@@ -912,7 +912,7 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 	))
 	{
 		m_errorReporter.typeError(
-			9132_error,
+			10110_error,
 			_location,
 			fmt::format(
 				"The \"{instruction}\" instruction is only available in Seismic legacy bytecode VM (you are currently compiling to EOF).",
