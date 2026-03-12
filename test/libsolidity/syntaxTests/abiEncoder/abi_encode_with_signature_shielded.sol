@@ -6,4 +6,4 @@ contract C {
 }
 // ----
 // Warning 9660: (65-76): Literals converted to shielded integers will leak during contract deployment.
-// TypeError 3648: (126-127): Shielded types cannot be ABI encoded.
+// TypeError 10202: (126-127): Shielded types cannot be ABI encoded.

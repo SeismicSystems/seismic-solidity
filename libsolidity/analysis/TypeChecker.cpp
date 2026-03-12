@@ -2556,7 +2556,7 @@ void TypeChecker::typeCheckABIEncodeFunctions(
 			);
 		else if (argType->containsShieldedType())
 			m_errorReporter.typeError(
-				3648_error,
+				10202_error,
 				arguments[i]->location(),
 				"Shielded types cannot be ABI encoded."
 			);
@@ -2715,7 +2715,7 @@ void TypeChecker::typeCheckABIEncodeCallFunction(FunctionCall const& _functionCa
 			);
 		else if (argType.containsShieldedType())
 			m_errorReporter.typeError(
-				3648_error,
+				10203_error,
 				callArguments[i]->location(),
 				"Shielded types cannot be ABI encoded."
 			);
