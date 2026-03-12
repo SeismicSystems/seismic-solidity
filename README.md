@@ -34,8 +34,10 @@ This is **experimental** software, thread with caution.
     *   [6.2 Limitations](#62-limitations)
     *   [6.3 Mappings](#63-mappings)
 7.  [Best Practices](#7-best-practices)
-8.  [Conclusion](#8-conclusion)
-9.  [Feedback](#9-feedback)
+8.  [Compiler Warning Codes](#8-compiler-warning-codes)
+9.  [Conclusion](#9-conclusion)
+10. [Upstream](#10-upstream)
+11. [Feedback](#11-feedback)
 
 - - -
 
@@ -249,7 +251,29 @@ We introduce two new EVM instructions to handle confidential storage:
 *   **Review Compiler Warnings**: Pay attention to compiler warnings related to shielded types to prevent accidental leaks.
 
 
-## 8\. Conclusion
+## 8\. Compiler Warning Codes
+
+Seismic extends the upstream Solidity compiler with new warnings and errors specific to shielded types. To keep them clearly separated from upstream codes:
+
+- **Upstream Solidity** uses 4-digit codes (1000–9999).
+- **Seismic-specific** codes are 5-digit, starting at **10000**.
+
+This separation enables the `--no-seismic-warnings` CLI flag, which suppresses all warnings with IDs >= 10000. If a Seismic warning were accidentally assigned a 4-digit code, it would escape this filter.
+
+### Code Groups
+
+Within the `10XYZ` scheme, the third digit (`X`) indicates the category:
+
+| Group | Range | Category | Examples |
+|-------|-------|----------|----------|
+| `100__` | 10001–10099 | **EVM compatibility** | Shielded types require Mercury EVM; `cload`/`cstore` opcode availability |
+| `101__` | 10100–10199 | **Declaration constraints** | No `public` shielded vars; no `constant`/`immutable`; no shielded mapping keys or array indices; no shielded event params |
+| `102__` | 10200–10299 | **ABI encoding & type interaction** | Shielded types cannot be ABI-encoded; array push type mismatches; shielded number literals with unit denominations |
+| `103__` | 10300–10399 | **Information leak warnings** | Comparisons/arithmetic on shielded integers can leak via gas; branching on `sbool` leaks execution patterns; `msg.value`/`msg.data` visibility |
+| `104__` | 10400–10499 | **Deployment leak warnings** | Literals (int, bool, address, bytes, enum) converted to shielded types are visible in deployment bytecode |
+
+
+## 9\. Conclusion
 
 This extension enhances the EVM by introducing confidential storage capabilities, allowing developers to handle sensitive data securely. By understanding the new shielded types, instructions, and associated caveats, you can leverage these features to build more secure smart contracts.
 
@@ -257,13 +281,13 @@ We encourage you to refer to the standard Ethereum documentation for foundationa
 
 We also welcome external contributions to this repository.
 
-## 9\. Upstream
+## 10\. Upstream
 
 The upstream repository lives [here](https://github.com/ethereum/solidity/tree/develop). This fork is up-to-date with it through commit `ab55807`. You can see this by viewing the [develop](https://github.com/SeismicSystems/seismic-solidity/tree/develop) branch on this repository.
 
 You can view all of our changes vs. upstream on this [pull request](https://github.com/SeismicSystems/seismic-solidity/pull/27). The sole purpose of this PR is display our diff; it will never be merged in to the main branch of this repo.
 
-## 9\. Feedback
+## 11\. Feedback
 
 We welcome your feedback on this documentation. If you have suggestions or encounter any issues, please contact our support team or contribute to our documentation repository.
 

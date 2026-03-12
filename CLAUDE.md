@@ -178,6 +178,32 @@ Shielded types are woven through the full compilation pipeline:
 - **IR generation**: `libsolidity/codegen/ir/IRGeneratorForStatements.cpp` — shielded expression handling
 - **Type checking**: `libsolidity/analysis/TypeChecker.cpp` — validation rules (no public shielded vars, no shielded constants/immutables, no shielded event params, no shielded mapping keys, no shielded array indices)
 
+## Seismic Error/Warning Codes
+
+Seismic-specific error and warning codes use **5-digit IDs in the 10000+ range**. Upstream Solidity codes are 4-digit (1000–9999). This separation is critical — the `--no-seismic-warnings` CLI flag suppresses all warnings with IDs >= 10000, so if a Seismic-specific warning is accidentally assigned a 4-digit code, it will not be suppressible.
+
+When adding a new error or warning:
+- **Always use a 5-digit code >= 10000** for anything Seismic-specific.
+- **Never use a code < 10000** for Seismic functionality — those are reserved for upstream Solidity.
+- Pick the code from the appropriate group below based on the 3rd digit (`10XYZ`, where `X` is the group).
+
+### Code groups (`10X__`)
+
+| Group | Range | Category | Description |
+|-------|-------|----------|-------------|
+| `100__` | 10001–10099 | EVM compatibility | Mercury EVM version requirements — shielded types needing Mercury, `cload`/`cstore`/`timestampms` opcodes, `timestamp_ms`/`timestamp_seconds` members |
+| `101__` | 10100–10199 | Declaration constraints | Restrictions on where shielded types can appear — no `public` state vars, no return from public/external functions, no `constant`/`immutable`, no transient storage, no mapping keys, no array indices, no event params, address payable restrictions, EOF compatibility |
+| `102__` | 10200–10299 | ABI encoding & type interaction | ABI encoding prohibition for shielded types, `new` with `saddress`, array push type mismatches, unit denomination restrictions, `saddress` member access |
+| `103__` | 10300–10399 | Information leak warnings | Runtime privacy warnings — comparison/arithmetic leaks, exponentiation gas leaks, dynamic array length observability, `msg.value`/`msg.data` visibility, branching on `sbool`, `sstore`/`cstore` slot conflicts |
+| `104__` | 10400–10499 | Deployment leak warnings | Literal and constant conversion warnings — literals (int, bool, address, fixedbytes, enum) converted to shielded types leak during deployment, shielded number literal (`s` suffix) leaks |
+
+### Adding a new code
+
+1. Identify which group the error belongs to.
+2. Pick the next unused number within that group.
+3. If none of the existing groups fit, use the next available group digit (e.g., `105__`).
+4. Run `scripts/error_codes.py --check` to verify no duplicates.
+
 ## Code Style
 
 See `CODING_STYLE.md`. Key rules:
