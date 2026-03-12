@@ -170,7 +170,7 @@ TypePointers TypeChecker::typeCheckABIDecodeAndRetrieveReturnType(FunctionCall c
 				);
 			else if (actualType->containsShieldedType())
 				m_errorReporter.typeError(
-					4851_error,
+					10201_error,
 					typeArgument->location(),
 					"Shielded types cannot be ABI encoded."
 				);
