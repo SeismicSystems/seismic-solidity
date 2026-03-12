@@ -388,7 +388,7 @@ bool TypeChecker::visit(FunctionDefinition const& _function)
 			// so shielded constructor arguments are visible in the deployment transaction.
 			if (_function.isConstructor() && !_var.isReturnParameter() && type(_var)->containsShieldedType())
 				m_errorReporter.warning(
-					5500_error,
+					10103_error,
 					_var.location(),
 					"Shielded types in constructor parameters are visible in deployment transaction data. "
 					"Contract creation (CREATE/CREATE2) does not encrypt calldata. "
