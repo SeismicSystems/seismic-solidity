@@ -5,4 +5,4 @@ contract C {
 // EVMVersion: =paris
 // compileViaYul: true
 // ----
-// DeclarationError 7491: (20-48): Shielded objects cannot be set to constant or immutable.
+// DeclarationError 10104: (20-48): Shielded objects cannot be set to constant or immutable.

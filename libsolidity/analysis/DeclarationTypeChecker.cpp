@@ -558,7 +558,7 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 		if (auto const* arrayType = dynamic_cast<ArrayType const*>(type))
 			hasShieldedContent = arrayType->baseType()->isShielded();
 	if ((_variable.isConstant() || _variable.immutable()) && hasShieldedContent)
-		m_errorReporter.declarationError(7491_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
+		m_errorReporter.declarationError(10104_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
 
 	if (_variable.isConstant() && !type->isValueType())
 	{
