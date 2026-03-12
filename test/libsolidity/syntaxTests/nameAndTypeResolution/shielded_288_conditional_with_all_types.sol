@@ -85,4 +85,4 @@ contract C {
 }
 // ----
 // Warning 2519: (1074-1088): This declaration shadows an existing declaration.
-// TypeError 7804: (193-199): Shielded types are not allowed as mapping keys.
+// TypeError 10109: (193-199): Shielded types are not allowed as mapping keys.

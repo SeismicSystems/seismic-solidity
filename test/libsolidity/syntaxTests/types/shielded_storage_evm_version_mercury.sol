@@ -14,4 +14,4 @@ contract C {
 // EVMVersion: >=mercury
 // compileViaYul: true
 // ----
-// Warning 9665: (62-73): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10305: (62-73): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.

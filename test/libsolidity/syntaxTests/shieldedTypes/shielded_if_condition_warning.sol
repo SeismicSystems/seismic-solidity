@@ -15,7 +15,7 @@ contract TestShieldedIfCondition {
 }
 
 // ----
-// Warning 5765: (95-96): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
-// Warning 5765: (232-237): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10311: (95-96): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10311: (232-237): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
 // Warning 2018: (39-155): Function state mutability can be restricted to pure
 // Warning 2018: (161-296): Function state mutability can be restricted to pure

@@ -8,4 +8,4 @@ contract C {
     }
 }
 // ----
-// Warning 1457: (182-201): Enums converted to shielded integers will leak during contract deployment.
+// Warning 10415: (182-201): Enums converted to shielded integers will leak during contract deployment.

@@ -8,11 +8,11 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (136-139): Shielded number literals will leak during contract deployment.
+// Warning 10416: (136-139): Shielded number literals will leak during contract deployment.
 // TypeError 9640: (128-140): Explicit type conversion not allowed from "shielded_int_const 42" to "uint256".
-// Warning 9667: (166-170): Shielded number literals will leak during contract deployment.
+// Warning 10416: (166-170): Shielded number literals will leak during contract deployment.
 // TypeError 9640: (160-171): Explicit type conversion not allowed from "shielded_int_const 255" to "uint8".
-// Warning 9667: (200-203): Shielded number literals will leak during contract deployment.
+// Warning 10416: (200-203): Shielded number literals will leak during contract deployment.
 // TypeError 9640: (192-204): Explicit type conversion not allowed from "shielded_int_const -42" to "int256".
-// Warning 9667: (229-233): Shielded number literals will leak during contract deployment.
+// Warning 10416: (229-233): Shielded number literals will leak during contract deployment.
 // TypeError 9640: (223-234): Explicit type conversion not allowed from "shielded_int_const -128" to "int8".

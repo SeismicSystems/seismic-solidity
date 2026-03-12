@@ -9,4 +9,4 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (233-245): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (233-245): Literals converted to shielded integers will leak during contract deployment.

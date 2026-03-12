@@ -10,7 +10,7 @@ contract C {
     }
 }
 // ----
-// Warning 9667: (241-243): Shielded number literals will leak during contract deployment.
+// Warning 10416: (241-243): Shielded number literals will leak during contract deployment.
 // TypeError 7407: (241-253): Type uint256 is not implicitly convertible to expected type suint256.
-// Warning 9667: (322-324): Shielded number literals will leak during contract deployment.
+// Warning 10416: (322-324): Shielded number literals will leak during contract deployment.
 // TypeError 7407: (322-334): Type uint256 is not implicitly convertible to expected type suint256.

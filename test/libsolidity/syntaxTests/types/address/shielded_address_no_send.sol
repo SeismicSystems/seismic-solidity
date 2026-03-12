@@ -5,4 +5,4 @@ contract C {
     }
 }
 // ----
-// TypeError 3125: (95-101): Member "send" not found or not visible after argument-dependent lookup in saddress payable. Cast to address first: "address(a).send".
+// TypeError 10208: (95-101): Member "send" not found or not visible after argument-dependent lookup in saddress payable. Cast to address first: "address(a).send".

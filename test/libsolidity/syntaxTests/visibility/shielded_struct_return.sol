@@ -25,9 +25,9 @@ contract C {
     }
 }
 // ----
-// TypeError 7492: (292-309): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
-// Warning 9660: (342-353): Literals converted to shielded integers will leak during contract deployment.
-// TypeError 7492: (424-441): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
-// Warning 9660: (474-485): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (644-655): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (811-822): Literals converted to shielded integers will leak during contract deployment.
+// TypeError 10102: (292-309): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// Warning 10403: (342-353): Literals converted to shielded integers will leak during contract deployment.
+// TypeError 10102: (424-441): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// Warning 10403: (474-485): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (644-655): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (811-822): Literals converted to shielded integers will leak during contract deployment.

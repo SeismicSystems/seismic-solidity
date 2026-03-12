@@ -18,5 +18,5 @@ contract Deployer {
     }
 }
 // ----
-// TypeError 7492: (321-325): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
-// TypeError 7492: (424-428): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// TypeError 10102: (321-325): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// TypeError 10102: (424-428): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.

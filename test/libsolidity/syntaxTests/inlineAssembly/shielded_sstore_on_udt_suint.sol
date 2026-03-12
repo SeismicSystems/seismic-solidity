@@ -9,4 +9,4 @@ contract C {
     }
 }
 // ----
-// TypeError 5765: (128-146): Cannot use sstore() on shielded storage variable. Use cstore() instead.
+// TypeError 10308: (128-146): Cannot use sstore() on shielded storage variable. Use cstore() instead.

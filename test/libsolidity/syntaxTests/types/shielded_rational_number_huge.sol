@@ -8,5 +8,5 @@ contract C {
     }
 }
 // ----
-// Warning 9660: (112-185): Literals converted to shielded integers will leak during contract deployment.
-// Warning 9660: (306-380): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (112-185): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (306-380): Literals converted to shielded integers will leak during contract deployment.

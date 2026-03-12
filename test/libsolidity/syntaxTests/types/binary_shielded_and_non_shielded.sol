@@ -11,5 +11,5 @@ contract C {
     }
 }
 // ----
-// Warning 4282: (102-115): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (102-115): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
 // TypeError 6359: (132-133): Return argument type sint32 is not implicitly convertible to expected type (type of first return variable) int32.

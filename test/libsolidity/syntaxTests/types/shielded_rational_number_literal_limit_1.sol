@@ -6,5 +6,5 @@ contract c {
     }
 }
 // ----
-// Warning 9660: (76-98): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10403: (76-98): Literals converted to shielded integers will leak during contract deployment.
 // TypeError 2826: (136-142): Invalid literal value.

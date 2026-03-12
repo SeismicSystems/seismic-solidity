@@ -4,4 +4,4 @@ contract C {
     }
 }
 // ----
-// Warning 4282: (102-107): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
+// Warning 10301: (102-107): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.

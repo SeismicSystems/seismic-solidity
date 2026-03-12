@@ -9,4 +9,4 @@ contract C {
     }
 }
 // ----
-// TypeError 5768: (224-232): Cannot use sload() on a slot that was previously written with cstore(). cstore() makes the slot private, and sload() cannot access private storage. Use cload() instead.
+// TypeError 10309: (224-232): Cannot use sload() on a slot that was previously written with cstore(). cstore() makes the slot private, and sload() cannot access private storage. Use cload() instead.
