@@ -8,4 +8,4 @@ contract C {
     }
 }
 // ----
-// TypeError 9582: (166-182): Member "gas" not found or not visible after argument-dependent lookup in function () view returns (sbytes32).
+// TypeError 9582: (168-186): Member "gas" not found or not visible after argument-dependent lookup in function () view returns (sbytes32).

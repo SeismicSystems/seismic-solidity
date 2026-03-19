@@ -7,4 +7,4 @@ contract C {
     }
 }
 // ----
-// TypeError 2527: (137-150): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (137-154): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".

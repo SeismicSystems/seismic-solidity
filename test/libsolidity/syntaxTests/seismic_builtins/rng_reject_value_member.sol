@@ -8,4 +8,4 @@ contract C {
     }
 }
 // ----
-// TypeError 8820: (166-183): Member "value" is only available for payable functions.
+// TypeError 8820: (170-191): Member "value" is only available for payable functions.

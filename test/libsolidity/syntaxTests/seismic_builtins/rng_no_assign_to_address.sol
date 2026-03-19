@@ -10,5 +10,5 @@ contract C {
     }
 }
 // ----
-// TypeError 9574: (175-200): Type suint256 is not implicitly convertible to expected type address.
-// TypeError 9574: (210-236): Type suint256 is not implicitly convertible to expected type saddress.
+// TypeError 9574: (179-208): Type suint256 is not implicitly convertible to expected type address.
+// TypeError 9574: (218-248): Type suint256 is not implicitly convertible to expected type saddress.

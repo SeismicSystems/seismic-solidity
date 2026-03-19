@@ -10,5 +10,5 @@ contract C {
     }
 }
 // ----
-// TypeError 9574: (165-185): Type suint8 is not implicitly convertible to expected type bool.
-// TypeError 9574: (195-216): Type suint8 is not implicitly convertible to expected type sbool.
+// TypeError 9574: (169-193): Type suint8 is not implicitly convertible to expected type bool.
+// TypeError 9574: (203-228): Type suint8 is not implicitly convertible to expected type sbool.

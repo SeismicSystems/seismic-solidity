@@ -8,4 +8,4 @@ contract C {
     }
 }
 // ----
-// TypeError 6160: (158-178): Wrong argument count for function call: 3 arguments given but expected 0.
+// TypeError 6160: (162-186): Wrong argument count for function call: 3 arguments given but expected 0.

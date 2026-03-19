@@ -9,4 +9,4 @@ contract C {
     }
 }
 // ----
-// TypeError 9574: (185-209): Type suint256 is not implicitly convertible to expected type suint8.
+// TypeError 9574: (189-217): Type suint256 is not implicitly convertible to expected type suint8.

@@ -12,10 +12,10 @@ contract C {
     function g() internal pure returns (suint256) { return unsafe_rng_u256(); }
 }
 // ----
-// TypeError 2527: (197-208): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (270-282): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (344-356): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (418-430): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (492-504): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (567-580): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (643-656): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (201-216): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (278-294): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (356-372): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (434-450): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (512-528): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (591-608): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (671-688): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".

@@ -10,8 +10,8 @@ contract C {
     function e() internal pure returns (sbytes32) { return unsafe_rng_b32(); }
 }
 // ----
-// TypeError 2527: (196-209): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (271-284): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (347-361): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (424-438): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
-// TypeError 2527: (501-515): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (200-215): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (277-292): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (355-371): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (434-450): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".
+// TypeError 2527: (513-529): Function declared as pure, but this expression (potentially) reads from the environment or state and thus requires "view".

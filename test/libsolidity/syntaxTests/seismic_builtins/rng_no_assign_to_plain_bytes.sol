@@ -9,4 +9,4 @@ contract C {
     }
 }
 // ----
-// TypeError 9574: (199-225): Type sbytes32 is not implicitly convertible to expected type bytes32.
+// TypeError 9574: (201-229): Type sbytes32 is not implicitly convertible to expected type bytes32.

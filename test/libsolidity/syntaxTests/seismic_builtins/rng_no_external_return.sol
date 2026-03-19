@@ -11,5 +11,5 @@ contract C {
     }
 }
 // ----
-// TypeError 10102: (170-178): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
-// TypeError 10102: (256-264): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// TypeError 10102: (174-182): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.
+// TypeError 10102: (264-272): Shielded objects cannot be returned from public or external functions. Use internal or private functions or cast to an unshielded type.

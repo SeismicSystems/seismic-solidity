@@ -9,4 +9,4 @@ contract C {
     }
 }
 // ----
-// TypeError 9574: (181-207): Type suint256 is not implicitly convertible to expected type sbytes32.
+// TypeError 9574: (185-215): Type suint256 is not implicitly convertible to expected type sbytes32.
