@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng functions reject multiple arguments.
+// unsafe_rng_u functions reject multiple arguments.
 contract C {
     function f() public view {
-        sync_rng256(1, 2, 3);
+        unsafe_rng_u256(1, 2, 3);
     }
 }
 // ----

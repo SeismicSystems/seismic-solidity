@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng returns shielded types, which cannot be implicitly assigned to plain types.
+// unsafe_rng_u returns shielded types, which cannot be implicitly assigned to plain types.
 contract C {
     function f() public view {
-        uint256 a = sync_rng256();
+        uint256 a = unsafe_rng_u256();
         a;
     }
 }

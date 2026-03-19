@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng integer cannot be assigned to an address or saddress.
+// unsafe_rng_u integer cannot be assigned to an address or saddress.
 contract C {
     function f() public view {
-        address a = sync_rng256();
-        saddress b = sync_rng256();
+        address a = unsafe_rng_u256();
+        saddress b = unsafe_rng_u256();
         a; b;
     }
 }

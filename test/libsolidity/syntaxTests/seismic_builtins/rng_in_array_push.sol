@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng result can be pushed to a shielded dynamic array.
+// unsafe_rng_u result can be pushed to a shielded dynamic array.
 contract C {
     suint256[] private arr;
 
     function f() public {
-        arr.push(sync_rng256());
+        arr.push(unsafe_rng_u256());
     }
 }
 // ----

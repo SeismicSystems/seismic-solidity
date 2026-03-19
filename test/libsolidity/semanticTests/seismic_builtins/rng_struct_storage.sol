@@ -11,9 +11,9 @@ contract RngStructStorage {
     SecretData private data;
 
     function storeRng() public {
-        data.value = sync_rng256();
-        data.token = sync_rng_b32();
-        data.small = sync_rng64();
+        data.value = unsafe_rng_u256();
+        data.token = unsafe_rng_b32();
+        data.small = unsafe_rng_u64();
     }
 
     function testAllFieldsNonzero() public view returns (bool) {

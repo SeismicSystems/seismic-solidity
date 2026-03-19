@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng calls within loops should compile.
+// unsafe_rng_u calls within loops should compile.
 contract C {
     suint256[] private arr;
 
     function f() public {
         for (uint i = 0; i < 10; i++) {
-            arr.push(sync_rng256());
+            arr.push(unsafe_rng_u256());
         }
     }
 }

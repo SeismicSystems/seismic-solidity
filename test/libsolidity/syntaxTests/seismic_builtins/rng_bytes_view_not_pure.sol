@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 contract C {
     function f() internal pure returns (sbytes32) {
-        return sync_rng_b32();
+        return unsafe_rng_b32();
     }
 }
 // ----

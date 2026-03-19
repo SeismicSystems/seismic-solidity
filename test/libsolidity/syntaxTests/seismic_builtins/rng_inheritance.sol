@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng should work across inheritance.
+// unsafe_rng_u should work across inheritance.
 contract Base {
     function getRng() internal view returns (suint256) {
-        return sync_rng256();
+        return unsafe_rng_u256();
     }
 }
 

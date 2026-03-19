@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng result cannot be assigned to bool or sbool.
+// unsafe_rng_u result cannot be assigned to bool or sbool.
 contract C {
     function f() public view {
-        bool a = sync_rng8();
-        sbool b = sync_rng8();
+        bool a = unsafe_rng_u8();
+        sbool b = unsafe_rng_u8();
         a; b;
     }
 }

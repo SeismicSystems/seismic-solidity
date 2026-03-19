@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng_b functions should not expose .value() member.
+// unsafe_rng_b functions should not expose .value() member.
 contract C {
     function f() public view {
-        sync_rng_b32.value();
+        unsafe_rng_b32.value();
     }
 }
 // ----

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 contract C {
     function f() internal pure returns (suint256) {
-        return sync_rng256();
+        return unsafe_rng_u256();
     }
 }
 // ----

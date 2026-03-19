@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Assigning sync_rng result to the wrong shielded integer width must fail.
+// Assigning unsafe_rng_u result to the wrong shielded integer width must fail.
 contract C {
     function f() public view {
-        suint8 a = sync_rng256();
+        suint8 a = unsafe_rng_u256();
         a;
     }
 }

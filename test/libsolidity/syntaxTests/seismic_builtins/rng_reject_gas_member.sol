@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng functions should not expose .gas() member.
+// unsafe_rng_u functions should not expose .gas() member.
 contract C {
     function f() public view {
-        sync_rng256.gas();
+        unsafe_rng_u256.gas();
     }
 }
 // ----

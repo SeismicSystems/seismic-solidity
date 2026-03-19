@@ -5,7 +5,7 @@ contract RngInConstructor {
     suint256 private val;
 
     constructor() {
-        val = sync_rng256();
+        val = unsafe_rng_u256();
     }
 
     // Value set in constructor should be nonzero.

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Assigning sync_rng_b32 to a smaller sbytes type must fail.
+// Assigning unsafe_rng_b32 to a smaller sbytes type must fail.
 contract C {
     function f() public view {
-        sbytes1 a = sync_rng_b32();
+        sbytes1 a = unsafe_rng_b32();
         a;
     }
 }
