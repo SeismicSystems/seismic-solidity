@@ -6,9 +6,9 @@ contract RngModifierContext {
     suint256 private postVal;
 
     modifier withRng() {
-        preVal = sync_rng256();
+        preVal = unsafe_rng_u256();
         _;
-        postVal = sync_rng256();
+        postVal = unsafe_rng_u256();
     }
 
     function execute() public withRng {

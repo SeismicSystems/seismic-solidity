@@ -33,11 +33,12 @@ This is **experimental** software, thread with caution.
     *   [6.1 Shielded Arrays](#61-shielded-arrays)
     *   [6.2 Limitations](#62-limitations)
     *   [6.3 Mappings](#63-mappings)
-7.  [Best Practices](#7-best-practices)
-8.  [Compiler Error Codes](#8-compiler-error-codes)
-9.  [Conclusion](#9-conclusion)
-10. [Upstream](#10-upstream)
-11. [Feedback](#11-feedback)
+7.  [RNG Precompiles](#7-rng-precompiles)
+8.  [Best Practices](#8-best-practices)
+9.  [Compiler Error Codes](#9-compiler-error-codes)
+10. [Conclusion](#10-conclusion)
+11. [Upstream](#11-upstream)
+12. [Feedback](#12-feedback)
 
 - - -
 
@@ -242,7 +243,20 @@ We introduce two new EVM instructions to handle confidential storage:
 *	 Mappings using shielded types for keys and/or values are supported. In such cases, the storage operations will employ the confidential instructions (CLOAD/CSTORE) accordingly.
 
 
-## 7\. Best Practices
+## 7\. RNG Precompiles
+
+The compiler exposes built-in functions for on-chain random number generation via Seismic's RNG precompile. These are available as global functions (no import needed):
+
+*   **`unsafe_rng_u8()` … `unsafe_rng_u256()`** — return a random `suint` of the corresponding bit width (8, 16, 32, 64, 96, 128, 256).
+*   **`unsafe_rng_b1()` … `unsafe_rng_b32()`** — return a random `sbytes` of the corresponding byte width (1–32).
+
+All RNG functions have `view` mutability and require the Mercury EVM version.
+
+> **Why `unsafe_`?** The randomness is generated synchronously by the sequencer and is **not** cryptographically committed before use — a malicious sequencer could influence the outcome. The `unsafe_` prefix signals that these functions are suitable for low-stakes randomness but should not be relied upon where sequencer trust is unacceptable.
+
+For full details, see the [RNG precompile documentation](https://docs.seismic.systems/reference/precompiles/rng).
+
+## 8\. Best Practices
 
 *   **Avoid Public Exposure**: Never expose shielded variables through public getters or events.
 *   **Careful with Gas Usage**: Be mindful of operations where gas cost can vary based on shielded values (e.g., loops, exponentiation).
@@ -251,7 +265,7 @@ We introduce two new EVM instructions to handle confidential storage:
 *   **Review Compiler Warnings**: Pay attention to compiler warnings related to shielded types to prevent accidental leaks.
 
 
-## 8\. Compiler Error Codes
+## 9\. Compiler Error Codes
 
 Seismic extends the upstream Solidity compiler with new errors and warnings specific to shielded types. To keep them clearly separated from upstream codes:
 
@@ -273,7 +287,7 @@ Within the `10XYZ` scheme, the third digit (`X`) indicates the category:
 | `104__` | 10400–10499 | **Deployment leak warnings** | Literals (int, bool, address, bytes, enum) converted to shielded types are visible in deployment bytecode |
 
 
-## 9\. Conclusion
+## 10\. Conclusion
 
 This extension enhances the EVM by introducing confidential storage capabilities, allowing developers to handle sensitive data securely. By understanding the new shielded types, instructions, and associated caveats, you can leverage these features to build more secure smart contracts.
 
@@ -281,13 +295,13 @@ We encourage you to refer to the standard Ethereum documentation for foundationa
 
 We also welcome external contributions to this repository.
 
-## 10\. Upstream
+## 11\. Upstream
 
 The upstream repository lives [here](https://github.com/ethereum/solidity/tree/develop). This fork is up-to-date with it through commit `ab55807`. You can see this by viewing the [develop](https://github.com/SeismicSystems/seismic-solidity/tree/develop) branch on this repository.
 
 You can view all of our changes vs. upstream on this [pull request](https://github.com/SeismicSystems/seismic-solidity/pull/27). The sole purpose of this PR is display our diff; it will never be merged in to the main branch of this repo.
 
-## 11\. Feedback
+## 12\. Feedback
 
 We welcome your feedback on this documentation. If you have suggestions or encounter any issues, please contact our support team or contribute to our documentation repository.
 

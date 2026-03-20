@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // Shielded return types cannot be used in external/public functions.
 contract C {
     function getRandom() external view returns (suint256) {
-        return sync_rng256();
+        return unsafe_rng_u256();
     }
 }
 // ----

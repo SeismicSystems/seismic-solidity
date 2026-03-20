@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng should be callable from a modifier.
+// unsafe_rng_u should be callable from a modifier.
 contract C {
     modifier withRng() {
-        suint256 r = sync_rng256();
+        suint256 r = unsafe_rng_u256();
         r;
         _;
     }

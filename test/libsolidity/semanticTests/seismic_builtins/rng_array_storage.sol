@@ -7,7 +7,7 @@ contract RngArrayStorage {
     // Push random values into a dynamic array.
     function pushRandomValues() public {
         for (uint i = 0; i < 5; i++) {
-            arr.push(sync_rng256());
+            arr.push(unsafe_rng_u256());
         }
     }
 

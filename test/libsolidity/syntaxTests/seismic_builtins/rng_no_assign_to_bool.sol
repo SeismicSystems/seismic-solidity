@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng result cannot be assigned to bool or sbool.
+// unsafe_rng_u result cannot be assigned to bool or sbool.
 contract C {
     function f() public view {
-        bool a = sync_rng8();
-        sbool b = sync_rng8();
+        bool a = unsafe_rng_u8();
+        sbool b = unsafe_rng_u8();
         a; b;
     }
 }
 // ----
-// TypeError 9574: (165-185): Type suint8 is not implicitly convertible to expected type bool.
-// TypeError 9574: (195-216): Type suint8 is not implicitly convertible to expected type sbool.
+// TypeError 9574: (169-193): Type suint8 is not implicitly convertible to expected type bool.
+// TypeError 9574: (203-228): Type suint8 is not implicitly convertible to expected type sbool.

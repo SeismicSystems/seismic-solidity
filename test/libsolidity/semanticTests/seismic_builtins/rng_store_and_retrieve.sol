@@ -5,9 +5,9 @@ contract RngStoreAndRetrieve {
     suint256 private storedVal;
     sbytes32 private storedBytes;
 
-    // Store sync_rng result in confidential storage and verify it persists.
+    // Store unsafe_rng_u result in confidential storage and verify it persists.
     function storeRng256() public {
-        storedVal = sync_rng256();
+        storedVal = unsafe_rng_u256();
     }
 
     function retrieveStored256() public view returns (bool) {
@@ -16,7 +16,7 @@ contract RngStoreAndRetrieve {
     }
 
     function storeRngB32() public {
-        storedBytes = sync_rng_b32();
+        storedBytes = unsafe_rng_b32();
     }
 
     function retrieveStoredB32() public view returns (bool) {

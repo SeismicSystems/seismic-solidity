@@ -7,7 +7,7 @@ contract RngMappingStorage {
     // Store random values in a mapping and verify they persist.
     function storeRandomValues() public {
         for (uint256 i = 0; i < 5; i++) {
-            m[i] = sync_rng256();
+            m[i] = unsafe_rng_u256();
         }
     }
 

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// sync_rng_b functions should not expose .value() member.
+// unsafe_rng_b functions should not expose .value() member.
 contract C {
     function f() public view {
-        sync_rng_b32.value();
+        unsafe_rng_b32.value();
     }
 }
 // ----
-// TypeError 8820: (168-186): Member "value" is only available for payable functions.
+// TypeError 8820: (170-190): Member "value" is only available for payable functions.
