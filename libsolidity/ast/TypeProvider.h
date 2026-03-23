@@ -75,6 +75,7 @@ public:
 	static ArrayType const* bytesStorage();
 	static ArrayType const* bytesMemory();
 	static ArrayType const* bytesCalldata();
+	static ArrayType const* withShieldedStorageMarker(ArrayType const& _type);
 	static ArrayType const* shieldedBytesStorage();
 	static ArrayType const* shieldedBytesMemory();
 	static ArrayType const* shieldedBytesCalldata();

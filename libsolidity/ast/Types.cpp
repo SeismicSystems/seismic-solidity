@@ -1896,6 +1896,18 @@ ArrayType::ArrayType(DataLocation _location, ShieldedByteArrayTag):
 {
 }
 
+ArrayType::ArrayType(ArrayType const& _other, ShieldedStorageMarker):
+	ReferenceType(_other.location()),
+	m_arrayKind(_other.m_arrayKind),
+	m_baseType(copyForLocationIfReference(_other.m_baseType)),
+	m_hasDynamicLength(_other.m_hasDynamicLength),
+	m_length(_other.m_length),
+	m_hasShieldedStorageMarker(true)
+{
+	if (location() == DataLocation::Storage)
+		m_isPointer = _other.isPointer();
+}
+
 void ArrayType::clearCache() const
 {
 	Type::clearCache();
@@ -1968,6 +1980,11 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 	return true;
 }
 
+bool ArrayType::containsShieldedType() const
+{
+	return m_hasShieldedStorageMarker || CompositeType::containsShieldedType();
+}
+
 std::string ArrayType::richIdentifier() const
 {
 	std::string id;
@@ -1986,6 +2003,8 @@ std::string ArrayType::richIdentifier() const
 		else
 			id += length().str();
 	}
+	if (m_hasShieldedStorageMarker)
+		id += "_shielded_storage_marker";
 	id += identifierLocationSuffix();
 
 	return id;
@@ -2004,6 +2023,7 @@ bool ArrayType::operator==(ArrayType const& _other) const
 		!equals(_other) ||
 		_other.isByteArray() != isByteArray() ||
 		_other.isString() != isString() ||
+		_other.m_hasShieldedStorageMarker != m_hasShieldedStorageMarker ||
 		_other.isDynamicallySized() != isDynamicallySized()
 	)
 		return false;
@@ -2226,7 +2246,11 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 	MemberList::MemberMap members;
 	if (!isString())
 	{
-		if (isDynamicallySized() && containsShieldedType())
+		// The shielded-storage marker only preserves storage op selection for aliases like
+		// `bytes(sbytesStorageRef)`. It must not leak into the surface type of `bytes`, so
+		// members like `.length` keep their ordinary `uint256` type unless the array itself is
+		// genuinely shielded.
+		if (isDynamicallySized() && CompositeType::containsShieldedType())
 			members.emplace_back("length", TypeProvider::shieldedUint256());
 		else
 			members.emplace_back("length", TypeProvider::uint256());
@@ -2347,6 +2371,8 @@ std::unique_ptr<ReferenceType> ArrayType::copyForLocation(DataLocation _location
 	copy->m_baseType = copy->copyForLocationIfReference(m_baseType);
 	copy->m_hasDynamicLength = m_hasDynamicLength;
 	copy->m_length = m_length;
+	copy->m_hasShieldedStorageMarker =
+		_location == DataLocation::Storage ? m_hasShieldedStorageMarker : false;
 	return copy;
 }
 

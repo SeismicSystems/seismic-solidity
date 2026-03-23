@@ -724,7 +724,7 @@ std::string ABIFunctions::abiEncodingFunctionCompactStorageArray(
 			templ("lengthPaddedShort", _options.padded ? "0x20" : "length");
 			templ("lengthPaddedLong", _options.padded ? "i" : "length");
 			templ("arrayDataSlot", m_utils.arrayDataAreaFunction(_from));
-			templ("loadOpcode", _from.baseType()->isShielded() ? "cload" : "sload");
+			templ("loadOpcode", _from.usesShieldedStorage() ? "cload" : "sload");
 			return templ.render();
 		}
 		else

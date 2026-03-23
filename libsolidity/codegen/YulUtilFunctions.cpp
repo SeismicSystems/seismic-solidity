@@ -54,6 +54,38 @@ std::optional<size_t> staticEncodingSize(std::vector<Type const*> const& _parame
 	return encodedSize;
 }
 
+std::string storageOpsIdentifierSuffix(bool _useShieldedStorageOps)
+{
+	return _useShieldedStorageOps ? "_shielded_storage_ops" : "";
+}
+
+bool isShieldedStorageAlias(ArrayType const& _type)
+{
+	return _type.isByteArrayOrString() && _type.hasShieldedStorageMarker();
+}
+
+std::string storageLoadOpcode(
+	Type const& _type,
+	VariableDeclaration::Location _location,
+	bool _useShieldedStorageOps
+)
+{
+	if (_location == VariableDeclaration::Location::Transient)
+		return "tload";
+	return (_useShieldedStorageOps || _type.isShielded()) ? "cload" : "sload";
+}
+
+std::string storageStoreOpcode(
+	Type const& _type,
+	VariableDeclaration::Location _location,
+	bool _useShieldedStorageOps
+)
+{
+	if (_location == VariableDeclaration::Location::Transient)
+		return "tstore";
+	return (_useShieldedStorageOps || _type.isShielded()) ? "cstore" : "sstore";
+}
+
 }
 
 std::string YulUtilFunctions::identityFunction()
@@ -1320,7 +1352,7 @@ std::string YulUtilFunctions::arrayLengthFunction(ArrayType const& _type)
 		)");
 		w("functionName", functionName);
 		w("dynamic", _type.isDynamicallySized());
-		w("loadOpcode", _type.isDynamicallySized() && _type.containsShieldedType() ? "cload" : "sload");
+		w("loadOpcode", _type.isDynamicallySized() && _type.usesShieldedStorage() ? "cload" : "sload");
 		if (!_type.isDynamicallySized()) w("length", toCompactHexWithPrefix(_type.length()));
 		w("memory", _type.location() == DataLocation::Memory);
 		w("storage", _type.location() == DataLocation::Storage);
@@ -1430,7 +1462,7 @@ std::string YulUtilFunctions::cleanUpStorageArrayEndFunction(ArrayType const& _t
 		("convertToSize", arrayConvertLengthToSize(_type))
 		("dataPosition", arrayDataAreaFunction(_type))
 		("clearStorageRange", clearStorageRangeFunction(
-			_type.baseType()->isShielded() ? *TypeProvider::shieldedUint256() : *_type.baseType()
+			_type.usesShieldedStorage() ? *TypeProvider::shieldedUint256() : *_type.baseType()
 		))
 		("packed", _type.baseType()->storageBytes() <= 16)
 		("itemsPerSlot", std::to_string(32 / _type.baseType()->storageBytes()))
@@ -1445,7 +1477,7 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 	std::string functionName = "resize_array_" + _type.identifier();
 	return m_functionCollector.createFunction(functionName, [&](std::vector<std::string>& _args, std::vector<std::string>&) {
 		solAssert(
-			!_type.baseType()->isShielded() || m_evmVersion.supportShieldedStorage(),
+			!_type.usesShieldedStorage() || m_evmVersion.supportShieldedStorage(),
 			"Shielded storage types require Mercury EVM version. This should have been caught by type checker."
 		);
 		_args = {"array", "newLen"};
@@ -1462,7 +1494,7 @@ std::string YulUtilFunctions::resizeDynamicByteArrayFunction(ArrayType const& _t
 			}
 		)")
 		("extractLength", extractByteArrayLengthFunction())
-		("loadOpcode", _type.baseType()->isShielded() ? "cload" : "sload")
+		("loadOpcode", _type.usesShieldedStorage() ? "cload" : "sload")
 		("decreaseSize", decreaseByteArraySizeFunction(_type))
 		("increaseSize", increaseByteArraySizeFunction(_type))
 		.render();
@@ -1489,7 +1521,7 @@ std::string YulUtilFunctions::cleanUpDynamicByteArrayEndSlotsFunction(ArrayType 
 		("dataLocation", arrayDataAreaFunction(_type))
 		("div32Ceil", divide32CeilFunction())
 		("clearStorageRange", clearStorageRangeFunction(
-			_type.baseType()->isShielded() ? *TypeProvider::shieldedUint256() : *_type.baseType()
+			_type.usesShieldedStorage() ? *TypeProvider::shieldedUint256() : *_type.baseType()
 		))
 		.render();
 	});
@@ -1531,12 +1563,12 @@ std::string YulUtilFunctions::decreaseByteArraySizeFunction(ArrayType const& _ty
 			("dataPosition", arrayDataAreaFunction(_type))
 			("partialClearStorageSlot", partialClearStorageSlotFunction(_type))
 			("clearStorageRange", clearStorageRangeFunction(
-				_type.baseType()->isShielded() ? *TypeProvider::shieldedUint256() : *_type.baseType()
+				_type.usesShieldedStorage() ? *TypeProvider::shieldedUint256() : *_type.baseType()
 			))
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("div32Ceil", divide32CeilFunction())
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-			("storeOpcode", _type.baseType()->isShielded() ? "cstore" : "sstore")
+			("storeOpcode", _type.usesShieldedStorage() ? "cstore" : "sstore")
 			.render();
 	});
 }
@@ -1572,7 +1604,7 @@ std::string YulUtilFunctions::increaseByteArraySizeFunction(ArrayType const& _ty
 		("maxArrayLength", (u256(1) << 64).str())
 		("dataPosition", arrayDataAreaFunction(_type))
 		("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-		("storeOpcode", _type.baseType()->isShielded() ? "cstore" : "sstore")
+		("storeOpcode", _type.usesShieldedStorage() ? "cstore" : "sstore")
 		.render();
 	});
 }
@@ -1593,8 +1625,8 @@ std::string YulUtilFunctions::byteArrayTransitLongToShortFunction(ArrayType cons
 			("functionName", functionName)
 			("dataPosition", arrayDataAreaFunction(_type))
 			("extractUsedApplyLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
-			("storeOpcode", _type.baseType()->isShielded() ? "cstore" : "sstore")
-			("loadOpcode", _type.baseType()->isShielded() ? "cload" : "sload")
+			("storeOpcode", _type.usesShieldedStorage() ? "cstore" : "sstore")
+			("loadOpcode", _type.usesShieldedStorage() ? "cload" : "sload")
 			.render();
 	});
 }
@@ -1709,9 +1741,13 @@ std::string YulUtilFunctions::storageByteArrayPopFunction(ArrayType const& _type
 			("transitLongToShort", byteArrayTransitLongToShortFunction(_type))
 			("encodeUsedSetLen", shortByteArrayEncodeUsedAreaSetLengthFunction())
 			("indexAccessNoChecks", longByteArrayStorageIndexAccessNoCheckFunction())
-			("storeOpcode", _type.baseType()->isShielded() ? "cstore" : "sstore")
-			("loadOpcode", _type.baseType()->isShielded() ? "cload" : "sload")
-			("setToZero", storageSetToZeroFunction(*_type.baseType(), VariableDeclaration::Location::Unspecified))
+			("storeOpcode", _type.usesShieldedStorage() ? "cstore" : "sstore")
+			("loadOpcode", _type.usesShieldedStorage() ? "cload" : "sload")
+			("setToZero", storageSetToZeroFunction(
+				*_type.baseType(),
+				VariableDeclaration::Location::Unspecified,
+				isShieldedStorageAlias(_type)
+			))
 			.render();
 	});
 }
@@ -1781,7 +1817,13 @@ std::string YulUtilFunctions::storageArrayPushFunction(ArrayType const& _type, T
 			("loadOpcode", _type.containsShieldedType() ? "cload" : "sload")
 			("isByteArrayOrString", _type.isByteArrayOrString())
 			("indexAccess", storageArrayIndexAccessFunction(_type))
-			("storeValue", updateStorageValueFunction(*_fromType, *_type.baseType(), VariableDeclaration::Location::Unspecified))
+			("storeValue", updateStorageValueFunction(
+				*_fromType,
+				*_type.baseType(),
+				VariableDeclaration::Location::Unspecified,
+				std::optional<unsigned>(),
+				isShieldedStorageAlias(_type)
+			))
 			("maxArrayLength", (u256(1) << 64).str())
 			("shl", shiftLeftFunctionDynamic())
 			.render();
@@ -2058,7 +2100,12 @@ std::string YulUtilFunctions::copyArrayToStorageFunction(ArrayType const& _fromT
 			0,
 			_fromType.baseType()->stackItems().size()
 		));
-		templ("updateStorageValue", updateStorageValueFunction(*_fromType.baseType(), *_toType.baseType(), VariableDeclaration::Location::Unspecified, 0));
+		templ("updateStorageValue", updateStorageValueFunction(
+			*_fromType.baseType(),
+			*_toType.baseType(),
+			VariableDeclaration::Location::Unspecified,
+			0
+		));
 		templ("srcStride",
 			fromCalldata ?
 			std::to_string(_fromType.calldataStride()) :
@@ -2142,10 +2189,10 @@ std::string YulUtilFunctions::copyByteArrayToStorageFunction(ArrayType const& _f
 			templ("srcDataLocation", arrayDataAreaFunction(_fromType));
 		templ("cleanUpEndArray", cleanUpDynamicByteArrayEndSlotsFunction(_toType));
 		templ("srcIncrement", std::to_string(fromStorage ? 1 : 0x20));
-		bool toIsShielded = _toType.baseType()->isShielded();
+		bool toIsShielded = _toType.usesShieldedStorage();
 		templ("storeOpcode", toIsShielded ? "cstore" : "sstore");
 		templ("loadOpcode", toIsShielded ? "cload" : "sload");
-		templ("read", fromStorage ? (_fromType.baseType()->isShielded() ? "cload" : "sload") : fromCalldata ? "calldataload" : "mload");
+		templ("read", fromStorage ? (_fromType.usesShieldedStorage() ? "cload" : "sload") : fromCalldata ? "calldataload" : "mload");
 		templ("maskBytes", maskBytesFunctionDynamic());
 		templ("byteArrayCombineShort", shortByteArrayEncodeUsedAreaSetLengthFunction());
 
@@ -2804,14 +2851,16 @@ std::string YulUtilFunctions::readFromStorage(
 	Type const& _type,
 	size_t _offset,
 	bool _splitFunctionTypes,
-	VariableDeclaration::Location _location
+	VariableDeclaration::Location _location,
+	bool _useShieldedStorageOps
 )
 {
 	if (_type.isValueType())
-		return readFromStorageValueType(_type, _offset, _splitFunctionTypes, _location);
+		return readFromStorageValueType(_type, _offset, _splitFunctionTypes, _location, _useShieldedStorageOps);
 	else
 	{
 		solAssert(_location != VariableDeclaration::Location::Transient);
+		solAssert(!_useShieldedStorageOps, "Shielded storage ops override is only supported for value types.");
 		solAssert(_offset == 0, "");
 		return readFromStorageReferenceType(_type);
 	}
@@ -2820,13 +2869,15 @@ std::string YulUtilFunctions::readFromStorage(
 std::string YulUtilFunctions::readFromStorageDynamic(
 	Type const& _type,
 	bool _splitFunctionTypes,
-	VariableDeclaration::Location _location
+	VariableDeclaration::Location _location,
+	bool _useShieldedStorageOps
 )
 {
 	if (_type.isValueType())
-		return readFromStorageValueType(_type, {}, _splitFunctionTypes, _location);
+		return readFromStorageValueType(_type, {}, _splitFunctionTypes, _location, _useShieldedStorageOps);
 
 	solAssert(_location != VariableDeclaration::Location::Transient);
+	solAssert(!_useShieldedStorageOps, "Shielded storage ops override is only supported for value types.");
 	std::string functionName =
 		"read_from_storage__dynamic_" +
 		std::string(_splitFunctionTypes ? "split_" : "") +
@@ -2850,7 +2901,8 @@ std::string YulUtilFunctions::readFromStorageValueType(
 	Type const& _type,
 	std::optional<size_t> _offset,
 	bool _splitFunctionTypes,
-	VariableDeclaration::Location _location
+	VariableDeclaration::Location _location,
+	bool _useShieldedStorageOps
 )
 {
 	solAssert(_type.isValueType(), "");
@@ -2858,6 +2910,10 @@ std::string YulUtilFunctions::readFromStorageValueType(
 		_location == VariableDeclaration::Location::Transient ||
 		_location == VariableDeclaration::Location::Unspecified,
 		"Variable location can only be transient or plain storage"
+	);
+	solAssert(
+		!(_location == VariableDeclaration::Location::Transient && _useShieldedStorageOps),
+		"Transient storage cannot use shielded storage op overrides."
 	);
 
 	std::string functionName =
@@ -2870,10 +2926,11 @@ std::string YulUtilFunctions::readFromStorageValueType(
 			"dynamic"
 		) +
 		"_" +
-		_type.identifier();
+		_type.identifier() +
+		storageOpsIdentifierSuffix(_useShieldedStorageOps);
 
 	return m_functionCollector.createFunction(functionName, [&] {
-		if (_type.isShielded() && !m_evmVersion.supportShieldedStorage())
+		if ((_type.isShielded() || _useShieldedStorageOps) && !m_evmVersion.supportShieldedStorage())
 		{
 			solAssert(false,
 				"Shielded storage types require Mercury EVM version. "
@@ -2890,8 +2947,7 @@ std::string YulUtilFunctions::readFromStorageValueType(
 		)");
 		templ("functionName", functionName);
 		templ("dynamic", !_offset.has_value());
-		templ("loadOpcode",
- 			_location == VariableDeclaration::Location::Transient ? "tload"  : (_type.isShielded() ? "cload" : "sload"));
+		templ("loadOpcode", storageLoadOpcode(_type, _location, _useShieldedStorageOps));
 		if (_offset.has_value())
 			templ("extract", extractFromStorageValue(_type, *_offset));
 		else
@@ -2972,13 +3028,18 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 	Type const& _fromType,
 	Type const& _toType,
 	VariableDeclaration::Location _location,
-	std::optional<unsigned> const& _offset
+	std::optional<unsigned> const& _offset,
+	bool _useShieldedStorageOps
 )
 {
 	solAssert(
 		_location == VariableDeclaration::Location::Transient ||
 		_location == VariableDeclaration::Location::Unspecified,
 		"Variable location can only be transient or plain storage"
+	);
+	solAssert(
+		!(_location == VariableDeclaration::Location::Transient && _useShieldedStorageOps),
+		"Transient storage cannot use shielded storage op overrides."
 	);
 
 	std::string const functionName =
@@ -2988,7 +3049,8 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 		(_offset.has_value() ? ("offset_" + std::to_string(*_offset)) + "_" : "") +
 		_fromType.identifier() +
 		"_to_" +
-		_toType.identifier();
+		_toType.identifier() +
+		storageOpsIdentifierSuffix(_useShieldedStorageOps);
 
 	return m_functionCollector.createFunction(functionName, [&] {
 		if (_toType.isValueType())
@@ -3019,15 +3081,14 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("convert", conversionFunction(_fromType, _toType))
 			("fromValues", suffixedVariableNameList("value_", 0, _fromType.sizeOnStack()))
 			("toValues", suffixedVariableNameList("convertedValue_", 0, _toType.sizeOnStack()))
-			("storeOpcode",
-			_location == VariableDeclaration::Location::Transient ? "tstore" : (_toType.isShielded() ? "cstore" : "sstore"))
-			("loadOpcode",
-			_location == VariableDeclaration::Location::Transient ? "tload"  : (_toType.isShielded() ? "cload" : "sload"))
+			("storeOpcode", storageStoreOpcode(_toType, _location, _useShieldedStorageOps))
+			("loadOpcode", storageLoadOpcode(_toType, _location, _useShieldedStorageOps))
 			("prepare", prepareStoreFunction(_toType))
 			.render();
 		}
 
 		solAssert(_location != VariableDeclaration::Location::Transient);
+		solAssert(!_useShieldedStorageOps, "Shielded storage ops override is only supported for value types.");
 		auto const* toReferenceType = dynamic_cast<ReferenceType const*>(&_toType);
 		auto const* fromReferenceType = dynamic_cast<ReferenceType const*>(&_fromType);
 		solAssert(toReferenceType, "");
@@ -4500,7 +4561,11 @@ std::string YulUtilFunctions::zeroValueFunction(Type const& _type, bool _splitFu
 	});
 }
 
-std::string YulUtilFunctions::storageSetToZeroFunction(Type const& _type, VariableDeclaration::Location _location)
+std::string YulUtilFunctions::storageSetToZeroFunction(
+	Type const& _type,
+	VariableDeclaration::Location _location,
+	bool _useShieldedStorageOps
+)
 {
 	// SEISMIC: Cherry-picked fix for TransientStorageClearingHelperCollision (SOL-2026-1)
 	// from upstream commit 12ede4f26 (Solidity 0.8.34).
@@ -4516,17 +4581,24 @@ std::string YulUtilFunctions::storageSetToZeroFunction(Type const& _type, Variab
 		_location == VariableDeclaration::Location::Unspecified,
 		"Invalid location for the storage_set_to_zero function"
 	);
+	solAssert(
+		!(_location == VariableDeclaration::Location::Transient && _useShieldedStorageOps),
+		"Transient storage cannot use shielded storage op overrides."
+	);
 
 	if (dynamic_cast<ReferenceType const*>(&_type))
 		solAssert(
 			_location == VariableDeclaration::Location::Unspecified &&
 			_type.dataStoredIn(DataLocation::Storage)
 		);
+	if (!_type.isValueType())
+		solAssert(!_useShieldedStorageOps, "Shielded storage ops override is only supported for value types.");
 
 	std::string const functionName =
 		(_location == VariableDeclaration::Location::Transient ? "transient_"s : "") +
 		"storage_set_to_zero_" +
-		_type.identifier();
+		_type.identifier() +
+		storageOpsIdentifierSuffix(_useShieldedStorageOps);
 
 	return m_functionCollector.createFunction(functionName, [&]() {
 		if (_type.isValueType())
@@ -4537,7 +4609,7 @@ std::string YulUtilFunctions::storageSetToZeroFunction(Type const& _type, Variab
 				}
 			)")
 			("functionName", functionName)
-			("store", updateStorageValueFunction(_type, _type, _location))
+			("store", updateStorageValueFunction(_type, _type, _location, std::optional<unsigned>(), _useShieldedStorageOps))
 			("values", suffixedVariableNameList("zero_", 0, _type.sizeOnStack()))
 			("zeroValue", zeroValueFunction(_type))
 			.render();

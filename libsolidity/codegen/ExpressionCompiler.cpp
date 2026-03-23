@@ -52,6 +52,29 @@ using namespace solidity::util;
 namespace
 {
 
+Type const& effectiveType(Expression const& _expression)
+{
+	if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+		if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			return *variable->annotation().type;
+
+	return *_expression.annotation().type;
+}
+
+FunctionTypePointer effectiveFunctionType(Expression const& _expression)
+{
+	if (auto const* functionType = dynamic_cast<FunctionType const*>(_expression.annotation().type))
+		if (
+			functionType->kind() == FunctionType::Kind::Internal &&
+			!functionType->hasBoundFirstArgument()
+		)
+			if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+				if (auto const* function = dynamic_cast<FunctionDefinition const*>(identifier->annotation().referencedDeclaration))
+					return function->functionType(true);
+
+	return dynamic_cast<FunctionType const*>(_expression.annotation().type);
+}
+
 Type const* closestType(Type const* _type, Type const* _targetType, bool _isShiftOp)
 {
 	if (_isShiftOp)
@@ -303,14 +326,12 @@ bool ExpressionCompiler::visit(Assignment const& _assignment)
 	CompilerContext::LocationSetter locationSetter(m_context, _assignment);
 	Token op = _assignment.assignmentOperator();
 	Token binOp = op == Token::Assign ? op : TokenTraits::AssignmentToBinaryOp(op);
-	Type const& leftType = *_assignment.leftHandSide().annotation().type;
+	Type const& leftType = effectiveType(_assignment.leftHandSide());
 	if (leftType.category() == Type::Category::Tuple)
 	{
 		solAssert(*_assignment.annotation().type == TupleType(), "");
 		solAssert(op == Token::Assign, "");
 	}
-	else
-		solAssert(*_assignment.annotation().type == leftType, "");
 	bool cleanupNeeded = false;
 	if (op != Token::Assign)
 		cleanupNeeded = cleanupNeededForOp(leftType.category(), binOp, m_context.arithmetic());
@@ -318,13 +339,13 @@ bool ExpressionCompiler::visit(Assignment const& _assignment)
 	// Perform some conversion already. This will convert storage types to memory and literals
 	// to their actual type, but will not convert e.g. memory to storage.
 	Type const* rightIntermediateType = closestType(
-		_assignment.rightHandSide().annotation().type,
-		_assignment.leftHandSide().annotation().type,
+		&effectiveType(_assignment.rightHandSide()),
+		&leftType,
 		op != Token::Assign && TokenTraits::isShiftOp(binOp)
 	);
 
 	solAssert(rightIntermediateType, "");
-	utils().convertType(*_assignment.rightHandSide().annotation().type, *rightIntermediateType, cleanupNeeded);
+	utils().convertType(effectiveType(_assignment.rightHandSide()), *rightIntermediateType, cleanupNeeded);
 
 	_assignment.leftHandSide().accept(*this);
 	solAssert(!!m_currentLValue, "LValue not retrieved.");
@@ -663,7 +684,7 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		functionType = structType.constructorType();
 	}
 	else
-		functionType = dynamic_cast<FunctionType const*>(_functionCall.expression().annotation().type);
+		functionType = effectiveFunctionType(_functionCall.expression());
 
 	TypePointers parameterTypes = functionType->parameterTypes();
 
@@ -1166,6 +1187,8 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				solAssert(paramType, "");
 
 				ArrayType const* arrayType = dynamic_cast<ArrayType const*>(function.selfType());
+				if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+					arrayType = dynamic_cast<ArrayType const*>(&effectiveType(memberAccess->expression()));
 				solAssert(arrayType, "");
 
 				// stack: ArrayReference
@@ -1187,6 +1210,8 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 				solAssert(!!function.parameterTypes()[0], "");
 				Type const* paramType = function.parameterTypes()[0];
 				ArrayType const* arrayType = dynamic_cast<ArrayType const*>(function.selfType());
+				if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+					arrayType = dynamic_cast<ArrayType const*>(&effectiveType(memberAccess->expression()));
 				solAssert(arrayType, "");
 
 				// stack: ArrayReference
@@ -1226,6 +1251,8 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 			solAssert(function.hasBoundFirstArgument(), "");
 			solAssert(function.parameterTypes().empty(), "");
 			ArrayType const* arrayType = dynamic_cast<ArrayType const*>(function.selfType());
+			if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+				arrayType = dynamic_cast<ArrayType const*>(&effectiveType(memberAccess->expression()));
 			solAssert(arrayType && arrayType->dataStoredIn(DataLocation::Storage), "");
 			ArrayUtils(m_context).popStorageArrayElement(*arrayType);
 			break;
@@ -2211,7 +2238,7 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 	}
 	case Type::Category::Array:
 	{
-		auto const& type = dynamic_cast<ArrayType const&>(*_memberAccess.expression().annotation().type);
+		auto const& type = dynamic_cast<ArrayType const&>(effectiveType(_memberAccess.expression()));
 		if (member == "length")
 		{
 			if (!type.isDynamicallySized())
@@ -2306,7 +2333,7 @@ bool ExpressionCompiler::visit(IndexAccess const& _indexAccess)
 	CompilerContext::LocationSetter locationSetter(m_context, _indexAccess);
 	_indexAccess.baseExpression().accept(*this);
 
-	Type const& baseType = *_indexAccess.baseExpression().annotation().type;
+	Type const& baseType = effectiveType(_indexAccess.baseExpression());
 
 	switch (baseType.category())
 	{
@@ -3183,7 +3210,7 @@ bool ExpressionCompiler::cleanupNeededForOp(Type::Category _type, Token _op, Ari
 void ExpressionCompiler::acceptAndConvert(Expression const& _expression, Type const& _type, bool _cleanupNeeded)
 {
 	_expression.accept(*this);
-	utils().convertType(*_expression.annotation().type, _type, _cleanupNeeded);
+	utils().convertType(effectiveType(_expression), _type, _cleanupNeeded);
 }
 
 CompilerUtils ExpressionCompiler::utils()

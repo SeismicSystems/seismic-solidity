@@ -478,6 +478,13 @@ ArrayType const* TypeProvider::bytesCalldata()
 	return m_bytesCalldata.get();
 }
 
+ArrayType const* TypeProvider::withShieldedStorageMarker(ArrayType const& _type)
+{
+	if (_type.hasShieldedStorageMarker())
+		return &_type;
+	return createAndGet<ArrayType>(_type, ArrayType::ShieldedStorageMarker{});
+}
+
 ArrayType const* TypeProvider::stringStorage()
 {
 	if (!m_stringStorage)
