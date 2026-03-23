@@ -443,7 +443,7 @@ void ArrayUtils::copyArrayToMemory(ArrayType const& _sourceType, bool _padToWord
 		// Special case for tightly-stored byte arrays
 		if (_sourceType.isByteArrayOrString())
 		{
-			auto const loadOp = _sourceType.containsShieldedType() ? Instruction::CLOAD : Instruction::SLOAD;
+			auto const loadOp = _sourceType.usesShieldedStorage() ? Instruction::CLOAD : Instruction::SLOAD;
 			// stack here: memory_offset storage_offset length
 			m_context << Instruction::DUP1 << u256(31) << Instruction::LT;
 			evmasm::AssemblyItem longByteArray = m_context.appendConditionalJump();
@@ -488,7 +488,7 @@ void ArrayUtils::copyArrayToMemory(ArrayType const& _sourceType, bool _padToWord
 		if (_sourceType.isByteArrayOrString())
 		{
 			// Packed both in storage and memory.
-			m_context << Instruction::DUP2 << (_sourceType.containsShieldedType() ? Instruction::CLOAD : Instruction::SLOAD);
+			m_context << Instruction::DUP2 << (_sourceType.usesShieldedStorage() ? Instruction::CLOAD : Instruction::SLOAD);
 			m_context << Instruction::DUP2 << Instruction::MSTORE;
 			// increment storage_data_offset by 1
 			m_context << Instruction::SWAP1 << u256(1) << Instruction::ADD;
@@ -1066,7 +1066,7 @@ void ArrayUtils::retrieveLength(ArrayType const& _arrayType, unsigned _stackDept
 			m_context << Instruction::MLOAD;
 			break;
 		case DataLocation::Storage:
-			if (_arrayType.containsShieldedType())
+			if (_arrayType.usesShieldedStorage())
 				m_context << Instruction::CLOAD;
 			else
 				m_context << Instruction::SLOAD;
@@ -1136,7 +1136,7 @@ void ArrayUtils::accessIndex(ArrayType const& _arrayType, bool _doBoundsCheck, b
 		{
 			// Special case of short byte arrays.
 			m_context << Instruction::SWAP1;
-			m_context << Instruction::DUP2 << (_arrayType.containsShieldedType() ? Instruction::CLOAD : Instruction::SLOAD);
+			m_context << Instruction::DUP2 << (_arrayType.usesShieldedStorage() ? Instruction::CLOAD : Instruction::SLOAD);
 			m_context << u256(1) << Instruction::AND << Instruction::ISZERO;
 			// No action needed for short byte arrays.
 			m_context.appendConditionalJumpTo(endTag);

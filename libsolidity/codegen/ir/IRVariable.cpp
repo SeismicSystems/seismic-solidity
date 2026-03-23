@@ -24,6 +24,20 @@ using namespace solidity;
 using namespace solidity::frontend;
 using namespace solidity::util;
 
+namespace
+{
+
+Type const& effectiveType(Expression const& _expression)
+{
+	if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+		if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			return *variable->annotation().type;
+
+	return *_expression.annotation().type;
+}
+
+}
+
 IRVariable::IRVariable(std::string _baseName, Type const& _type):
 	m_baseName(std::move(_baseName)), m_type(_type)
 {
@@ -36,7 +50,7 @@ IRVariable::IRVariable(VariableDeclaration const& _declaration):
 }
 
 IRVariable::IRVariable(Expression const& _expression):
-	IRVariable(IRNames::localVariable(_expression), *_expression.annotation().type)
+	IRVariable(IRNames::localVariable(_expression), effectiveType(_expression))
 {
 }
 

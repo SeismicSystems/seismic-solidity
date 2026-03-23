@@ -59,6 +59,29 @@ using namespace std::string_literals;
 namespace
 {
 
+Type const& effectiveType(Expression const& _expression)
+{
+	if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+		if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			return *variable->annotation().type;
+
+	return *_expression.annotation().type;
+}
+
+FunctionTypePointer effectiveFunctionType(Expression const& _expression)
+{
+	if (auto const* functionType = dynamic_cast<FunctionType const*>(_expression.annotation().type))
+		if (
+			functionType->kind() == FunctionType::Kind::Internal &&
+			!functionType->hasBoundFirstArgument()
+		)
+			if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+				if (auto const* function = dynamic_cast<FunctionDefinition const*>(identifier->annotation().referencedDeclaration))
+					return function->functionType(true);
+
+	return dynamic_cast<FunctionType const*>(_expression.annotation().type);
+}
+
 struct CopyTranslate: public yul::ASTCopier
 {
 	using ExternalRefsMap = std::map<yul::Identifier const*, InlineAssemblyAnnotation::ExternalIdentifierInfo>;
@@ -277,6 +300,7 @@ void IRGeneratorForStatements::initializeStateVar(VariableDeclaration const& _va
 			IRLValue{*_varDecl.annotation().type, IRLValue::Immutable{&_varDecl}} :
 			IRLValue{*_varDecl.annotation().type, IRLValue::Storage{
 				toCompactHexWithPrefix(m_context.storageLocationOfStateVariable(_varDecl).first),
+				false,
 				m_context.storageLocationOfStateVariable(_varDecl).second
 			}},
 			*_varDecl.value()
@@ -441,12 +465,12 @@ bool IRGeneratorForStatements::visit(Assignment const& _assignment)
 		TokenTraits::AssignmentToBinaryOp(assignmentOperator);
 
 	if (TokenTraits::isShiftOp(binaryOperator))
-		solAssert(type(_assignment.rightHandSide()).mobileType());
+		solAssert(effectiveType(_assignment.rightHandSide()).mobileType());
 	IRVariable value =
-		type(_assignment.leftHandSide()).isValueType() ?
+		effectiveType(_assignment.leftHandSide()).isValueType() ?
 		convert(
 			_assignment.rightHandSide(),
-			TokenTraits::isShiftOp(binaryOperator) ? *type(_assignment.rightHandSide()).mobileType() : type(_assignment)
+			TokenTraits::isShiftOp(binaryOperator) ? *effectiveType(_assignment.rightHandSide()).mobileType() : effectiveType(_assignment.leftHandSide())
 		) :
 		_assignment.rightHandSide();
 
@@ -457,17 +481,16 @@ bool IRGeneratorForStatements::visit(Assignment const& _assignment)
 
 	if (assignmentOperator != Token::Assign)
 	{
-		solAssert(type(_assignment.leftHandSide()).isValueType(), "Compound operators only available for value types.");
+		solAssert(effectiveType(_assignment.leftHandSide()).isValueType(), "Compound operators only available for value types.");
 		solAssert(binaryOperator != Token::Exp);
-		solAssert(type(_assignment) == type(_assignment.leftHandSide()));
 
 		IRVariable leftIntermediate = readFromLValue(*m_currentLValue);
-		solAssert(type(_assignment) == leftIntermediate.type());
+		solAssert(effectiveType(_assignment.leftHandSide()) == leftIntermediate.type());
 
 		define(_assignment) << (
 			TokenTraits::isShiftOp(binaryOperator) ?
 			shiftOperation(binaryOperator, leftIntermediate, value) :
-			binaryOperation(binaryOperator, type(_assignment), leftIntermediate.name(), value.name())
+			binaryOperation(binaryOperator, effectiveType(_assignment.leftHandSide()), leftIntermediate.name(), value.name())
 		) << "\n";
 
 		writeToLValue(*m_currentLValue, IRVariable(_assignment));
@@ -716,7 +739,11 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 			util::GenericVisitor{
 				[&](IRLValue::Storage const& _storage) {
 					appendCode() <<
-						m_utils.storageSetToZeroFunction(m_currentLValue->type, VariableDeclaration::Location::Unspecified) <<
+						m_utils.storageSetToZeroFunction(
+							m_currentLValue->type,
+							VariableDeclaration::Location::Unspecified,
+							_storage.usesShieldedStorage
+						) <<
 						"(" <<
 						_storage.slot <<
 						", " <<
@@ -978,7 +1005,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		functionType = structType.constructorType();
 	}
 	else
-		functionType = dynamic_cast<FunctionType const*>(_functionCall.expression().annotation().type);
+		functionType = effectiveFunctionType(_functionCall.expression());
 
 	TypePointers parameterTypes = functionType->parameterTypes();
 
@@ -1431,6 +1458,8 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		solAssert(functionType->hasBoundFirstArgument());
 		solAssert(functionType->parameterTypes().empty());
 		ArrayType const* arrayType = dynamic_cast<ArrayType const*>(functionType->selfType());
+		if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+			arrayType = dynamic_cast<ArrayType const*>(&effectiveType(memberAccess->expression()));
 		solAssert(arrayType);
 		define(_functionCall) <<
 			m_utils.storageArrayPopFunction(*arrayType) <<
@@ -1442,6 +1471,8 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 	case FunctionType::Kind::ArrayPush:
 	{
 		ArrayType const* arrayType = dynamic_cast<ArrayType const*>(functionType->selfType());
+		if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+			arrayType = dynamic_cast<ArrayType const*>(&effectiveType(memberAccess->expression()));
 		solAssert(arrayType);
 
 		if (arguments.empty())
@@ -1455,6 +1486,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 				*arrayType->baseType(),
 				IRLValue::Storage{
 					slotName,
+					arrayType->usesShieldedStorage(),
 					offsetName,
 				}
 			});
@@ -2339,7 +2371,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 				("add(" + expression.part("slot").name() + ", " + offsets.first.str() + ")\n");
 			setLValue(_memberAccess, IRLValue{
 				type(_memberAccess),
-				IRLValue::Storage{slot, offsets.second}
+				IRLValue::Storage{slot, false, offsets.second}
 			});
 			break;
 		}
@@ -2393,7 +2425,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 	}
 	case Type::Category::Array:
 	{
-		auto const& type = dynamic_cast<ArrayType const&>(*_memberAccess.expression().annotation().type);
+		auto const& type = dynamic_cast<ArrayType const&>(effectiveType(_memberAccess.expression()));
 		if (member == "length")
 		{
 			// shortcut for <address>.code.length
@@ -2592,7 +2624,7 @@ bool IRGeneratorForStatements::visit(InlineAssembly const& _inlineAsm)
 void IRGeneratorForStatements::endVisit(IndexAccess const& _indexAccess)
 {
 	setLocation(_indexAccess);
-	Type const& baseType = *_indexAccess.baseExpression().annotation().type;
+	Type const& baseType = effectiveType(_indexAccess.baseExpression());
 
 	if (baseType.category() == Type::Category::Mapping)
 	{
@@ -2612,6 +2644,7 @@ void IRGeneratorForStatements::endVisit(IndexAccess const& _indexAccess)
 			*_indexAccess.annotation().type,
 			IRLValue::Storage{
 				slot,
+				false,
 				0u
 			}
 		});
@@ -2647,7 +2680,7 @@ void IRGeneratorForStatements::endVisit(IndexAccess const& _indexAccess)
 
 				setLValue(_indexAccess, IRLValue{
 					*_indexAccess.annotation().type,
-					IRLValue::Storage{slot, offset}
+					IRLValue::Storage{slot, arrayType.usesShieldedStorage(), offset}
 				});
 
 				break;
@@ -2893,6 +2926,7 @@ void IRGeneratorForStatements::handleVariableReference(
 			*_variable.annotation().type,
 			IRLValue::TransientStorage{
 				toCompactHexWithPrefix(m_context.storageLocationOfStateVariable(_variable).first),
+				false,
 				m_context.storageLocationOfStateVariable(_variable).second
 			}
 		});
@@ -2903,6 +2937,7 @@ void IRGeneratorForStatements::handleVariableReference(
 			*_variable.annotation().type,
 			IRLValue::Storage{
 				toCompactHexWithPrefix(m_context.storageLocationOfStateVariable(_variable).first),
+				false,
 				m_context.storageLocationOfStateVariable(_variable).second
 			}
 		});
@@ -3436,7 +3471,13 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 				}, _storage.offset);
 
 				appendCode() <<
-					m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, VariableDeclaration::Location::Unspecified, offsetStatic) <<
+					m_utils.updateStorageValueFunction(
+						_value.type(),
+						_lvalue.type,
+						VariableDeclaration::Location::Unspecified,
+						offsetStatic,
+						_storage.usesShieldedStorage
+					) <<
 					"(" <<
 					_storage.slot <<
 					offsetArgument <<
@@ -3542,7 +3583,12 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 				define(result) << _storage.slot << "\n";
 			else if (std::holds_alternative<std::string>(_storage.offset))
 				define(result) <<
-					m_utils.readFromStorageDynamic(_lvalue.type, true, VariableDeclaration::Location::Unspecified) <<
+					m_utils.readFromStorageDynamic(
+						_lvalue.type,
+						true,
+						VariableDeclaration::Location::Unspecified,
+						_storage.usesShieldedStorage
+					) <<
 					"(" <<
 					_storage.slot <<
 					", " <<
@@ -3550,7 +3596,13 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 					")\n";
 			else
 				define(result) <<
-					m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_storage.offset), true, VariableDeclaration::Location::Unspecified) <<
+					m_utils.readFromStorage(
+						_lvalue.type,
+						std::get<unsigned>(_storage.offset),
+						true,
+						VariableDeclaration::Location::Unspecified,
+						_storage.usesShieldedStorage
+					) <<
 					"(" <<
 					_storage.slot <<
 					")\n";

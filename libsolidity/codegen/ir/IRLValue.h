@@ -43,6 +43,9 @@ struct IRLValue
 	struct GenericStorage
 	{
 		std::string const slot;
+		/// Some unshielded value types (for example bytes1 reached through bytes(sbytesRef)[i])
+		/// still have to use cload/cstore because the containing storage they point at is shielded.
+		bool usesShieldedStorage = false;
 		/// unsigned: Used when the offset is known at compile time, uses optimized
 		///           functions
 		/// string: Used when the offset is determined at run time

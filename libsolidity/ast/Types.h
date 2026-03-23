@@ -973,6 +973,11 @@ public:
 	/// Constructor for a shielded byte array ("sbytes").
 	ArrayType(DataLocation _location, ShieldedByteArrayTag);
 
+	/// Tag type for constructing byte-array/string references with the shielded-storage marker.
+	struct ShieldedStorageMarker {};
+	/// Constructor for a byte-array/string reference that preserves the shielded-storage marker.
+	ArrayType(ArrayType const& _other, ShieldedStorageMarker);
+
 	/// Constructor for a dynamically sized array type ("<type>[]")
 	ArrayType(DataLocation _location, Type const* _baseType):
 		ReferenceType(_location),
@@ -992,6 +997,7 @@ public:
 
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	bool containsShieldedType() const override;
 	std::string richIdentifier() const override;
 	bool operator==(ArrayType const& _other) const;
 	bool operator==(Type const& _other) const override;
@@ -1025,6 +1031,14 @@ public:
 	/// @returns true if this is a string
 	bool isString() const { return m_arrayKind == ArrayKind::String; }
 	Type const* baseType() const { solAssert(!!m_baseType, ""); return m_baseType; }
+	bool hasShieldedStorageMarker() const { return m_hasShieldedStorageMarker; }
+	bool usesShieldedStorage() const
+	{
+		return
+			isByteArrayOrString() ?
+			baseType()->isShielded() || m_hasShieldedStorageMarker :
+			containsShieldedType();
+	}
 	Type const* finalBaseType(bool breakIfDynamicArrayType) const;
 	u256 const& length() const { return m_length; }
 	u256 memoryDataSize() const override;
@@ -1054,6 +1068,11 @@ private:
 	Type const* m_baseType;
 	bool m_hasDynamicLength = true;
 	u256 m_length;
+	/// Marks byte-array/string references that still point at shielded storage even though their
+	/// surface type is unshielded. This exists for casts like bytes(sbytesStorageRef): after the
+	/// cast the type is plain bytes, but the underlying slots are still private. Any storage access
+	/// through such a reference must therefore keep using shielded storage ops (cload/cstore).
+	bool m_hasShieldedStorageMarker = false;
 	mutable std::optional<TypeResult> m_interfaceType;
 	mutable std::optional<TypeResult> m_interfaceType_library;
 };

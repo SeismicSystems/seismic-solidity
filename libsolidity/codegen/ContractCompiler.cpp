@@ -67,6 +67,15 @@ using solidity::util::errinfo_comment;
 namespace
 {
 
+Type const& effectiveType(Expression const& _expression)
+{
+	if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+		if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			return *variable->annotation().type;
+
+	return *_expression.annotation().type;
+}
+
 /**
  * Simple helper class to ensure that the stack height is the same at certain places in the code.
  */
@@ -1541,7 +1550,7 @@ void ContractCompiler::compileExpression(Expression const& _expression, Type con
 	ExpressionCompiler expressionCompiler(m_context, m_optimiserSettings.runOrderLiterals);
 	expressionCompiler.compile(_expression);
 	if (_targetType)
-		CompilerUtils(m_context).convertType(*_expression.annotation().type, *_targetType);
+		CompilerUtils(m_context).convertType(effectiveType(_expression), *_targetType);
 }
 
 void ContractCompiler::popScopedVariables(ASTNode const* _node)

@@ -57,6 +57,107 @@ using namespace solidity::util;
 using namespace solidity::langutil;
 using namespace solidity::frontend;
 
+namespace
+{
+
+/// Preserves the shielded-storage marker across casts/aliases like bytes(sbytesStorageRef). The
+/// resulting type stays unshielded bytes/string, but it still points at shielded storage, so both
+/// reads and writes must keep using shielded storage ops.
+Type const* preserveShieldedStorageMarker(Type const& _from, Type const& _to)
+{
+	auto const* fromArrayType = dynamic_cast<ArrayType const*>(&_from);
+	auto const* toArrayType = dynamic_cast<ArrayType const*>(&_to);
+	if (
+		// Only array types can carry the shielded-storage marker.
+		!fromArrayType ||
+		// Only array types can receive the shielded-storage marker.
+		!toArrayType ||
+		// The marker only matters for aliases that still point at storage.
+		fromArrayType->location() != DataLocation::Storage ||
+		// The marker is only for byte-array/string aliases like bytes(sbytesRef).
+		!fromArrayType->isByteArrayOrString() ||
+		// The target must also be a byte-array/string alias.
+		!toArrayType->isByteArrayOrString() ||
+		// There is nothing to preserve unless the source already uses shielded storage.
+		!fromArrayType->usesShieldedStorage() ||
+		// Do not mark genuinely shielded targets; they already select shielded ops directly.
+		toArrayType->baseType()->isShielded()
+	)
+		return &_to;
+
+	return TypeProvider::withShieldedStorageMarker(*toArrayType);
+}
+
+/// Local storage-reference declarations need the adjusted type annotation as well. Otherwise
+/// `bytes storage ref = bytes(sbytesRef)` would validate the initializer against the right type,
+/// but later uses of `ref` would still see plain `bytes storage` and lose the shielded-storage
+/// marker that codegen needs.
+void preserveShieldedStorageMarkerInDeclaration(
+	VariableDeclaration const& _variable,
+	Type const& _valueType
+)
+{
+	solAssert(_variable.annotation().type, "");
+	_variable.annotation().type = preserveShieldedStorageMarker(
+		_valueType,
+		*_variable.annotation().type
+	);
+}
+
+bool canPreserveShieldedStorageMarkerInAssignment(VariableDeclaration const& _variable)
+{
+	return
+		(_variable.isLocalVariable() || _variable.isCallableOrCatchParameter()) &&
+		_variable.referenceLocation() == VariableDeclaration::Location::Storage;
+}
+
+FunctionDefinition const* internalFunctionDefinition(FunctionType const& _functionType)
+{
+	if (_functionType.kind() != FunctionType::Kind::Internal || !_functionType.hasDeclaration())
+		return nullptr;
+
+	return dynamic_cast<FunctionDefinition const*>(&_functionType.declaration());
+}
+
+void preserveShieldedStorageMarkersInInternalCall(
+	FunctionCall const& _functionCall,
+	FunctionType const& _functionType
+)
+{
+	auto const* function = internalFunctionDefinition(_functionType);
+	if (!function)
+		return;
+
+	bool const isPositionalCall = _functionCall.names().empty();
+	TypePointers const& parameterTypes = _functionType.parameterTypes();
+	std::vector<ASTPointer<Expression const>> const& arguments = _functionCall.arguments();
+
+	if (arguments.size() != parameterTypes.size())
+		return;
+
+	std::vector<Expression const*> paramArgMap(parameterTypes.size());
+	if (isPositionalCall)
+		for (size_t i = 0; i < paramArgMap.size(); ++i)
+			paramArgMap[i] = arguments[i].get();
+	else
+	{
+		auto const& parameterNames = _functionType.parameterNames();
+		for (size_t i = 0; i < _functionCall.names().size(); ++i)
+			for (size_t j = 0; j < parameterNames.size(); ++j)
+				if (parameterNames[j] == *_functionCall.names()[i])
+				{
+					paramArgMap[j] = arguments[i].get();
+					break;
+				}
+	}
+
+	for (size_t i = 0; i < paramArgMap.size() && i < function->parameters().size(); ++i)
+		if (paramArgMap[i])
+			preserveShieldedStorageMarkerInDeclaration(*function->parameters()[i], *type(*paramArgMap[i]));
+}
+
+}
+
 bool TypeChecker::typeSupportedByOldABIEncoder(Type const& _type, bool _isLibraryCall)
 {
 	if (_isLibraryCall && _type.dataStoredIn(DataLocation::Storage))
@@ -1395,6 +1496,15 @@ void TypeChecker::endVisit(Return const& _return)
 		return;
 	}
 	TypePointers returnTypes;
+	if (auto tupleType = dynamic_cast<TupleType const*>(type(*_return.expression())))
+	{
+		for (size_t i = 0; i < std::min(tupleType->components().size(), params->parameters().size()); ++i)
+			if (tupleType->components()[i])
+				preserveShieldedStorageMarkerInDeclaration(*params->parameters()[i], *tupleType->components()[i]);
+	}
+	else if (params->parameters().size() == 1)
+		preserveShieldedStorageMarkerInDeclaration(*params->parameters().front(), *type(*_return.expression()));
+
 	for (auto const& var: params->parameters())
 		returnTypes.push_back(type(*var));
 	if (auto tupleType = dynamic_cast<TupleType const*>(type(*_return.expression())))
@@ -1526,8 +1636,7 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 		solAssert(!var.value(), "Value has to be tied to statement.");
 		Type const* valueComponentType = valueTypes[i];
 		solAssert(!!valueComponentType, "");
-		solAssert(var.annotation().type, "");
-
+		preserveShieldedStorageMarkerInDeclaration(var, *valueComponentType);
 		var.accept(*this);
 		BoolResult result = valueComponentType->isImplicitlyConvertibleTo(*var.annotation().type);
 		if (!result)
@@ -1729,7 +1838,13 @@ bool TypeChecker::visit(Assignment const& _assignment)
 		expectType(_assignment.rightHandSide(), *tupleType);
 	}
 	else if (_assignment.assignmentOperator() == Token::Assign)
+	{
 		expectType(_assignment.rightHandSide(), *t);
+		if (auto const* identifier = dynamic_cast<Identifier const*>(&_assignment.leftHandSide()))
+			if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+				if (canPreserveShieldedStorageMarkerInAssignment(*variable))
+					preserveShieldedStorageMarkerInDeclaration(*variable, *type(_assignment.rightHandSide()));
+	}
 	else
 	{
 		// compound assignment
@@ -2218,6 +2333,7 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 			dataLoc = argRefType->location();
 		if (auto type = dynamic_cast<ReferenceType const*>(resultType))
 			resultType = TypeProvider::withLocation(type, dataLoc, type->isPointer());
+		resultType = preserveShieldedStorageMarker(*argType, *resultType);
 		BoolResult result = argType->isExplicitlyConvertibleTo(*resultType);
 		SecondarySourceLocation ssl;
 		if (result)
@@ -2381,6 +2497,7 @@ void TypeChecker::typeCheckFunctionCall(
 
 	// Perform standard function call type checking
 	typeCheckFunctionGeneralChecks(_functionCall, _functionType);
+	preserveShieldedStorageMarkersInInternalCall(_functionCall, *_functionType);
 }
 
 void TypeChecker::typeCheckFallbackFunction(FunctionDefinition const& _function)
@@ -3268,12 +3385,14 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 			returnTypes = functionType->returnParameterTypes();
 			break;
 		}
-		default:
-		{
-			typeCheckFunctionCall(_functionCall, functionType);
-			returnTypes = m_evmVersion.supportsReturndata() ?
-				functionType->returnParameterTypes() :
-				functionType->returnParameterTypesWithoutDynamicTypes();
+			default:
+			{
+				typeCheckFunctionCall(_functionCall, functionType);
+				if (auto const* function = internalFunctionDefinition(*functionType))
+					functionType = function->functionType(true);
+				returnTypes = m_evmVersion.supportsReturndata() ?
+					functionType->returnParameterTypes() :
+					functionType->returnParameterTypesWithoutDynamicTypes();
 			break;
 		}
 		}
