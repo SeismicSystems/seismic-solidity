@@ -152,6 +152,15 @@ namespace
 		AssemblyItems output = CFG(_input);
 		BOOST_CHECK_EQUAL_COLLECTIONS(_expectation.begin(), _expectation.end(), output.begin(), output.end());
 	}
+
+	size_t countInstruction(AssemblyItems const& _items, Instruction _instruction)
+	{
+		size_t count = 0;
+		for (AssemblyItem const& item: _items)
+			if (item.type() == Operation && item.instruction() == _instruction)
+				++count;
+		return count;
+	}
 }
 
 BOOST_AUTO_TEST_SUITE(Optimiser)
@@ -2686,6 +2695,71 @@ BOOST_AUTO_TEST_CASE(cse_cstore_cload_same_slot_can_optimize)
 		Instruction::SWAP1,
 		Instruction::CSTORE
 	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_cstore_sstore_cstore_preserves_all)
+{
+	// CSTORE privatizes slot 0, then SSTORE conflicts (should revert at runtime),
+	// then another CSTORE writes to same slot. Without the fix, CSE drops the
+	// first CSTORE, allowing the SSTORE to succeed and changing revert->success.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	AssemblyItems optimized = CSE(input);
+
+	// Both CSTOREs and the SSTORE must be preserved — the cross-domain conflict
+	// means eliminating any store changes the runtime semantics.
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 2u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_sstore_cstore_sstore_preserves_all)
+{
+	// Reverse direction: SSTORE, then CSTORE, then SSTORE on same slot.
+	// Without the fix, CSE drops the first SSTORE.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0x22),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::SSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 2u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_same_domain_duplicate_cstore_still_optimizes)
+{
+	// Two CSTOREs to the same slot with no cross-domain conflict —
+	// normal CSE optimization should still eliminate the first one.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	// Only the last CSTORE should survive (normal same-domain optimization)
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
