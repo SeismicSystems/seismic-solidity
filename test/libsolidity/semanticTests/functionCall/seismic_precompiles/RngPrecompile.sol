@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO: add personalization test once unsafe_rng_u256_pers(...) is supported
 contract SEISMICRNG {
     function seismicRng() public view returns (uint256) {
         return uint256(unsafe_rng_u256());
