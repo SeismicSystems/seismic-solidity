@@ -21,7 +21,12 @@ on:
 jobs:
   build-release:
     name: Build and Archive Binaries
-    runs-on: ${{ matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' || matrix.os }}
+    runs-on: >-
+      ${{
+        matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' ||
+        matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64' && 'ubuntu-24.04-arm' ||
+        matrix.os
+      }}
     strategy:
       fail-fast: false
       matrix:
@@ -47,6 +52,10 @@ jobs:
             arch: arm64
           - os: macos-latest-large
             arch: arm64 # since macos-latest-large is x86_64
+          - os: ubuntu-22.04 # self-hosted runner is x86_64 only
+            arch: arm64
+          - os: windows-latest # no ARM64 runner available
+            arch: arm64
     steps:
       # Checkout source code
       - name: Checkout source code
