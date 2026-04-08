@@ -21,8 +21,8 @@ contract SEISMICRNG {
 // ====
 // EVMVersion: >=mercury
 // compileViaYul: false
-// optimize: false
+// optimize: [200]
 // ====
 // ----
-// seismicRng() -> 0xc65861d54a2bb28a93433c5d0dea7c49c83fb55bc2250efd611bd90cf305e7e1
-// seismicRng() -> 0xc65861d54a2bb28a93433c5d0dea7c49c83fb55bc2250efd611bd90cf305e7e1
+// seismicRng() -> 0x7f6ff9feff08393ef61c784b21e1a04bee92234d909b8308645c45048c7b732c
+// seismicRng() -> 0x7f6ff9feff08393ef61c784b21e1a04bee92234d909b8308645c45048c7b732c
