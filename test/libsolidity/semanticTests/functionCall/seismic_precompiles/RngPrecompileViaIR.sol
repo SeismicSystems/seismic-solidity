@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// TODO: add personalization test once unsafe_rng_u256_pers(...) is supported
 contract SEISMICRNG {
     function seismicRng() public view returns (bytes memory) {
         address rngPrecompile = address(0x64);
@@ -17,6 +16,25 @@ contract SEISMICRNG {
             return(data, len)
         }
     }
+
+    function seismicRngPers(bytes32 pers) public view returns (bytes memory) {
+        address rngPrecompile = address(0x64);
+
+        bytes memory input = bytes.concat(pers);
+
+        // Call the precompile
+        (bool success, bytes memory output) = rngPrecompile.staticcall(abi.encodePacked(uint32(32),input));
+
+        // Ensure the call was successful
+        require(success, "RNG Precompile call failed");
+
+        assembly {
+            let len := mload(output)
+            let data := add(output, 32)
+            return(data, len)
+        }
+
+    }
 }
 // ====
 // EVMVersion: >=mercury
@@ -24,5 +42,6 @@ contract SEISMICRNG {
 // optimize: false
 // ====
 // ----
-// seismicRng() -> 0x942f21b7e7babd30e758dc40c7310361ad6650ba3571e992ec958a8560a5b0b6
-// seismicRng() -> 0x942f21b7e7babd30e758dc40c7310361ad6650ba3571e992ec958a8560a5b0b6
+// seismicRng() -> 0x91a2ab5586137acbcfa7e12098c832d2f11fd8051c68d702e9b62b8d9f9895c1
+// seismicRng() -> 0x91a2ab5586137acbcfa7e12098c832d2f11fd8051c68d702e9b62b8d9f9895c1
+// seismicRngPers(bytes32): 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef -> 0x98fa567007bd70734b07d2238e448093020f1f717426ea85109a1fd7e1507e05
