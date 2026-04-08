@@ -194,11 +194,27 @@ jobs:
           LATEST="${{ github.event.inputs.latest }}"
           LATEST_FLAG="--latest=${LATEST:-true}"
 
-          # Create release and upload assets in one step to avoid race condition
-          # (gh release upload can fail with "release not found" if called right after create)
-          shopt -s nullglob
-          gh release create "$TAG_NAME" *.tar.gz *.zip \
+          # Create the release first (without files — passing files inline
+          # triggers a 403 "Resource not accessible by integration" error).
+          gh release create "$TAG_NAME" \
             --title "Release $TAG_NAME" \
             --notes "Automated release for commit $RESOLVED_SHA." \
             --target "$RESOLVED_SHA" \
             $LATEST_FLAG
+
+          # Upload assets separately, retrying to avoid the race condition
+          # where the release isn't immediately visible after creation.
+          shopt -s nullglob
+          for file in *.tar.gz *.zip; do
+            for attempt in 1 2 3 4 5; do
+              echo "Uploading $file (attempt $attempt)..."
+              if gh release upload "$TAG_NAME" "$file" --clobber; then
+                break
+              fi
+              if [ "$attempt" -eq 5 ]; then
+                echo "Failed to upload $file after 5 attempts"
+                exit 1
+              fi
+              sleep 3
+            done
+          done
