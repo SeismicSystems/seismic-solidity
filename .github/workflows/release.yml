@@ -21,7 +21,12 @@ on:
 jobs:
   build-release:
     name: Build and Archive Binaries
-    runs-on: ${{ matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' || matrix.os }}
+    runs-on: >-
+      ${{
+        matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' ||
+        matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64' && 'ubuntu-24.04-arm' ||
+        matrix.os
+      }}
     strategy:
       fail-fast: false
       matrix:
@@ -47,6 +52,10 @@ jobs:
             arch: arm64
           - os: macos-latest-large
             arch: arm64 # since macos-latest-large is x86_64
+          - os: ubuntu-22.04 # self-hosted runner is x86_64 only
+            arch: arm64
+          - os: windows-latest # no ARM64 runner available
+            arch: arm64
     steps:
       # Checkout source code
       - name: Checkout source code
@@ -185,17 +194,11 @@ jobs:
           LATEST="${{ github.event.inputs.latest }}"
           LATEST_FLAG="--latest=${LATEST:-true}"
 
-          # Create release first
-          gh release create "$TAG_NAME" \
+          # Create release and upload assets in one step to avoid race condition
+          # (gh release upload can fail with "release not found" if called right after create)
+          shopt -s nullglob
+          gh release create "$TAG_NAME" *.tar.gz *.zip \
             --title "Release $TAG_NAME" \
             --notes "Automated release for commit $RESOLVED_SHA." \
             --target "$RESOLVED_SHA" \
             $LATEST_FLAG
-
-          # Then upload each asset separately
-          shopt -s nullglob
-          for file in *.tar.gz *.zip; do
-            echo "Uploading $file..."
-            gh release upload "$TAG_NAME" "$file" --clobber
-          done
-          shopt -u nullglob

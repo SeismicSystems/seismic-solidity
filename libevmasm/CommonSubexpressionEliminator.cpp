@@ -148,8 +148,28 @@ AssemblyItems CSECodeGenerator::generateCode(
 		m_classPositions[item.second].insert(item.first);
 
 	// generate the dependency graph starting from final storage and memory writes and target stack contents
+	//
+	// When the same slot has stores from both public (Storage) and shielded (ShieldedStorage) domains,
+	// we must preserve ALL stores — not just the last per (target, slot) — because cross-domain access
+	// to the same slot triggers a runtime revert. Dropping an earlier store can change the execution
+	// semantics from revert to success.
+	std::set<Id> crossDomainSlots;
+	{
+		std::map<Id, std::set<StoreOperation::Target>> slotTargets;
+		for (auto const& p: m_storeOperations)
+			slotTargets[p.first.second].insert(p.first.first);
+		for (auto const& entry: slotTargets)
+			if (entry.second.count(StoreOperation::Storage) && entry.second.count(StoreOperation::ShieldedStorage))
+				crossDomainSlots.insert(entry.first);
+	}
 	for (auto const& p: m_storeOperations)
-		addDependencies(p.second.back().expression);
+	{
+		if (crossDomainSlots.count(p.first.second))
+			for (auto const& store: p.second)
+				addDependencies(store.expression);
+		else
+			addDependencies(p.second.back().expression);
+	}
 	for (auto const& targetItem: m_targetStack)
 	{
 		m_finalClasses.insert(targetItem.second);
