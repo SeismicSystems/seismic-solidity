@@ -10,7 +10,7 @@ contract C {
         }
     }
 
-    function val() public returns (uint ret) {
+    function val() public returns (uint lenAfter, uint elemAfter) {
         assembly {
             cstore(0, 2)
             mstore(0, 0)
@@ -24,11 +24,12 @@ contract C {
         delete data;
 
         assembly {
+            lenAfter := cload(0)
             mstore(0, 0)
-            ret := cload(keccak256(0, 32))
+            elemAfter := cload(keccak256(0, 32))
         }
     }
 }
 // ----
 // len() -> 0
-// val() -> 0
+// val() -> 0, 0
