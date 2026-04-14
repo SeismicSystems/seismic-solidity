@@ -3470,13 +3470,17 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 					[&](std::string const& _offset) { offsetArgument = ", " + _offset; }
 				}, _storage.offset);
 
+				// For reference types (structs, arrays), shielded storage ops are
+				// handled per-member by the copy functions, not via the override flag.
+				// Only pass the shielded flag for value types.
+				bool useShieldedOps = _lvalue.type.isValueType() && _storage.usesShieldedStorage;
 				appendCode() <<
 					m_utils.updateStorageValueFunction(
 						_value.type(),
 						_lvalue.type,
 						VariableDeclaration::Location::Unspecified,
 						offsetStatic,
-						_storage.usesShieldedStorage
+						useShieldedOps
 					) <<
 					"(" <<
 					_storage.slot <<
