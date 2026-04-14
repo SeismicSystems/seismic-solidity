@@ -23,10 +23,7 @@ contract C {
 
         delete data;
 
-        suint256 size = suint256(999);
-
         assembly {
-            size := cload(0)
             mstore(0, 0)
             ret := cload(keccak256(0, 32))
         }

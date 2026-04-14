@@ -4,7 +4,7 @@ contract C {
         saddress a = saddress(address(0x1234567890123456789012345678901234567890));
         sbytes20 b = sbytes20(a);
         saddress c = saddress(b);
+        require(address(c) == address(0x1234567890123456789012345678901234567890));
     }
 }
 // ----
-// Warning 2072: (249-259): Unused local variable.

@@ -2,22 +2,11 @@
 contract C {
     saddress private stored;
 
-    function testTernaryTrue() public pure returns (bool) {
+    function testTernary(bool cond) public pure returns (address) {
         saddress a = saddress(address(0x1111111111111111111111111111111111111111));
         saddress b = saddress(address(0x2222222222222222222222222222222222222222));
-        saddress result = true ? a : b;
-        require(address(result) == address(0x1111111111111111111111111111111111111111));
-
-        return true;
-    }
-
-    function testTernaryFalse() public pure returns (bool) {
-        saddress a = saddress(address(0x1111111111111111111111111111111111111111));
-        saddress b = saddress(address(0x2222222222222222222222222222222222222222));
-        saddress result = false ? a : b;
-        require(address(result) == address(0x2222222222222222222222222222222222222222));
-
-        return true;
+        saddress result = cond ? a : b;
+        return address(result);
     }
 
     function testTernaryWithComparison() public pure returns (bool) {
@@ -36,21 +25,17 @@ contract C {
         return true;
     }
 
-    function testTernaryStorage() public returns (bool) {
+    function testTernaryStorage(bool cond) public returns (address) {
         saddress a = saddress(address(0x3333333333333333333333333333333333333333));
         saddress b = saddress(address(0x4444444444444444444444444444444444444444));
 
-        stored = true ? a : b;
-        require(address(stored) == address(0x3333333333333333333333333333333333333333));
-
-        stored = false ? a : b;
-        require(address(stored) == address(0x4444444444444444444444444444444444444444));
-
-        return true;
+        stored = cond ? a : b;
+        return address(stored);
     }
 }
 // ----
-// testTernaryTrue() -> true
-// testTernaryFalse() -> true
+// testTernary(bool): true -> 0x1111111111111111111111111111111111111111
+// testTernary(bool): false -> 0x2222222222222222222222222222222222222222
 // testTernaryWithComparison() -> true
-// testTernaryStorage() -> true
+// testTernaryStorage(bool): true -> 0x3333333333333333333333333333333333333333
+// testTernaryStorage(bool): false -> 0x4444444444444444444444444444444444444444
