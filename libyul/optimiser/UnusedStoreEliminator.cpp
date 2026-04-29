@@ -311,12 +311,16 @@ bool UnusedStoreEliminator::knownUnrelated(
 	if (_op1.location == Location::Storage)
 	{
 		// Different storage domains (public vs shielded) are generally unrelated.
-		// However, CLOAD can read BOTH domains, so it's related to any storage store.
+		// Two exceptions: CLOAD reads from BOTH domains, and a wildcard storage
+		// read (an external call's storage Read with no concrete slot) can
+		// observe any active store regardless of domain.
 		// Note: _op1 is always a store (from m_storeOperations), so we only check _op2.
 		if (_op1.isShieldedStorage != _op2.isShieldedStorage)
 		{
-			bool op2IsCload = (_op2.effect == Effect::Read && _op2.isShieldedStorage);
-			if (!op2IsCload)
+			bool op2ReadsBothDomains =
+				(_op2.effect == Effect::Read && _op2.isShieldedStorage) ||
+				!_op2.start;
+			if (!op2ReadsBothDomains)
 				return true;
 		}
 		if (_op1.start && _op2.start)
