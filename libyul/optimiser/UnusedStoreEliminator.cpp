@@ -311,16 +311,25 @@ bool UnusedStoreEliminator::knownUnrelated(
 	if (_op1.location == Location::Storage)
 	{
 		// Different storage domains (public vs shielded) are generally unrelated.
-		// Two exceptions: CLOAD reads from BOTH domains, and a wildcard storage
-		// read (an external call's storage Read with no concrete slot) can
-		// observe any active store regardless of domain.
+		// Three exceptions:
+		//   1. CLOAD reads from BOTH domains.
+		//   2. A wildcard storage read (an external call's storage Read with
+		//      no concrete slot) can observe any active store regardless of
+		//      domain.
+		//   3. A cross-domain access on the same slot is observable at runtime
+		//      (the load reverts because the slot is claimed for the other
+		//      domain), so the prior store must be kept live for the revert
+		//      to fire.
 		// Note: _op1 is always a store (from m_storeOperations), so we only check _op2.
 		if (_op1.isShieldedStorage != _op2.isShieldedStorage)
 		{
 			bool op2ReadsBothDomains =
 				(_op2.effect == Effect::Read && _op2.isShieldedStorage) ||
 				!_op2.start;
-			if (!op2ReadsBothDomains)
+			bool sameSlotCrossDomain =
+				_op1.start && _op2.start &&
+				!m_knowledgeBase.knownToBeDifferent(*_op1.start, *_op2.start);
+			if (!op2ReadsBothDomains && !sameSlotCrossDomain)
 				return true;
 		}
 		if (_op1.start && _op2.start)
