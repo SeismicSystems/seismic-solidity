@@ -97,6 +97,11 @@ void DataFlowAnalyzer::operator()(ExpressionStatement& _statement)
 					vars->second != value;
 			}));
 			m_state.environment.confidentialStorage[vars->first] = vars->second;
+			// CSTORE claims the slot for the shielded domain. Track this
+			// separately from the value cache so EqualStoreEliminator can
+			// distinguish "value already in slot" (which CLOAD also establishes)
+			// from "slot is provably shielded" (which only CSTORE establishes).
+			m_state.environment.confidentialStorageClaimed.insert(vars->first);
 			// cstore claims a slot, invalidating regular storage for the same key
 			// because in Seismic EVM a subsequent sload on that key would fail.
 			std::erase_if(m_state.environment.storage, mapTuple([&](auto&& key, auto&& /* value */) {
@@ -267,6 +272,11 @@ std::optional<YulName> DataFlowAnalyzer::confidentialStorageValue(YulName _key) 
 		return std::nullopt;
 }
 
+bool DataFlowAnalyzer::confidentialStorageIsClaimed(YulName _key) const
+{
+	return m_state.environment.confidentialStorageClaimed.contains(_key);
+}
+
 void DataFlowAnalyzer::handleAssignment(std::set<YulName> const& _variables, Expression* _value, bool _isDeclaration)
 {
 	if (!_isDeclaration)
@@ -301,6 +311,7 @@ void DataFlowAnalyzer::handleAssignment(std::set<YulName> const& _variables, Exp
 			std::erase_if(m_state.environment.storage, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
 			// assignment to confidential storage slot denoted by "name"
 			m_state.environment.confidentialStorage.erase(name);
+			m_state.environment.confidentialStorageClaimed.erase(name);
 			// assignment to confidential storage slot contents denoted by "name"
 			std::erase_if(m_state.environment.confidentialStorage, mapTuple([&name](auto&& /* key */, auto&& value) { return value == name; }));
 			// assignment to slot denoted by "name"
@@ -371,6 +382,9 @@ void DataFlowAnalyzer::clearValues(std::set<YulName> const& _variablesToClear)
 	});
 	std::erase_if(m_state.environment.storage, eraseCondition);
 	std::erase_if(m_state.environment.confidentialStorage, eraseCondition);
+	std::erase_if(m_state.environment.confidentialStorageClaimed, [&_variablesToClear](auto&& key) {
+		return _variablesToClear.count(key);
+	});
 	std::erase_if(m_state.environment.memory, eraseCondition);
 	std::erase_if(m_state.environment.keccak, [&_variablesToClear](auto&& _item) {
 		return
@@ -410,6 +424,7 @@ void DataFlowAnalyzer::clearKnowledgeIfInvalidated(Block const& _block)
 	{
 		m_state.environment.storage.clear();
 		m_state.environment.confidentialStorage.clear();
+		m_state.environment.confidentialStorageClaimed.clear();
 	}
 	if (sideEffects.invalidatesMemory())
 	{
@@ -427,6 +442,7 @@ void DataFlowAnalyzer::clearKnowledgeIfInvalidated(Expression const& _expr)
 	{
 		m_state.environment.storage.clear();
 		m_state.environment.confidentialStorage.clear();
+		m_state.environment.confidentialStorageClaimed.clear();
 	}
 	if (sideEffects.invalidatesMemory())
 	{
@@ -505,6 +521,11 @@ void DataFlowAnalyzer::joinKnowledge(Environment const& _olderEnvironment)
 		return;
 	joinKnowledgeHelper(m_state.environment.storage, _olderEnvironment.storage);
 	joinKnowledgeHelper(m_state.environment.confidentialStorage, _olderEnvironment.confidentialStorage);
+	// A slot is claimed at the join point only if it was claimed in BOTH
+	// branches — drop entries that aren't in the older environment.
+	std::erase_if(m_state.environment.confidentialStorageClaimed, [&_olderEnvironment](auto&& key) {
+		return !_olderEnvironment.confidentialStorageClaimed.contains(key);
+	});
 	joinKnowledgeHelper(m_state.environment.memory, _olderEnvironment.memory);
 	std::erase_if(m_state.environment.keccak, mapTuple([&_olderEnvironment](auto&& key, auto&& currentValue) {
 		YulName const* oldValue = valueOrNullptr(_olderEnvironment.keccak, key);
