@@ -65,9 +65,15 @@ void EqualStoreEliminator::visit(Statement& _statement)
 		}
 		else if (auto vars = isSimpleStore(StoreLoadLocation::ConfidentialStorage, *expression))
 		{
+			// confidentialStorage is also populated by CLOAD, which reads both
+			// public and shielded slots. A value-cache hit alone is therefore
+			// not enough to drop the CSTORE: the CSTORE has a domain-claim
+			// side effect that CLOAD does not. Require an explicit prior
+			// CSTORE on this slot (tracked separately) before eliminating.
 			if (std::optional<YulName> currentValue = confidentialStorageValue(vars->first))
 				if (*currentValue == vars->second)
-					m_pendingRemovals.insert(&_statement);
+					if (confidentialStorageIsClaimed(vars->first))
+						m_pendingRemovals.insert(&_statement);
 		}
 	}
 
