@@ -398,7 +398,8 @@ bool isNumber(frontend::Type const& _type)
 
 bool isBool(frontend::Type const& _type)
 {
-	return _type.category() == frontend::Type::Category::Bool;
+	return _type.category() == frontend::Type::Category::Bool
+		|| _type.category() == frontend::Type::Category::ShieldedBool;
 }
 
 bool isFunction(frontend::Type const& _type)
