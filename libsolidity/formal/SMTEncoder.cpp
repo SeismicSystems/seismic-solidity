@@ -1141,6 +1141,13 @@ void SMTEncoder::visitTypeConversion(FunctionCall const& _funCall)
 		return;
 	}
 
+	// bool <-> sbool: value-level identity (shielded flag is storage-domain only).
+	if (smt::isBool(*argType) && smt::isBool(*funCallType))
+	{
+		defineExpr(_funCall, symbArg);
+		return;
+	}
+
 	// TODO Simplify this whole thing for 0.8.0 where weird casts are disallowed.
 
 	unsigned argSize = argType->storageBytes();
@@ -1823,7 +1830,7 @@ void SMTEncoder::arithmeticOperation(BinaryOperation const& _op)
 {
 	auto type = _op.annotation().commonType;
 	solAssert(type, "");
-	solAssert(type->category() == Type::Category::Integer || type->category() == Type::Category::FixedPoint, "");
+	solAssert(smt::isInteger(*type) || smt::isFixedPoint(*type), "");
 	switch (_op.getOperator())
 	{
 	case Token::Add:
@@ -1868,10 +1875,7 @@ std::pair<smtutil::Expression, smtutil::Expression> SMTEncoder::arithmeticOperat
 	};
 	solAssert(validOperators.count(_op), "");
 	solAssert(_commonType, "");
-	solAssert(
-		_commonType->category() == Type::Category::Integer || _commonType->category() == Type::Category::FixedPoint,
-		""
-	);
+	solAssert(smt::isInteger(*_commonType) || smt::isFixedPoint(*_commonType), "");
 
 	IntegerType const* intType = nullptr;
 	if (auto type = dynamic_cast<IntegerType const*>(_commonType))
@@ -2041,7 +2045,7 @@ void SMTEncoder::booleanOperation(BinaryOperation const& _op)
 {
 	solAssert(_op.getOperator() == Token::And || _op.getOperator() == Token::Or, "");
 	solAssert(_op.annotation().commonType, "");
-	solAssert(_op.annotation().commonType->category() == Type::Category::Bool, "");
+	solAssert(smt::isBool(*_op.annotation().commonType), "");
 	// @TODO check that both of them are not constant
 	_op.leftExpression().accept(*this);
 	if (_op.getOperator() == Token::And)
