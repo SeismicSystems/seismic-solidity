@@ -91,7 +91,7 @@ public:
 
 	/// @returns the name of a function that stores a string literal at a specific location in storage
 	/// signature: (slot) ->
-	std::string copyLiteralToStorageFunction(std::string const& _literal);
+	std::string copyLiteralToStorageFunction(std::string const& _literal, ArrayType const& _type);
 
 	/// @returns statements to revert with an error.
 	/// Generates code to revert with an error. The error arguments are assumed to

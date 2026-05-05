@@ -219,12 +219,20 @@ std::string YulUtilFunctions::storeLiteralInMemoryFunction(std::string const& _l
 	});
 }
 
-std::string YulUtilFunctions::copyLiteralToStorageFunction(std::string const& _literal)
+std::string YulUtilFunctions::copyLiteralToStorageFunction(std::string const& _literal, ArrayType const& _type)
 {
-	std::string functionName = "copy_literal_to_storage_" + util::toHex(util::keccak256(_literal).asBytes());
+	solAssert(_type.isByteArrayOrString(), "");
+	solAssert(_type.isDynamicallySized(), "");
+
+	std::string functionName = "copy_literal_to_storage_"
+		+ _type.identifier() + "_"
+		+ util::toHex(util::keccak256(_literal).asBytes());
 
 	return m_functionCollector.createFunction(functionName, [&](std::vector<std::string>& _args, std::vector<std::string>&) {
 		_args = {"slot"};
+
+		std::string const storeOpcode = _type.usesShieldedStorage() ? "cstore" : "sstore";
+		std::string const loadOpcode = _type.usesShieldedStorage() ? "cload" : "sload";
 
 		if (_literal.size() >= 32)
 		{
@@ -236,33 +244,37 @@ std::string YulUtilFunctions::copyLiteralToStorageFunction(std::string const& _l
 				wordParams[i]["wordValue"] = formatAsStringOrNumber(_literal.substr(32 * i, 32));
 			}
 			return Whiskers(R"(
-				let oldLen := <byteArrayLength>(sload(slot))
+				let oldLen := <byteArrayLength>(<load>(slot))
 				<cleanUpArrayEnd>(slot, oldLen, <length>)
-				sstore(slot, <encodedLen>)
+				<store>(slot, <encodedLen>)
 				let dstPtr := <dataArea>(slot)
 				<#word>
-					sstore(add(dstPtr, <offset>), <wordValue>)
+					<store>(add(dstPtr, <offset>), <wordValue>)
 				</word>
 			)")
 			("byteArrayLength", extractByteArrayLengthFunction())
-			("cleanUpArrayEnd", cleanUpDynamicByteArrayEndSlotsFunction(*TypeProvider::bytesStorage()))
-			("dataArea", arrayDataAreaFunction(*TypeProvider::bytesStorage()))
+			("cleanUpArrayEnd", cleanUpDynamicByteArrayEndSlotsFunction(_type))
+			("dataArea", arrayDataAreaFunction(_type))
 			("word", wordParams)
 			("length", std::to_string(_literal.size()))
 			("encodedLen", std::to_string(2 * _literal.size() + 1))
+			("store", storeOpcode)
+			("load", loadOpcode)
 			.render();
 		}
 		else
 			return Whiskers(R"(
-				let oldLen := <byteArrayLength>(sload(slot))
+				let oldLen := <byteArrayLength>(<load>(slot))
 				<cleanUpArrayEnd>(slot, oldLen, <length>)
-				sstore(slot, add(<wordValue>, <encodedLen>))
+				<store>(slot, add(<wordValue>, <encodedLen>))
 			)")
 			("byteArrayLength", extractByteArrayLengthFunction())
-			("cleanUpArrayEnd", cleanUpDynamicByteArrayEndSlotsFunction(*TypeProvider::bytesStorage()))
+			("cleanUpArrayEnd", cleanUpDynamicByteArrayEndSlotsFunction(_type))
 			("wordValue", formatAsStringOrNumber(_literal))
 			("length", std::to_string(_literal.size()))
 			("encodedLen", std::to_string(2 * _literal.size()))
+			("store", storeOpcode)
+			("load", loadOpcode)
 			.render();
 	});
 }
@@ -3109,7 +3121,10 @@ std::string YulUtilFunctions::updateStorageValueFunction(
 			("functionName", functionName)
 			("dynamicOffset", !_offset.has_value())
 			("panic", panicFunction(PanicCode::Generic))
-			("copyToStorage", copyLiteralToStorageFunction(dynamic_cast<StringLiteralType const&>(_fromType).value()))
+			("copyToStorage", copyLiteralToStorageFunction(
+				dynamic_cast<StringLiteralType const&>(_fromType).value(),
+				toArrayType
+			))
 			.render();
 		}
 
