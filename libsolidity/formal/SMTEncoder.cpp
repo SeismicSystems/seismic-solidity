@@ -674,7 +674,15 @@ void SMTEncoder::endVisit(FunctionCall const& _funCall)
 	case FunctionType::Kind::ECRecover:
 	case FunctionType::Kind::SHA256:
 	case FunctionType::Kind::RIPEMD160:
+	case FunctionType::Kind::SeismicHKDF:
+	case FunctionType::Kind::SeismicECDH:
+	case FunctionType::Kind::SeismicAESGCMEncrypt:
+	case FunctionType::Kind::SeismicAESGCMDecrypt:
+	case FunctionType::Kind::SeismicSecp256k1Sign:
 		visitCryptoFunction(_funCall);
+		break;
+	case FunctionType::Kind::SeismicRNG:
+		// unsafe_rng_* is non-deterministic by design — leave the result unconstrained.
 		break;
 	case FunctionType::Kind::BlockHash:
 		defineExpr(_funCall, state().blockhash(expr(*_funCall.arguments().at(0))));
@@ -874,6 +882,62 @@ void SMTEncoder::visitCryptoFunction(FunctionCall const& _funCall)
 			{arg0, arg1, arg2, arg3}
 		);
 		result = smtutil::Expression::select(e, ecrecoverInput);
+	}
+	else if (kind == FunctionType::Kind::SeismicHKDF)
+		result = smtutil::Expression::select(
+			state().cryptoFunction("hkdf"),
+			expr(*_funCall.arguments().at(0), TypeProvider::bytesStorage())
+		);
+	else if (
+		kind == FunctionType::Kind::SeismicECDH ||
+		kind == FunctionType::Kind::SeismicAESGCMEncrypt ||
+		kind == FunctionType::Kind::SeismicAESGCMDecrypt ||
+		kind == FunctionType::Kind::SeismicSecp256k1Sign
+	)
+	{
+		std::string name;
+		std::vector<smtutil::Expression> args;
+		if (kind == FunctionType::Kind::SeismicECDH)
+		{
+			name = "ecdh";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::bytesStorage())
+			};
+		}
+		else if (kind == FunctionType::Kind::SeismicAESGCMEncrypt)
+		{
+			name = "aes_gcm_encrypt";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::uint(96)),
+				expr(*_funCall.arguments().at(2), TypeProvider::bytesStorage())
+			};
+		}
+		else if (kind == FunctionType::Kind::SeismicAESGCMDecrypt)
+		{
+			name = "aes_gcm_decrypt";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::uint(96)),
+				expr(*_funCall.arguments().at(2), TypeProvider::bytesStorage())
+			};
+		}
+		else
+		{
+			name = "secp256k1_sign";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::fixedBytes(32))
+			};
+		}
+		auto e = state().cryptoFunction(name);
+		auto inputSort = dynamic_cast<smtutil::ArraySort&>(*e.sort).domain;
+		auto input = smtutil::Expression::tuple_constructor(
+			smtutil::Expression(std::make_shared<smtutil::SortSort>(inputSort), ""),
+			args
+		);
+		result = smtutil::Expression::select(e, input);
 	}
 	else
 		solAssert(false, "");
