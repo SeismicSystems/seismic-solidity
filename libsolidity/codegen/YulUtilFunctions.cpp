@@ -3931,7 +3931,7 @@ std::string YulUtilFunctions::bytesToFixedBytesConversionFunction(ArrayType cons
 			templ(
 				"extractValue",
 				_from.dataStoredIn(DataLocation::Storage) ?
-				readFromStorage(_to, 32 - _to.numBytes(), false, VariableDeclaration::Location::Unspecified) :
+				readFromStorage(_to, 32 - _to.numBytes(), false, VariableDeclaration::Location::Unspecified, _from.usesShieldedStorage()) :
 				readFromMemory(_to)
 			);
 		templ("shl", shiftLeftFunctionDynamic());
