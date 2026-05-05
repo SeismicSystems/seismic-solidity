@@ -1836,6 +1836,27 @@ bool TypeChecker::visit(Assignment const& _assignment)
 		_assignment.annotation().type = TypeProvider::emptyTuple();
 
 		expectType(_assignment.rightHandSide(), *tupleType);
+
+		// Mirror the single-component branch below: propagate the shielded
+		// storage marker from each RHS component onto the matching LHS local.
+		auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide());
+		auto const* rhsTupleType = dynamic_cast<TupleType const*>(type(_assignment.rightHandSide()));
+		if (lhsTuple && rhsTupleType)
+		{
+			auto const& lhsComponents = lhsTuple->components();
+			auto const& rhsComponents = rhsTupleType->components();
+			for (size_t i = 0; i < std::min(lhsComponents.size(), rhsComponents.size()); ++i)
+			{
+				if (!lhsComponents[i] || !rhsComponents[i])
+					continue;
+				auto const* identifier = dynamic_cast<Identifier const*>(lhsComponents[i].get());
+				if (!identifier)
+					continue;
+				auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration);
+				if (variable && canPreserveShieldedStorageMarkerInAssignment(*variable))
+					preserveShieldedStorageMarkerInDeclaration(*variable, *rhsComponents[i]);
+			}
+		}
 	}
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
