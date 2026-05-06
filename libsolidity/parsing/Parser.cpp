@@ -2267,26 +2267,14 @@ ASTPointer<Expression> Parser::parseLeftHandSideExpression(
 	}
 	else if (m_scanner->currentToken() == Token::Payable)
 	{
-		//peek into inner payable() argument and check for Saddress
-        Token nextNextToken = m_scanner->peekNextNextToken();
-
+		// Always emit `address payable`; the type checker promotes to `saddress payable` when the argument is shielded.
 		expectToken(Token::Payable);
 		nodeFactory.markEndPosition();
-		if (nextNextToken == Token::SAddress){
-			auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
-				ElementaryTypeNameToken(Token::SAddress, 0, 0),
-				std::make_optional(StateMutability::Payable)
-			);
-			expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
-		}
-		else
-		{
-			auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
-				ElementaryTypeNameToken(Token::Address, 0, 0),
-				std::make_optional(StateMutability::Payable)
-			);
-			expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
-		}
+		auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
+			ElementaryTypeNameToken(Token::Address, 0, 0),
+			std::make_optional(StateMutability::Payable)
+		);
+		expression = nodeFactory.createNode<ElementaryTypeNameExpression>(expressionType);
 		expectToken(Token::LParen, false);
 	}
 	else

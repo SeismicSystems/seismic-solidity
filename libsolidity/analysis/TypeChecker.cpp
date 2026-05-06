@@ -2355,6 +2355,15 @@ Type const* TypeChecker::typeCheckTypeConversionAndRetrieveReturnType(
 		if (auto type = dynamic_cast<ReferenceType const*>(resultType))
 			resultType = TypeProvider::withLocation(type, dataLoc, type->isPointer());
 		resultType = preserveShieldedStorageMarker(*argType, *resultType);
+		// payable(saddressValue) preserves the shielded marker; the parser cannot decide because it doesn't know identifier types.
+		if (auto const* fromAddr = dynamic_cast<AddressType const*>(argType))
+			if (auto const* toAddr = dynamic_cast<AddressType const*>(resultType))
+				if (
+					fromAddr->isShielded() &&
+					!toAddr->isShielded() &&
+					toAddr->stateMutability() == StateMutability::Payable
+				)
+					resultType = TypeProvider::payableShieldedAddress();
 		BoolResult result = argType->isExplicitlyConvertibleTo(*resultType);
 		SecondarySourceLocation ssl;
 		if (result)
