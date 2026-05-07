@@ -837,6 +837,11 @@ BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo
 			(addressType->stateMutability() != StateMutability::Payable) &&
 			!isSigned() &&
 			(numBits() == 160);
+	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			!isSigned() &&
+			(numBits() == 160);
 	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
 		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
 	else if (dynamic_cast<EnumType const*>(&_convertTo))
