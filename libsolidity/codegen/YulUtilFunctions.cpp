@@ -1882,7 +1882,7 @@ std::string YulUtilFunctions::storageArrayPushZeroFunction(ArrayType const& _typ
 
 std::string YulUtilFunctions::partialClearStorageSlotFunction(ArrayType const& _type)
 {
-	std::string functionName = "partial_clear_storage_slot";
+	std::string functionName = "partial_clear_storage_slot_" + _type.identifier();
 	bool isShielded = _type.containsShieldedType();
 	return m_functionCollector.createFunction(functionName, [&]() {
 		return Whiskers(R"(
