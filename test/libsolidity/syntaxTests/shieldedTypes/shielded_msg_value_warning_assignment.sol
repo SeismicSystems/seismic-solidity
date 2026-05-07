@@ -5,4 +5,4 @@ contract C {
     }
 }
 // ----
-// Warning 10306: (101-110): msg.value is always publicly visible on-chain. Assigning it to a shielded type does not hide the transaction value from observers.
+// Warning 10306: (108-117): msg.value is always publicly visible on-chain. Assigning it to a shielded type does not hide the transaction value from observers.

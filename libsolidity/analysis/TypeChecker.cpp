@@ -1869,6 +1869,7 @@ bool TypeChecker::visit(Assignment const& _assignment)
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
 		expectType(_assignment.rightHandSide(), *t);
+		checkMsgValueToShielded(_assignment.rightHandSide(), *t);
 		if (auto const* identifier = dynamic_cast<Identifier const*>(&_assignment.leftHandSide()))
 			if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
 				if (canPreserveShieldedStorageMarkerInAssignment(*variable))
