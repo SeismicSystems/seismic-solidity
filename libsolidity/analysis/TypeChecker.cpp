@@ -4774,7 +4774,10 @@ void TypeChecker::checkLiteralToShielded(
 	}
 	else if (
 		_expression.annotation().type &&
-		_expression.annotation().type->category() == Type::Category::RationalNumber &&
+		(
+			_expression.annotation().type->category() == Type::Category::RationalNumber ||
+			_expression.annotation().type->category() == Type::Category::StringLiteral
+		) &&
 		_targetType.category() == Type::Category::ShieldedFixedBytes
 	)
 	{
