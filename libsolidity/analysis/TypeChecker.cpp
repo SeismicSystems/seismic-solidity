@@ -696,6 +696,14 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 		// Local value-type variables (stack/memory)
 		shouldCheckShieldedTypes = true;
 	}
+	else if (
+		_variable.referenceLocation() == VariableDeclaration::Location::Memory ||
+		_variable.referenceLocation() == VariableDeclaration::Location::CallData
+	)
+	{
+		// Local reference-type parameters/locals (memory, calldata)
+		shouldCheckShieldedTypes = true;
+	}
 
 	if (shouldCheckShieldedTypes && varType->containsShieldedType())
 	{
