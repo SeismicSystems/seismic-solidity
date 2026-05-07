@@ -738,11 +738,12 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		std::visit(
 			util::GenericVisitor{
 				[&](IRLValue::Storage const& _storage) {
+					bool useShieldedOps = m_currentLValue->type.isValueType() && _storage.usesShieldedStorage;
 					appendCode() <<
 						m_utils.storageSetToZeroFunction(
 							m_currentLValue->type,
 							VariableDeclaration::Location::Unspecified,
-							_storage.usesShieldedStorage
+							useShieldedOps
 						) <<
 						"(" <<
 						_storage.slot <<
