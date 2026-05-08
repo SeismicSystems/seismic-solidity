@@ -6,4 +6,4 @@ contract C {
     }
 }
 // ----
-// TypeError 9640: (139-148): Explicit type conversion not allowed from "suint8" to "enum C.E".
+// TypeError 9640: (126-135): Explicit type conversion not allowed from "suint8" to "enum C.E".
