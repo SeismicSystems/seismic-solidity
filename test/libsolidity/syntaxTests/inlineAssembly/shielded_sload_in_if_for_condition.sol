@@ -8,5 +8,5 @@ contract C {
     }
 }
 // ----
-// TypeError 10308: (123-141): Cannot use sload() on shielded storage variable. Use cload() instead.
-// TypeError 10308: (175-193): Cannot use sload() on shielded storage variable. Use cload() instead.
+// TypeError 10308: (129-147): Cannot use sload() on shielded storage variable. Use cload() instead.
+// TypeError 10308: (184-202): Cannot use sload() on shielded storage variable. Use cload() instead.
