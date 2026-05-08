@@ -1255,6 +1255,8 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 							checkStorageOp(funCall);
 				},
 				[&](yul::If const& _if) {
+					if (auto const* funCall = std::get_if<yul::FunctionCall>(_if.condition.get()))
+						checkStorageOp(funCall);
 					collectStorageOps(_if.body);
 				},
 				[&](yul::Switch const& _switch) {
@@ -1262,6 +1264,8 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 						collectStorageOps(_case.body);
 				},
 				[&](yul::ForLoop const& _forLoop) {
+					if (auto const* funCall = std::get_if<yul::FunctionCall>(_forLoop.condition.get()))
+						checkStorageOp(funCall);
 					collectStorageOps(_forLoop.pre);
 					collectStorageOps(_forLoop.body);
 					collectStorageOps(_forLoop.post);
