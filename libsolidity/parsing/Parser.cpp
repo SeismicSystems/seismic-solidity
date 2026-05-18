@@ -93,6 +93,7 @@ ASTPointer<SourceUnit> Parser::parse(CharStream& _charStream)
 	{
 		m_recursionDepth = 0;
 		m_scanner = std::make_shared<Scanner>(_charStream);
+		m_scanner->setShieldedTypesEnabled(m_evmVersion.supportShieldedStorage());
 		ASTNodeFactory nodeFactory(*this);
 		m_experimentalSolidityEnabledInCurrentSourceUnit = false;
 

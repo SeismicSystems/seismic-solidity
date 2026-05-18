@@ -344,6 +344,13 @@ namespace TokenTraits
 			tok == Token::TrueLiteral || tok == Token::FalseLiteral || tok == Token::HexStringLiteral || tok == Token::Hex;
 	}
 
+	constexpr bool isShieldedTypeKeyword(Token tok)
+	{
+		return tok == Token::SUInt || tok == Token::SInt || tok == Token::SBytes ||
+			tok == Token::SAddress || tok == Token::SBool ||
+			tok == Token::SUIntM || tok == Token::SIntM || tok == Token::SBytesM;
+	}
+
 	constexpr bool isBuiltinTypeClassName(Token _token)
 	{
 		return
