@@ -4403,7 +4403,9 @@ void TypeChecker::endVisit(Literal const& _literal)
 	if (_literal.looksLikeAddress())
 	{
 		// Assign type here if it even looks like an address. This prevents double errors for invalid addresses
-		_literal.annotation().type = TypeProvider::address();
+		_literal.annotation().type = _literal.token() == Token::ShieldedNumber
+			? static_cast<Type const*>(TypeProvider::shieldedAddress())
+			: static_cast<Type const*>(TypeProvider::address());
 
 		std::string msg;
 		if (_literal.valueWithoutUnderscores().length() != 42) // "0x" + 40 hex digits
