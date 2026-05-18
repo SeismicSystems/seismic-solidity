@@ -1047,6 +1047,8 @@ std::tuple<Token, unsigned, unsigned> Scanner::scanIdentifierOrKeyword()
 	literal.complete();
 
 	auto const token = TokenTraits::fromIdentifierOrKeyword(m_tokens[NextNext].literal);
+	if (!m_shieldedTypesEnabled && TokenTraits::isShieldedTypeKeyword(std::get<0>(token)))
+		return std::make_tuple(Token::Identifier, 0, 0);
 	switch (m_kind)
 	{
 	case ScannerKind::SpecialComment:
