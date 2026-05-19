@@ -75,6 +75,10 @@ void DataFlowAnalyzer::operator()(ExpressionStatement& _statement)
 					vars->second != value;
 			}));
 			m_state.environment.storage[vars->first] = vars->second;
+			// Mirror the CSTORE branch: invalidate the parallel cache for the same slot.
+			std::erase_if(m_state.environment.confidentialStorage, mapTuple([&](auto&& key, auto&& /* value */) {
+				return !m_knowledgeBase.knownToBeDifferent(vars->first, key);
+			}));
 			return;
 		}
 		else if (auto vars = isSimpleStore(StoreLoadLocation::Memory, _statement))
