@@ -6,4 +6,4 @@ contract C {
 // ====
 // EVMVersion: =paris
 // ----
-// DeclarationError 7576: (78-90): Undeclared identifier.
+// DeclarationError 7576: (78-91): Undeclared identifier.
