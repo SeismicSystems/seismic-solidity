@@ -10,6 +10,6 @@ contract C {
 }
 // ----
 // Warning 10312: (89-101): Shielded integer shift count can leak through the public shift result.
-// Warning 10312: (111-123): Shielded integer shift count can leak through the public shift result.
-// Warning 10312: (137-149): Shielded integer shift count can leak through the public shift result.
-// Warning 10312: (159-171): Shielded integer shift count can leak through the public shift result.
+// Warning 10312: (115-126): Shielded integer shift count can leak through the public shift result.
+// Warning 10312: (136-148): Shielded integer shift count can leak through the public shift result.
+// Warning 10312: (162-173): Shielded integer shift count can leak through the public shift result.
