@@ -1874,10 +1874,9 @@ bool TypeChecker::visit(Assignment const& _assignment)
 	{
 		// compound assignment
 		_assignment.rightHandSide().accept(*this);
-		Type const* resultType = t->binaryOperatorResult(
-			TokenTraits::AssignmentToBinaryOp(_assignment.assignmentOperator()),
-			type(_assignment.rightHandSide())
-		);
+		Token const binaryOp = TokenTraits::AssignmentToBinaryOp(_assignment.assignmentOperator());
+		Type const* rhsType = type(_assignment.rightHandSide());
+		Type const* resultType = t->binaryOperatorResult(binaryOp, rhsType);
 		if (!resultType || *resultType != *t)
 			m_errorReporter.typeError(
 				7366_error,
@@ -1889,6 +1888,17 @@ bool TypeChecker::visit(Assignment const& _assignment)
 				" and " +
 				type(_assignment.rightHandSide())->humanReadableName() +
 				"."
+			);
+		if (
+			resultType && *resultType == *t &&
+			TokenTraits::isShiftOp(binaryOp) &&
+			rhsType->category() == Type::Category::ShieldedInteger &&
+			t->category() != Type::Category::ShieldedInteger
+		)
+			m_errorReporter.warning(
+				10312_error,
+				_assignment.location(),
+				"Shielded integer shift count can leak through the public shift result."
 			);
 	}
 	return false;
@@ -2275,6 +2285,17 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 			)
 		);
 	}
+
+	if (
+		TokenTraits::isShiftOp(_operation.getOperator()) &&
+		rightType->category() == Type::Category::ShieldedInteger &&
+		commonType->category() != Type::Category::ShieldedInteger
+	)
+		m_errorReporter.warning(
+			10312_error,
+			_operation.location(),
+			"Shielded integer shift count can leak through the public shift result."
+		);
 
 	if (_operation.getOperator() == Token::Exp || _operation.getOperator() == Token::SHL)
 	{
