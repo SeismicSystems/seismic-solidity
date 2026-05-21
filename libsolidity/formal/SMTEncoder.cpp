@@ -1212,6 +1212,13 @@ void SMTEncoder::visitTypeConversion(FunctionCall const& _funCall)
 		return;
 	}
 
+	// address <-> saddress: same, before the size-mismatch path truncates.
+	if (smt::isAddress(*argType) && smt::isAddress(*funCallType))
+	{
+		defineExpr(_funCall, symbArg);
+		return;
+	}
+
 	// TODO Simplify this whole thing for 0.8.0 where weird casts are disallowed.
 
 	unsigned argSize = argType->storageBytes();
