@@ -1218,6 +1218,26 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 					}
 				}
 			}
+			else if (isShieldedOp)
+			{
+				if (auto const* slotIdent = std::get_if<yul::Identifier>(&slotExpr))
+				{
+					auto it = externalRefs.find(slotIdent);
+					if (
+						it != externalRefs.end() &&
+						it->second.suffix == "slot" &&
+						!it->second.isShieldedStorage
+					)
+						if (auto const* var = dynamic_cast<VariableDeclaration const*>(it->second.declaration))
+							if (var->isStateVariable())
+								m_errorReporter.typeError(
+									10314_error,
+									nativeLocationOf(*funCall),
+									std::string("Cannot use ") + std::string(funcName) + "() on non-shielded storage variable. Use " +
+									(funcName == "cstore" ? "sstore" : "sload") + "() instead."
+								);
+				}
+			}
 
 			// Track for same-slot conflict detection
 			if (auto slotKey = getSlotKey(slotExpr))
