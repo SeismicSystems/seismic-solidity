@@ -367,12 +367,8 @@ bool isFixedBytes(frontend::Type const& _type)
 
 bool isAddress(frontend::Type const& _type)
 {
-	return _type.category() == frontend::Type::Category::Address;
-}
-
-bool isShieldedAddress(frontend::Type const& _type)
-{
-	return _type.category() == frontend::Type::Category::ShieldedAddress;
+	return _type.category() == frontend::Type::Category::Address
+		|| _type.category() == frontend::Type::Category::ShieldedAddress;
 }
 
 bool isContract(frontend::Type const& _type)
