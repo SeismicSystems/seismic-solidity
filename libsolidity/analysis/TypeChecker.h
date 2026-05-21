@@ -183,6 +183,10 @@ private:
 		Type const& _targetType
 	);
 
+	/// Walks an event/error call argument and warns when a shielded-to-public
+	/// type conversion exposes a confidential value to public logs or returndata.
+	void checkShieldedLeakInPublicSink(Expression const& _expression);
+
 	/// @returns the referenced declaration and throws on error.
 	Declaration const& dereference(Identifier const& _identifier) const;
 	/// @returns the referenced declaration and throws on error.

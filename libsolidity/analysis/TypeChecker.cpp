@@ -1556,6 +1556,9 @@ void TypeChecker::endVisit(EmitStatement const& _emit)
 		dynamic_cast<FunctionType const&>(*type(_emit.eventCall().expression())).kind() != FunctionType::Kind::Event
 	)
 		m_errorReporter.typeError(9292_error, _emit.eventCall().expression().location(), "Expression has to be an event invocation.");
+	for (auto const& arg: _emit.eventCall().arguments())
+		if (arg)
+			checkShieldedLeakInPublicSink(*arg);
 }
 
 void TypeChecker::endVisit(RevertStatement const& _revert)
@@ -1567,6 +1570,9 @@ void TypeChecker::endVisit(RevertStatement const& _revert)
 		dynamic_cast<FunctionType const&>(*type(errorCall.expression())).kind() != FunctionType::Kind::Error
 	)
 		m_errorReporter.typeError(1885_error, errorCall.expression().location(), "Expression has to be an error.");
+	for (auto const& arg: errorCall.arguments())
+		if (arg)
+			checkShieldedLeakInPublicSink(*arg);
 }
 
 void TypeChecker::endVisit(ArrayTypeName const& _typeName)
@@ -3233,6 +3239,15 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 				"observable execution patterns such as gas costs, state changes, and execution traces."
 			);
 	}
+
+	// revert("msg") and require(cond, "msg") expose their message argument via revert returndata.
+	if (
+		_functionType->kind() == FunctionType::Kind::Revert ||
+		_functionType->kind() == FunctionType::Kind::Require
+	)
+		for (Expression const* arg: paramArgMap)
+			if (arg)
+				checkShieldedLeakInPublicSink(*arg);
 }
 
 bool TypeChecker::visit(FunctionCall const& _functionCall)
@@ -4896,6 +4911,40 @@ void TypeChecker::checkMsgValueToShielded(
 			if (arg)
 				checkMsgValueToShielded(*arg, _targetType);
 	}
+}
+
+void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
+{
+	auto funcCall = dynamic_cast<FunctionCall const*>(&_expression);
+	if (!funcCall)
+		return;
+
+	// Structural shielding check that ignores the array storage marker, since
+	// bytes(sbytesRef) carries it through but the value is semantically public.
+	std::function<bool(Type const&)> structurallyShielded = [&](Type const& t) -> bool {
+		if (t.isShielded())
+			return true;
+		if (auto arr = dynamic_cast<ArrayType const*>(&t))
+			return structurallyShielded(*arr->baseType());
+		return t.containsShieldedType();
+	};
+
+	if (
+		*funcCall->annotation().kind == FunctionCallKind::TypeConversion &&
+		!funcCall->arguments().empty() &&
+		funcCall->arguments().front() &&
+		structurallyShielded(*type(*funcCall->arguments().front())) &&
+		!structurallyShielded(*type(_expression))
+	)
+		m_errorReporter.warning(
+			10313_error,
+			_expression.location(),
+			"Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata."
+		);
+
+	for (auto const& arg: funcCall->arguments())
+		if (arg)
+			checkShieldedLeakInPublicSink(*arg);
 }
 
 void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _callable)
