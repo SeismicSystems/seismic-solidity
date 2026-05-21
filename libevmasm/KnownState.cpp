@@ -420,7 +420,9 @@ ExpressionClasses::Id KnownState::loadFromStorage(Id _slot, langutil::DebugData:
 
 	AssemblyItem item(Instruction::SLOAD, std::move(_debugData));
 	Id value = m_expressionClasses->find(item, {_slot}, true, m_sequenceNumber);
-	m_storageContent[_slot] = {value, false};
+	// Mirror the storeInStorage fix: don't clobber a slot already known private.
+	if (!m_storageContent.count(_slot) || !m_storageContent.at(_slot).is_private)
+		m_storageContent[_slot] = {value, false};
 	return value;
 }
 
