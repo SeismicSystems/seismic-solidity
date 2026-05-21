@@ -13,3 +13,4 @@ contract C {
 }
 // ----
 // Warning 10403: (264-276): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10313: (308-325): Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata.
