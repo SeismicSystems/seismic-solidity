@@ -8,5 +8,5 @@ contract C {
     }
 }
 // ----
-// TypeError 10314: (90-105): Cannot use cstore() on non-shielded storage variable. Use sstore() instead.
-// TypeError 10314: (192-202): Cannot use cload() on non-shielded storage variable. Use sload() instead.
+// TypeError 10314: (99-116): Cannot use cstore() on non-shielded storage variable. Use sstore() instead.
+// TypeError 10314: (205-218): Cannot use cload() on non-shielded storage variable. Use sload() instead.
