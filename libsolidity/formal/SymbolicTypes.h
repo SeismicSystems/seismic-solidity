@@ -48,7 +48,6 @@ bool isFixedPoint(frontend::Type const& _type);
 bool isRational(frontend::Type const& _type);
 bool isFixedBytes(frontend::Type const& _type);
 bool isAddress(frontend::Type const& _type);
-bool isShieldedAddress(frontend::Type const& _type);
 bool isContract(frontend::Type const& _type);
 bool isEnum(frontend::Type const& _type);
 bool isNumber(frontend::Type const& _type);
