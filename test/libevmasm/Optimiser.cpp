@@ -2697,6 +2697,36 @@ BOOST_AUTO_TEST_CASE(cse_cstore_cload_same_slot_can_optimize)
 	});
 }
 
+BOOST_AUTO_TEST_CASE(cse_p27_sstore_does_not_clobber_private_marker)
+{
+	// cstore(0, 0x11) claims slot 0 private. sstore(0, 0x22) would revert at
+	// runtime — KnownState must not clobber the is_private=true marker, since
+	// a subsequent CLOAD's cached value depends on it. Pre-fix the model sees
+	// is_private=false after the SSTORE and a later CLOAD picks up 0x22 from
+	// the cache; with the fix it stays 0x11.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x22),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// Post-fix: CLOAD eliminated, 0x11 (cstore value) left on stack via DUP.
+	checkCSE(input, {
+		u256(0x11),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		u256(0x22),
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+}
+
 BOOST_AUTO_TEST_CASE(cse_cross_domain_cstore_sstore_cstore_preserves_all)
 {
 	// CSTORE privatizes slot 0, then SSTORE conflicts (should revert at runtime),
