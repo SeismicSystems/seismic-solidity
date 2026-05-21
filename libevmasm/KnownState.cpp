@@ -369,7 +369,10 @@ KnownState::StoreOperation KnownState::storeInStorage(
 	AssemblyItem item(Instruction::SSTORE, std::move(_debugData));
 	Id id = m_expressionClasses->find(item, {_slot, _value}, true, m_sequenceNumber);
 	StoreOperation operation{StoreOperation::Storage, _slot, m_sequenceNumber, id};
-	m_storageContent[_slot] = {_value, false};
+	// If the slot is already claimed by the confidential domain, an SSTORE here
+	// reverts at runtime — don't clobber the is_private=true marker.
+	if (!m_storageContent.count(_slot) || !m_storageContent[_slot].is_private)
+		m_storageContent[_slot] = {_value, false};
 	// increment a second time so that we get unique sequence numbers for writes
 	m_sequenceNumber++;
 
