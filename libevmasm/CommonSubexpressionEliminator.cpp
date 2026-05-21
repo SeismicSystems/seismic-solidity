@@ -149,18 +149,26 @@ AssemblyItems CSECodeGenerator::generateCode(
 
 	// generate the dependency graph starting from final storage and memory writes and target stack contents
 	//
-	// When the same slot has stores from both public (Storage) and shielded (ShieldedStorage) domains,
-	// we must preserve ALL stores — not just the last per (target, slot) — because cross-domain access
-	// to the same slot triggers a runtime revert. Dropping an earlier store can change the execution
-	// semantics from revert to success.
+	// Cross-domain stores on the same (or possibly-aliasing) slot revert at runtime, so any slot
+	// pair that knownToBeDifferent can't separate must preserve every store, not just the last.
 	std::set<Id> crossDomainSlots;
 	{
-		std::map<Id, std::set<StoreOperation::Target>> slotTargets;
+		std::set<Id> publicSlots;
+		std::set<Id> shieldedSlots;
 		for (auto const& p: m_storeOperations)
-			slotTargets[p.first.second].insert(p.first.first);
-		for (auto const& entry: slotTargets)
-			if (entry.second.count(StoreOperation::Storage) && entry.second.count(StoreOperation::ShieldedStorage))
-				crossDomainSlots.insert(entry.first);
+		{
+			if (p.first.first == StoreOperation::Storage)
+				publicSlots.insert(p.first.second);
+			else if (p.first.first == StoreOperation::ShieldedStorage)
+				shieldedSlots.insert(p.first.second);
+		}
+		for (Id pub: publicSlots)
+			for (Id shi: shieldedSlots)
+				if (pub == shi || !m_expressionClasses.knownToBeDifferent(pub, shi))
+				{
+					crossDomainSlots.insert(pub);
+					crossDomainSlots.insert(shi);
+				}
 	}
 	for (auto const& p: m_storeOperations)
 	{
