@@ -2810,6 +2810,51 @@ BOOST_AUTO_TEST_CASE(cse_same_domain_duplicate_cstore_still_optimizes)
 	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
 }
 
+BOOST_AUTO_TEST_CASE(cse_cross_domain_aliased_slots_preserves_all)
+{
+	// calldataload(0) and calldataload(32) get distinct expression IDs but
+	// may alias at runtime — pre-fix the first CSTORE is dropped.
+	AssemblyItems input{
+		u256(0xaa),
+		u256(0),
+		Instruction::CALLDATALOAD,
+		Instruction::CSTORE,
+		u256(0xbb),
+		u256(32),
+		Instruction::CALLDATALOAD,
+		Instruction::SSTORE,
+		u256(0xcc),
+		u256(0),
+		Instruction::CALLDATALOAD,
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 2u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_distinct_constants_still_optimize)
+{
+	// Negative control: static slots 0 and 1 are knownToBeDifferent, so the
+	// redundant first cstore on slot 0 should still be eliminated.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x22),
+		u256(1),
+		Instruction::SSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // end namespaces
