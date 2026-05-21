@@ -2697,6 +2697,24 @@ BOOST_AUTO_TEST_CASE(cse_cstore_cload_same_slot_can_optimize)
 	});
 }
 
+BOOST_AUTO_TEST_CASE(known_state_p13_sload_preserves_private_marker)
+{
+	// SLOAD breaks CSE blocks (side-effecting), so drive KnownState directly:
+	// post-fix the second cstore early-outs against the preserved {value, true}.
+	KnownState state;
+	state.feedItem(AssemblyItem{u256(0x11)});
+	state.feedItem(AssemblyItem{u256(0)});
+	BOOST_REQUIRE(state.feedItem(AssemblyItem{Instruction::CSTORE}).isValid());
+
+	state.feedItem(AssemblyItem{u256(0)});
+	state.feedItem(AssemblyItem{Instruction::SLOAD});
+
+	state.feedItem(AssemblyItem{u256(0x11)});
+	state.feedItem(AssemblyItem{u256(0)});
+	KnownState::StoreOperation op = state.feedItem(AssemblyItem{Instruction::CSTORE});
+	BOOST_CHECK(!op.isValid());
+}
+
 BOOST_AUTO_TEST_CASE(cse_p27_sstore_does_not_clobber_private_marker)
 {
 	// cstore(0, 0x11) claims slot 0 private. sstore(0, 0x22) would revert at
