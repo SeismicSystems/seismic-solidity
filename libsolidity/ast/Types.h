@@ -1696,12 +1696,17 @@ public:
 	/// @param _inLibrary if true, uses DelegateCall as location.
 	FunctionTypePointer asExternallyCallableFunction(bool _inLibrary) const;
 
+	/// Re-snapshot parameter types from the declaration's annotations (used after
+	/// preserveShieldedStorageMarker mutates them).
+	void refreshParameterTypesFromDeclaration() const;
+
 protected:
 	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override;
+
 private:
 	static TypePointers parseElementaryTypeVector(strings const& _types);
 
-	TypePointers m_parameterTypes;
+	mutable TypePointers m_parameterTypes;
 	TypePointers m_returnParameterTypes;
 	std::vector<std::string> m_parameterNames;
 	std::vector<std::string> m_returnParameterNames;
