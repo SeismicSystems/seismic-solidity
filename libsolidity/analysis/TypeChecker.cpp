@@ -154,6 +154,7 @@ void preserveShieldedStorageMarkersInInternalCall(
 	for (size_t i = 0; i < paramArgMap.size() && i < function->parameters().size(); ++i)
 		if (paramArgMap[i])
 			preserveShieldedStorageMarkerInDeclaration(*function->parameters()[i], *type(*paramArgMap[i]));
+	_functionType.refreshParameterTypesFromDeclaration();
 }
 
 }
@@ -1864,10 +1865,8 @@ bool TypeChecker::visit(Assignment const& _assignment)
 		// Sequenced assignments of tuples is not valid, make the result a "void" type.
 		_assignment.annotation().type = TypeProvider::emptyTuple();
 
-		expectType(_assignment.rightHandSide(), *tupleType);
+		_assignment.rightHandSide().accept(*this);
 
-		// Mirror the single-component branch below: propagate the shielded
-		// storage marker from each RHS component onto the matching LHS local.
 		auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide());
 		auto const* rhsTupleType = dynamic_cast<TupleType const*>(type(_assignment.rightHandSide()));
 		if (lhsTuple && rhsTupleType)
@@ -1883,18 +1882,45 @@ bool TypeChecker::visit(Assignment const& _assignment)
 					continue;
 				auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration);
 				if (variable && canPreserveShieldedStorageMarkerInAssignment(*variable))
+				{
 					preserveShieldedStorageMarkerInDeclaration(*variable, *rhsComponents[i]);
+					// Sync the cached Identifier annotation so the rebuilt tupleType picks it up.
+					identifier->annotation().type = variable->annotation().type;
+				}
+			}
+			// Rebuild tupleType from post-preserve component types, mirroring visit(TupleExpression).
+			auto const& components = lhsTuple->components();
+			if (components.size() == 1 && components[0])
+			{
+				if (auto const* innerTuple = dynamic_cast<TupleType const*>(type(*components[0])))
+					tupleType = innerTuple;
+			}
+			else
+			{
+				TypePointers updatedComponentTypes;
+				for (auto const& component: components)
+					updatedComponentTypes.push_back(component ? type(*component) : nullptr);
+				tupleType = TypeProvider::tuple(updatedComponentTypes);
 			}
 		}
+
+		checkImplicitConversion(_assignment.rightHandSide(), *tupleType);
 	}
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
-		expectType(_assignment.rightHandSide(), *t);
-		checkMsgValueToShielded(_assignment.rightHandSide(), *t);
+		_assignment.rightHandSide().accept(*this);
 		if (auto const* identifier = dynamic_cast<Identifier const*>(&_assignment.leftHandSide()))
 			if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
 				if (canPreserveShieldedStorageMarkerInAssignment(*variable))
+				{
 					preserveShieldedStorageMarkerInDeclaration(*variable, *type(_assignment.rightHandSide()));
+					// Sync the cached Identifier and Assignment types to the variable's post-preserve type.
+					identifier->annotation().type = variable->annotation().type;
+					t = variable->annotation().type;
+					_assignment.annotation().type = t;
+				}
+		checkImplicitConversion(_assignment.rightHandSide(), *t);
+		checkMsgValueToShielded(_assignment.rightHandSide(), *t);
 	}
 	else
 	{
@@ -2576,9 +2602,9 @@ void TypeChecker::typeCheckFunctionCall(
 			"\"staticcall\" is not supported by the VM version."
 		);
 
-	// Perform standard function call type checking
-	typeCheckFunctionGeneralChecks(_functionCall, _functionType);
+	// preserve runs first so the convertibility check inside the general checks sees the marker.
 	preserveShieldedStorageMarkersInInternalCall(_functionCall, *_functionType);
+	typeCheckFunctionGeneralChecks(_functionCall, _functionType);
 }
 
 void TypeChecker::typeCheckFallbackFunction(FunctionDefinition const& _function)
@@ -5017,6 +5043,11 @@ Declaration const& TypeChecker::dereference(IdentifierPath const& _path) const
 bool TypeChecker::expectType(Expression const& _expression, Type const& _expectedType)
 {
 	_expression.accept(*this);
+	return checkImplicitConversion(_expression, _expectedType);
+}
+
+bool TypeChecker::checkImplicitConversion(Expression const& _expression, Type const& _expectedType)
+{
 	BoolResult result = type(_expression)->isImplicitlyConvertibleTo(_expectedType);
 	if (!result)
 	{
