@@ -743,7 +743,8 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 						m_utils.storageSetToZeroFunction(
 							m_currentLValue->type,
 							VariableDeclaration::Location::Unspecified,
-							useShieldedOps
+							useShieldedOps,
+							_storage.packedShieldedFixedBytes
 						) <<
 						"(" <<
 						_storage.slot <<
@@ -1489,6 +1490,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 					slotName,
 					arrayType->usesShieldedStorage(),
 					offsetName,
+					arrayType->isByteArrayOrString() && arrayType->baseType()->isShielded()
 				}
 			});
 		}
@@ -2681,7 +2683,12 @@ void IRGeneratorForStatements::endVisit(IndexAccess const& _indexAccess)
 
 				setLValue(_indexAccess, IRLValue{
 					*_indexAccess.annotation().type,
-					IRLValue::Storage{slot, arrayType.usesShieldedStorage(), offset}
+					IRLValue::Storage{
+						slot,
+						arrayType.usesShieldedStorage(),
+						offset,
+						arrayType.isByteArrayOrString() && arrayType.baseType()->isShielded()
+					}
 				});
 
 				break;
@@ -3481,7 +3488,8 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 						_lvalue.type,
 						VariableDeclaration::Location::Unspecified,
 						offsetStatic,
-						useShieldedOps
+						useShieldedOps,
+						_storage.packedShieldedFixedBytes
 					) <<
 					"(" <<
 					_storage.slot <<
@@ -3592,7 +3600,8 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 						_lvalue.type,
 						true,
 						VariableDeclaration::Location::Unspecified,
-						_storage.usesShieldedStorage
+						_storage.usesShieldedStorage,
+						_storage.packedShieldedFixedBytes
 					) <<
 					"(" <<
 					_storage.slot <<
