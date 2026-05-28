@@ -362,11 +362,13 @@ public:
 		VariableDeclaration::Location _location,
 		bool _useShieldedStorageOps = false
 	);
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
 	std::string readFromStorageDynamic(
 		Type const& _type,
 		bool _splitFunctionTypes,
 		VariableDeclaration::Location _location,
-		bool _useShieldedStorageOps = false
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
 	);
 
 	/// @returns a function that reads a value type from memory. Performs cleanup.
@@ -383,7 +385,8 @@ public:
 	///
 	/// For external function types, input and output is in "compressed"/"unsplit" form.
 	std::string extractFromStorageValue(Type const& _type, size_t _offset);
-	std::string extractFromStorageValueDynamic(Type const& _type);
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
+	std::string extractFromStorageValueDynamic(Type const& _type, bool _packedShieldedFixedBytes = false);
 
 	/// Returns the name of a function will write the given value to
 	/// the specified slot and offset. If offset is not given, it is expected as
@@ -391,12 +394,14 @@ public:
 	/// For reference types, offset is checked to be zero at runtime.
 	/// `_useShieldedStorageOps` has the same meaning as in readFromStorage().
 	/// signature: (slot, [offset,] value)
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
 	std::string updateStorageValueFunction(
 		Type const& _fromType,
 		Type const& _toType,
 		VariableDeclaration::Location _location,
 		std::optional<unsigned> const& _offset = std::optional<unsigned>(),
-		bool _useShieldedStorageOps = false
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
 	);
 
 	/// Returns the name of a function that will write the given value to
@@ -411,13 +416,17 @@ public:
 	/// The storage cleanup expects the value to be right-aligned with potentially
 	/// dirty higher order bytes.
 	/// For external functions, input and output is in "compressed"/"unsplit" form.
-	std::string cleanupFromStorageFunction(Type const& _type);
+	/// @param _packedShieldedFixedBytes if true and @a _type is a ShieldedFixedBytesType, treat the
+	/// value as packed into numBytes() (used for sbytes byte-array elements); otherwise use the
+	/// full 32-byte slot, matching the documented full-slot invariant for standalone shielded types.
+	std::string cleanupFromStorageFunction(Type const& _type, bool _packedShieldedFixedBytes = false);
 
 	/// @returns the name of a function that prepares a value of the given type
 	/// for being stored in storage. This usually includes cleanup and right-alignment
 	/// to fit the number of bytes in storage.
 	/// The resulting value might still have dirty higher order bits.
-	std::string prepareStoreFunction(Type const& _type);
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
+	std::string prepareStoreFunction(Type const& _type, bool _packedShieldedFixedBytes = false);
 
 	/// @returns the name of a function that allocates memory.
 	/// Modifies the "free memory pointer"
@@ -517,10 +526,12 @@ public:
 	/// zero
 	/// signature: (slot, offset) ->
 	/// `_useShieldedStorageOps` has the same meaning as in readFromStorage().
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
 	std::string storageSetToZeroFunction(
 		Type const& _type,
 		VariableDeclaration::Location _location,
-		bool _useShieldedStorageOps = false
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
 	);
 
 	/// If revertStrings is debug, @returns the name of a function that
@@ -604,7 +615,8 @@ private:
 		std::optional<size_t> _offset,
 		bool _splitFunctionTypes,
 		VariableDeclaration::Location _location,
-		bool _useShieldedStorageOps = false
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
 	);
 	/// @returns a function that reads a reference type from storage to memory (performing a deep copy).
 	std::string readFromStorageReferenceType(Type const& _type);
