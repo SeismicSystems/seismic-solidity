@@ -1248,36 +1248,46 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 		}
 	};
 
+	// Walk an expression and every sub-expression so storage ops nested inside other calls
+	// (e.g. iszero(sload(...))) or in a switch value are checked, not just a top-level call.
+	std::function<void(yul::Expression const&)> walkExpression = [&](yul::Expression const& _expr) {
+		if (auto const* funCall = std::get_if<yul::FunctionCall>(&_expr))
+		{
+			checkStorageOp(funCall);
+			for (auto const& arg : funCall->arguments)
+				walkExpression(arg);
+		}
+	};
+
 	std::function<void(yul::Block const&)> collectStorageOps = [&](yul::Block const& _block) {
 		for (auto const& statement : _block.statements)
 		{
 			std::visit(util::GenericVisitor{
 				[&](yul::ExpressionStatement const& _exprStmt) {
-					if (auto const* funCall = std::get_if<yul::FunctionCall>(&_exprStmt.expression))
-						checkStorageOp(funCall);
+					walkExpression(_exprStmt.expression);
 				},
 				[&](yul::VariableDeclaration const& _varDecl) {
 					if (_varDecl.value)
-						if (auto const* funCall = std::get_if<yul::FunctionCall>(_varDecl.value.get()))
-							checkStorageOp(funCall);
+						walkExpression(*_varDecl.value);
 				},
 				[&](yul::Assignment const& _assignment) {
 					if (_assignment.value)
-						if (auto const* funCall = std::get_if<yul::FunctionCall>(_assignment.value.get()))
-							checkStorageOp(funCall);
+						walkExpression(*_assignment.value);
 				},
 				[&](yul::If const& _if) {
-					if (auto const* funCall = std::get_if<yul::FunctionCall>(_if.condition.get()))
-						checkStorageOp(funCall);
+					if (_if.condition)
+						walkExpression(*_if.condition);
 					collectStorageOps(_if.body);
 				},
 				[&](yul::Switch const& _switch) {
+					if (_switch.expression)
+						walkExpression(*_switch.expression);
 					for (auto const& _case : _switch.cases)
 						collectStorageOps(_case.body);
 				},
 				[&](yul::ForLoop const& _forLoop) {
-					if (auto const* funCall = std::get_if<yul::FunctionCall>(_forLoop.condition.get()))
-						checkStorageOp(funCall);
+					if (_forLoop.condition)
+						walkExpression(*_forLoop.condition);
 					collectStorageOps(_forLoop.pre);
 					collectStorageOps(_forLoop.body);
 					collectStorageOps(_forLoop.post);
