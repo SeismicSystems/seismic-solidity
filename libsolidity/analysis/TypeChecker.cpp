@@ -3287,13 +3287,18 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 	}
 
 	// revert("msg") and require(cond, "msg") expose their message argument via revert returndata.
-	if (
-		_functionType->kind() == FunctionType::Kind::Revert ||
-		_functionType->kind() == FunctionType::Kind::Require
-	)
+	// require's first argument is the condition (control flow, not returndata) — skip it; a
+	// control-flow leak from a shielded condition is 10310/10311's concern, not 10313's.
+	if (_functionType->kind() == FunctionType::Kind::Revert)
+	{
 		for (Expression const* arg: paramArgMap)
 			if (arg)
 				checkShieldedLeakInPublicSink(*arg);
+	}
+	else if (_functionType->kind() == FunctionType::Kind::Require)
+		for (size_t i = 1; i < paramArgMap.size(); ++i)
+			if (paramArgMap[i])
+				checkShieldedLeakInPublicSink(*paramArgMap[i]);
 }
 
 bool TypeChecker::visit(FunctionCall const& _functionCall)
