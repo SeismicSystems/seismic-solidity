@@ -1221,8 +1221,16 @@ void SMTEncoder::visitTypeConversion(FunctionCall const& _funCall)
 
 	// TODO Simplify this whole thing for 0.8.0 where weird casts are disallowed.
 
-	unsigned argSize = argType->storageBytes();
-	unsigned castSize = funCallType->storageBytes();
+	// Shielded types report storageBytes() == 32; use their real value width so narrowing casts truncate.
+	auto valueSizeBytes = [](Type const* _type) -> unsigned {
+		if (auto const* shieldedInt = dynamic_cast<ShieldedIntegerType const*>(_type))
+			return shieldedInt->numBits() / 8;
+		if (auto const* shieldedBytes = dynamic_cast<ShieldedFixedBytesType const*>(_type))
+			return shieldedBytes->numBytes();
+		return _type->storageBytes();
+	};
+	unsigned argSize = valueSizeBytes(argType);
+	unsigned castSize = valueSizeBytes(funCallType);
 	bool castIsSigned = smt::isNumber(*funCallType) && smt::isSigned(funCallType);
 	bool argIsSigned = smt::isNumber(*argType) && smt::isSigned(argType);
 	std::optional<smtutil::Expression> symbMin;
