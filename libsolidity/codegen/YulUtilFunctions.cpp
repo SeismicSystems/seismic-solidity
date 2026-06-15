@@ -1473,11 +1473,12 @@ std::string YulUtilFunctions::cleanUpStorageArrayEndFunction(ArrayType const& _t
 		)")
 		("convertToSize", arrayConvertLengthToSize(_type))
 		("dataPosition", arrayDataAreaFunction(_type))
-		// Struct bases need per-member clearing; the shieldedUint256 shortcut is value-type only.
+		// Reference-type elements (structs, nested arrays) need per-element clearing so each slot
+		// gets the right opcode at any depth; the flat shieldedUint256 shortcut is value-type only.
 		("clearStorageRange", clearStorageRangeFunction(
-			_type.baseType()->category() == Type::Category::Struct
-				? *_type.baseType()
-				: (_type.usesShieldedStorage() ? *TypeProvider::shieldedUint256() : *_type.baseType())
+			_type.baseType()->isValueType()
+				? (_type.usesShieldedStorage() ? *TypeProvider::shieldedUint256() : *_type.baseType())
+				: *_type.baseType()
 		))
 		("packed", _type.baseType()->storageBytes() <= 16)
 		("itemsPerSlot", std::to_string(32 / _type.baseType()->storageBytes()))
