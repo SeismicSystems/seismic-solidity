@@ -1529,6 +1529,16 @@ void TypeChecker::endVisit(Return const& _return)
 	else if (params->parameters().size() == 1)
 		preserveShieldedStorageMarkerInDeclaration(*params->parameters().front(), *type(*_return.expression()));
 
+	// Returning msg.value/msg.data through a shielded return parameter leaks it.
+	if (auto const* rhsTuple = dynamic_cast<TupleExpression const*>(_return.expression()))
+	{
+		for (size_t i = 0; i < std::min(rhsTuple->components().size(), params->parameters().size()); ++i)
+			if (rhsTuple->components()[i])
+				checkMsgValueToShielded(*rhsTuple->components()[i], *type(*params->parameters()[i]));
+	}
+	else if (params->parameters().size() == 1)
+		checkMsgValueToShielded(*_return.expression(), *type(*params->parameters().front()));
+
 	for (auto const& var: params->parameters())
 		returnTypes.push_back(type(*var));
 	if (auto tupleType = dynamic_cast<TupleType const*>(type(*_return.expression())))
@@ -1905,6 +1915,19 @@ bool TypeChecker::visit(Assignment const& _assignment)
 		}
 
 		checkImplicitConversion(_assignment.rightHandSide(), *tupleType);
+
+		// Per-component msg.value/msg.data leak check, for simple variable targets paired with a
+		// literal-tuple RHS. Mirrors the preserve loop above: only Identifier LHS components, so
+		// non-lvalue components like x.push() are skipped (they can't receive msg.value anyway).
+		if (auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide()))
+			if (auto const* rhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.rightHandSide()))
+				for (size_t i = 0; i < std::min(lhsTuple->components().size(), rhsTuple->components().size()); ++i)
+				{
+					if (!lhsTuple->components()[i] || !rhsTuple->components()[i])
+						continue;
+					if (dynamic_cast<Identifier const*>(lhsTuple->components()[i].get()))
+						checkMsgValueToShielded(*rhsTuple->components()[i], *type(*lhsTuple->components()[i]));
+				}
 	}
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
@@ -1926,6 +1949,7 @@ bool TypeChecker::visit(Assignment const& _assignment)
 	{
 		// compound assignment
 		_assignment.rightHandSide().accept(*this);
+		checkMsgValueToShielded(_assignment.rightHandSide(), *t);
 		Token const binaryOp = TokenTraits::AssignmentToBinaryOp(_assignment.assignmentOperator());
 		Type const* rhsType = type(_assignment.rightHandSide());
 		Type const* resultType = t->binaryOperatorResult(binaryOp, rhsType);
@@ -3177,6 +3201,8 @@ void TypeChecker::typeCheckFunctionGeneralChecks(
 	for (size_t i = 0; i < paramArgMap.size(); ++i)
 	{
 		solAssert(!!paramArgMap[i], "unmapped parameter");
+		// Passing msg.value/msg.data into a shielded parameter leaks it.
+		checkMsgValueToShielded(*paramArgMap[i], *parameterTypes[i]);
 		BoolResult result = type(*paramArgMap[i])->isImplicitlyConvertibleTo(*parameterTypes[i]);
 		if (!result)
 		{
