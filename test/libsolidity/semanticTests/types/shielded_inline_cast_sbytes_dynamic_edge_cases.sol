@@ -1,4 +1,6 @@
 // Edge cases around bytes aliases to shielded storage.
+// (Passing a shielded alias across an internal-function boundary is rejected at compile time;
+// see syntaxTests/.../shielded_alias_internal_param_rejected.sol. Copies stay allowed.)
 contract C {
     sbytes private data;
     bytes private publicData;
@@ -23,25 +25,10 @@ contract C {
     function readPublic() public view returns (bytes memory) {
         return publicData;
     }
-
-    function passToInternal() public view returns (bytes memory) {
-        bytes storage ref = bytes(data);
-        return internalRead(ref);
-    }
-
-    function passToInternalDirect() public view returns (bytes memory) {
-        return internalRead(bytes(data));
-    }
-
-    function internalRead(bytes storage ref) internal view returns (bytes memory) {
-        return ref;
-    }
 }
 // ----
 // setup() ->
 // readPublic() -> 0x20, 2, left(0x1122)
-// passToInternal() -> 0x20, 2, left(0xaabb)
-// passToInternalDirect() -> 0x20, 2, left(0xaabb)
 // copyToPublic() ->
 // readPublic() -> 0x20, 2, left(0xaabb)
 // appendToPublicAfterCopy() ->
