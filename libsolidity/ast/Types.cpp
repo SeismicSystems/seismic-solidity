@@ -1935,7 +1935,10 @@ BoolResult ArrayType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 		isByteArrayOrString() && convertTo.isByteArrayOrString() &&
 		hasShieldedStorageMarker() != convertTo.hasShieldedStorageMarker()
 	)
-		return false;
+		return BoolResult::err(
+			"Cannot mix shielded and non-shielded storage byte arrays: a reference into shielded "
+			"storage is not interchangeable with a plain bytes/string storage reference."
+		);
 	// memory/calldata to storage can be converted, but only to a direct storage reference
 	if (convertTo.location() == DataLocation::Storage && location() != DataLocation::Storage && convertTo.isPointer())
 		return false;
@@ -3431,18 +3434,6 @@ TypePointers FunctionType::parameterTypes() const
 	if (!hasBoundFirstArgument())
 		return m_parameterTypes;
 	return TypePointers(m_parameterTypes.cbegin() + 1, m_parameterTypes.cend());
-}
-
-void FunctionType::refreshParameterTypesFromDeclaration() const
-{
-	auto const* function = dynamic_cast<FunctionDefinition const*>(m_declaration);
-	if (!function)
-		return;
-	auto const& params = function->parameters();
-	if (params.size() != m_parameterTypes.size())
-		return;
-	for (size_t i = 0; i < params.size(); ++i)
-		m_parameterTypes[i] = params[i]->annotation().type;
 }
 
 TypePointers const& FunctionType::parameterTypesIncludingSelf() const

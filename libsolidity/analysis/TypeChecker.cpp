@@ -119,44 +119,6 @@ FunctionDefinition const* internalFunctionDefinition(FunctionType const& _functi
 	return dynamic_cast<FunctionDefinition const*>(&_functionType.declaration());
 }
 
-void preserveShieldedStorageMarkersInInternalCall(
-	FunctionCall const& _functionCall,
-	FunctionType const& _functionType
-)
-{
-	auto const* function = internalFunctionDefinition(_functionType);
-	if (!function)
-		return;
-
-	bool const isPositionalCall = _functionCall.names().empty();
-	TypePointers const& parameterTypes = _functionType.parameterTypes();
-	std::vector<ASTPointer<Expression const>> const& arguments = _functionCall.arguments();
-
-	if (arguments.size() != parameterTypes.size())
-		return;
-
-	std::vector<Expression const*> paramArgMap(parameterTypes.size());
-	if (isPositionalCall)
-		for (size_t i = 0; i < paramArgMap.size(); ++i)
-			paramArgMap[i] = arguments[i].get();
-	else
-	{
-		auto const& parameterNames = _functionType.parameterNames();
-		for (size_t i = 0; i < _functionCall.names().size(); ++i)
-			for (size_t j = 0; j < parameterNames.size(); ++j)
-				if (parameterNames[j] == *_functionCall.names()[i])
-				{
-					paramArgMap[j] = arguments[i].get();
-					break;
-				}
-	}
-
-	for (size_t i = 0; i < paramArgMap.size() && i < function->parameters().size(); ++i)
-		if (paramArgMap[i])
-			preserveShieldedStorageMarkerInDeclaration(*function->parameters()[i], *type(*paramArgMap[i]));
-	_functionType.refreshParameterTypesFromDeclaration();
-}
-
 }
 
 bool TypeChecker::typeSupportedByOldABIEncoder(Type const& _type, bool _isLibraryCall)
@@ -2679,8 +2641,6 @@ void TypeChecker::typeCheckFunctionCall(
 			"\"staticcall\" is not supported by the VM version."
 		);
 
-	// preserve runs first so the convertibility check inside the general checks sees the marker.
-	preserveShieldedStorageMarkersInInternalCall(_functionCall, *_functionType);
 	typeCheckFunctionGeneralChecks(_functionCall, _functionType);
 }
 
