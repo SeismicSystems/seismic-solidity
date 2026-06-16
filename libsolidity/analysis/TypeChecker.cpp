@@ -1173,11 +1173,19 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 	// Storage slots occupied by a fully non-shielded state variable. Used to flag cstore on a
 	// public slot referenced by a bare literal (cstore(0, v)). Mixed/shielded vars are excluded
 	// so we never flag a slot where cstore could be legitimate.
+	//
+	// A `contract ... layout at N` base is evaluated after type checking, so computing the slot
+	// map here would dereference an unset SetOnce. Skip the literal-slot map for such a contract
+	// until its base is resolved; the .slot and copied-local checks below need no slot map.
 	std::set<u256> publicSlots;
 	if (m_currentContract)
-		for (auto const& [var, slot, byteOffset]: ContractType(*m_currentContract).linearizedStateVariables(DataLocation::Storage))
-			if (var->annotation().type && !var->annotation().type->isShielded() && !var->annotation().type->containsShieldedType())
-				publicSlots.insert(slot);
+	{
+		auto const* layoutSpecifier = m_currentContract->storageLayoutSpecifier();
+		if (!layoutSpecifier || layoutSpecifier->annotation().baseSlot.set())
+			for (auto const& [var, slot, byteOffset]: ContractType(*m_currentContract).linearizedStateVariables(DataLocation::Storage))
+				if (var->annotation().type && !var->annotation().type->isShielded() && !var->annotation().type->containsShieldedType())
+					publicSlots.insert(slot);
+	}
 
 	// yul locals that currently alias a non-shielded state variable's .slot (let s := pub.slot),
 	// so cstore(s, v) is flagged too. Reassigning the local to anything else clears the alias.
