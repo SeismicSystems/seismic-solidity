@@ -5026,13 +5026,14 @@ void TypeChecker::checkMsgValueToShielded(
 		}
 	}
 
-	// Recurse into type conversion arguments: suint256(msg.value)
+	// Recurse only through type conversions (suint256(msg.value)). Arguments of a real call are
+	// the callee's parameters, checked at the call site — recursing into them here would double
+	// the warning and mis-attribute the callee's argument to this target.
 	if (auto funcCall = dynamic_cast<FunctionCall const*>(&_expression))
-	{
-		for (auto const& arg : funcCall->arguments())
-			if (arg)
-				checkMsgValueToShielded(*arg, _targetType);
-	}
+		if (funcCall->annotation().kind.set() && *funcCall->annotation().kind == FunctionCallKind::TypeConversion)
+			for (auto const& arg : funcCall->arguments())
+				if (arg)
+					checkMsgValueToShielded(*arg, _targetType);
 }
 
 void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
