@@ -1017,7 +1017,13 @@ void ArrayUtils::convertLengthToSize(ArrayType const& _arrayType, bool _pad) con
 {
 	if (_arrayType.location() == DataLocation::Storage)
 	{
-		if (_arrayType.baseType()->storageSize() <= 1)
+		if (_arrayType.isByteArrayOrString())
+			// Byte/string arrays pack 32 bytes per slot, including shielded sbytes whose
+			// element reports a full-slot storageBytes(). Slot count = ceil(len / 32).
+			m_context
+				<< u256(31) << Instruction::ADD
+				<< u256(32) << Instruction::SWAP1 << Instruction::DIV;
+		else if (_arrayType.baseType()->storageSize() <= 1)
 		{
 			unsigned baseBytes = _arrayType.baseType()->storageBytes();
 			if (baseBytes == 0)
