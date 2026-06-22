@@ -85,6 +85,9 @@ public:
 		Effect effect;
 		/// Start of affected area. Unknown if not provided.
 		std::optional<YulName> start;
+		/// Constant value of the start operand, if known (covers literal operands,
+		/// for which `start` is empty). Used to compare storage slots across domains.
+		std::optional<u256> startValue;
 		/// Length of affected area, unknown if not provided.
 		/// Unused for storage.
 		std::optional<OperationLength> length;
@@ -118,6 +121,10 @@ private:
 	void applyOperation(Operation const& _operation);
 	bool knownUnrelated(Operation const& _op1, Operation const& _op2) const;
 	bool knownCovered(Operation const& _covered, Operation const& _covering) const;
+	/// Returns true if two storage operations are provably on different slots, comparing
+	/// known constant slot values (incl. literals) or, failing that, SSA slot identifiers.
+	/// When neither can prove a difference, returns false (slots may coincide).
+	bool knownToBeDifferentStorageSlots(Operation const& _op1, Operation const& _op2) const;
 	/// Returns true if two operations target the same storage slot but different domains (public vs shielded).
 	/// This will cause a runtime error, so both operations must be preserved.
 	bool hasStorageDomainConflict(Operation const& _op1, Operation const& _op2) const;
@@ -133,6 +140,10 @@ private:
 	std::map<YulName, AssignedValue> const& m_ssaValues;
 
 	std::map<Statement const*, Operation> m_storeOperations;
+
+	/// Set while visiting a store statement if it has a cross-domain conflict with an
+	/// active store; the incoming store then itself reverts at runtime and must be kept.
+	bool m_currentStatementHasDomainConflict = false;
 
 	KnowledgeBase mutable m_knowledgeBase;
 };
