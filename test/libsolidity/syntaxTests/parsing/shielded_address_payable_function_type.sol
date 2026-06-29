@@ -5,4 +5,6 @@ contract C {
     }
 }
 // ----
-// Warning 6321: (199-270): Unnamed return variable can remain unassigned. Add an explicit return with value to all non-reverting code paths or name the variable.
+// TypeError 10111: (113-129): Shielded types cannot appear in the parameters or return values of an external function type. The ABI encodes a function value as (address, selector) only and cannot enforce the shielded boundary across it.
+// TypeError 10111: (209-225): Shielded types cannot appear in the parameters or return values of an external function type. The ABI encodes a function value as (address, selector) only and cannot enforce the shielded boundary across it.
+// TypeError 10111: (291-307): Shielded types cannot appear in the parameters or return values of an external function type. The ABI encodes a function value as (address, selector) only and cannot enforce the shielded boundary across it.
