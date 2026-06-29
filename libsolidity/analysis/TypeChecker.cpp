@@ -922,6 +922,13 @@ void TypeChecker::endVisit(FunctionTypeName const& _funType)
 			solAssert(t->annotation().type, "Type not set for parameter.");
 			if (!t->annotation().type->interfaceType(false).get())
 				m_errorReporter.fatalTypeError(2582_error, t->location(), "Internal type cannot be used for external function type.");
+			if (t->annotation().type->containsShieldedType())
+				m_errorReporter.typeError(
+					10111_error,
+					t->location(),
+					"Shielded types cannot appear in the parameters or return values of an external function type. "
+					"The ABI encodes a function value as (address, selector) only and cannot enforce the shielded boundary across it."
+				);
 		}
 		solAssert(fun.interfaceType(false), "External function type uses internal types.");
 	}
