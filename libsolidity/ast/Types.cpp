@@ -763,6 +763,11 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		{
 			if (otherIntType->isSigned())
 				return TypeResult::err("Exponentiation power is not allowed to be a signed shielded integer type.");
+			// Shielded exponent -> shielded result, preserving the base's width/signedness.
+			return TypeProvider::shieldedInteger(
+				numBits(),
+				isSigned() ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
+			);
 		}
 		else if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
 		{
