@@ -5,16 +5,16 @@ contract C {
 		secret.push(sbytes1(0xAA));
 	}
 
-	function getSecret() internal returns (bytes storage r, uint) {
-		r = bytes(secret);
+	function getSecret() internal view returns (sbytes storage r, uint) {
+		r = secret;
 		return (r, 1);
 	}
 
 	function g() external {
-		bytes storage ref;
+		sbytes storage ref;
 		uint x;
 		(ref, x) = getSecret();
-		ref.push(0x42);
+		ref.push(sbytes1(0x42));
 	}
 
 	function len() external view returns (uint256) {
