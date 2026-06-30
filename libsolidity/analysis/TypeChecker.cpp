@@ -1525,6 +1525,23 @@ bool TypeChecker::visit(ForStatement const& _forStatement)
 	return false;
 }
 
+void TypeChecker::endVisit(FunctionDefinition const& _function)
+{
+	// Checked after the body so every assignment/return to a named return parameter has resolved.
+	for (ASTPointer<VariableDeclaration> const& param: _function.returnParameters())
+		if (
+			param->referenceLocation() == VariableDeclaration::Location::Storage &&
+			param->annotation().type &&
+			isShieldedByteStorageAlias(*param->annotation().type)
+		)
+			m_errorReporter.typeError(
+				10113_error,
+				param->location(),
+				"A bytes/string storage reference aliasing shielded storage cannot be returned. "
+				"Return the shielded type (sbytes storage) or a memory copy (bytes memory) instead."
+			);
+}
+
 void TypeChecker::endVisit(Return const& _return)
 {
 	ParameterList const* params = _return.annotation().functionReturnParameters;
@@ -1539,31 +1556,18 @@ void TypeChecker::endVisit(Return const& _return)
 		m_errorReporter.typeError(7552_error, _return.location(), "Return arguments not allowed.");
 		return;
 	}
-	static std::string const shieldedAliasReturnError =
-		"A bytes/string storage reference aliasing shielded storage cannot be returned. "
-		"Return the shielded type (sbytes storage) or a memory copy (bytes memory) instead.";
 	TypePointers returnTypes;
 	if (auto tupleType = dynamic_cast<TupleType const*>(type(*_return.expression())))
 	{
 		for (size_t i = 0; i < std::min(tupleType->components().size(), params->parameters().size()); ++i)
 			if (tupleType->components()[i])
 			{
-				if (
-					params->parameters()[i]->referenceLocation() == VariableDeclaration::Location::Storage &&
-					isShieldedByteStorageAlias(*tupleType->components()[i])
-				)
-					m_errorReporter.typeError(10113_error, _return.location(), shieldedAliasReturnError);
 				preserveShieldedStorageMarkerInDeclaration(*params->parameters()[i], *tupleType->components()[i]);
 				checkByteStorageRefDomain(*params->parameters()[i], *tupleType->components()[i], _return.location());
 			}
 	}
 	else if (params->parameters().size() == 1)
 	{
-		if (
-			params->parameters().front()->referenceLocation() == VariableDeclaration::Location::Storage &&
-			isShieldedByteStorageAlias(*type(*_return.expression()))
-		)
-			m_errorReporter.typeError(10113_error, _return.location(), shieldedAliasReturnError);
 		preserveShieldedStorageMarkerInDeclaration(*params->parameters().front(), *type(*_return.expression()));
 		checkByteStorageRefDomain(*params->parameters().front(), *type(*_return.expression()), _return.location());
 	}
