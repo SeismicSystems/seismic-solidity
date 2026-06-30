@@ -122,6 +122,7 @@ private:
 	void endVisit(InheritanceSpecifier const& _inheritance) override;
 	void endVisit(ModifierDefinition const& _modifier) override;
 	bool visit(FunctionDefinition const& _function) override;
+	void endVisit(FunctionDefinition const& _function) override;
 	void endVisit(ArrayTypeName const& _typeName) override;
 	bool visit(VariableDeclaration const& _variable) override;
 	void endVisit(StructDefinition const& _struct) override;
