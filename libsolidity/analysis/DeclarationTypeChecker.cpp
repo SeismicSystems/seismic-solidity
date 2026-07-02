@@ -282,8 +282,8 @@ void DeclarationTypeChecker::endVisit(Mapping const& _mapping)
 	Type const* keyType = _mapping.keyType().annotation().type;
 	ASTString keyName = _mapping.keyName();
 
-	// Reject shielded types as mapping keys
-	if (keyType->isShielded())
+	// containsShieldedType also covers sbytes, whose ArrayType::isShielded() is false.
+	if (keyType->isShielded() || keyType->containsShieldedType())
 	{
 		m_errorReporter.fatalTypeError(
 			10109_error,
