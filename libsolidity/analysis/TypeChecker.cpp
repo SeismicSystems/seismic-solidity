@@ -2390,7 +2390,7 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		commonType->category() != Type::Category::ShieldedInteger
 	)
 		m_errorReporter.warning(
-			10312_error,
+			10315_error,
 			_operation.location(),
 			"Shielded integer shift count can leak through the public shift result."
 		);
