@@ -3857,7 +3857,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 				"after argument-dependent lookup in " + exprType->humanReadableName() + ".";
 
 			if (auto const* arrayType = dynamic_cast<ArrayType const*>(exprType)) {
-				if (memberName == "push") {
+				if (memberName == "push" && annotation.arguments.has_value() && !annotation.arguments.value().types.empty()) {
 					if (arrayType->containsShieldedType() && !annotation.arguments.value().types.front()->isShielded()) {
 						return { 10205_error, "Cannot push a non-shielded type to a shielded array" };
 					}
