@@ -1150,6 +1150,16 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 	if (m_currentContract)
 	{
 		auto const* layoutSpecifier = m_currentContract->storageLayoutSpecifier();
+		// baseSlot is normally set in a later pass (PostTypeContractLevelChecker); resolve it here so
+		// the literal/alias 10314 arm is not dead for `layout at` contracts. PostType's set is guarded.
+		if (layoutSpecifier && !layoutSpecifier->annotation().baseSlot.set())
+			if (auto const* rational = dynamic_cast<RationalNumberType const*>(type(layoutSpecifier->baseSlotExpression())))
+				if (!rational->isFractional())
+				{
+					bigint base = rational->value().numerator();
+					if (0 <= base && base <= std::numeric_limits<u256>::max())
+						layoutSpecifier->annotation().baseSlot = u256(base);
+				}
 		if (!layoutSpecifier || layoutSpecifier->annotation().baseSlot.set())
 			for (auto const& [var, slot, byteOffset]: ContractType(*m_currentContract).linearizedStateVariables(DataLocation::Storage))
 				if (var->annotation().type && !var->annotation().type->isShielded() && !var->annotation().type->containsShieldedType())
