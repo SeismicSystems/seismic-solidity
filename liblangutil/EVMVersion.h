@@ -147,8 +147,10 @@ public:
 	bool hasBlobHash() const { return *this >= cancun(); }
 	bool hasMcopy() const { return *this >= cancun(); }
 	bool supportsTransientStorage() const { return *this >= cancun(); }
-	bool supportShieldedStorage() const { return *this >= mercury(); }
-	bool hasTimestampMs() const { return *this >= mercury(); }
+	// Mercury-only: the runtime defines CLOAD/CSTORE/TIMESTAMPMS for Mercury alone, and later
+	// versions (e.g. Osaka) do not, so shielded support must not extend past Mercury.
+	bool supportShieldedStorage() const { return *this == mercury(); }
+	bool hasTimestampMs() const { return *this == mercury(); }
 	bool supportsEOF() const { return *this >= firstWithEOF(); }
 
 	bool hasOpcode(evmasm::Instruction _opcode, std::optional<uint8_t> _eofVersion) const;
