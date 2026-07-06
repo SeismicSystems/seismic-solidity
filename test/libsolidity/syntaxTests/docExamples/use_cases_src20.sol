@@ -10,5 +10,5 @@ contract SRC20 {
     }
 }
 // ====
-// EVMVersion: >=mercury
+// EVMVersion: =mercury
 // ----
