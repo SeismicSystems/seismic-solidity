@@ -32,6 +32,8 @@ contract C {
     }
 }
 // ----
+// Warning 10316: (175-181): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
+// Warning 10316: (195-201): Using shielded types in branching conditions can leak information through observable execution patterns such as gas costs, state changes, and execution traces.
 // TypeError 2271: (234-239): Built-in binary operator > cannot be applied to types sbool and sbool.
 // TypeError 2271: (253-258): Built-in binary operator < cannot be applied to types sbool and sbool.
 // TypeError 2271: (272-278): Built-in binary operator >= cannot be applied to types sbool and sbool.
