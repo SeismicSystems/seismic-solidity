@@ -1931,18 +1931,14 @@ bool TypeChecker::visit(Assignment const& _assignment)
 
 		checkImplicitConversion(_assignment.rightHandSide(), *tupleType);
 
-		// Per-component msg.value/msg.data leak check, for simple variable targets paired with a
-		// literal-tuple RHS. Mirrors the preserve loop above: only Identifier LHS components, so
-		// non-lvalue components like x.push() are skipped (they can't receive msg.value anyway).
+		// Per-component msg.value/msg.data leak check against a literal-tuple RHS. Fires for any
+		// LHS component whose resolved type is shielded (member/index targets included);
+		// checkMsgValueToShielded self-guards on the target type.
 		if (auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide()))
 			if (auto const* rhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.rightHandSide()))
 				for (size_t i = 0; i < std::min(lhsTuple->components().size(), rhsTuple->components().size()); ++i)
-				{
-					if (!lhsTuple->components()[i] || !rhsTuple->components()[i])
-						continue;
-					if (dynamic_cast<Identifier const*>(lhsTuple->components()[i].get()))
+					if (lhsTuple->components()[i] && rhsTuple->components()[i])
 						checkMsgValueToShielded(*rhsTuple->components()[i], *type(*lhsTuple->components()[i]));
-				}
 	}
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
@@ -4959,6 +4955,11 @@ void TypeChecker::checkMsgValueToShielded(
 	Type const& _targetType
 )
 {
+	// A tuple target (nested tuple LHS component) is decomposed and its components are checked
+	// individually; TupleType::containsShieldedType() is unimplemented, so skip it here.
+	if (dynamic_cast<TupleType const*>(&_targetType))
+		return;
+
 	// Only warn if target type is or contains a shielded type
 	if (!_targetType.isShielded() && !_targetType.containsShieldedType())
 		return;
@@ -5002,6 +5003,21 @@ void TypeChecker::checkMsgValueToShielded(
 			for (auto const& arg : funcCall->arguments())
 				if (arg)
 					checkMsgValueToShielded(*arg, _targetType);
+
+	// A real helper call can launder msg.value/msg.data into a shielded target, e.g.
+	// secret = wrap(msg.value). Recurse into positional arguments whose parameter is public;
+	// shielded-parameter arguments are already covered by the call-site check.
+	if (auto funcCall = dynamic_cast<FunctionCall const*>(&_expression))
+		if (funcCall->annotation().kind.set() && *funcCall->annotation().kind == FunctionCallKind::FunctionCall)
+			if (funcCall->names().empty())
+				if (auto const* funcType = dynamic_cast<FunctionType const*>(type(funcCall->expression())))
+				{
+					TypePointers const params = funcType->parameterTypes();
+					auto const& args = funcCall->arguments();
+					for (size_t i = 0; i < args.size() && i < params.size(); ++i)
+						if (args[i] && params[i] && !params[i]->isShielded() && !params[i]->containsShieldedType())
+							checkMsgValueToShielded(*args[i], _targetType);
+				}
 }
 
 void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
