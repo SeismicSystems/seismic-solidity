@@ -1020,7 +1020,7 @@ Token Scanner::scanNumber(char _charSeen)
 	// Check for shielded literal suffix 's'.
 	// Only treat as suffix if 's' is not followed by an identifier character
 	// (so that e.g. `1seconds` still errors as expected).
-	if (m_char == 's' && (m_source.isPastEndOfInput(1) || !isIdentifierPart(m_source.get(1))))
+	if (m_shieldedTypesEnabled && m_char == 's' && (m_source.isPastEndOfInput(1) || !isIdentifierPart(m_source.get(1))))
 	{
 		advance(); // consume the 's'
 		literal.complete();
