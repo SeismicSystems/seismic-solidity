@@ -22,5 +22,5 @@ contract SealedBidAuction {
     }
 }
 // ====
-// EVMVersion: >=mercury
+// EVMVersion: =mercury
 // ----
