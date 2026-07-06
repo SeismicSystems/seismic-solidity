@@ -201,7 +201,7 @@ void ReferencesResolver::endVisit(IdentifierPath const& _path)
 				m_errorReporter.fatalDeclarationError(
 					10002_error,
 					_path.location(),
-					"Shielded type \"" + _path.path().front() + "\" requires the Mercury EVM version or later. "
+					"Shielded type \"" + _path.path().front() + "\" requires the Mercury EVM version. "
 					"The current EVM version \"" + m_evmVersion.name() + "\" does not support shielded types. "
 					"Use \"--evm-version mercury\" to enable shielded type support."
 				);

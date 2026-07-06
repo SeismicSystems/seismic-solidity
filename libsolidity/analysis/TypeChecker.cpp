@@ -675,7 +675,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 			m_errorReporter.typeError(
 				10001_error,
 				_variable.location(),
-				"Shielded types (suint, sbool, saddress, sbytes, etc.) require the Mercury EVM version or later. "
+				"Shielded types (suint, sbool, saddress, sbytes, etc.) require the Mercury EVM version. "
 				"The current EVM version \"" + m_evmVersion.name() + "\" does not support shielded types. "
 				"Use \"--evm-version mercury\" to enable shielded type support."
 			);
