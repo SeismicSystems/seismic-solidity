@@ -2391,6 +2391,17 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 			"Shielded integer shift count can leak through the public shift result."
 		);
 
+	if (
+		(_operation.getOperator() == Token::And || _operation.getOperator() == Token::Or) &&
+		(leftType->category() == Type::Category::ShieldedBool || rightType->category() == Type::Category::ShieldedBool)
+	)
+		m_errorReporter.warning(
+			10316_error,
+			_operation.location(),
+			"Using shielded types in branching conditions can leak information through "
+			"observable execution patterns such as gas costs, state changes, and execution traces."
+		);
+
 	if (_operation.getOperator() == Token::Exp || _operation.getOperator() == Token::SHL)
 	{
 		std::string operation = _operation.getOperator() == Token::Exp ? "exponentiation" : "shift";
