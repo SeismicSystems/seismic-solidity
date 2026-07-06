@@ -27,7 +27,7 @@ contract ComplianceToken is AccessControl {
     }
 }
 // ====
-// EVMVersion: >=mercury
+// EVMVersion: =mercury
 // ----
 // Warning 5667: (462-474): Unused function parameter. Remove or comment out the variable name to silence this warning.
 // Warning 5667: (476-491): Unused function parameter. Remove or comment out the variable name to silence this warning.

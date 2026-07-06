@@ -24,7 +24,7 @@ contract PrivateVoting {
     }
 }
 // ====
-// EVMVersion: >=mercury
+// EVMVersion: =mercury
 // ----
 // Warning 10406: (389-400): Bool Literals converted to shielded bools will leak during contract deployment.
 // Warning 10403: (455-466): Literals converted to shielded integers will leak during contract deployment.

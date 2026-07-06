@@ -20,7 +20,7 @@ contract ConfidentialAMM {
     }
 }
 // ====
-// EVMVersion: >=mercury
+// EVMVersion: =mercury
 // ----
 // Warning 10301: (507-526): Shielded integer multiplication can leak information. A revert due to overflow reveals range information about the operands.
 // Warning 10301: (531-550): Shielded integer addition can leak information. A revert due to overflow reveals range information about the operands.
