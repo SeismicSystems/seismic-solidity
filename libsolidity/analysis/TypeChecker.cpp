@@ -1153,13 +1153,20 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 	// so cstore(s, v) is flagged too. Reassigning the local to anything else clears the alias.
 	std::set<std::string> slotAliases;
 
-	// Track storage operations: slot key -> (isShielded, location, funcName)
+	// Per op: scopePath is the (switchId, caseIndex) nesting (to spot mutually exclusive arms),
+	// loops is the enclosing loop ids (for cross-iteration conflicts).
 	struct StorageOp {
 		bool isShielded;
 		langutil::SourceLocation location;
 		std::string funcName;
+		std::vector<std::pair<unsigned, unsigned>> scopePath;
+		std::set<unsigned> loops;
 	};
 	std::map<std::string, std::vector<StorageOp>> storageOps;
+
+	std::vector<std::pair<unsigned, unsigned>> currentScope;
+	std::set<unsigned> currentLoops;
+	unsigned scopeCounter = 0;
 
 	// Helper to get a string key for a slot expression
 	auto getSlotKey = [](yul::Expression const& _expr) -> std::optional<std::string> {
@@ -1235,7 +1242,7 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 			// Track for same-slot conflict detection
 			if (auto slotKey = getSlotKey(slotExpr))
 			{
-				storageOps[*slotKey].push_back({isShieldedOp, nativeLocationOf(*funCall), std::string(funcName)});
+				storageOps[*slotKey].push_back({isShieldedOp, nativeLocationOf(*funCall), std::string(funcName), currentScope, currentLoops});
 			}
 		}
 	};
@@ -1287,15 +1294,23 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 				[&](yul::Switch const& _switch) {
 					if (_switch.expression)
 						walkExpression(*_switch.expression);
-					for (auto const& _case : _switch.cases)
-						collectStorageOps(_case.body);
+					unsigned const switchId = scopeCounter++;
+					for (unsigned caseIndex = 0; caseIndex < _switch.cases.size(); ++caseIndex)
+					{
+						currentScope.emplace_back(switchId, caseIndex);
+						collectStorageOps(_switch.cases[caseIndex].body);
+						currentScope.pop_back();
+					}
 				},
 				[&](yul::ForLoop const& _forLoop) {
 					if (_forLoop.condition)
 						walkExpression(*_forLoop.condition);
+					unsigned const loopId = scopeCounter++;
+					currentLoops.insert(loopId);
 					collectStorageOps(_forLoop.pre);
 					collectStorageOps(_forLoop.body);
 					collectStorageOps(_forLoop.post);
+					currentLoops.erase(loopId);
 				},
 				[&](yul::Block const& _nestedBlock) {
 					collectStorageOps(_nestedBlock);
@@ -1309,32 +1324,53 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 	};
 	collectStorageOps(_inlineAssembly.operations().root());
 
-	// Check for conflicts: cstore makes a slot private, after which sstore/sload will fail
-	// Note: cload can read from any slot (public or private), so it doesn't conflict
-	for (auto const& [slotKey, ops] : storageOps)
-	{
-		StorageOp const* firstCstore = nullptr;
-
-		for (auto const& op : ops)
+	// Mutually exclusive: scope chains agree up to a shared switch, then take different arms of it.
+	auto mutuallyExclusive = [](StorageOp const& _a, StorageOp const& _b) -> bool {
+		size_t const common = std::min(_a.scopePath.size(), _b.scopePath.size());
+		for (size_t k = 0; k < common; ++k)
 		{
-			if (op.funcName == "cstore" && !firstCstore)
+			if (_a.scopePath[k].first != _b.scopePath[k].first)
+				return false;
+			if (_a.scopePath[k].second != _b.scopePath[k].second)
+				return true;
+		}
+		return false;
+	};
+	auto shareLoop = [](StorageOp const& _a, StorageOp const& _b) -> bool {
+		for (unsigned loopId: _a.loops)
+			if (_b.loops.count(loopId))
+				return true;
+		return false;
+	};
+
+	// cstore makes a slot private; a later sstore/sload on it fails (cload is always fine). Flag an
+	// sstore/sload when a non-exclusive cstore reaches it: precedes it textually, or shares a loop.
+	for (auto const& [slotKey, ops] : storageOps)
+		for (size_t x = 0; x < ops.size(); ++x)
+		{
+			if (ops[x].funcName != "sstore" && ops[x].funcName != "sload")
+				continue;
+			for (size_t c = 0; c < ops.size(); ++c)
 			{
-				firstCstore = &op;
-			}
-			else if (firstCstore && (op.funcName == "sstore" || op.funcName == "sload"))
-			{
-				// cstore was called before sstore/sload on the same slot
-				// cstore makes the slot private, and sstore/sload cannot access private slots
-				m_errorReporter.typeError(
-					10309_error,
-					op.location,
-					"Cannot use " + op.funcName + "() on a slot that was previously written with cstore(). "
-					"cstore() makes the slot private, and " + op.funcName + "() cannot access private storage. "
-					"Use " + (op.funcName == "sstore" ? "cstore" : "cload") + "() instead."
-				);
+				if (ops[c].funcName != "cstore")
+					continue;
+				bool const crossIteration = shareLoop(ops[c], ops[x]);
+				// Exclusivity only suppresses within one pass; across iterations the arms still meet.
+				if (!crossIteration && mutuallyExclusive(ops[c], ops[x]))
+					continue;
+				if (c < x || crossIteration)
+				{
+					m_errorReporter.typeError(
+						10309_error,
+						ops[x].location,
+						"Cannot use " + ops[x].funcName + "() on a slot that was previously written with cstore(). "
+						"cstore() makes the slot private, and " + ops[x].funcName + "() cannot access private storage. "
+						"Use " + (ops[x].funcName == "sstore" ? "cstore" : "cload") + "() instead."
+					);
+					break;
+				}
 			}
 		}
-	}
 }
 
 bool TypeChecker::visit(IfStatement const& _ifStatement)
