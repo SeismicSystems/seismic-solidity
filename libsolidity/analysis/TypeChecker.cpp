@@ -1168,7 +1168,9 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 
 	// yul locals that currently alias a non-shielded state variable's .slot (let s := pub.slot),
 	// so cstore(s, v) is flagged too. Reassigning the local to anything else clears the alias.
+	// shieldedSlotAliases mirrors it for shielded .slot references (let s := secret.slot).
 	std::set<std::string> slotAliases;
+	std::set<std::string> shieldedSlotAliases;
 
 	// Per op: scopePath is the (switchId, caseIndex) nesting (to spot mutually exclusive arms),
 	// loops is the enclosing loop ids (for cross-iteration conflicts).
@@ -1199,10 +1201,41 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 		return std::nullopt;
 	};
 
-	// Whether a slot operand resolves to a non-shielded state variable's slot, through any of the
-	// statically-visible spellings: a direct .slot reference, a yul local aliasing one, or a bare
-	// literal slot number. Runtime-computed slots (keccak256, arithmetic) are not classifiable.
-	auto slotTargetsPublicStateVar = [&](yul::Expression const& _slot) -> bool {
+	auto typeIsShielded = [](VariableDeclaration const* _var) -> bool {
+		return _var && _var->annotation().type &&
+			(_var->annotation().type->isShielded() || _var->annotation().type->containsShieldedType());
+	};
+
+	// Classify a slot operand's domain by the value it computes (identifier, yul alias, literal,
+	// local storage pointer, or arithmetic/hash wrapper), not its surface syntax.
+	std::function<bool(yul::Expression const&)> slotIsShielded;
+	std::function<bool(yul::Expression const&)> slotIsPublic;
+	slotIsShielded = [&](yul::Expression const& _slot) -> bool {
+		if (auto const* ident = std::get_if<yul::Identifier>(&_slot))
+		{
+			auto it = externalRefs.find(ident);
+			if (it != externalRefs.end())
+			{
+				if (it->second.suffix == "slot")
+				{
+					if (it->second.isShieldedStorage)
+						return true;
+					// local storage pointer into shielded storage (S storage ptr, S contains shielded)
+					if (auto const* var = dynamic_cast<VariableDeclaration const*>(it->second.declaration))
+						if (!var->isStateVariable() && typeIsShielded(var))
+							return true;
+				}
+				return false;
+			}
+			return shieldedSlotAliases.count(ident->name.str()) > 0;
+		}
+		if (auto const* funCall = std::get_if<yul::FunctionCall>(&_slot))
+			for (auto const& arg: funCall->arguments)
+				if (slotIsShielded(arg))
+					return true;
+		return false;
+	};
+	slotIsPublic = [&](yul::Expression const& _slot) -> bool {
 		if (auto const* lit = std::get_if<yul::Literal>(&_slot))
 			return lit->kind == yul::LiteralKind::Number && publicSlots.count(lit->value.value()) > 0;
 		if (auto const* ident = std::get_if<yul::Identifier>(&_slot))
@@ -1210,13 +1243,19 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 			auto it = externalRefs.find(ident);
 			if (it != externalRefs.end())
 			{
+				// Public only when the type is non-shielded; keying on isStateVariable alone would
+				// misflag cstore(keccak(sbytes.slot, i)) on a shielded dynamic array's element.
 				if (it->second.suffix == "slot" && !it->second.isShieldedStorage)
 					if (auto const* var = dynamic_cast<VariableDeclaration const*>(it->second.declaration))
-						return var->isStateVariable();
+						return !typeIsShielded(var);
 				return false;
 			}
 			return slotAliases.count(ident->name.str()) > 0;
 		}
+		if (auto const* funCall = std::get_if<yul::FunctionCall>(&_slot))
+			for (auto const& arg: funCall->arguments)
+				if (slotIsPublic(arg))
+					return true;
 		return false;
 	};
 
@@ -1230,26 +1269,20 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 		{
 			auto const& slotExpr = funCall->arguments.front();
 
-			// Check for external identifier referencing shielded variable with wrong op
+			// Reject sstore/sload against a shielded slot (resolved by value, not just a bare identifier).
 			if (isNonShieldedOp)
 			{
-				if (auto const* slotIdent = std::get_if<yul::Identifier>(&slotExpr))
-				{
-					auto it = externalRefs.find(slotIdent);
-					if (it != externalRefs.end() && it->second.isShieldedStorage)
-					{
-						m_errorReporter.typeError(
-							10308_error,
-							nativeLocationOf(*funCall),
-							std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
-							(funcName == "sstore" ? "cstore" : "cload") + "() instead."
-						);
-					}
-				}
+				if (slotIsShielded(slotExpr))
+					m_errorReporter.typeError(
+						10308_error,
+						nativeLocationOf(*funCall),
+						std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
+						(funcName == "sstore" ? "cstore" : "cload") + "() instead."
+					);
 			}
 			// cload only reads — it never claims a slot for the confidential domain, so it is safe
 			// on a public slot. Only cstore bricks a public slot, so 10314 is cstore-only.
-			else if (funcName == "cstore" && slotTargetsPublicStateVar(slotExpr))
+			else if (funcName == "cstore" && slotIsPublic(slotExpr))
 				m_errorReporter.typeError(
 					10314_error,
 					nativeLocationOf(*funCall),
@@ -1285,22 +1318,29 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 				[&](yul::VariableDeclaration const& _varDecl) {
 					if (_varDecl.value)
 						walkExpression(*_varDecl.value);
-					// let s := pub.slot  -> s now aliases a public slot.
-					if (_varDecl.value && _varDecl.variables.size() == 1 && slotTargetsPublicStateVar(*_varDecl.value))
-						slotAliases.insert(_varDecl.variables.front().name.str());
+					// let s := pub.slot / secret.slot  -> s now aliases that slot's domain.
+					if (_varDecl.value && _varDecl.variables.size() == 1)
+					{
+						std::string const name = _varDecl.variables.front().name.str();
+						if (slotIsShielded(*_varDecl.value))
+							shieldedSlotAliases.insert(name);
+						else if (slotIsPublic(*_varDecl.value))
+							slotAliases.insert(name);
+					}
 				},
 				[&](yul::Assignment const& _assignment) {
 					if (_assignment.value)
 						walkExpression(*_assignment.value);
-					// Reassignment updates the alias: track it if the new value is a public slot,
-					// otherwise the local no longer aliases one.
+					// Reassignment retracks the alias to the new value's domain (or clears it).
 					if (_assignment.variableNames.size() == 1)
 					{
 						std::string const name = _assignment.variableNames.front().name.str();
-						if (_assignment.value && slotTargetsPublicStateVar(*_assignment.value))
+						shieldedSlotAliases.erase(name);
+						slotAliases.erase(name);
+						if (_assignment.value && slotIsShielded(*_assignment.value))
+							shieldedSlotAliases.insert(name);
+						else if (_assignment.value && slotIsPublic(*_assignment.value))
 							slotAliases.insert(name);
-						else
-							slotAliases.erase(name);
 					}
 				},
 				[&](yul::If const& _if) {
