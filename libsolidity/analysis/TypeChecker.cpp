@@ -1607,6 +1607,9 @@ void TypeChecker::endVisit(Return const& _return)
 	else if (params->parameters().size() == 1)
 		checkMsgValueToShielded(*_return.expression(), *type(*params->parameters().front()));
 
+	// A shielded-to-public cast in a return expression leaks into returndata.
+	checkShieldedLeakInPublicSink(*_return.expression());
+
 	for (auto const& var: params->parameters())
 		returnTypes.push_back(type(*var));
 	if (auto tupleType = dynamic_cast<TupleType const*>(type(*_return.expression())))
@@ -2041,6 +2044,21 @@ bool TypeChecker::visit(Assignment const& _assignment)
 				"Shielded integer shift count can leak through the public shift result."
 			);
 	}
+
+	// A cast to a public target leaks into public storage; a shielded target (reshield) does not.
+	auto targetIsPublicSink = [&](Type const* _t) -> bool {
+		return _t && !dynamic_cast<TupleType const*>(_t) && !_t->isShielded() && !_t->containsShieldedType();
+	};
+	if (auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide()))
+	{
+		if (auto const* rhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.rightHandSide()))
+			for (size_t i = 0; i < std::min(lhsTuple->components().size(), rhsTuple->components().size()); ++i)
+				if (lhsTuple->components()[i] && rhsTuple->components()[i] && targetIsPublicSink(type(*lhsTuple->components()[i])))
+					checkShieldedLeakInPublicSink(*rhsTuple->components()[i]);
+	}
+	else if (targetIsPublicSink(type(_assignment.leftHandSide())))
+		checkShieldedLeakInPublicSink(_assignment.rightHandSide());
+
 	return false;
 }
 
@@ -5086,10 +5104,6 @@ void TypeChecker::checkMsgValueToShielded(
 
 void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
 {
-	auto funcCall = dynamic_cast<FunctionCall const*>(&_expression);
-	if (!funcCall)
-		return;
-
 	// Structural shielding check that ignores the array storage marker, since
 	// bytes(sbytesRef) carries it through but the value is semantically public.
 	std::function<bool(Type const&)> structurallyShielded = [&](Type const& t) -> bool {
@@ -5100,22 +5114,44 @@ void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
 		return t.containsShieldedType();
 	};
 
-	if (
-		*funcCall->annotation().kind == FunctionCallKind::TypeConversion &&
-		!funcCall->arguments().empty() &&
-		funcCall->arguments().front() &&
-		structurallyShielded(*type(*funcCall->arguments().front())) &&
-		!structurallyShielded(*type(_expression))
-	)
-		m_errorReporter.warning(
-			10313_error,
-			_expression.location(),
-			"Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata."
-		);
+	// Value-based: descend the expression tree so a shielded-to-public cast is caught wherever it
+	// sits (ternary, binary operand, tuple component, call arg), not only as a direct call argument.
+	if (auto const* funcCall = dynamic_cast<FunctionCall const*>(&_expression))
+	{
+		if (
+			funcCall->annotation().kind.set() &&
+			*funcCall->annotation().kind == FunctionCallKind::TypeConversion &&
+			!funcCall->arguments().empty() &&
+			funcCall->arguments().front() &&
+			structurallyShielded(*type(*funcCall->arguments().front())) &&
+			!structurallyShielded(*type(_expression))
+		)
+			m_errorReporter.warning(
+				10313_error,
+				_expression.location(),
+				"Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage."
+			);
 
-	for (auto const& arg: funcCall->arguments())
-		if (arg)
-			checkShieldedLeakInPublicSink(*arg);
+		for (auto const& arg: funcCall->arguments())
+			if (arg)
+				checkShieldedLeakInPublicSink(*arg);
+	}
+	else if (auto const* conditional = dynamic_cast<Conditional const*>(&_expression))
+	{
+		checkShieldedLeakInPublicSink(conditional->trueExpression());
+		checkShieldedLeakInPublicSink(conditional->falseExpression());
+	}
+	else if (auto const* binaryOperation = dynamic_cast<BinaryOperation const*>(&_expression))
+	{
+		checkShieldedLeakInPublicSink(binaryOperation->leftExpression());
+		checkShieldedLeakInPublicSink(binaryOperation->rightExpression());
+	}
+	else if (auto const* tuple = dynamic_cast<TupleExpression const*>(&_expression))
+	{
+		for (auto const& component: tuple->components())
+			if (component)
+				checkShieldedLeakInPublicSink(*component);
+	}
 }
 
 void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _callable)
