@@ -41,10 +41,10 @@ contract C {
 }
 // ----
 // Warning 10305: (17-38): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
-// Warning 10313: (264-277): Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata.
-// Warning 10313: (346-359): Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata.
-// Warning 10313: (433-446): Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata.
-// Warning 10313: (543-556): Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata.
+// Warning 10313: (264-277): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (346-359): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (433-446): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (543-556): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
 // TypeError 10202: (635-648): Shielded types cannot be ABI encoded.
-// Warning 10313: (635-648): Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata.
-// Warning 10313: (725-738): Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata.
+// Warning 10313: (635-648): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (725-738): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
