@@ -24,3 +24,5 @@ contract SealedBidAuction {
 // ====
 // EVMVersion: =mercury
 // ----
+// Warning 10313: (669-691): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (710-729): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.

@@ -7,3 +7,5 @@ contract C {
     }
 }
 // ----
+// Warning 10313: (77-105): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (177-213): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.

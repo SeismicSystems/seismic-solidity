@@ -29,3 +29,5 @@ contract PrivateVoting {
 // Warning 10406: (389-400): Bool Literals converted to shielded bools will leak during contract deployment.
 // Warning 10403: (455-466): Literals converted to shielded integers will leak during contract deployment.
 // Warning 10403: (508-519): Literals converted to shielded integers will leak during contract deployment.
+// Warning 10313: (694-711): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (726-742): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
