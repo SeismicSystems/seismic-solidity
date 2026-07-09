@@ -11,5 +11,7 @@ contract C {
 }
 // ----
 // TypeError 9640: (85-97): Explicit type conversion not allowed from "int_const -1" to "saddress".
+// Warning 10313: (77-98): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
 // TypeError 6359: (170-172): Return argument type int_const -1 is not implicitly convertible to expected type (type of first return variable) address.
 // TypeError 9640: (243-259): Explicit type conversion not allowed from "int_const 1461...(41 digits omitted)...2976" to "saddress".
+// Warning 10313: (235-260): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.

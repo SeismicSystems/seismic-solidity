@@ -11,3 +11,4 @@ contract InstantiationFail {
 }
 // ----
 // TypeError 10204: (234-266): Instantiating a contract with a saddress is not yet supported
+// Warning 10313: (234-266): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.

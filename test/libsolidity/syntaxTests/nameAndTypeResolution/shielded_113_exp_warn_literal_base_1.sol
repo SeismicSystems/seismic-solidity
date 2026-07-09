@@ -7,3 +7,4 @@ contract test {
 // ----
 // Warning 10403: (80-91): Literals converted to shielded integers will leak during contract deployment.
 // Warning 10304: (113-118): Shielded integer exponentiation will leak the exponent value through gas cost.
+// Warning 10313: (108-119): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.

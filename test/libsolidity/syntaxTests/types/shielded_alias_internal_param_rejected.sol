@@ -24,4 +24,5 @@ contract C {
 // ----
 // Warning 10305: (17-30): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
 // TypeError 9553: (502-515): Invalid type for argument in function call. Invalid implicit conversion from bytes storage pointer to bytes storage pointer requested. Cannot mix shielded and non-shielded storage byte arrays: a reference into shielded storage is not interchangeable with a plain bytes/string storage reference.
+// Warning 10313: (502-515): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
 // TypeError 9553: (651-652): Invalid type for argument in function call. Invalid implicit conversion from bytes storage pointer to bytes storage pointer requested. Cannot mix shielded and non-shielded storage byte arrays: a reference into shielded storage is not interchangeable with a plain bytes/string storage reference.

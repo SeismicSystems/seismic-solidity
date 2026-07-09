@@ -24,3 +24,6 @@ contract C {
 // Warning 10412: (72-85): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // Warning 10412: (109-136): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
 // Warning 10412: (162-238): FixedBytes Literals converted to shielded fixed bytes will leak during contract deployment.
+// Warning 10313: (531-542): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (557-568): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
+// Warning 10313: (584-597): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
