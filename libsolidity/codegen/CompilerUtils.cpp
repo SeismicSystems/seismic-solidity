@@ -1035,7 +1035,11 @@ void CompilerUtils::convertType(
 	case Type::Category::Array:
 	{
 		auto const& typeOnStack = dynamic_cast<ArrayType const&>(_typeOnStack);
-		if (_targetType.category() == Type::Category::FixedBytes)
+		// sbytes -> sbytesN shares the bytes -> bytesN path (ShieldedFixedBytesType derives from FixedBytesType).
+		if (
+			_targetType.category() == Type::Category::FixedBytes ||
+			_targetType.category() == Type::Category::ShieldedFixedBytes
+		)
 		{
 			solAssert(
 				typeOnStack.isByteArray(),
@@ -1165,7 +1169,10 @@ void CompilerUtils::convertType(
 	case Type::Category::ArraySlice:
 	{
 		auto& typeOnStack = dynamic_cast<ArraySliceType const&>(_typeOnStack);
-		if (_targetType.category() == Type::Category::FixedBytes)
+		if (
+			_targetType.category() == Type::Category::FixedBytes ||
+			_targetType.category() == Type::Category::ShieldedFixedBytes
+		)
 		{
 			solAssert(
 				typeOnStack.arrayType().isByteArray(),
