@@ -1990,7 +1990,17 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 		if (_convertTo.category() == Type::Category::FixedBytes)
 			return !baseType()->isShielded();
 		if (_convertTo.category() == Type::Category::ShieldedFixedBytes)
-			return baseType()->isShielded();
+		{
+			if (!baseType()->isShielded())
+				return false;
+			// Storage source needs an unimplemented shielded read; memory/calldata is a plain copy.
+			if (location() == DataLocation::Storage)
+				return BoolResult::err(
+					"Conversion of a shielded byte array in storage to a fixed shielded-bytes type "
+					"is not supported; copy it to memory first (e.g. sbytesN(sbytes memory))."
+				);
+			return true;
+		}
 		return false;
 	}
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);

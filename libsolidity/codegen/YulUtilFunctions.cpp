@@ -3604,7 +3604,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 	else if (_from.category() == Type::Category::ArraySlice)
 	{
 		auto const& fromType = dynamic_cast<ArraySliceType const&>(_from);
-		if (_to.category() == Type::Category::FixedBytes)
+		if (_to.category() == Type::Category::FixedBytes || _to.category() == Type::Category::ShieldedFixedBytes)
 		{
 			solAssert(fromType.arrayType().isByteArray(), "Array types other than bytes not convertible to bytesNN.");
 			return bytesToFixedBytesConversionFunction(fromType.arrayType(), dynamic_cast<FixedBytesType const &>(_to));
@@ -3644,7 +3644,7 @@ std::string YulUtilFunctions::conversionFunction(Type const& _from, Type const& 
 	else if (_from.category() == Type::Category::Array)
 	{
 		auto const& fromArrayType =  dynamic_cast<ArrayType const&>(_from);
-		if (_to.category() == Type::Category::FixedBytes)
+		if (_to.category() == Type::Category::FixedBytes || _to.category() == Type::Category::ShieldedFixedBytes)
 		{
 			solAssert(fromArrayType.isByteArray(), "Array types other than bytes not convertible to bytesNN.");
 			return bytesToFixedBytesConversionFunction(fromArrayType, dynamic_cast<FixedBytesType const &>(_to));
