@@ -37,5 +37,7 @@ contract C {
 }
 // ----
 // Warning 10305: (294-315): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// Warning 10313: (628-641): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
 // TypeError 10113: (596-609): A bytes/string storage reference aliasing shielded storage cannot be returned. Return the shielded type (sbytes storage) or a memory copy (bytes memory) instead.
 // TypeError 10113: (852-867): A bytes/string storage reference aliasing shielded storage cannot be returned. Return the shielded type (sbytes storage) or a memory copy (bytes memory) instead.
+// Warning 10313: (1303-1316): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
