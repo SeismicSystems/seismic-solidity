@@ -763,6 +763,11 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		{
 			if (otherIntType->isSigned())
 				return TypeResult::err("Exponentiation power is not allowed to be a signed shielded integer type.");
+			// Shielded exponent -> shielded result, preserving the base's width/signedness.
+			return TypeProvider::shieldedInteger(
+				numBits(),
+				isSigned() ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
+			);
 		}
 		else if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
 		{
@@ -1985,7 +1990,17 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 		if (_convertTo.category() == Type::Category::FixedBytes)
 			return !baseType()->isShielded();
 		if (_convertTo.category() == Type::Category::ShieldedFixedBytes)
-			return baseType()->isShielded();
+		{
+			if (!baseType()->isShielded())
+				return false;
+			// Storage source needs an unimplemented shielded read; memory/calldata is a plain copy.
+			if (location() == DataLocation::Storage)
+				return BoolResult::err(
+					"Conversion of a shielded byte array in storage to a fixed shielded-bytes type "
+					"is not supported; copy it to memory first (e.g. sbytesN(sbytes memory))."
+				);
+			return true;
+		}
 		return false;
 	}
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);

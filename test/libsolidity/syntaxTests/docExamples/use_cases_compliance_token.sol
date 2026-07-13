@@ -27,8 +27,9 @@ contract ComplianceToken is AccessControl {
     }
 }
 // ====
-// EVMVersion: >=mercury
+// EVMVersion: =mercury
 // ----
+// Warning 10313: (780-807): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
 // Warning 5667: (462-474): Unused function parameter. Remove or comment out the variable name to silence this warning.
 // Warning 5667: (476-491): Unused function parameter. Remove or comment out the variable name to silence this warning.
 // Warning 2018: (445-558): Function state mutability can be restricted to pure

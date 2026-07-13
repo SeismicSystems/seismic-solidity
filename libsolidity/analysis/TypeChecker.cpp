@@ -691,7 +691,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 			m_errorReporter.typeError(
 				10001_error,
 				_variable.location(),
-				"Shielded types (suint, sbool, saddress, sbytes, etc.) require the Mercury EVM version or later. "
+				"Shielded types (suint, sbool, saddress, sbytes, etc.) require the Mercury EVM version. "
 				"The current EVM version \"" + m_evmVersion.name() + "\" does not support shielded types. "
 				"Use \"--evm-version mercury\" to enable shielded type support."
 			);
@@ -930,6 +930,13 @@ void TypeChecker::endVisit(FunctionTypeName const& _funType)
 			solAssert(t->annotation().type, "Type not set for parameter.");
 			if (!t->annotation().type->interfaceType(false).get())
 				m_errorReporter.fatalTypeError(2582_error, t->location(), "Internal type cannot be used for external function type.");
+			if (t->annotation().type->containsShieldedType())
+				m_errorReporter.typeError(
+					10111_error,
+					t->location(),
+					"Shielded types cannot appear in the parameters or return values of an external function type. "
+					"The ABI encodes a function value as (address, selector) only and cannot enforce the shielded boundary across it."
+				);
 		}
 		solAssert(fun.interfaceType(false), "External function type uses internal types.");
 	}
@@ -1180,6 +1187,16 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 	if (m_currentContract)
 	{
 		auto const* layoutSpecifier = m_currentContract->storageLayoutSpecifier();
+		// baseSlot is normally set in a later pass (PostTypeContractLevelChecker); resolve it here so
+		// the literal/alias 10314 arm is not dead for `layout at` contracts. PostType's set is guarded.
+		if (layoutSpecifier && !layoutSpecifier->annotation().baseSlot.set())
+			if (auto const* rational = dynamic_cast<RationalNumberType const*>(type(layoutSpecifier->baseSlotExpression())))
+				if (!rational->isFractional())
+				{
+					bigint base = rational->value().numerator();
+					if (0 <= base && base <= std::numeric_limits<u256>::max())
+						layoutSpecifier->annotation().baseSlot = u256(base);
+				}
 		if (!layoutSpecifier || layoutSpecifier->annotation().baseSlot.set())
 			for (auto const& [var, slot, byteOffset]: ContractType(*m_currentContract).linearizedStateVariables(DataLocation::Storage))
 				if (var->annotation().type && !var->annotation().type->isShielded() && !var->annotation().type->containsShieldedType())
@@ -1188,15 +1205,24 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 
 	// yul locals that currently alias a non-shielded state variable's .slot (let s := pub.slot),
 	// so cstore(s, v) is flagged too. Reassigning the local to anything else clears the alias.
+	// shieldedSlotAliases mirrors it for shielded .slot references (let s := secret.slot).
 	std::set<std::string> slotAliases;
+	std::set<std::string> shieldedSlotAliases;
 
-	// Track storage operations: slot key -> (isShielded, location, funcName)
+	// Per op: scopePath is the (switchId, caseIndex) nesting (to spot mutually exclusive arms),
+	// loops is the enclosing loop ids (for cross-iteration conflicts).
 	struct StorageOp {
 		bool isShielded;
 		langutil::SourceLocation location;
 		std::string funcName;
+		std::vector<std::pair<unsigned, unsigned>> scopePath;
+		std::set<unsigned> loops;
 	};
 	std::map<std::string, std::vector<StorageOp>> storageOps;
+
+	std::vector<std::pair<unsigned, unsigned>> currentScope;
+	std::set<unsigned> currentLoops;
+	unsigned scopeCounter = 0;
 
 	// Helper to get a string key for a slot expression
 	auto getSlotKey = [](yul::Expression const& _expr) -> std::optional<std::string> {
@@ -1212,10 +1238,41 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 		return std::nullopt;
 	};
 
-	// Whether a slot operand resolves to a non-shielded state variable's slot, through any of the
-	// statically-visible spellings: a direct .slot reference, a yul local aliasing one, or a bare
-	// literal slot number. Runtime-computed slots (keccak256, arithmetic) are not classifiable.
-	auto slotTargetsPublicStateVar = [&](yul::Expression const& _slot) -> bool {
+	auto typeIsShielded = [](VariableDeclaration const* _var) -> bool {
+		return _var && _var->annotation().type &&
+			(_var->annotation().type->isShielded() || _var->annotation().type->containsShieldedType());
+	};
+
+	// Classify a slot operand's domain by the value it computes (identifier, yul alias, literal,
+	// local storage pointer, or arithmetic/hash wrapper), not its surface syntax.
+	std::function<bool(yul::Expression const&)> slotIsShielded;
+	std::function<bool(yul::Expression const&)> slotIsPublic;
+	slotIsShielded = [&](yul::Expression const& _slot) -> bool {
+		if (auto const* ident = std::get_if<yul::Identifier>(&_slot))
+		{
+			auto it = externalRefs.find(ident);
+			if (it != externalRefs.end())
+			{
+				if (it->second.suffix == "slot")
+				{
+					if (it->second.isShieldedStorage)
+						return true;
+					// local storage pointer into shielded storage (S storage ptr, S contains shielded)
+					if (auto const* var = dynamic_cast<VariableDeclaration const*>(it->second.declaration))
+						if (!var->isStateVariable() && typeIsShielded(var))
+							return true;
+				}
+				return false;
+			}
+			return shieldedSlotAliases.count(ident->name.str()) > 0;
+		}
+		if (auto const* funCall = std::get_if<yul::FunctionCall>(&_slot))
+			for (auto const& arg: funCall->arguments)
+				if (slotIsShielded(arg))
+					return true;
+		return false;
+	};
+	slotIsPublic = [&](yul::Expression const& _slot) -> bool {
 		if (auto const* lit = std::get_if<yul::Literal>(&_slot))
 			return lit->kind == yul::LiteralKind::Number && publicSlots.count(lit->value.value()) > 0;
 		if (auto const* ident = std::get_if<yul::Identifier>(&_slot))
@@ -1223,13 +1280,19 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 			auto it = externalRefs.find(ident);
 			if (it != externalRefs.end())
 			{
+				// Public only when the type is non-shielded; keying on isStateVariable alone would
+				// misflag cstore(keccak(sbytes.slot, i)) on a shielded dynamic array's element.
 				if (it->second.suffix == "slot" && !it->second.isShieldedStorage)
 					if (auto const* var = dynamic_cast<VariableDeclaration const*>(it->second.declaration))
-						return var->isStateVariable();
+						return !typeIsShielded(var);
 				return false;
 			}
 			return slotAliases.count(ident->name.str()) > 0;
 		}
+		if (auto const* funCall = std::get_if<yul::FunctionCall>(&_slot))
+			for (auto const& arg: funCall->arguments)
+				if (slotIsPublic(arg))
+					return true;
 		return false;
 	};
 
@@ -1243,26 +1306,20 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 		{
 			auto const& slotExpr = funCall->arguments.front();
 
-			// Check for external identifier referencing shielded variable with wrong op
+			// Reject sstore/sload against a shielded slot (resolved by value, not just a bare identifier).
 			if (isNonShieldedOp)
 			{
-				if (auto const* slotIdent = std::get_if<yul::Identifier>(&slotExpr))
-				{
-					auto it = externalRefs.find(slotIdent);
-					if (it != externalRefs.end() && it->second.isShieldedStorage)
-					{
-						m_errorReporter.typeError(
-							10308_error,
-							nativeLocationOf(*funCall),
-							std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
-							(funcName == "sstore" ? "cstore" : "cload") + "() instead."
-						);
-					}
-				}
+				if (slotIsShielded(slotExpr))
+					m_errorReporter.typeError(
+						10308_error,
+						nativeLocationOf(*funCall),
+						std::string("Cannot use ") + std::string(funcName) + "() on shielded storage variable. Use " +
+						(funcName == "sstore" ? "cstore" : "cload") + "() instead."
+					);
 			}
 			// cload only reads — it never claims a slot for the confidential domain, so it is safe
 			// on a public slot. Only cstore bricks a public slot, so 10314 is cstore-only.
-			else if (funcName == "cstore" && slotTargetsPublicStateVar(slotExpr))
+			else if (funcName == "cstore" && slotIsPublic(slotExpr))
 				m_errorReporter.typeError(
 					10314_error,
 					nativeLocationOf(*funCall),
@@ -1272,7 +1329,7 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 			// Track for same-slot conflict detection
 			if (auto slotKey = getSlotKey(slotExpr))
 			{
-				storageOps[*slotKey].push_back({isShieldedOp, nativeLocationOf(*funCall), std::string(funcName)});
+				storageOps[*slotKey].push_back({isShieldedOp, nativeLocationOf(*funCall), std::string(funcName), currentScope, currentLoops});
 			}
 		}
 	};
@@ -1298,22 +1355,29 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 				[&](yul::VariableDeclaration const& _varDecl) {
 					if (_varDecl.value)
 						walkExpression(*_varDecl.value);
-					// let s := pub.slot  -> s now aliases a public slot.
-					if (_varDecl.value && _varDecl.variables.size() == 1 && slotTargetsPublicStateVar(*_varDecl.value))
-						slotAliases.insert(_varDecl.variables.front().name.str());
+					// let s := pub.slot / secret.slot  -> s now aliases that slot's domain.
+					if (_varDecl.value && _varDecl.variables.size() == 1)
+					{
+						std::string const name = _varDecl.variables.front().name.str();
+						if (slotIsShielded(*_varDecl.value))
+							shieldedSlotAliases.insert(name);
+						else if (slotIsPublic(*_varDecl.value))
+							slotAliases.insert(name);
+					}
 				},
 				[&](yul::Assignment const& _assignment) {
 					if (_assignment.value)
 						walkExpression(*_assignment.value);
-					// Reassignment updates the alias: track it if the new value is a public slot,
-					// otherwise the local no longer aliases one.
+					// Reassignment retracks the alias to the new value's domain (or clears it).
 					if (_assignment.variableNames.size() == 1)
 					{
 						std::string const name = _assignment.variableNames.front().name.str();
-						if (_assignment.value && slotTargetsPublicStateVar(*_assignment.value))
+						shieldedSlotAliases.erase(name);
+						slotAliases.erase(name);
+						if (_assignment.value && slotIsShielded(*_assignment.value))
+							shieldedSlotAliases.insert(name);
+						else if (_assignment.value && slotIsPublic(*_assignment.value))
 							slotAliases.insert(name);
-						else
-							slotAliases.erase(name);
 					}
 				},
 				[&](yul::If const& _if) {
@@ -1324,15 +1388,23 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 				[&](yul::Switch const& _switch) {
 					if (_switch.expression)
 						walkExpression(*_switch.expression);
-					for (auto const& _case : _switch.cases)
-						collectStorageOps(_case.body);
+					unsigned const switchId = scopeCounter++;
+					for (unsigned caseIndex = 0; caseIndex < _switch.cases.size(); ++caseIndex)
+					{
+						currentScope.emplace_back(switchId, caseIndex);
+						collectStorageOps(_switch.cases[caseIndex].body);
+						currentScope.pop_back();
+					}
 				},
 				[&](yul::ForLoop const& _forLoop) {
 					if (_forLoop.condition)
 						walkExpression(*_forLoop.condition);
+					unsigned const loopId = scopeCounter++;
+					currentLoops.insert(loopId);
 					collectStorageOps(_forLoop.pre);
 					collectStorageOps(_forLoop.body);
 					collectStorageOps(_forLoop.post);
+					currentLoops.erase(loopId);
 				},
 				[&](yul::Block const& _nestedBlock) {
 					collectStorageOps(_nestedBlock);
@@ -1346,32 +1418,53 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 	};
 	collectStorageOps(_inlineAssembly.operations().root());
 
-	// Check for conflicts: cstore makes a slot private, after which sstore/sload will fail
-	// Note: cload can read from any slot (public or private), so it doesn't conflict
-	for (auto const& [slotKey, ops] : storageOps)
-	{
-		StorageOp const* firstCstore = nullptr;
-
-		for (auto const& op : ops)
+	// Mutually exclusive: scope chains agree up to a shared switch, then take different arms of it.
+	auto mutuallyExclusive = [](StorageOp const& _a, StorageOp const& _b) -> bool {
+		size_t const common = std::min(_a.scopePath.size(), _b.scopePath.size());
+		for (size_t k = 0; k < common; ++k)
 		{
-			if (op.funcName == "cstore" && !firstCstore)
+			if (_a.scopePath[k].first != _b.scopePath[k].first)
+				return false;
+			if (_a.scopePath[k].second != _b.scopePath[k].second)
+				return true;
+		}
+		return false;
+	};
+	auto shareLoop = [](StorageOp const& _a, StorageOp const& _b) -> bool {
+		for (unsigned loopId: _a.loops)
+			if (_b.loops.count(loopId))
+				return true;
+		return false;
+	};
+
+	// cstore makes a slot private; a later sstore/sload on it fails (cload is always fine). Flag an
+	// sstore/sload when a non-exclusive cstore reaches it: precedes it textually, or shares a loop.
+	for (auto const& [slotKey, ops] : storageOps)
+		for (size_t x = 0; x < ops.size(); ++x)
+		{
+			if (ops[x].funcName != "sstore" && ops[x].funcName != "sload")
+				continue;
+			for (size_t c = 0; c < ops.size(); ++c)
 			{
-				firstCstore = &op;
-			}
-			else if (firstCstore && (op.funcName == "sstore" || op.funcName == "sload"))
-			{
-				// cstore was called before sstore/sload on the same slot
-				// cstore makes the slot private, and sstore/sload cannot access private slots
-				m_errorReporter.typeError(
-					10309_error,
-					op.location,
-					"Cannot use " + op.funcName + "() on a slot that was previously written with cstore(). "
-					"cstore() makes the slot private, and " + op.funcName + "() cannot access private storage. "
-					"Use " + (op.funcName == "sstore" ? "cstore" : "cload") + "() instead."
-				);
+				if (ops[c].funcName != "cstore")
+					continue;
+				bool const crossIteration = shareLoop(ops[c], ops[x]);
+				// Exclusivity only suppresses within one pass; across iterations the arms still meet.
+				if (!crossIteration && mutuallyExclusive(ops[c], ops[x]))
+					continue;
+				if (c < x || crossIteration)
+				{
+					m_errorReporter.typeError(
+						10309_error,
+						ops[x].location,
+						"Cannot use " + ops[x].funcName + "() on a slot that was previously written with cstore(). "
+						"cstore() makes the slot private, and " + ops[x].funcName + "() cannot access private storage. "
+						"Use " + (ops[x].funcName == "sstore" ? "cstore" : "cload") + "() instead."
+					);
+					break;
+				}
 			}
 		}
-	}
 }
 
 bool TypeChecker::visit(IfStatement const& _ifStatement)
@@ -1613,6 +1706,9 @@ void TypeChecker::endVisit(Return const& _return)
 	}
 	else if (params->parameters().size() == 1)
 		checkMsgValueToShielded(*_return.expression(), *type(*params->parameters().front()));
+
+	// A shielded-to-public cast in a return expression leaks into returndata.
+	checkShieldedLeakInPublicSink(*_return.expression());
 
 	for (auto const& var: params->parameters())
 		returnTypes.push_back(type(*var));
@@ -1993,18 +2089,14 @@ bool TypeChecker::visit(Assignment const& _assignment)
 
 		checkImplicitConversion(_assignment.rightHandSide(), *tupleType);
 
-		// Per-component msg.value/msg.data leak check, for simple variable targets paired with a
-		// literal-tuple RHS. Mirrors the preserve loop above: only Identifier LHS components, so
-		// non-lvalue components like x.push() are skipped (they can't receive msg.value anyway).
+		// Per-component msg.value/msg.data leak check against a literal-tuple RHS. Fires for any
+		// LHS component whose resolved type is shielded (member/index targets included);
+		// checkMsgValueToShielded self-guards on the target type.
 		if (auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide()))
 			if (auto const* rhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.rightHandSide()))
 				for (size_t i = 0; i < std::min(lhsTuple->components().size(), rhsTuple->components().size()); ++i)
-				{
-					if (!lhsTuple->components()[i] || !rhsTuple->components()[i])
-						continue;
-					if (dynamic_cast<Identifier const*>(lhsTuple->components()[i].get()))
+					if (lhsTuple->components()[i] && rhsTuple->components()[i])
 						checkMsgValueToShielded(*rhsTuple->components()[i], *type(*lhsTuple->components()[i]));
-				}
 	}
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
@@ -2055,6 +2147,21 @@ bool TypeChecker::visit(Assignment const& _assignment)
 				"Shielded integer shift count can leak through the public shift result."
 			);
 	}
+
+	// A cast to a public target leaks into public storage; a shielded target (reshield) does not.
+	auto targetIsPublicSink = [&](Type const* _t) -> bool {
+		return _t && !dynamic_cast<TupleType const*>(_t) && !_t->isShielded() && !_t->containsShieldedType();
+	};
+	if (auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide()))
+	{
+		if (auto const* rhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.rightHandSide()))
+			for (size_t i = 0; i < std::min(lhsTuple->components().size(), rhsTuple->components().size()); ++i)
+				if (lhsTuple->components()[i] && rhsTuple->components()[i] && targetIsPublicSink(type(*lhsTuple->components()[i])))
+					checkShieldedLeakInPublicSink(*rhsTuple->components()[i]);
+	}
+	else if (targetIsPublicSink(type(_assignment.leftHandSide())))
+		checkShieldedLeakInPublicSink(_assignment.rightHandSide());
+
 	return false;
 }
 
@@ -2446,9 +2553,20 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		commonType->category() != Type::Category::ShieldedInteger
 	)
 		m_errorReporter.warning(
-			10312_error,
+			10315_error,
 			_operation.location(),
 			"Shielded integer shift count can leak through the public shift result."
+		);
+
+	if (
+		(_operation.getOperator() == Token::And || _operation.getOperator() == Token::Or) &&
+		(leftType->category() == Type::Category::ShieldedBool || rightType->category() == Type::Category::ShieldedBool)
+	)
+		m_errorReporter.warning(
+			10316_error,
+			_operation.location(),
+			"Using shielded types in branching conditions can leak information through "
+			"observable execution patterns such as gas costs, state changes, and execution traces."
 		);
 
 	if (_operation.getOperator() == Token::Exp || _operation.getOperator() == Token::SHL)
@@ -3896,7 +4014,7 @@ bool TypeChecker::visit(MemberAccess const& _memberAccess)
 				"after argument-dependent lookup in " + exprType->humanReadableName() + ".";
 
 			if (auto const* arrayType = dynamic_cast<ArrayType const*>(exprType)) {
-				if (memberName == "push") {
+				if (memberName == "push" && annotation.arguments.has_value() && !annotation.arguments.value().types.empty()) {
 					if (arrayType->containsShieldedType() && !annotation.arguments.value().types.front()->isShielded()) {
 						return { 10205_error, "Cannot push a non-shielded type to a shielded array" };
 					}
@@ -5022,6 +5140,11 @@ void TypeChecker::checkMsgValueToShielded(
 	Type const& _targetType
 )
 {
+	// A tuple target (nested tuple LHS component) is decomposed and its components are checked
+	// individually; TupleType::containsShieldedType() is unimplemented, so skip it here.
+	if (dynamic_cast<TupleType const*>(&_targetType))
+		return;
+
 	// Only warn if target type is or contains a shielded type
 	if (!_targetType.isShielded() && !_targetType.containsShieldedType())
 		return;
@@ -5065,14 +5188,25 @@ void TypeChecker::checkMsgValueToShielded(
 			for (auto const& arg : funcCall->arguments())
 				if (arg)
 					checkMsgValueToShielded(*arg, _targetType);
+
+	// A real helper call can launder msg.value/msg.data into a shielded target, e.g.
+	// secret = wrap(msg.value). Recurse into positional arguments whose parameter is public;
+	// shielded-parameter arguments are already covered by the call-site check.
+	if (auto funcCall = dynamic_cast<FunctionCall const*>(&_expression))
+		if (funcCall->annotation().kind.set() && *funcCall->annotation().kind == FunctionCallKind::FunctionCall)
+			if (funcCall->names().empty())
+				if (auto const* funcType = dynamic_cast<FunctionType const*>(type(funcCall->expression())))
+				{
+					TypePointers const params = funcType->parameterTypes();
+					auto const& args = funcCall->arguments();
+					for (size_t i = 0; i < args.size() && i < params.size(); ++i)
+						if (args[i] && params[i] && !params[i]->isShielded() && !params[i]->containsShieldedType())
+							checkMsgValueToShielded(*args[i], _targetType);
+				}
 }
 
 void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
 {
-	auto funcCall = dynamic_cast<FunctionCall const*>(&_expression);
-	if (!funcCall)
-		return;
-
 	// Structural shielding check that ignores the array storage marker, since
 	// bytes(sbytesRef) carries it through but the value is semantically public.
 	std::function<bool(Type const&)> structurallyShielded = [&](Type const& t) -> bool {
@@ -5083,22 +5217,44 @@ void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
 		return t.containsShieldedType();
 	};
 
-	if (
-		*funcCall->annotation().kind == FunctionCallKind::TypeConversion &&
-		!funcCall->arguments().empty() &&
-		funcCall->arguments().front() &&
-		structurallyShielded(*type(*funcCall->arguments().front())) &&
-		!structurallyShielded(*type(_expression))
-	)
-		m_errorReporter.warning(
-			10313_error,
-			_expression.location(),
-			"Converting a shielded value to a public type within an emit or revert leaks the value to public logs or returndata."
-		);
+	// Value-based: descend the expression tree so a shielded-to-public cast is caught wherever it
+	// sits (ternary, binary operand, tuple component, call arg), not only as a direct call argument.
+	if (auto const* funcCall = dynamic_cast<FunctionCall const*>(&_expression))
+	{
+		if (
+			funcCall->annotation().kind.set() &&
+			*funcCall->annotation().kind == FunctionCallKind::TypeConversion &&
+			!funcCall->arguments().empty() &&
+			funcCall->arguments().front() &&
+			structurallyShielded(*type(*funcCall->arguments().front())) &&
+			!structurallyShielded(*type(_expression))
+		)
+			m_errorReporter.warning(
+				10313_error,
+				_expression.location(),
+				"Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage."
+			);
 
-	for (auto const& arg: funcCall->arguments())
-		if (arg)
-			checkShieldedLeakInPublicSink(*arg);
+		for (auto const& arg: funcCall->arguments())
+			if (arg)
+				checkShieldedLeakInPublicSink(*arg);
+	}
+	else if (auto const* conditional = dynamic_cast<Conditional const*>(&_expression))
+	{
+		checkShieldedLeakInPublicSink(conditional->trueExpression());
+		checkShieldedLeakInPublicSink(conditional->falseExpression());
+	}
+	else if (auto const* binaryOperation = dynamic_cast<BinaryOperation const*>(&_expression))
+	{
+		checkShieldedLeakInPublicSink(binaryOperation->leftExpression());
+		checkShieldedLeakInPublicSink(binaryOperation->rightExpression());
+	}
+	else if (auto const* tuple = dynamic_cast<TupleExpression const*>(&_expression))
+	{
+		for (auto const& component: tuple->components())
+			if (component)
+				checkShieldedLeakInPublicSink(*component);
+	}
 }
 
 void TypeChecker::checkErrorAndEventParameters(CallableDeclaration const& _callable)
@@ -5203,7 +5359,6 @@ bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 	Type const* condType = type(_expression);
 	if (condType->category() == Type::Category::Bool || condType->category() == Type::Category::ShieldedBool)
 	{
-		// Warn about information leakage when shielded types are used in branching conditions
 		if (condType->category() == Type::Category::ShieldedBool)
 			m_errorReporter.warning(
 				10311_error,
@@ -5213,8 +5368,48 @@ bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 			);
 		return true;
 	}
-	else
-		return expectType(_expression, *TypeProvider::boolean());
+	// expectType would accept() a second time (SetOnce reassign -> crash); inline its check.
+	Type const& expectedType = *TypeProvider::boolean();
+	BoolResult result = condType->isImplicitlyConvertibleTo(expectedType);
+	if (!result)
+	{
+		auto errorMsg = "Type " +
+			condType->humanReadableName() +
+			" is not implicitly convertible to expected type " +
+			expectedType.humanReadableName();
+		if (
+			condType->category() == Type::Category::RationalNumber &&
+			dynamic_cast<RationalNumberType const*>(condType)->isFractional() &&
+			condType->mobileType()
+		)
+		{
+			if (expectedType.operator==(*condType->mobileType()))
+				m_errorReporter.typeError(
+					4426_error,
+					_expression.location(),
+					errorMsg + ", but it can be explicitly converted."
+				);
+			else
+				m_errorReporter.typeErrorConcatenateDescriptions(
+					2326_error,
+					_expression.location(),
+					errorMsg +
+					". Try converting to type " +
+					condType->mobileType()->humanReadableName() +
+					" or use an explicit conversion.",
+					result.message()
+				);
+		}
+		else
+			m_errorReporter.typeErrorConcatenateDescriptions(
+				7407_error,
+				_expression.location(),
+				errorMsg + ".",
+				result.message()
+			);
+		return false;
+	}
+	return true;
 }
 
 
