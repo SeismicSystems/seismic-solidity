@@ -852,7 +852,7 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 		errorForVM(7755_error, "only available for Cancun-compatible");
 	else if ((_instr == evmasm::Instruction::TSTORE || _instr == evmasm::Instruction::TLOAD) && !m_evmVersion.supportsTransientStorage())
 		errorForVM(6243_error, "only available for Cancun-compatible");
-	else if ((_instr == evmasm::Instruction::CLOAD || _instr == evmasm::Instruction::CSTORE || _instr == evmasm::Instruction::TIMESTAMPMS) && !m_evmVersion.supportShieldedStorage())
+	else if ((_instr == evmasm::Instruction::CLOAD || _instr == evmasm::Instruction::CSTORE || _instr == evmasm::Instruction::TIMESTAMPMS || _instr == evmasm::Instruction::TXTYPE) && !m_evmVersion.supportShieldedStorage())
 		errorForVM(10002_error, "only available for Mercury-compatible");
 	else if (_instr == evmasm::Instruction::PC)
 		m_errorReporter.error(
@@ -908,7 +908,8 @@ bool AsmAnalyzer::validateInstructions(evmasm::Instruction _instr, SourceLocatio
 	}
 	else if (m_eofVersion.has_value() && (
 		_instr == evmasm::Instruction::CSTORE ||
-		_instr == evmasm::Instruction::CLOAD
+		_instr == evmasm::Instruction::CLOAD ||
+		_instr == evmasm::Instruction::TXTYPE
 	))
 	{
 		m_errorReporter.typeError(

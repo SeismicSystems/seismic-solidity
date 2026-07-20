@@ -187,6 +187,7 @@ enum class Instruction: uint8_t
 
 	CLOAD = 0xb0,			  ///< loads shielded objects
 	CSTORE = 0xb1,			  ///< stores shielded objects
+	TXTYPE = 0xb2,			  ///< pushes the EIP-2718 transaction-type byte
 
 	DATALOADN = 0xd1,         ///< load data from EOF data section
 

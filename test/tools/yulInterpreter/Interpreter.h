@@ -100,6 +100,8 @@ struct InterpreterState
 	u256 prevrandao = (u256(1) << 64) + 1;
 	u256 gaslimit = 4000000;
 	u256 chainid = 0x01;
+	/// EIP-2718 transaction-type byte reported by TXTYPE (0x4A = Seismic).
+	u256 txType = 0x4a;
 	/// The minimum value of basefee: 7 wei.
 	u256 basefee = 0x07;
 	/// The minimum value of blobbasefee: 1 wei.

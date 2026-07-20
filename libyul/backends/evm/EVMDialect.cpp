@@ -137,7 +137,7 @@ std::set<std::string, std::less<>> createReservedIdentifiers(langutil::EVMVersio
 	{
 		return
 			_evmVersion < langutil::EVMVersion::mercury() &&
-			(_instr == evmasm::Instruction::CSTORE || _instr == evmasm::Instruction::CLOAD || _instr == evmasm::Instruction::TIMESTAMPMS);
+			(_instr == evmasm::Instruction::CSTORE || _instr == evmasm::Instruction::CLOAD || _instr == evmasm::Instruction::TIMESTAMPMS || _instr == evmasm::Instruction::TXTYPE);
 	};
 
 	auto eofIdentifiersException = [&](evmasm::Instruction _instr) -> bool
