@@ -5368,48 +5368,9 @@ bool TypeChecker::expectBoolOrShieldedBool(Expression const& _expression) {
 			);
 		return true;
 	}
-	// expectType would accept() a second time (SetOnce reassign -> crash); inline its check.
-	Type const& expectedType = *TypeProvider::boolean();
-	BoolResult result = condType->isImplicitlyConvertibleTo(expectedType);
-	if (!result)
-	{
-		auto errorMsg = "Type " +
-			condType->humanReadableName() +
-			" is not implicitly convertible to expected type " +
-			expectedType.humanReadableName();
-		if (
-			condType->category() == Type::Category::RationalNumber &&
-			dynamic_cast<RationalNumberType const*>(condType)->isFractional() &&
-			condType->mobileType()
-		)
-		{
-			if (expectedType.operator==(*condType->mobileType()))
-				m_errorReporter.typeError(
-					4426_error,
-					_expression.location(),
-					errorMsg + ", but it can be explicitly converted."
-				);
-			else
-				m_errorReporter.typeErrorConcatenateDescriptions(
-					2326_error,
-					_expression.location(),
-					errorMsg +
-					". Try converting to type " +
-					condType->mobileType()->humanReadableName() +
-					" or use an explicit conversion.",
-					result.message()
-				);
-		}
-		else
-			m_errorReporter.typeErrorConcatenateDescriptions(
-				7407_error,
-				_expression.location(),
-				errorMsg + ".",
-				result.message()
-			);
-		return false;
-	}
-	return true;
+	// Already accepted above; checkImplicitConversion does not accept, so calling it directly
+	// avoids the double-visit crash without duplicating its 4426/2326/7407 error sites.
+	return checkImplicitConversion(_expression, *TypeProvider::boolean());
 }
 
 
