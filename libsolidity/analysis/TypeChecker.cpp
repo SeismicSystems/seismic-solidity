@@ -5249,6 +5249,8 @@ void TypeChecker::checkShieldedLeakInPublicSink(Expression const& _expression)
 		checkShieldedLeakInPublicSink(binaryOperation->leftExpression());
 		checkShieldedLeakInPublicSink(binaryOperation->rightExpression());
 	}
+	else if (auto const* unaryOperation = dynamic_cast<UnaryOperation const*>(&_expression))
+		checkShieldedLeakInPublicSink(unaryOperation->subExpression());
 	else if (auto const* tuple = dynamic_cast<TupleExpression const*>(&_expression))
 	{
 		for (auto const& component: tuple->components())
