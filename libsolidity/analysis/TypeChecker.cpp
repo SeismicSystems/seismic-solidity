@@ -2137,17 +2137,6 @@ bool TypeChecker::visit(Assignment const& _assignment)
 				type(_assignment.rightHandSide())->humanReadableName() +
 				"."
 			);
-		if (
-			resultType && *resultType == *t &&
-			TokenTraits::isShiftOp(binaryOp) &&
-			rhsType->category() == Type::Category::ShieldedInteger &&
-			t->category() != Type::Category::ShieldedInteger
-		)
-			m_errorReporter.warning(
-				10312_error,
-				_assignment.location(),
-				"Shielded integer shift count can leak through the public shift result."
-			);
 	}
 
 	// A cast to a public target leaks into public storage; a shielded target (reshield) does not.
@@ -2549,16 +2538,6 @@ void TypeChecker::endVisit(BinaryOperation const& _operation)
 		);
 	}
 
-	if (
-		TokenTraits::isShiftOp(_operation.getOperator()) &&
-		rightType->category() == Type::Category::ShieldedInteger &&
-		commonType->category() != Type::Category::ShieldedInteger
-	)
-		m_errorReporter.warning(
-			10315_error,
-			_operation.location(),
-			"Shielded integer shift count can leak through the public shift result."
-		);
 
 	if (
 		(_operation.getOperator() == Token::And || _operation.getOperator() == Token::Or) &&
