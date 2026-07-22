@@ -752,10 +752,15 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 	if (TokenTraits::isShiftOp(_operator))
 	{
 		// Shifts are not symmetric with respect to the type
-		if (isValidShiftAndAmountType(_operator, *_other))
-			return this;
-		else
+		if (!isValidShiftAndAmountType(_operator, *_other))
 			return nullptr;
+		// Shielded shift amount -> shielded result, so a public return errors (mirrors exp).
+		if (dynamic_cast<ShieldedIntegerType const*>(_other))
+			return TypeProvider::shieldedInteger(
+				numBits(),
+				isSigned() ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
+			);
+		return this;
 	}
 	else if (Token::Exp == _operator)
 	{
