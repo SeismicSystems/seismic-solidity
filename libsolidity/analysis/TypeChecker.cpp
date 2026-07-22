@@ -1397,11 +1397,13 @@ void TypeChecker::validateShieldedStorageOps(InlineAssembly const& _inlineAssemb
 					}
 				},
 				[&](yul::ForLoop const& _forLoop) {
-					if (_forLoop.condition)
-						walkExpression(*_forLoop.condition);
+					// pre runs once before the loop (straight-line); condition/body/post run each
+					// iteration, so only they carry the loop id for cross-iteration conflicts.
+					collectStorageOps(_forLoop.pre);
 					unsigned const loopId = scopeCounter++;
 					currentLoops.insert(loopId);
-					collectStorageOps(_forLoop.pre);
+					if (_forLoop.condition)
+						walkExpression(*_forLoop.condition);
 					collectStorageOps(_forLoop.body);
 					collectStorageOps(_forLoop.post);
 					currentLoops.erase(loopId);
