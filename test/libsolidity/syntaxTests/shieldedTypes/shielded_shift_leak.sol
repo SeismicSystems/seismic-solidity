@@ -1,3 +1,5 @@
+// Shifting a public value by a shielded amount yields a shielded result, so it cannot flow to a
+// public destination (mirrors public ** shielded). The prior warning-only leak is now an error.
 contract C {
     suint8 private secret;
     uint256 a;
@@ -9,7 +11,7 @@ contract C {
     }
 }
 // ----
-// Warning 10312: (89-101): Shielded integer shift count can leak through the public shift result.
-// Warning 10315: (115-126): Shielded integer shift count can leak through the public shift result.
-// Warning 10312: (136-148): Shielded integer shift count can leak through the public shift result.
-// Warning 10315: (162-173): Shielded integer shift count can leak through the public shift result.
+// TypeError 7366: (283-295): Operator <<= not compatible with types uint256 and suint8.
+// TypeError 7407: (309-320): Type suint256 is not implicitly convertible to expected type uint256.
+// TypeError 7366: (330-342): Operator >>= not compatible with types uint256 and suint8.
+// TypeError 7407: (356-367): Type suint256 is not implicitly convertible to expected type uint256.
