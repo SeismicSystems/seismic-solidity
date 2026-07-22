@@ -13,6 +13,10 @@ contract C {
         suint256 x;
         stored = x << secret;
     }
+    // public base shifted by a shielded amount -> shielded result, legal into a shielded sink
+    function publicBaseIntoShielded(uint256 base) external {
+        stored = base << secret;
+    }
 }
 // ----
 // TypeError 6359: (247-261): Return argument type suint256 is not implicitly convertible to expected type (type of first return variable) uint256.
