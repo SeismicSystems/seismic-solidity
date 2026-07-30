@@ -1599,10 +1599,12 @@ TypeResult FixedBytesType::binaryOperatorResult(Token _operator, Type const* _ot
 {
 	if (TokenTraits::isShiftOp(_operator))
 	{
-		if (isValidShiftAndAmountType(_operator, *_other))
-			return this;
-		else
+		if (!isValidShiftAndAmountType(_operator, *_other))
 			return nullptr;
+		// Shielded shift amount -> shielded result, so a public sink errors (mirrors IntegerType).
+		if (dynamic_cast<ShieldedIntegerType const*>(_other))
+			return TypeProvider::shieldedFixedBytes(numBytes());
+		return this;
 	}
 
 	auto commonType = dynamic_cast<FixedBytesType const*>(Type::commonType(this, _other));
