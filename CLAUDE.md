@@ -2,6 +2,8 @@
 
 Fork of the [Ethereum Solidity compiler](https://github.com/ethereum/solidity) that adds **confidential storage** to the EVM, enabling smart contracts to handle sensitive data privately on-chain. Upstream is tracked through the `develop` branch.
 
+**Workspace context**: this repo is part of the multi-repo Seismic workspace. If the workspace file isn't already in your context, read `../CLAUDE.md` (sibling checkout) or fetch [CLAUDE.workspace.md](https://github.com/SeismicSystems/seismic/blob/main/workspace/CLAUDE.workspace.md) (standalone checkout/CI) for key concepts, the repo map, and cross-repo conventions.
+
 ## What This Does
 
 Standard EVM storage is publicly readable by anyone. Seismic extends the compiler with four **shielded types** — `suint`, `sint`, `saddress`, `sbool` — that behave like their normal counterparts but store data in confidential storage slots. The compiler automatically emits `CSTORE`/`CLOAD` opcodes (instead of `SSTORE`/`SLOAD`) for shielded variables, so developers write familiar Solidity while getting privacy guarantees at the storage layer. Shielded types each occupy a full storage slot (no packing), cannot be `public`/`constant`/`immutable`, and cannot appear in events. Shielded arrays and mappings with shielded values are supported; shielded types as mapping keys or array indices are disallowed.
