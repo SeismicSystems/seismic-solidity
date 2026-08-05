@@ -662,6 +662,7 @@ bool SemanticInformation::invalidInPureFunctions(Instruction _instruction)
 	case Instruction::CALLER:
 	case Instruction::CALLVALUE:
 	case Instruction::CHAINID:
+	case Instruction::TXTYPE:
 	case Instruction::BASEFEE:
 	case Instruction::BLOBBASEFEE:
 	case Instruction::GAS:

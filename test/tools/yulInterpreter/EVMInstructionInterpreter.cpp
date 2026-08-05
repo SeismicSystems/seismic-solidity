@@ -249,6 +249,8 @@ u256 EVMInstructionInterpreter::eval(
 		return m_state.gasprice;
 	case Instruction::CHAINID:
 		return m_state.chainid;
+	case Instruction::TXTYPE:
+		return m_state.txType;
 	case Instruction::BASEFEE:
 		return m_state.basefee;
 	case Instruction::BLOBHASH:

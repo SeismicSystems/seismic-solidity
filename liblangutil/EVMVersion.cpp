@@ -64,6 +64,7 @@ bool EVMVersion::hasOpcode(Instruction _opcode, std::optional<uint8_t> _eofVersi
 	case Instruction::CLOAD:
 	case Instruction::CSTORE:
 	case Instruction::TIMESTAMPMS:
+	case Instruction::TXTYPE:
 		return supportShieldedStorage() && !_eofVersion.has_value();
 	// Instructions below are deprecated in EOF
 	case Instruction::CALL:
