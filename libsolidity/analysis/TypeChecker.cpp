@@ -111,6 +111,22 @@ bool canPreserveShieldedStorageMarkerInAssignment(VariableDeclaration const& _va
 		_variable.referenceLocation() == VariableDeclaration::Location::Storage;
 }
 
+// 0 = not a byte-array/string storage ref, 1 = public, 2 = shielded.
+int byteStorageRefDomain(Type const& _type)
+{
+	auto const* arrayType = dynamic_cast<ArrayType const*>(&_type);
+	if (!arrayType || arrayType->location() != DataLocation::Storage || !arrayType->isByteArrayOrString())
+		return 0;
+	return arrayType->usesShieldedStorage() ? 2 : 1;
+}
+
+// The bytes(sbytesRef) alias form: shielded via the side-marker, not an intrinsic sbytes element.
+bool isShieldedByteStorageAlias(Type const& _type)
+{
+	auto const* arrayType = dynamic_cast<ArrayType const*>(&_type);
+	return arrayType && arrayType->location() == DataLocation::Storage && arrayType->hasShieldedStorageMarker();
+}
+
 FunctionDefinition const* internalFunctionDefinition(FunctionType const& _functionType)
 {
 	if (_functionType.kind() != FunctionType::Kind::Internal || !_functionType.hasDeclaration())
@@ -912,6 +928,27 @@ bool TypeChecker::visit(ErrorDefinition const& _errorDef)
 	return true;
 }
 
+void TypeChecker::checkByteStorageRefDomain(
+	VariableDeclaration const& _variable,
+	Type const& _sourceType,
+	SourceLocation const& _location
+)
+{
+	int const domain = byteStorageRefDomain(_sourceType);
+	if (domain == 0)
+		return;
+	auto& [seenShielded, seenPublic] = m_byteStorageRefDomains[&_variable];
+	(domain == 2 ? seenShielded : seenPublic) = true;
+	if (seenShielded && seenPublic)
+		m_errorReporter.typeError(
+			10112_error,
+			_location,
+			"This bytes/string storage reference aliases both shielded and non-shielded storage "
+			"on different paths. A storage reference must have a single confidentiality domain, "
+			"since the compiler selects cstore/cload or sstore/sload for it at compile time."
+		);
+}
+
 void TypeChecker::endVisit(FunctionTypeName const& _funType)
 {
 	FunctionType const& fun = dynamic_cast<FunctionType const&>(*_funType.annotation().type);
@@ -922,6 +959,13 @@ void TypeChecker::endVisit(FunctionTypeName const& _funType)
 			solAssert(t->annotation().type, "Type not set for parameter.");
 			if (!t->annotation().type->interfaceType(false).get())
 				m_errorReporter.fatalTypeError(2582_error, t->location(), "Internal type cannot be used for external function type.");
+			if (t->annotation().type->containsShieldedType())
+				m_errorReporter.typeError(
+					10111_error,
+					t->location(),
+					"Shielded types cannot appear in the parameters or return values of an external function type. "
+					"The ABI encodes a function value as (address, selector) only and cannot enforce the shielded boundary across it."
+				);
 		}
 		solAssert(fun.interfaceType(false), "External function type uses internal types.");
 	}
@@ -1481,6 +1525,23 @@ bool TypeChecker::visit(ForStatement const& _forStatement)
 	return false;
 }
 
+void TypeChecker::endVisit(FunctionDefinition const& _function)
+{
+	// Checked after the body so every assignment/return to a named return parameter has resolved.
+	for (ASTPointer<VariableDeclaration> const& param: _function.returnParameters())
+		if (
+			param->referenceLocation() == VariableDeclaration::Location::Storage &&
+			param->annotation().type &&
+			isShieldedByteStorageAlias(*param->annotation().type)
+		)
+			m_errorReporter.typeError(
+				10113_error,
+				param->location(),
+				"A bytes/string storage reference aliasing shielded storage cannot be returned. "
+				"Return the shielded type (sbytes storage) or a memory copy (bytes memory) instead."
+			);
+}
+
 void TypeChecker::endVisit(Return const& _return)
 {
 	ParameterList const* params = _return.annotation().functionReturnParameters;
@@ -1500,10 +1561,16 @@ void TypeChecker::endVisit(Return const& _return)
 	{
 		for (size_t i = 0; i < std::min(tupleType->components().size(), params->parameters().size()); ++i)
 			if (tupleType->components()[i])
+			{
 				preserveShieldedStorageMarkerInDeclaration(*params->parameters()[i], *tupleType->components()[i]);
+				checkByteStorageRefDomain(*params->parameters()[i], *tupleType->components()[i], _return.location());
+			}
 	}
 	else if (params->parameters().size() == 1)
+	{
 		preserveShieldedStorageMarkerInDeclaration(*params->parameters().front(), *type(*_return.expression()));
+		checkByteStorageRefDomain(*params->parameters().front(), *type(*_return.expression()), _return.location());
+	}
 
 	for (auto const& var: params->parameters())
 		returnTypes.push_back(type(*var));
@@ -1637,6 +1704,7 @@ bool TypeChecker::visit(VariableDeclarationStatement const& _statement)
 		Type const* valueComponentType = valueTypes[i];
 		solAssert(!!valueComponentType, "");
 		preserveShieldedStorageMarkerInDeclaration(var, *valueComponentType);
+		checkByteStorageRefDomain(var, *valueComponentType, var.location());
 		var.accept(*this);
 		BoolResult result = valueComponentType->isImplicitlyConvertibleTo(*var.annotation().type);
 		if (!result)
@@ -1836,6 +1904,27 @@ bool TypeChecker::visit(Assignment const& _assignment)
 		_assignment.annotation().type = TypeProvider::emptyTuple();
 
 		expectType(_assignment.rightHandSide(), *tupleType);
+		// Best-effort domain tracking for tuple component storage refs (seismic-compatible).
+		if (auto const* lhsTuple = dynamic_cast<TupleExpression const*>(&_assignment.leftHandSide()))
+		{
+			auto const& lhsComponents = lhsTuple->components();
+			auto const& rhsComponents = tupleType->components();
+			for (size_t i = 0; i < std::min(lhsComponents.size(), rhsComponents.size()); ++i)
+			{
+				if (!lhsComponents[i] || !rhsComponents[i])
+					continue;
+				auto const* identifier = dynamic_cast<Identifier const*>(lhsComponents[i].get());
+				if (!identifier)
+					continue;
+				auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration);
+				if (variable && canPreserveShieldedStorageMarkerInAssignment(*variable))
+				{
+					preserveShieldedStorageMarkerInDeclaration(*variable, *rhsComponents[i]);
+					checkByteStorageRefDomain(*variable, *rhsComponents[i], _assignment.location());
+					identifier->annotation().type = variable->annotation().type;
+				}
+			}
+		}
 	}
 	else if (_assignment.assignmentOperator() == Token::Assign)
 	{
@@ -1843,7 +1932,14 @@ bool TypeChecker::visit(Assignment const& _assignment)
 		if (auto const* identifier = dynamic_cast<Identifier const*>(&_assignment.leftHandSide()))
 			if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
 				if (canPreserveShieldedStorageMarkerInAssignment(*variable))
+				{
 					preserveShieldedStorageMarkerInDeclaration(*variable, *type(_assignment.rightHandSide()));
+					checkByteStorageRefDomain(*variable, *type(_assignment.rightHandSide()), _assignment.location());
+					// Sync the cached Identifier and Assignment types to the variable's post-preserve type.
+					identifier->annotation().type = variable->annotation().type;
+					t = variable->annotation().type;
+					_assignment.annotation().type = t;
+				}
 	}
 	else
 	{

@@ -1,4 +1,5 @@
-// Internal functions that return bytes storage aliases must preserve shielded storage ops.
+// Internal functions returning a shielded storage ref (sbytes storage) preserve shielded ops
+// regardless of definition order; the boundary reveal goes through bytes()/bytes memory.
 contract C {
     sbytes private left;
     sbytes private right;
@@ -20,33 +21,33 @@ contract C {
             longRight.push(sbytes1(bytes1(uint8(i + 0x31))));
     }
 
-    function pick(bool which) internal view returns (bytes storage ref) {
+    function pick(bool which) internal view returns (sbytes storage ref) {
         if (which)
-            ref = bytes(left);
+            ref = left;
         else
-            ref = bytes(right);
+            ref = right;
     }
 
-    function pickTagged(bool which) internal view returns (uint256, bytes storage ref) {
+    function pickTagged(bool which) internal view returns (uint256, sbytes storage ref) {
         if (which)
-            return (1, bytes(left));
-        return (2, bytes(right));
+            return (1, left);
+        return (2, right);
     }
 
-    function pickLong(bool which) internal view returns (bytes storage ref) {
+    function pickLong(bool which) internal view returns (sbytes storage ref) {
         if (which)
-            ref = bytes(longLeft);
+            ref = longLeft;
         else
-            ref = bytes(longRight);
+            ref = longRight;
     }
 
     function readPick(bool which) public view returns (bytes memory) {
-        bytes storage ref = pick(which);
-        return ref;
+        sbytes storage ref = pick(which);
+        return bytes(ref);
     }
 
     function readPickDirect(bool which) public view returns (bytes memory) {
-        return pick(which);
+        return bytes(pick(which));
     }
 
     function readViaTernary(bool which) public view returns (bytes memory) {
@@ -60,8 +61,8 @@ contract C {
     }
 
     function pushPick(bool which, bytes1 value) public {
-        bytes storage ref = pick(which);
-        ref.push(value);
+        sbytes storage ref = pick(which);
+        ref.push(sbytes1(value));
     }
 
     function pushViaTernary(bool which, bytes1 value) public {
@@ -89,22 +90,22 @@ contract C {
     }
 
     function readTaggedBytes(bool which) public view returns (bytes memory) {
-        (, bytes storage ref) = pickTagged(which);
-        return ref;
+        (, sbytes storage ref) = pickTagged(which);
+        return bytes(ref);
     }
 
     function readPickLong(bool which) public view returns (bytes memory) {
-        return pickLong(which);
+        return bytes(pickLong(which));
     }
 
     function readPickLongAt(bool which, uint256 i) public view returns (bytes1) {
-        bytes storage ref = pickLong(which);
-        return ref[i];
+        sbytes storage ref = pickLong(which);
+        return bytes1(ref[i]);
     }
 
     function pushPickLong(bool which, bytes1 value) public {
-        bytes storage ref = pickLong(which);
-        ref.push(value);
+        sbytes storage ref = pickLong(which);
+        ref.push(sbytes1(value));
     }
 
     function readDirectLongLeft() public view returns (bytes memory) {
