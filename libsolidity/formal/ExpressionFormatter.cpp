@@ -257,8 +257,9 @@ std::optional<std::string> expressionToString(smtutil::Expression const& _expr, 
 		}
 
 		if (
-			_type->category() == frontend::Type::Category::Address ||
-			_type->category() == frontend::Type::Category::FixedBytes
+			_type->category() == frontend::Type::Category::Address ||	
+			_type->category() == frontend::Type::Category::FixedBytes ||
+			_type->category() == frontend::Type::Category::ShieldedAddress
 		)
 		{
 			try

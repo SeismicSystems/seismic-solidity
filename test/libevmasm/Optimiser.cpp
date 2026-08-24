@@ -30,7 +30,6 @@
 #include <libevmasm/ControlFlowGraph.h>
 #include <libevmasm/BlockDeduplicator.h>
 #include <libevmasm/Assembly.h>
-
 #include <boost/test/unit_test.hpp>
 
 #include <range/v3/algorithm/any_of.hpp>
@@ -153,6 +152,15 @@ namespace
 		AssemblyItems output = CFG(_input);
 		BOOST_CHECK_EQUAL_COLLECTIONS(_expectation.begin(), _expectation.end(), output.begin(), output.end());
 	}
+
+	size_t countInstruction(AssemblyItems const& _items, Instruction _instruction)
+	{
+		size_t count = 0;
+		for (AssemblyItem const& item: _items)
+			if (item.type() == Operation && item.instruction() == _instruction)
+				++count;
+		return count;
+	}
 }
 
 BOOST_AUTO_TEST_SUITE(Optimiser)
@@ -195,13 +203,26 @@ BOOST_AUTO_TEST_CASE(cse_assign_immutable_breaks)
 	BOOST_REQUIRE(cse.feedItems(input.begin(), input.end(), false) == input.begin() + 2);
 }
 
+// SEISMIC NOTE: In Seismic Solidity, SLOAD has side effects (can revert on confidential storage access).
+// CSE stops at SLOAD, so we use fullCSE and just check output is not empty.
 BOOST_AUTO_TEST_CASE(cse_intermediate_swap)
+{
+	AssemblyItems input{
+		Instruction::SWAP1, Instruction::POP, Instruction::ADD, u256(0), Instruction::SWAP1,
+		Instruction::SLOAD, Instruction::SWAP1, u256(100), Instruction::EXP, Instruction::SWAP1,
+		Instruction::DIV, u256(0xff), Instruction::AND
+	};
+	AssemblyItems output = fullCSE(input);
+	BOOST_CHECK(!output.empty());
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_intermediate_swap)
 {
 	evmasm::KnownState state;
 	evmasm::CommonSubexpressionEliminator cse(state);
 	AssemblyItems input{
 		Instruction::SWAP1, Instruction::POP, Instruction::ADD, u256(0), Instruction::SWAP1,
-		Instruction::SLOAD, Instruction::SWAP1, u256(100), Instruction::EXP, Instruction::SWAP1,
+		Instruction::CLOAD, Instruction::SWAP1, u256(100), Instruction::EXP, Instruction::SWAP1,
 		Instruction::DIV, u256(0xff), Instruction::AND
 	};
 	BOOST_REQUIRE(cse.feedItems(input.begin(), input.end(), false) == input.end());
@@ -378,6 +399,7 @@ BOOST_AUTO_TEST_CASE(cse_storage)
 		u256(0),
 		Instruction::SSTORE
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(0),
 		Instruction::DUP1,
@@ -386,6 +408,41 @@ BOOST_AUTO_TEST_CASE(cse_storage)
 		Instruction::ADD,
 		Instruction::SWAP1,
 		Instruction::SSTORE
+	});
+	*/
+
+	// With Seismic Solidity SLOAD having side effects, CSE cannot optimize across SLOADs,
+	// so we use checkFullCSE which handles CSE stopping at side-effect instructions,
+	// to at least do constant folding.
+	checkFullCSE(input, {
+		u256(0),
+		Instruction::SLOAD,
+		u256(0),
+		Instruction::SLOAD,
+		Instruction::ADD,
+		u256(0),
+		Instruction::SSTORE
+	});
+}
+BOOST_AUTO_TEST_CASE(shielded_cse_storage)
+{
+	AssemblyItems input{
+		u256(0),
+		Instruction::CLOAD,
+		u256(0),
+		Instruction::CLOAD,
+		Instruction::ADD,
+		u256(0),
+		Instruction::CSTORE
+	};
+	checkCSE(input, {
+		u256(0),
+		Instruction::DUP1,
+		Instruction::CLOAD,
+		Instruction::DUP1,
+		Instruction::ADD,
+		Instruction::SWAP1,
+		Instruction::CSTORE
 	});
 }
 
@@ -403,10 +460,37 @@ BOOST_AUTO_TEST_CASE(cse_noninterleaved_storage)
 		Instruction::DUP3,
 		Instruction::SSTORE
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(8),
 		Instruction::DUP2,
 		Instruction::SSTORE,
+		u256(7)
+	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it
+	checkFullCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_noninterleaved_storage)
+{
+	// two stores to the same location should be replaced by only one store, even if we
+	// read in the meantime
+	AssemblyItems input{
+		u256(7),
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		Instruction::DUP1,
+		Instruction::CLOAD,
+		u256(8),
+		Instruction::DUP3,
+		Instruction::CSTORE
+	};
+	checkCSE(input, {
+		u256(8),
+		Instruction::DUP2,
+		Instruction::CSTORE,
 		u256(7)
 	});
 }
@@ -423,6 +507,26 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage)
 		u256(0),
 		Instruction::DUP3,
 		Instruction::SSTORE // store different value to "DUP1"
+	};
+	/* Upstream code does this
+	checkCSE(input, input);
+	*/
+	// Seismic Solidity requires FullCSE since SLOAD has side effects
+	checkFullCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage)
+{
+	// stores and reads to/from two unknown locations, should not optimize away the first store
+	AssemblyItems input{
+		u256(7),
+		Instruction::DUP2,
+		Instruction::CSTORE, // store to "DUP1"
+		Instruction::DUP2,
+		Instruction::CLOAD, // read from "DUP2", might be equal to "DUP1"
+		u256(0),
+		Instruction::DUP3,
+		Instruction::CSTORE
 	};
 	checkCSE(input, input);
 }
@@ -443,12 +547,52 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_same_value)
 		Instruction::DUP3,
 		Instruction::SSTORE // store same value to "DUP1"
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(7),
 		Instruction::DUP2,
 		Instruction::SSTORE,
 		Instruction::DUP2,
 		Instruction::SLOAD
+	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it.
+	// But constant folding still happens (6 + 1 = 7).
+	checkFullCSE(input, {
+		u256(7),
+		Instruction::DUP2,
+		Instruction::SSTORE,
+		Instruction::DUP2,
+		Instruction::SLOAD,
+		u256(7),
+		Instruction::DUP3,
+		Instruction::SSTORE
+	});
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_same_value)
+{
+	// stores and reads to/from two unknown locations, should not optimize away the first store
+	// but it should optimize away the second, since we already know the value will be the same
+	AssemblyItems input{
+		u256(7),
+		Instruction::DUP2,
+		Instruction::CSTORE, // store to "DUP1"
+		Instruction::DUP2,
+		Instruction::CLOAD, // read from "DUP2", might be equal to "DUP1"
+		u256(6),
+		u256(1),
+		Instruction::ADD,
+		Instruction::DUP3,
+		Instruction::CSTORE // store same value to "DUP1"
+	};
+	checkCSE(input, {
+		u256(7),
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		Instruction::DUP2,
+		Instruction::CLOAD
 	});
 }
 
@@ -466,12 +610,40 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_at_known_location)
 		u256(1),
 		Instruction::SSTORE // store different value at 1
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(2),
 		Instruction::SLOAD,
 		u256(0x90),
 		u256(1),
 		Instruction::SSTORE
+	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it
+	checkFullCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_at_known_location)
+{
+	// stores and reads to/from two known locations, should optimize away the first store,
+	// because we know that the location is different
+	AssemblyItems input{
+		u256(0x70),
+		u256(1),
+		Instruction::CSTORE, // store to 1
+		u256(2),
+		Instruction::CLOAD, // read from 2, is different from 1
+		u256(0x90),
+		u256(1),
+		Instruction::CSTORE // store different value at 1
+	};
+	checkCSE(input, {
+		u256(2),
+		Instruction::CLOAD,
+		u256(0x90),
+		u256(1),
+		Instruction::CSTORE
 	});
 }
 
@@ -495,6 +667,7 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_at_known_location_offset)
 		Instruction::ADD,
 		Instruction::SSTORE // store different value at "DUP1"+1
 	};
+	/* Upstream code does this
 	checkCSE(input, {
 		u256(2),
 		Instruction::DUP2,
@@ -505,6 +678,43 @@ BOOST_AUTO_TEST_CASE(cse_interleaved_storage_at_known_location_offset)
 		Instruction::DUP4,
 		Instruction::ADD,
 		Instruction::SSTORE
+	});
+	*/
+
+	// With SLOAD having side effects, CSE cannot optimize across it
+	checkFullCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_interleaved_storage_at_known_location_offset)
+{
+	// stores and reads to/from two locations which are known to be different,
+	// should optimize away the first store, because we know that the location is different
+	AssemblyItems input{
+		u256(0x70),
+		Instruction::DUP2,
+		u256(1),
+		Instruction::ADD,
+		Instruction::CSTORE, // store to "DUP1"+1
+		Instruction::DUP1,
+		u256(2),
+		Instruction::ADD,
+		Instruction::CLOAD, // read from "DUP1"+2, is different from "DUP1"+1
+		u256(0x90),
+		Instruction::DUP3,
+		u256(1),
+		Instruction::ADD,
+		Instruction::CSTORE // store different value at "DUP1"+1
+	};
+	checkCSE(input, {
+		u256(2),
+		Instruction::DUP2,
+		Instruction::ADD,
+		Instruction::CLOAD,
+		u256(0x90),
+		u256(1),
+		Instruction::DUP4,
+		Instruction::ADD,
+		Instruction::CSTORE
 	});
 }
 
@@ -752,6 +962,10 @@ BOOST_AUTO_TEST_CASE(cse_equality_on_initially_known_stack)
 	BOOST_CHECK(find(output.begin(), output.end(), AssemblyItem(u256(1))) != output.end());
 }
 
+// Commenting out this test, but keeping here for documenting how seismic solidity semantics
+// differ from normal solidity. Because SLOAD has side effects, StackTooDeepException on
+// sequence access simply can't occur anymore because CSE stops at SLOAD before
+// it can try to access previous sequences.
 BOOST_AUTO_TEST_CASE(cse_access_previous_sequence)
 {
 	// Tests that the code generator detects whether it tries to access SLOAD instructions
@@ -771,10 +985,35 @@ BOOST_AUTO_TEST_CASE(cse_access_previous_sequence)
 		u256(0),
 		Instruction::SLOAD,
 	};
-	BOOST_CHECK_THROW(CSE(input, state), StackTooDeepException);
+	// BOOST_CHECK_THROW(CSE(input, state), StackTooDeepException);
 	// @todo for now, this throws an exception, but it should recover to the following
 	// (or an even better version) at some point:
 	// 0, SLOAD, 1, ADD, SSTORE, 0 SLOAD
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_access_previous_sequence)
+{
+	// Tests that the code generator detects whether it tries to access CLOAD instructions
+	// from a sequenced expression which is not in its scope.
+	evmasm::KnownState state = createInitialState(AssemblyItems{
+		u256(0),
+		Instruction::CLOAD,
+		u256(1),
+		Instruction::ADD,
+		u256(0),
+		Instruction::CSTORE
+	});
+	// now stored: val_1 + 1 (value at sequence 1)
+	// if in the following instructions, the CLOAD cresolves to "val_1 + 1",
+	// this cannot be generated because we cannot load from sequence 1 anymore.
+	AssemblyItems input{
+		u256(0),
+		Instruction::CLOAD,
+	};
+	BOOST_CHECK_THROW(CSE(input, state), StackTooDeepException);
+	// @todo for now, this throws an exception, but it should recover to the following
+	// (or an even better version) at some point:
+	// 0, CLOAD, 1, ADD, CSTORE, 0 CLOAD
 }
 
 BOOST_AUTO_TEST_CASE(cse_optimise_return)
@@ -975,6 +1214,38 @@ BOOST_AUTO_TEST_CASE(block_deduplicator_loops)
 	BOOST_CHECK_EQUAL(pushTags.size(), 1);
 }
 
+BOOST_AUTO_TEST_CASE(shielded_block_deduplicator_loops)
+{
+	AssemblyItems input{
+		u256(0),
+		Instruction::CLOAD,
+		AssemblyItem(PushTag, 1),
+		AssemblyItem(PushTag, 2),
+		Instruction::JUMPI,
+		Instruction::JUMP,
+		AssemblyItem(Tag, 1),
+		u256(5),
+		u256(6),
+		Instruction::CSTORE,
+		AssemblyItem(PushTag, 1),
+		Instruction::JUMP,
+		AssemblyItem(Tag, 2),
+		u256(5),
+		u256(6),
+		Instruction::CSTORE,
+		AssemblyItem(PushTag, 2),
+		Instruction::JUMP,
+	};
+	BlockDeduplicator deduplicator(input);
+	deduplicator.deduplicate();
+
+	std::set<u256> pushTags;
+	for (AssemblyItem const& item: input)
+		if (item.type() == PushTag)
+			pushTags.insert(item.data());
+	BOOST_CHECK_EQUAL(pushTags.size(), 1);
+}
+
 BOOST_AUTO_TEST_CASE(clear_unreachable_code)
 {
 	AssemblyItems items{
@@ -1001,6 +1272,41 @@ BOOST_AUTO_TEST_CASE(clear_unreachable_code)
 		AssemblyItem(PushTag, 1),
 		Instruction::JUMP
 	};
+	PeepholeOptimiser peepOpt(items, solidity::test::CommonOptions::get().evmVersion());
+	BOOST_REQUIRE(peepOpt.optimise());
+	BOOST_CHECK_EQUAL_COLLECTIONS(
+		items.begin(), items.end(),
+		expectation.begin(), expectation.end()
+	);
+}
+
+BOOST_AUTO_TEST_CASE(shielded_clear_unreachable_code)
+{
+	AssemblyItems items{
+		AssemblyItem(PushTag, 1),
+		Instruction::JUMP,
+		u256(0),
+		Instruction::CLOAD,
+		AssemblyItem(Tag, 2),
+		u256(5),
+		u256(6),
+		Instruction::CSTORE,
+		AssemblyItem(PushTag, 1),
+		Instruction::JUMP,
+		u256(5),
+		u256(6)
+	};
+	AssemblyItems expectation{
+		AssemblyItem(PushTag, 1),
+		Instruction::JUMP,
+		AssemblyItem(Tag, 2),
+		u256(5),
+		u256(6),
+		Instruction::CSTORE,
+		AssemblyItem(PushTag, 1),
+		Instruction::JUMP
+	};
+
 	PeepholeOptimiser peepOpt(items, solidity::test::CommonOptions::get().evmVersion());
 	BOOST_REQUIRE(peepOpt.optimise());
 	BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -1636,6 +1942,11 @@ BOOST_AUTO_TEST_CASE(cse_verbatim_mload)
 	checkFullCSE(input, input);
 }
 
+// SEISMIC NOTE: In Seismic Solidity, SLOAD has side effects (can revert on confidential storage access).
+// Therefore two SLOADs from the same slot cannot be combined into one SLOAD + DUP.
+// Note that this is generally not true since the only revert possible from an SLOAD is from attempting
+// to read from a confidential slot, so reading the same slot twice should be optimizable.
+// However we have not implemented such an analysis yet, so we conservatively assume SLOAD has generic side effects.
 BOOST_AUTO_TEST_CASE(cse_sload_verbatim_dup)
 {
 	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
@@ -1647,6 +1958,7 @@ BOOST_AUTO_TEST_CASE(cse_sload_verbatim_dup)
 		verbatim
 	};
 
+	/* Upstream code does this
 	AssemblyItems output{
 		u256(0),
 		Instruction::SLOAD,
@@ -1656,7 +1968,33 @@ BOOST_AUTO_TEST_CASE(cse_sload_verbatim_dup)
 
 	checkCSE(input, output);
 	checkFullCSE(input, output);
+	*/
+	// With SLOAD having side effects, the two SLOADs cannot be combined
+	checkFullCSE(input, input);
 }
+
+BOOST_AUTO_TEST_CASE(shielded_cse_sload_verbatim_dup)
+{
+	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
+	AssemblyItems input{
+		u256(0),
+		Instruction::CLOAD,
+		u256(0),
+		Instruction::CLOAD,
+		verbatim
+	};
+
+	AssemblyItems output{
+		u256(0),
+		Instruction::CLOAD,
+		Instruction::DUP1,
+		verbatim
+	};
+
+	checkCSE(input, output);
+	checkFullCSE(input, output);
+}
+
 
 BOOST_AUTO_TEST_CASE(cse_verbatim_sload_sideeffect)
 {
@@ -1672,12 +2010,40 @@ BOOST_AUTO_TEST_CASE(cse_verbatim_sload_sideeffect)
 	checkFullCSE(input, input);
 }
 
+BOOST_AUTO_TEST_CASE(shielded_cse_verbatim_sload_sideeffect)
+{
+	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
+	AssemblyItems input{
+		u256(0),
+		Instruction::CLOAD,
+		verbatim,
+		u256(0),
+		Instruction::CLOAD,
+	};
+
+	checkFullCSE(input, input);
+}
+
 BOOST_AUTO_TEST_CASE(cse_verbatim_eq)
 {
 	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
 	AssemblyItems input{
 		u256(0),
 		Instruction::SLOAD,
+		verbatim,
+		Instruction::DUP1,
+		Instruction::EQ
+	};
+
+	checkFullCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(shielded_cse_verbatim_eq)
+{
+	auto verbatim = AssemblyItem{bytes{1, 2, 3, 4, 5}, 0, 0};
+	AssemblyItems input{
+		u256(0),
+		Instruction::CLOAD,
 		verbatim,
 		Instruction::DUP1,
 		Instruction::EQ
@@ -2224,6 +2590,270 @@ BOOST_AUTO_TEST_CASE(inliner_invalid)
 	);
 }
 
+
+BOOST_AUTO_TEST_CASE(cse_sstore_then_cload_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// CLOAD can read from public storage, so optimizer eliminates CLOAD and keeps 0x42 on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_then_sload_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::SLOAD
+	};
+	// Optimizer does stack manipulation but keeps SLOAD (doesn't replace with CSTORE value)
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::SWAP1,
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		Instruction::SLOAD
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_sstore_cload_different_slots_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(1),
+		Instruction::CLOAD
+	};
+	checkCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_sload_different_slots_no_optimization)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(1),
+		Instruction::SLOAD
+	};
+	checkCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_sstore_sload_same_slot_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::SLOAD
+	};
+	/* Upstream code does this
+	// Optimizer eliminates SLOAD and keeps value on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+	*/
+
+	// In Seismic Solidity, with SLOAD having side effects, it cannot be eliminated
+	checkFullCSE(input, input);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cstore_cload_same_slot_can_optimize)
+{
+	AssemblyItems input{
+		u256(0x42),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// Optimizer eliminates CLOAD and keeps value on stack
+	checkCSE(input, {
+		u256(0x42),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::SWAP1,
+		Instruction::CSTORE
+	});
+}
+
+BOOST_AUTO_TEST_CASE(known_state_p13_sload_preserves_private_marker)
+{
+	// SLOAD breaks CSE blocks (side-effecting), so drive KnownState directly:
+	// post-fix the second cstore early-outs against the preserved {value, true}.
+	KnownState state;
+	state.feedItem(AssemblyItem{u256(0x11)});
+	state.feedItem(AssemblyItem{u256(0)});
+	BOOST_REQUIRE(state.feedItem(AssemblyItem{Instruction::CSTORE}).isValid());
+
+	state.feedItem(AssemblyItem{u256(0)});
+	state.feedItem(AssemblyItem{Instruction::SLOAD});
+
+	state.feedItem(AssemblyItem{u256(0x11)});
+	state.feedItem(AssemblyItem{u256(0)});
+	KnownState::StoreOperation op = state.feedItem(AssemblyItem{Instruction::CSTORE});
+	BOOST_CHECK(!op.isValid());
+}
+
+BOOST_AUTO_TEST_CASE(cse_p27_sstore_does_not_clobber_private_marker)
+{
+	// cstore(0, 0x11) claims slot 0 private. sstore(0, 0x22) would revert at
+	// runtime — KnownState must not clobber the is_private=true marker, since
+	// a subsequent CLOAD's cached value depends on it. Pre-fix the model sees
+	// is_private=false after the SSTORE and a later CLOAD picks up 0x22 from
+	// the cache; with the fix it stays 0x11.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x22),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// Post-fix: CLOAD eliminated, 0x11 (cstore value) left on stack via DUP.
+	checkCSE(input, {
+		u256(0x11),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		u256(0x22),
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_cstore_sstore_cstore_preserves_all)
+{
+	// CSTORE privatizes slot 0, then SSTORE conflicts (should revert at runtime),
+	// then another CSTORE writes to same slot. Without the fix, CSE drops the
+	// first CSTORE, allowing the SSTORE to succeed and changing revert->success.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	AssemblyItems optimized = CSE(input);
+
+	// Both CSTOREs and the SSTORE must be preserved — the cross-domain conflict
+	// means eliminating any store changes the runtime semantics.
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 2u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_sstore_cstore_sstore_preserves_all)
+{
+	// Reverse direction: SSTORE, then CSTORE, then SSTORE on same slot.
+	// Without the fix, CSE drops the first SSTORE.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0x22),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::SSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 2u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_same_domain_duplicate_cstore_still_optimizes)
+{
+	// Two CSTOREs to the same slot with no cross-domain conflict —
+	// normal CSE optimization should still eliminate the first one.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	// Only the last CSTORE should survive (normal same-domain optimization)
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_aliased_slots_preserves_all)
+{
+	// calldataload(0) and calldataload(32) get distinct expression IDs but
+	// may alias at runtime — pre-fix the first CSTORE is dropped.
+	AssemblyItems input{
+		u256(0xaa),
+		u256(0),
+		Instruction::CALLDATALOAD,
+		Instruction::CSTORE,
+		u256(0xbb),
+		u256(32),
+		Instruction::CALLDATALOAD,
+		Instruction::SSTORE,
+		u256(0xcc),
+		u256(0),
+		Instruction::CALLDATALOAD,
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 2u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_distinct_constants_still_optimize)
+{
+	// Negative control: static slots 0 and 1 are knownToBeDifferent, so the
+	// redundant first cstore on slot 0 should still be eliminated.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x22),
+		u256(1),
+		Instruction::SSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -1,0 +1,314 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "C": [
+      27
+    ],
+    "MyAddress": [
+      2
+    ],
+    "MyUInt": [
+      4
+    ],
+    "f": [
+      16
+    ]
+  },
+  "id": 28,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "canonicalName": "MyAddress",
+      "id": 2,
+      "name": "MyAddress",
+      "nameLocation": "5:9:1",
+      "nodeType": "UserDefinedValueTypeDefinition",
+      "src": "0:26:1",
+      "underlyingType": {
+        "id": 1,
+        "name": "address",
+        "nodeType": "ElementaryTypeName",
+        "src": "18:7:1",
+        "stateMutability": "nonpayable",
+        "typeDescriptions": {
+          "typeIdentifier": "t_address",
+          "typeString": "address"
+        }
+      }
+    },
+    {
+      "canonicalName": "MyUInt",
+      "id": 4,
+      "name": "MyUInt",
+      "nameLocation": "32:6:1",
+      "nodeType": "UserDefinedValueTypeDefinition",
+      "src": "27:21:1",
+      "underlyingType": {
+        "id": 3,
+        "name": "suint",
+        "nodeType": "ElementaryTypeName",
+        "src": "42:5:1",
+        "typeDescriptions": {
+          "typeIdentifier": "t_suint256",
+          "typeString": "suint256"
+        }
+      }
+    },
+    {
+      "body": {
+        "id": 15,
+        "nodeType": "Block",
+        "src": "62:34:1",
+        "statements": [
+          {
+            "assignments": [
+              9
+            ],
+            "declarations": [
+              {
+                "constant": false,
+                "id": 9,
+                "mutability": "mutable",
+                "name": "a",
+                "nameLocation": "78:1:1",
+                "nodeType": "VariableDeclaration",
+                "scope": 15,
+                "src": "68:11:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_userDefinedValueType$_MyAddress_$2",
+                  "typeString": "MyAddress"
+                },
+                "typeName": {
+                  "id": 8,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 7,
+                    "name": "MyAddress",
+                    "nameLocations": [
+                      "68:9:1"
+                    ],
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 2,
+                    "src": "68:9:1"
+                  },
+                  "referencedDeclaration": 2,
+                  "src": "68:9:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_MyAddress_$2",
+                    "typeString": "MyAddress"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "id": 10,
+            "nodeType": "VariableDeclarationStatement",
+            "src": "68:11:1"
+          },
+          {
+            "assignments": [
+              13
+            ],
+            "declarations": [
+              {
+                "constant": false,
+                "id": 13,
+                "mutability": "mutable",
+                "name": "b",
+                "nameLocation": "92:1:1",
+                "nodeType": "VariableDeclaration",
+                "scope": 15,
+                "src": "85:8:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_userDefinedValueType$_MyUInt_$4",
+                  "typeString": "MyUInt"
+                },
+                "typeName": {
+                  "id": 12,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 11,
+                    "name": "MyUInt",
+                    "nameLocations": [
+                      "85:6:1"
+                    ],
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 4,
+                    "src": "85:6:1"
+                  },
+                  "referencedDeclaration": 4,
+                  "src": "85:6:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_MyUInt_$4",
+                    "typeString": "MyUInt"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "id": 14,
+            "nodeType": "VariableDeclarationStatement",
+            "src": "85:8:1"
+          }
+        ]
+      },
+      "id": 16,
+      "implemented": true,
+      "kind": "freeFunction",
+      "modifiers": [],
+      "name": "f",
+      "nameLocation": "58:1:1",
+      "nodeType": "FunctionDefinition",
+      "parameters": {
+        "id": 5,
+        "nodeType": "ParameterList",
+        "parameters": [],
+        "src": "59:2:1"
+      },
+      "returnParameters": {
+        "id": 6,
+        "nodeType": "ParameterList",
+        "parameters": [],
+        "src": "62:0:1"
+      },
+      "scope": 28,
+      "src": "49:47:1",
+      "stateMutability": "nonpayable",
+      "virtual": false,
+      "visibility": "internal"
+    },
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "C",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 27,
+      "linearizedBaseContracts": [
+        27
+      ],
+      "name": "C",
+      "nameLocation": "106:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "canonicalName": "C.MyAddress",
+          "id": 18,
+          "name": "MyAddress",
+          "nameLocation": "119:9:1",
+          "nodeType": "UserDefinedValueTypeDefinition",
+          "src": "114:26:1",
+          "underlyingType": {
+            "id": 17,
+            "name": "address",
+            "nodeType": "ElementaryTypeName",
+            "src": "132:7:1",
+            "stateMutability": "nonpayable",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            }
+          }
+        },
+        {
+          "canonicalName": "C.MyUInt",
+          "id": 20,
+          "name": "MyUInt",
+          "nameLocation": "150:6:1",
+          "nodeType": "UserDefinedValueTypeDefinition",
+          "src": "145:21:1",
+          "underlyingType": {
+            "id": 19,
+            "name": "suint",
+            "nodeType": "ElementaryTypeName",
+            "src": "160:5:1",
+            "typeDescriptions": {
+              "typeIdentifier": "t_suint256",
+              "typeString": "suint256"
+            }
+          }
+        },
+        {
+          "constant": false,
+          "id": 26,
+          "mutability": "mutable",
+          "name": "m",
+          "nameLocation": "209:1:1",
+          "nodeType": "VariableDeclaration",
+          "scope": 27,
+          "src": "171:39:1",
+          "stateVariable": true,
+          "storageLocation": "default",
+          "typeDescriptions": {
+            "typeIdentifier": "t_mapping$_t_userDefinedValueType$_MyAddress_$18_$_t_userDefinedValueType$_MyUInt_$20_$",
+            "typeString": "mapping(C.MyAddress => C.MyUInt)"
+          },
+          "typeName": {
+            "id": 25,
+            "keyName": "",
+            "keyNameLocation": "-1:-1:-1",
+            "keyType": {
+              "id": 22,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 21,
+                "name": "MyAddress",
+                "nameLocations": [
+                  "179:9:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 18,
+                "src": "179:9:1"
+              },
+              "referencedDeclaration": 18,
+              "src": "179:9:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_userDefinedValueType$_MyAddress_$18",
+                "typeString": "C.MyAddress"
+              }
+            },
+            "nodeType": "Mapping",
+            "src": "171:28:1",
+            "typeDescriptions": {
+              "typeIdentifier": "t_mapping$_t_userDefinedValueType$_MyAddress_$18_$_t_userDefinedValueType$_MyUInt_$20_$",
+              "typeString": "mapping(C.MyAddress => C.MyUInt)"
+            },
+            "valueName": "",
+            "valueNameLocation": "-1:-1:-1",
+            "valueType": {
+              "id": 24,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 23,
+                "name": "MyUInt",
+                "nameLocations": [
+                  "192:6:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 20,
+                "src": "192:6:1"
+              },
+              "referencedDeclaration": 20,
+              "src": "192:6:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_userDefinedValueType$_MyUInt_$20",
+                "typeString": "C.MyUInt"
+              }
+            }
+          },
+          "visibility": "internal"
+        }
+      ],
+      "scope": 28,
+      "src": "97:116:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:214:1"
+}

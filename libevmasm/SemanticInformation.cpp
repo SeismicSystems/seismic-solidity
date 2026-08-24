@@ -34,6 +34,8 @@ std::vector<SemanticInformation::Operation> SemanticInformation::readWriteOperat
 	{
 	case Instruction::SSTORE:
 	case Instruction::SLOAD:
+	case Instruction::CSTORE:
+	case Instruction::CLOAD:
 	{
 		assertThrow(memory(_instruction) == Effect::None, OptimizerException, "");
 		assertThrow(storage(_instruction) != Effect::None, OptimizerException, "");
@@ -275,6 +277,8 @@ bool SemanticInformation::breaksCSEAnalysisBlock(AssemblyItem const& _item, bool
 		InstructionInfo info = instructionInfo(_item.instruction(), langutil::EVMVersion());
 		if (_item.instruction() == Instruction::SSTORE)
 			return false;
+		if (_item.instruction() == Instruction::CSTORE)
+			return false;
 		if (_item.instruction() == Instruction::MSTORE)
 			return false;
 		if (!_msizeImportant && (
@@ -464,6 +468,7 @@ bool SemanticInformation::movable(Instruction _instruction)
 	case Instruction::EXTCODEHASH:
 	case Instruction::RETURNDATASIZE:
 	case Instruction::SLOAD:
+	case Instruction::CLOAD:
 	case Instruction::TLOAD:
 	case Instruction::PC:
 	case Instruction::MSIZE:
@@ -541,7 +546,11 @@ bool SemanticInformation::movableApartFromEffects(Instruction _instruction)
 	case Instruction::RETURNDATASIZE:
 	case Instruction::BALANCE:
 	case Instruction::SELFBALANCE:
-	case Instruction::SLOAD:
+	// SLOAD is NOT movable apart from effects because it can revert due to
+	// confidentiality mismatch (reading private storage).
+	// Hoisting SLOAD out of a loop could change behavior from non-reverting
+	// to reverting for zero-iteration loops.
+	case Instruction::CLOAD:
 	case Instruction::TLOAD:
 	case Instruction::KECCAK256:
 	case Instruction::MLOAD:
@@ -562,6 +571,7 @@ SemanticInformation::Effect SemanticInformation::storage(Instruction _instructio
 	case Instruction::CREATE:
 	case Instruction::CREATE2:
 	case Instruction::SSTORE:
+	case Instruction::CSTORE:
 	case Instruction::EOFCREATE:
 	case Instruction::RETURNCONTRACT:
 	case Instruction::EXTCALL:
@@ -569,6 +579,7 @@ SemanticInformation::Effect SemanticInformation::storage(Instruction _instructio
 		return SemanticInformation::Write;
 
 	case Instruction::SLOAD:
+	case Instruction::CLOAD:
 	case Instruction::STATICCALL:
 	case Instruction::EXTSTATICCALL:
 		return SemanticInformation::Read;
@@ -662,12 +673,14 @@ bool SemanticInformation::invalidInPureFunctions(Instruction _instruction)
 	case Instruction::BLOBHASH:
 	case Instruction::COINBASE:
 	case Instruction::TIMESTAMP:
+	case Instruction::TIMESTAMPMS:
 	case Instruction::NUMBER:
 	case Instruction::PREVRANDAO:
 	case Instruction::GASLIMIT:
 	case Instruction::EXTSTATICCALL:
 	case Instruction::STATICCALL:
 	case Instruction::SLOAD:
+	case Instruction::CLOAD:
 	case Instruction::TLOAD:
 		return true;
 	default:
@@ -683,6 +696,7 @@ bool SemanticInformation::invalidInViewFunctions(Instruction _instruction)
 	switch (_instruction)
 	{
 	case Instruction::SSTORE:
+	case Instruction::CSTORE:
 	case Instruction::TSTORE:
 	case Instruction::JUMP:
 	case Instruction::JUMPI:

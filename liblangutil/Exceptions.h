@@ -67,7 +67,7 @@ struct InvalidAstError: virtual util::Exception {};
 		(CONDITION), \
 		::solidity::langutil::InternalCompilerError, \
 		(DESCRIPTION), \
-		"Solidity assertion failed" \
+		"Solidity assertion failed at " __FILE__ ":" BOOST_PP_STRINGIZE(__LINE__) \
 	)
 
 

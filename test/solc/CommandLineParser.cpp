@@ -118,14 +118,14 @@ BOOST_AUTO_TEST_CASE(cli_mode_options)
 			"--output-dir=/tmp/out",
 			"--overwrite",
 			"--evm-version=spuriousDragon",
-			"--via-ir",
-			"--experimental-via-ir",
+			// NOTE: --via-ir and --experimental-via-ir removed (via-ir pipeline disabled)
 			"--revert-strings=strip",
 			"--debug-info=location",
 			"--pretty-json",
 			"--json-indent=7",
 			"--no-color",
 			"--error-codes",
+			"--no-seismic-warnings",
 			"--libraries="
 				"dir1/file1.sol:L=0x1234567890123456789012345678901234567890,"
 				"dir2/file2.sol:L=0x1111122222333334444455555666667777788888",
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(cli_mode_options)
 		expectedOptions.output.dir = "/tmp/out";
 		expectedOptions.output.overwriteFiles = true;
 		expectedOptions.output.evmVersion = EVMVersion::spuriousDragon();
-		expectedOptions.output.viaIR = true;
+		expectedOptions.output.viaIR = false;
 		expectedOptions.output.revertStrings = RevertStrings::Strip;
 		expectedOptions.output.debugInfoSelection = DebugInfoSelection::fromString("location");
 		expectedOptions.formatting.json = JsonFormat{JsonFormat::Pretty, 7};
@@ -190,6 +190,7 @@ BOOST_AUTO_TEST_CASE(cli_mode_options)
 		};
 		expectedOptions.formatting.coloredOutput = false;
 		expectedOptions.formatting.withErrorIds = true;
+		expectedOptions.formatting.noSeismicWarnings = true;
 		expectedOptions.compiler.outputs = {
 			true, true, true, true, true,
 			true, true, true, true, true,
@@ -260,12 +261,15 @@ BOOST_AUTO_TEST_CASE(no_import_callback)
 	}
 }
 
+// NOTE: via_ir_options test skipped (via-ir pipeline disabled)
+#if 0
 BOOST_AUTO_TEST_CASE(via_ir_options)
 {
 	BOOST_TEST(!parseCommandLine({"solc", "contract.sol"}).output.viaIR);
 	for (std::string viaIrOption: {"--via-ir", "--experimental-via-ir"})
 		BOOST_TEST(parseCommandLine({"solc", viaIrOption, "contract.sol"}).output.viaIR);
 }
+#endif
 
 BOOST_AUTO_TEST_CASE(assembly_mode_options)
 {
@@ -386,6 +390,7 @@ BOOST_AUTO_TEST_CASE(standard_json_mode_options)
 		"--json-indent=1",
 		"--no-color",                      // Accepted but has no effect in Standard JSON mode
 		"--error-codes",                   // Accepted but has no effect in Standard JSON mode
+		"--no-seismic-warnings",           // Accepted but has no effect in Standard JSON mode
 		"--libraries="                     // Ignored in Standard JSON mode
 			"dir1/file1.sol:L=0x1234567890123456789012345678901234567890,"
 			"dir2/file2.sol:L=0x1111122222333334444455555666667777788888",
@@ -407,6 +412,7 @@ BOOST_AUTO_TEST_CASE(standard_json_mode_options)
 	expectedOptions.formatting.json = JsonFormat {JsonFormat::Pretty, 1};
 	expectedOptions.formatting.coloredOutput = false;
 	expectedOptions.formatting.withErrorIds = true;
+	expectedOptions.formatting.noSeismicWarnings = true;
 	expectedOptions.compiler.estimateGas = true;
 	expectedOptions.compiler.combinedJsonRequests = CombinedJsonRequests{};
 	expectedOptions.compiler.combinedJsonRequests->abi = true;
@@ -628,6 +634,8 @@ BOOST_AUTO_TEST_CASE(invalid_optimizer_sequence_without_optimize)
 	}
 }
 
+// NOTE: ethdebug test skipped (requires --via-ir which is disabled)
+#if 0
 BOOST_AUTO_TEST_CASE(ethdebug)
 {
 	CommandLineOptions commandLineOptions = parseCommandLine({"solc", "contract.sol", "--debug-info", "ethdebug", "--ethdebug", "--via-ir"});
@@ -664,6 +672,7 @@ BOOST_AUTO_TEST_CASE(ethdebug)
 	BOOST_CHECK_EQUAL(commandLineOptions.output.debugInfoSelection.has_value(), true);
 	BOOST_CHECK_EQUAL(commandLineOptions.output.debugInfoSelection->ethdebug, true);
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

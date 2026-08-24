@@ -1,0 +1,579 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "C": [
+      49
+    ],
+    "I8": [
+      2
+    ],
+    "sub": [
+      20
+    ],
+    "unsub": [
+      30
+    ]
+  },
+  "id": 50,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "canonicalName": "I8",
+      "id": 2,
+      "name": "I8",
+      "nameLocation": "5:2:1",
+      "nodeType": "UserDefinedValueTypeDefinition",
+      "src": "0:17:1",
+      "underlyingType": {
+        "id": 1,
+        "name": "sint8",
+        "nodeType": "ElementaryTypeName",
+        "src": "11:5:1",
+        "typeDescriptions": {
+          "typeIdentifier": "t_sint8",
+          "typeString": "sint8"
+        }
+      }
+    },
+    {
+      "functionList": [
+        {
+          "definition": {
+            "id": 3,
+            "name": "sub",
+            "nameLocations": [
+              "25:3:1"
+            ],
+            "nodeType": "IdentifierPath",
+            "referencedDeclaration": 20,
+            "src": "25:3:1"
+          },
+          "operator": "-"
+        },
+        {
+          "definition": {
+            "id": 4,
+            "name": "unsub",
+            "nameLocations": [
+              "35:5:1"
+            ],
+            "nodeType": "IdentifierPath",
+            "referencedDeclaration": 30,
+            "src": "35:5:1"
+          },
+          "operator": "-"
+        }
+      ],
+      "global": true,
+      "id": 7,
+      "nodeType": "UsingForDirective",
+      "src": "18:43:1",
+      "typeName": {
+        "id": 6,
+        "nodeType": "UserDefinedTypeName",
+        "pathNode": {
+          "id": 5,
+          "name": "I8",
+          "nameLocations": [
+            "51:2:1"
+          ],
+          "nodeType": "IdentifierPath",
+          "referencedDeclaration": 2,
+          "src": "51:2:1"
+        },
+        "referencedDeclaration": 2,
+        "src": "51:2:1",
+        "typeDescriptions": {
+          "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+          "typeString": "I8"
+        }
+      }
+    },
+    {
+      "body": {
+        "id": 19,
+        "nodeType": "Block",
+        "src": "101:2:1",
+        "statements": []
+      },
+      "id": 20,
+      "implemented": true,
+      "kind": "freeFunction",
+      "modifiers": [],
+      "name": "sub",
+      "nameLocation": "71:3:1",
+      "nodeType": "FunctionDefinition",
+      "parameters": {
+        "id": 14,
+        "nodeType": "ParameterList",
+        "parameters": [
+          {
+            "constant": false,
+            "id": 10,
+            "mutability": "mutable",
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "nodeType": "VariableDeclaration",
+            "scope": 20,
+            "src": "75:2:1",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+              "typeString": "I8"
+            },
+            "typeName": {
+              "id": 9,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 8,
+                "name": "I8",
+                "nameLocations": [
+                  "75:2:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 2,
+                "src": "75:2:1"
+              },
+              "referencedDeclaration": 2,
+              "src": "75:2:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                "typeString": "I8"
+              }
+            },
+            "visibility": "internal"
+          },
+          {
+            "constant": false,
+            "id": 13,
+            "mutability": "mutable",
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "nodeType": "VariableDeclaration",
+            "scope": 20,
+            "src": "79:2:1",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+              "typeString": "I8"
+            },
+            "typeName": {
+              "id": 12,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 11,
+                "name": "I8",
+                "nameLocations": [
+                  "79:2:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 2,
+                "src": "79:2:1"
+              },
+              "referencedDeclaration": 2,
+              "src": "79:2:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                "typeString": "I8"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "src": "74:8:1"
+      },
+      "returnParameters": {
+        "id": 18,
+        "nodeType": "ParameterList",
+        "parameters": [
+          {
+            "constant": false,
+            "id": 17,
+            "mutability": "mutable",
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "nodeType": "VariableDeclaration",
+            "scope": 20,
+            "src": "97:2:1",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+              "typeString": "I8"
+            },
+            "typeName": {
+              "id": 16,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 15,
+                "name": "I8",
+                "nameLocations": [
+                  "97:2:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 2,
+                "src": "97:2:1"
+              },
+              "referencedDeclaration": 2,
+              "src": "97:2:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                "typeString": "I8"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "src": "96:4:1"
+      },
+      "scope": 50,
+      "src": "62:41:1",
+      "stateMutability": "pure",
+      "virtual": false,
+      "visibility": "internal"
+    },
+    {
+      "body": {
+        "id": 29,
+        "nodeType": "Block",
+        "src": "141:2:1",
+        "statements": []
+      },
+      "id": 30,
+      "implemented": true,
+      "kind": "freeFunction",
+      "modifiers": [],
+      "name": "unsub",
+      "nameLocation": "113:5:1",
+      "nodeType": "FunctionDefinition",
+      "parameters": {
+        "id": 24,
+        "nodeType": "ParameterList",
+        "parameters": [
+          {
+            "constant": false,
+            "id": 23,
+            "mutability": "mutable",
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "nodeType": "VariableDeclaration",
+            "scope": 30,
+            "src": "119:2:1",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+              "typeString": "I8"
+            },
+            "typeName": {
+              "id": 22,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 21,
+                "name": "I8",
+                "nameLocations": [
+                  "119:2:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 2,
+                "src": "119:2:1"
+              },
+              "referencedDeclaration": 2,
+              "src": "119:2:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                "typeString": "I8"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "src": "118:4:1"
+      },
+      "returnParameters": {
+        "id": 28,
+        "nodeType": "ParameterList",
+        "parameters": [
+          {
+            "constant": false,
+            "id": 27,
+            "mutability": "mutable",
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "nodeType": "VariableDeclaration",
+            "scope": 30,
+            "src": "137:2:1",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+              "typeString": "I8"
+            },
+            "typeName": {
+              "id": 26,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 25,
+                "name": "I8",
+                "nameLocations": [
+                  "137:2:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 2,
+                "src": "137:2:1"
+              },
+              "referencedDeclaration": 2,
+              "src": "137:2:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                "typeString": "I8"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "src": "136:4:1"
+      },
+      "scope": 50,
+      "src": "104:39:1",
+      "stateMutability": "pure",
+      "virtual": false,
+      "visibility": "internal"
+    },
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "C",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 49,
+      "linearizedBaseContracts": [
+        49
+      ],
+      "name": "C",
+      "nameLocation": "153:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "body": {
+            "id": 47,
+            "nodeType": "Block",
+            "src": "211:30:1",
+            "statements": [
+              {
+                "expression": {
+                  "commonType": {
+                    "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                    "typeString": "I8"
+                  },
+                  "function": 20,
+                  "id": 45,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": false,
+                  "lValueRequested": false,
+                  "leftExpression": {
+                    "function": 30,
+                    "id": 43,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "nodeType": "UnaryOperation",
+                    "operator": "-",
+                    "prefix": true,
+                    "src": "228:2:1",
+                    "subExpression": {
+                      "id": 42,
+                      "name": "a",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 33,
+                      "src": "229:1:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                        "typeString": "I8"
+                      }
+                    },
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                      "typeString": "I8"
+                    }
+                  },
+                  "nodeType": "BinaryOperation",
+                  "operator": "-",
+                  "rightExpression": {
+                    "id": 44,
+                    "name": "b",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 36,
+                    "src": "233:1:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                      "typeString": "I8"
+                    }
+                  },
+                  "src": "228:6:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                    "typeString": "I8"
+                  }
+                },
+                "functionReturnParameters": 41,
+                "id": 46,
+                "nodeType": "Return",
+                "src": "221:13:1"
+              }
+            ]
+          },
+          "id": 48,
+          "implemented": true,
+          "kind": "function",
+          "modifiers": [],
+          "name": "f",
+          "nameLocation": "170:1:1",
+          "nodeType": "FunctionDefinition",
+          "parameters": {
+            "id": 37,
+            "nodeType": "ParameterList",
+            "parameters": [
+              {
+                "constant": false,
+                "id": 33,
+                "mutability": "mutable",
+                "name": "a",
+                "nameLocation": "175:1:1",
+                "nodeType": "VariableDeclaration",
+                "scope": 48,
+                "src": "172:4:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                  "typeString": "I8"
+                },
+                "typeName": {
+                  "id": 32,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 31,
+                    "name": "I8",
+                    "nameLocations": [
+                      "172:2:1"
+                    ],
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 2,
+                    "src": "172:2:1"
+                  },
+                  "referencedDeclaration": 2,
+                  "src": "172:2:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                    "typeString": "I8"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 36,
+                "mutability": "mutable",
+                "name": "b",
+                "nameLocation": "181:1:1",
+                "nodeType": "VariableDeclaration",
+                "scope": 48,
+                "src": "178:4:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                  "typeString": "I8"
+                },
+                "typeName": {
+                  "id": 35,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 34,
+                    "name": "I8",
+                    "nameLocations": [
+                      "178:2:1"
+                    ],
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 2,
+                    "src": "178:2:1"
+                  },
+                  "referencedDeclaration": 2,
+                  "src": "178:2:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                    "typeString": "I8"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "src": "171:12:1"
+          },
+          "returnParameters": {
+            "id": 41,
+            "nodeType": "ParameterList",
+            "parameters": [
+              {
+                "constant": false,
+                "id": 40,
+                "mutability": "mutable",
+                "name": "",
+                "nameLocation": "-1:-1:-1",
+                "nodeType": "VariableDeclaration",
+                "scope": 48,
+                "src": "207:2:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                  "typeString": "I8"
+                },
+                "typeName": {
+                  "id": 39,
+                  "nodeType": "UserDefinedTypeName",
+                  "pathNode": {
+                    "id": 38,
+                    "name": "I8",
+                    "nameLocations": [
+                      "207:2:1"
+                    ],
+                    "nodeType": "IdentifierPath",
+                    "referencedDeclaration": 2,
+                    "src": "207:2:1"
+                  },
+                  "referencedDeclaration": 2,
+                  "src": "207:2:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_userDefinedValueType$_I8_$2",
+                    "typeString": "I8"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "src": "206:4:1"
+          },
+          "scope": 49,
+          "src": "161:80:1",
+          "stateMutability": "pure",
+          "virtual": false,
+          "visibility": "internal"
+        }
+      ],
+      "scope": 50,
+      "src": "144:99:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:244:1"
+}

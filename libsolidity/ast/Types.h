@@ -42,6 +42,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <unordered_set>
 
 namespace solidity::frontend
 {
@@ -178,14 +179,18 @@ public:
 	enum class Category
 	{
 		Address,
+		ShieldedAddress,
 		Integer,
+		ShieldedInteger,
 		RationalNumber,
 		StringLiteral,
 		Bool,
+		ShieldedBool,
 		FixedPoint,
 		Array,
 		ArraySlice,
 		FixedBytes,
+		ShieldedFixedBytes,
 		Contract,
 		Struct,
 		Function,
@@ -204,6 +209,8 @@ public:
 	static Type const* commonType(Type const* _a, Type const* _b);
 
 	virtual Category category() const = 0;
+	virtual bool isShielded() const { return false; }
+	virtual bool containsShieldedType() const { return isShielded(); }
 	/// @returns a valid solidity identifier such that two types should compare equal if and
 	/// only if they have the same identifier.
 	/// The identifier should start with "t_".
@@ -435,6 +442,9 @@ protected:
 	mutable std::map<ASTNode const*, std::unique_ptr<MemberList>> m_members;
 	mutable std::optional<std::vector<std::tuple<std::string, Type const*>>> m_stackItems;
 	mutable std::optional<size_t> m_stackSize;
+	virtual bool containsShieldedTypeRecurse(std::unordered_set<std::string>& visited) const {
+		(void)visited;
+		return containsShieldedType(); }
 };
 
 /**
@@ -445,9 +455,9 @@ class AddressType: public Type
 public:
 	explicit AddressType(StateMutability _stateMutability);
 
-	Category category() const override { return Category::Address; }
+	virtual Category category() const override { return Category::Address; }
 
-	std::string richIdentifier() const override;
+	virtual std::string richIdentifier() const override;
 	BoolResult isImplicitlyConvertibleTo(Type const& _other) const override;
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
@@ -456,15 +466,15 @@ public:
 	bool operator==(Type const& _other) const override;
 
 	unsigned calldataEncodedSize(bool _padded = true) const override { return _padded ? 32 : 160 / 8; }
-	unsigned storageBytes() const override { return 160 / 8; }
+	virtual unsigned storageBytes() const override { return 160 / 8; }
 	bool leftAligned() const override { return false; }
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
 
 	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
 
-	std::string toString(bool _withoutDataLocation) const override;
-	std::string canonicalName() const override;
+	virtual std::string toString(bool _withoutDataLocation) const override;
+	virtual std::string canonicalName() const override;
 
 	u256 literalValue(Literal const* _literal) const override;
 
@@ -475,6 +485,32 @@ public:
 
 private:
 	StateMutability m_stateMutability;
+};
+
+/**
+ * Type for shielded addresses.
+ */
+class ShieldedAddressType: public AddressType
+{
+public:
+	explicit ShieldedAddressType(StateMutability _stateMutability): AddressType(_stateMutability) {
+		solAssert(_stateMutability == StateMutability::Payable || _stateMutability == StateMutability::NonPayable, "");
+	}
+
+	Category category() const override { return Category::ShieldedAddress; }
+
+	bool isShielded() const override { return true; }
+	std::string richIdentifier() const override;
+
+	virtual unsigned storageBytes() const override { return 32; }
+	std::string toString(bool _withoutDataLocation) const override;
+	std::string canonicalName() const override;
+
+	/// Only code and codehash are allowed on shielded addresses.
+	/// For other members, cast to address first.
+	MemberList::MemberMap nativeMembers(ASTNode const*) const override;
+
+	StateMutability stateMutability(void) const { return AddressType::stateMutability(); }
 };
 
 /**
@@ -490,13 +526,13 @@ public:
 
 	explicit IntegerType(unsigned _bits, Modifier _modifier = Modifier::Unsigned);
 
-	Category category() const override { return Category::Integer; }
+	virtual Category category() const override { return Category::Integer; }
 
-	std::string richIdentifier() const override;
-	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
-	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
-	TypeResult unaryOperatorResult(Token _operator) const override;
-	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
+	virtual std::string richIdentifier() const override;
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual TypeResult unaryOperatorResult(Token _operator) const override;
+	virtual TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
 	bool operator==(IntegerType const& _other) const;
 	bool operator==(Type const& _other) const override;
@@ -507,13 +543,13 @@ public:
 	bool isValueType() const override { return true; }
 	bool nameable() const override { return true; }
 
-	std::string toString(bool _withoutDataLocation) const override;
+	virtual std::string toString(bool _withoutDataLocation) const override;
 
-	Type const* encodingType() const override { return this; }
-	TypeResult interfaceType(bool) const override { return this; }
+	virtual Type const* encodingType() const override { return this; }
+	virtual TypeResult interfaceType(bool) const override { return this; }
 
-	unsigned numBits() const { return m_bits; }
-	bool isSigned() const { return m_modifier == Modifier::Signed; }
+	virtual unsigned numBits() const { return m_bits; }
+	virtual bool isSigned() const { return m_modifier == Modifier::Signed; }
 
 	u256 min() const;
 	u256 max() const;
@@ -524,6 +560,38 @@ public:
 private:
 	unsigned const m_bits;
 	Modifier const m_modifier;
+};
+
+/**
+ * Any kind of shielded integer type (signed, unsigned).
+ */
+ class ShieldedIntegerType: public IntegerType
+ {
+ public:
+	explicit ShieldedIntegerType(unsigned _bits, Modifier _modifier=Modifier::Unsigned): IntegerType(_bits, _modifier)
+	{
+		solAssert(
+			_bits > 0 && _bits <= 256 && _bits % 8 == 0,
+			"Invalid bit number for shielded integer type: " + util::toString(_bits)
+		);
+	}
+
+	virtual unsigned storageBytes() const override { return 32; }
+	bool isShielded() const override { return true; }
+
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	Category category() const override { return Category::ShieldedInteger; }
+
+	std::string richIdentifier() const override;
+	std::string toString(bool _withoutDataLocation) const override;
+
+	// Use the base class public methods instead of private members:
+	unsigned numBits() const override { return IntegerType::numBits(); }
+	bool isSigned() const override { return IntegerType::isSigned(); }
+
+	Type const* encodingType() const override { return this; }
+	TypeResult interfaceType(bool) const override { return this; }
 };
 
 /**
@@ -588,8 +656,8 @@ private:
 class RationalNumberType: public Type
 {
 public:
-	explicit RationalNumberType(rational _value, Type const* _compatibleBytesType = nullptr):
-		m_value(std::move(_value)), m_compatibleBytesType(_compatibleBytesType)
+	explicit RationalNumberType(rational _value, Type const* _compatibleBytesType = nullptr, bool _shielded = false):
+		m_value(std::move(_value)), m_compatibleBytesType(_compatibleBytesType), m_shielded(_shielded)
 	{}
 
 	Category category() const override { return Category::RationalNumber; }
@@ -615,6 +683,8 @@ public:
 
 	/// @returns the smallest integer type that can hold the value or an empty pointer if not possible.
 	IntegerType const* integerType() const;
+	/// @returns the smallest shielded integer type that can hold the value or an empty pointer if not possible.
+	ShieldedIntegerType const* shieldedIntegerType() const;
 	/// @returns the smallest fixed type that can hold the value or incurs the least precision loss,
 	/// unless the value was truncated, then a suitable type will be chosen to indicate such event.
 	/// If the integer part does not fit, returns an empty pointer.
@@ -629,6 +699,9 @@ public:
 	/// @returns true if the value is zero.
 	bool isZero() const { return m_value == 0; }
 
+	/// @returns true if the literal was written with the shielded suffix (e.g. 1s).
+	bool isShielded() const { return m_shielded; }
+
 	/// @returns true if the literal is a valid integer.
 	static std::tuple<bool, rational> isValidLiteral(Literal const& _literal);
 
@@ -638,6 +711,9 @@ private:
 	/// Bytes type to which the rational can be implicitly converted.
 	/// Empty for all rationals that are not directly parsed from hex literals.
 	Type const* m_compatibleBytesType;
+
+	/// Whether this rational was written with the shielded suffix (e.g. 1s).
+	bool m_shielded = false;
 
 	/// @returns true if the literal is a valid rational number.
 	static std::tuple<bool, rational> parseRational(std::string const& _value);
@@ -659,6 +735,7 @@ public:
 	Category category() const override { return Category::StringLiteral; }
 
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult binaryOperatorResult(Token, Type const*) const override
 	{
 		return nullptr;
@@ -715,6 +792,39 @@ private:
 };
 
 /**
+ * A shielded fixed-size byte array type.
+ */
+class ShieldedFixedBytesType: public FixedBytesType
+{
+public:
+	explicit ShieldedFixedBytesType(unsigned _bytes): FixedBytesType(_bytes), m_bytes(_bytes)
+	{
+		solAssert(
+			m_bytes > 0 && m_bytes <= 32,
+			"Invalid byte number for shielded fixed bytes type: " + util::toString(m_bytes)
+		);
+	}
+
+	virtual unsigned storageBytes() const override { return 32; }
+	bool isShielded() const override { return true; }
+	Category category() const override { return Category::ShieldedFixedBytes; }
+
+	virtual BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	virtual BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	
+	std::string richIdentifier() const override;
+	std::string toString(bool _withoutDataLocation) const override;
+	
+	unsigned numBytes() const { return m_bytes; }
+	
+	Type const* encodingType() const override { return this; }
+	TypeResult interfaceType(bool) const override { return this; }
+
+private:
+	unsigned const m_bytes;
+};
+
+/**
  * The boolean type.
  */
 class BoolType: public Type
@@ -722,6 +832,8 @@ class BoolType: public Type
 public:
 	Category category() const override { return Category::Bool; }
 	std::string richIdentifier() const override { return "t_bool"; }
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
 	TypeResult unaryOperatorResult(Token _operator) const override;
 	TypeResult binaryOperatorResult(Token _operator, Type const* _other) const override;
 
@@ -735,6 +847,22 @@ public:
 	u256 literalValue(Literal const* _literal) const override;
 	Type const* encodingType() const override { return this; }
 	TypeResult interfaceType(bool) const override { return this; }
+};
+/**
+ * The shielded boolean type.
+ */
+class ShieldedBoolType : public BoolType
+{
+public:
+    Category category() const override { return Category::ShieldedBool; }
+    std::string richIdentifier() const override { return "t_sbool"; }
+	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
+	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+
+	bool isShielded() const override { return true; }
+    unsigned storageBytes() const override { return 32; }
+
+	std::string toString(bool) const override { return "sbool"; }
 };
 
 /**
@@ -753,6 +881,7 @@ public:
 	/// elements of decomposition of these elements and so on, up to non-composite types.
 	/// Each type is included only once.
 	std::vector<Type const*> fullDecomposition() const;
+    virtual bool containsShieldedType() const;
 
 protected:
 	/// @returns a list of types that together make up the data part of this type.
@@ -761,6 +890,7 @@ protected:
 	/// the component types for tuples and the value type for mappings
 	/// (note that the key type of a mapping is *not* part of the list).
 	virtual std::vector<Type const*> decomposition() const = 0;
+	virtual bool containsShieldedTypeRecurse(std::unordered_set<std::string>& visited) const;
 };
 
 /**
@@ -838,6 +968,16 @@ public:
 	/// Constructor for a byte array ("bytes") and string.
 	explicit ArrayType(DataLocation _location, bool _isString = false);
 
+	/// Tag type for constructing shielded byte arrays.
+	struct ShieldedByteArrayTag {};
+	/// Constructor for a shielded byte array ("sbytes").
+	ArrayType(DataLocation _location, ShieldedByteArrayTag);
+
+	/// Tag type for constructing byte-array/string references with the shielded-storage marker.
+	struct ShieldedStorageMarker {};
+	/// Constructor for a byte-array/string reference that preserves the shielded-storage marker.
+	ArrayType(ArrayType const& _other, ShieldedStorageMarker);
+
 	/// Constructor for a dynamically sized array type ("<type>[]")
 	ArrayType(DataLocation _location, Type const* _baseType):
 		ReferenceType(_location),
@@ -857,6 +997,7 @@ public:
 
 	BoolResult isImplicitlyConvertibleTo(Type const& _convertTo) const override;
 	BoolResult isExplicitlyConvertibleTo(Type const& _convertTo) const override;
+	bool containsShieldedType() const override;
 	std::string richIdentifier() const override;
 	bool operator==(ArrayType const& _other) const;
 	bool operator==(Type const& _other) const override;
@@ -880,13 +1021,24 @@ public:
 
 	BoolResult validForLocation(DataLocation _loc) const override;
 
-	/// @returns true if this is a byte array.
+	/// @returns true if this is a byte array (bytes or sbytes).
+	/// NOTE: Shielded byte arrays (sbytes) have baseType() == shieldedByte().
+	/// Use baseType()->isShielded() to distinguish sbytes from bytes.
 	bool isByteArray() const { return m_arrayKind == ArrayKind::Bytes; }
-	/// @returns true if this is a byte array or a string
+	/// @returns true if this is a byte array or a string (bytes, sbytes, or string).
+	/// @see isByteArray() for the shielded-type note.
 	bool isByteArrayOrString() const { return m_arrayKind != ArrayKind::Ordinary; }
 	/// @returns true if this is a string
 	bool isString() const { return m_arrayKind == ArrayKind::String; }
 	Type const* baseType() const { solAssert(!!m_baseType, ""); return m_baseType; }
+	bool hasShieldedStorageMarker() const { return m_hasShieldedStorageMarker; }
+	bool usesShieldedStorage() const
+	{
+		return
+			isByteArrayOrString() ?
+			baseType()->isShielded() || m_hasShieldedStorageMarker :
+			containsShieldedType();
+	}
 	Type const* finalBaseType(bool breakIfDynamicArrayType) const;
 	u256 const& length() const { return m_length; }
 	u256 memoryDataSize() const override;
@@ -916,6 +1068,11 @@ private:
 	Type const* m_baseType;
 	bool m_hasDynamicLength = true;
 	u256 m_length;
+	/// Marks byte-array/string references that still point at shielded storage even though their
+	/// surface type is unshielded. This exists for casts like bytes(sbytesStorageRef): after the
+	/// cast the type is plain bytes, but the underlying slots are still private. Any storage access
+	/// through such a reference must therefore keep using shielded storage ops (cload/cstore).
+	bool m_hasShieldedStorageMarker = false;
 	mutable std::optional<TypeResult> m_interfaceType;
 	mutable std::optional<TypeResult> m_interfaceType_library;
 };
@@ -1166,6 +1323,9 @@ public:
 	u256 storageSize() const override { return underlyingType().storageSize(); }
 	unsigned storageBytes() const override { return underlyingType().storageBytes(); }
 
+	bool isShielded() const override;
+	bool containsShieldedType() const override;
+
 	bool isValueType() const override { return true; }
 	bool nameable() const override
 	{
@@ -1301,6 +1461,12 @@ public:
 		/// (i.e. when accessed directly via the name of the containing contract).
 		/// Cannot be called.
 		Declaration,
+		SeismicRNG,             ///< STATICCALL to RNG precompile (0x64)
+		SeismicECDH,            ///< STATICCALL to ECDH precompile (0x65)
+		SeismicAESGCMEncrypt,   ///< STATICCALL to AES-GCM encrypt precompile (0x66)
+		SeismicAESGCMDecrypt,   ///< STATICCALL to AES-GCM decrypt precompile (0x67)
+		SeismicHKDF,            ///< STATICCALL to HKDF precompile (0x68)
+		SeismicSecp256k1Sign,   ///< STATICCALL to secp256k1 sign precompile (0x69)
 	};
 	struct Options
 	{
@@ -1532,6 +1698,7 @@ public:
 
 protected:
 	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override;
+
 private:
 	static TypePointers parseElementaryTypeVector(strings const& _types);
 

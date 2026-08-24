@@ -92,6 +92,8 @@ enum class Instruction: uint8_t
 	BASEFEE,                  ///< get the block's basefee
 	BLOBHASH = 0x49,          ///< get a versioned hash of one of the blobs associated with the transaction
 	BLOBBASEFEE = 0x4a,       ///< get the block's blob basefee
+	
+	TIMESTAMPMS = 0x4b,       ///< get the block's timestamp in milliseconds
 
 	POP = 0x50,               ///< remove item from stack
 	MLOAD,                    ///< load word from memory
@@ -182,6 +184,9 @@ enum class Instruction: uint8_t
 	LOG2,                     ///< Makes a log entry; 2 topics.
 	LOG3,                     ///< Makes a log entry; 3 topics.
 	LOG4,                     ///< Makes a log entry; 4 topics.
+
+	CLOAD = 0xb0,			  ///< loads shielded objects
+	CSTORE = 0xb1,			  ///< stores shielded objects
 
 	DATALOADN = 0xd1,         ///< load data from EOF data section
 

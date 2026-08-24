@@ -34,7 +34,7 @@ jobs:
           close-pr-label: closed-due-inactivity
           days-before-pr-stale: ${{ env.BEFORE_PR_STALE }}
           days-before-pr-close: ${{ env.BEFORE_PR_CLOSE }}
-          exempt-pr-labels: 'external contribution :star:,roadmap,epic'
+          exempt-pr-labels: 'external contribution :star:,roadmap,epic, upstream diff'
           exempt-draft-pr: false
           exempt-all-milestones: true
           remove-stale-when-updated: true

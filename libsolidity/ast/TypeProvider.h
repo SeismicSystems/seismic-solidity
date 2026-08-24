@@ -63,12 +63,22 @@ public:
 	/// @returns boolean type.
 	static BoolType const* boolean() noexcept { return &m_boolean; }
 
+	/// @returns boolean type.
+	static ShieldedBoolType const* shieldedBoolean() noexcept { return &m_shieldedBoolean; }
+
 	static FixedBytesType const* byte() { return fixedBytes(1); }
 	static FixedBytesType const* fixedBytes(unsigned m) { return m_bytesM.at(m - 1).get(); }
+	
+	static ShieldedFixedBytesType const* shieldedByte() { return shieldedFixedBytes(1); }
+	static ShieldedFixedBytesType const* shieldedFixedBytes(unsigned m) { return m_sbytesM.at(m - 1).get(); }
 
 	static ArrayType const* bytesStorage();
 	static ArrayType const* bytesMemory();
 	static ArrayType const* bytesCalldata();
+	static ArrayType const* withShieldedStorageMarker(ArrayType const& _type);
+	static ArrayType const* shieldedBytesStorage();
+	static ArrayType const* shieldedBytesMemory();
+	static ArrayType const* shieldedBytesCalldata();
 	static ArrayType const* stringStorage();
 	static ArrayType const* stringMemory();
 
@@ -85,7 +95,8 @@ public:
 
 	static AddressType const* payableAddress() noexcept { return &m_payableAddress; }
 	static AddressType const* address() noexcept { return &m_address; }
-
+	static ShieldedAddressType const* payableShieldedAddress() noexcept { return &m_payableShieldedAddress; }
+	static ShieldedAddressType const* shieldedAddress() noexcept { return &m_shieldedAddress; }
 	static IntegerType const* integer(unsigned _bits, IntegerType::Modifier _modifier)
 	{
 		solAssert((_bits % 8) == 0, "");
@@ -98,6 +109,18 @@ public:
 
 	static IntegerType const* uint256() { return uint(256); }
 	static IntegerType const* int256() { return integer(256, IntegerType::Modifier::Signed); }
+
+	static ShieldedIntegerType const* shieldedInteger(unsigned _bits, ShieldedIntegerType::Modifier _modifier) {
+
+		solAssert((_bits % 8) == 0, "");
+		if (_modifier == ShieldedIntegerType::Modifier::Unsigned)
+			return m_suintM.at(_bits / 8 - 1).get();
+		else
+			return m_sintM.at(_bits / 8 - 1).get();
+		}
+	static ShieldedIntegerType const* shieldedUint(unsigned _bits) { return shieldedInteger(_bits, ShieldedIntegerType::Modifier::Unsigned); }
+	static ShieldedIntegerType const* shieldedUint256() { return shieldedUint(256); }
+	static ShieldedIntegerType const* shieldedInt256() { return shieldedInteger(256, ShieldedIntegerType::Modifier::Signed); }
 
 	static FixedPointType const* fixedPoint(unsigned m, unsigned n, FixedPointType::Modifier _modifier);
 
@@ -172,7 +195,8 @@ public:
 
 	static RationalNumberType const* rationalNumber(
 		rational const& _value,
-		Type const* _compatibleBytesType = nullptr
+		Type const* _compatibleBytesType = nullptr,
+		bool _shielded = false
 	);
 
 	static ContractType const* contract(ContractDefinition const& _contract, bool _isSuper = false);
@@ -211,21 +235,30 @@ private:
 	static inline T const* createAndGet(Args&& ... _args);
 
 	static BoolType const m_boolean;
+	static ShieldedBoolType const m_shieldedBoolean;
 	static InaccessibleDynamicType const m_inaccessibleDynamic;
 
 	/// These are lazy-initialized because they depend on `byte` being available.
 	static std::unique_ptr<ArrayType> m_bytesStorage;
 	static std::unique_ptr<ArrayType> m_bytesMemory;
 	static std::unique_ptr<ArrayType> m_bytesCalldata;
+	static std::unique_ptr<ArrayType> m_shieldedBytesStorage;
+	static std::unique_ptr<ArrayType> m_shieldedBytesMemory;
+	static std::unique_ptr<ArrayType> m_shieldedBytesCalldata;
 	static std::unique_ptr<ArrayType> m_stringStorage;
 	static std::unique_ptr<ArrayType> m_stringMemory;
 
 	static TupleType const m_emptyTuple;
 	static AddressType const m_payableAddress;
 	static AddressType const m_address;
+	static ShieldedAddressType const m_payableShieldedAddress;
+	static ShieldedAddressType const m_shieldedAddress;
 	static std::array<std::unique_ptr<IntegerType>, 32> const m_intM;
 	static std::array<std::unique_ptr<IntegerType>, 32> const m_uintM;
+	static std::array<std::unique_ptr<ShieldedIntegerType>, 32> const m_suintM;
+	static std::array<std::unique_ptr<ShieldedIntegerType>, 32> const m_sintM;
 	static std::array<std::unique_ptr<FixedBytesType>, 32> const m_bytesM;
+	static std::array<std::unique_ptr<ShieldedFixedBytesType>, 32> const m_sbytesM;
 	static std::array<std::unique_ptr<MagicType>, 5> const m_magics;        ///< MagicType's except MetaType
 
 	std::map<std::pair<unsigned, unsigned>, std::unique_ptr<FixedPointType>> m_ufixedMxN{};

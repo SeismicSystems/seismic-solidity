@@ -22,6 +22,7 @@
  */
 
 #include <string>
+#include <stdio.h>
 
 #include <liblangutil/Scanner.h>
 #include <libsolidity/parsing/Parser.h>
@@ -39,6 +40,9 @@
 #include <test/Common.h>
 
 #include <boost/test/unit_test.hpp>
+
+
+
 
 using namespace solidity::evmasm;
 using namespace solidity::langutil;
@@ -513,6 +517,105 @@ BOOST_AUTO_TEST_CASE(unary_inc_dec)
 	char const* sourceCode = R"(
 		contract test {
 			function f(uint a) public returns (uint x) { unchecked { x = --a ^ (a-- ^ (++a ^ a++)); } }
+		}
+	)";
+	bytes code = compileFirstExpression(sourceCode, {}, {{"test", "f", "a"}, {"test", "f", "x"}});
+
+	// Stack: a, x
+	bytes expectation{
+		uint8_t(Instruction::DUP2),
+		uint8_t(Instruction::DUP1),
+		uint8_t(Instruction::PUSH1), 0x1,
+		uint8_t(Instruction::ADD),
+		// Stack here: a x a (a+1)
+		uint8_t(Instruction::SWAP3),
+		uint8_t(Instruction::POP), // first ++
+		// Stack here: (a+1) x a
+		uint8_t(Instruction::DUP3),
+		uint8_t(Instruction::PUSH1), 0x1,
+		uint8_t(Instruction::ADD),
+		// Stack here: (a+1) x a (a+2)
+		uint8_t(Instruction::SWAP3),
+		uint8_t(Instruction::POP),
+		// Stack here: (a+2) x a
+		uint8_t(Instruction::DUP3), // second ++
+		uint8_t(Instruction::XOR),
+		// Stack here: (a+2) x a^(a+2)
+		uint8_t(Instruction::DUP3),
+		uint8_t(Instruction::DUP1),
+		uint8_t(Instruction::PUSH1), 0x1,
+		uint8_t(Instruction::SWAP1),
+		uint8_t(Instruction::SUB),
+		// Stack here: (a+2) x a^(a+2) (a+2) (a+1)
+		uint8_t(Instruction::SWAP4),
+		uint8_t(Instruction::POP), // first --
+		uint8_t(Instruction::XOR),
+		// Stack here: (a+1) x a^(a+2)^(a+2)
+		uint8_t(Instruction::DUP3),
+		uint8_t(Instruction::PUSH1), 0x1,
+		uint8_t(Instruction::SWAP1),
+		uint8_t(Instruction::SUB),
+		// Stack here: (a+1) x a^(a+2)^(a+2) a
+		uint8_t(Instruction::SWAP3),
+		uint8_t(Instruction::POP), // second ++
+		// Stack here: a x a^(a+2)^(a+2)
+		uint8_t(Instruction::DUP3), // will change
+		uint8_t(Instruction::XOR),
+		uint8_t(Instruction::SWAP1),
+		uint8_t(Instruction::POP),
+		uint8_t(Instruction::DUP1)
+	};
+	// Stack here: a x a^(a+2)^(a+2)^a
+	BOOST_CHECK_EQUAL_COLLECTIONS(code.begin(), code.end(), expectation.begin(), expectation.end());
+}
+
+BOOST_AUTO_TEST_CASE(shielded_unary_operators)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f(sint y) public { unchecked { !(~- y == sint(2)); } }
+		}
+	)";
+	bytes code = compileFirstExpression(sourceCode, {}, {{"test", "f", "y"}});
+
+	bytes push0Bytes = solidity::test::CommonOptions::get().evmVersion().hasPush0() ?
+		bytes{uint8_t(Instruction::PUSH0)} :
+		bytes{uint8_t(Instruction::PUSH1), 0x0};
+
+	bytes expectation;
+	if (solidity::test::CommonOptions::get().optimize)
+		expectation = bytes{
+			uint8_t(Instruction::DUP1),
+		} +
+		push0Bytes +
+		bytes{
+			uint8_t(Instruction::SUB),
+			uint8_t(Instruction::NOT),
+			uint8_t(Instruction::PUSH1), 0x2,
+			uint8_t(Instruction::EQ),
+			uint8_t(Instruction::ISZERO)
+		};
+	else
+		expectation = bytes{
+			uint8_t(Instruction::PUSH1), 0x2,
+			uint8_t(Instruction::DUP2),
+		} +
+		push0Bytes +
+		bytes{
+			uint8_t(Instruction::SUB),
+			uint8_t(Instruction::NOT),
+			uint8_t(Instruction::EQ),
+			uint8_t(Instruction::ISZERO)
+		};
+
+	BOOST_CHECK_EQUAL_COLLECTIONS(code.begin(), code.end(), expectation.begin(), expectation.end());
+}
+
+BOOST_AUTO_TEST_CASE(shielded_unary_inc_dec)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f(suint a) internal returns (suint x) { unchecked { x = --a ^ (a-- ^ (++a ^ a++)); } }
 		}
 	)";
 	bytes code = compileFirstExpression(sourceCode, {}, {{"test", "f", "a"}, {"test", "f", "x"}});

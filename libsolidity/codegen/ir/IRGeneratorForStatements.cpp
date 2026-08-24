@@ -59,6 +59,29 @@ using namespace std::string_literals;
 namespace
 {
 
+Type const& effectiveType(Expression const& _expression)
+{
+	if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+		if (auto const* variable = dynamic_cast<VariableDeclaration const*>(identifier->annotation().referencedDeclaration))
+			return *variable->annotation().type;
+
+	return *_expression.annotation().type;
+}
+
+FunctionTypePointer effectiveFunctionType(Expression const& _expression)
+{
+	if (auto const* functionType = dynamic_cast<FunctionType const*>(_expression.annotation().type))
+		if (
+			functionType->kind() == FunctionType::Kind::Internal &&
+			!functionType->hasBoundFirstArgument()
+		)
+			if (auto const* identifier = dynamic_cast<Identifier const*>(&_expression))
+				if (auto const* function = dynamic_cast<FunctionDefinition const*>(identifier->annotation().referencedDeclaration))
+					return function->functionType(true);
+
+	return dynamic_cast<FunctionType const*>(_expression.annotation().type);
+}
+
 struct CopyTranslate: public yul::ASTCopier
 {
 	using ExternalRefsMap = std::map<yul::Identifier const*, InlineAssemblyAnnotation::ExternalIdentifierInfo>;
@@ -138,7 +161,9 @@ private:
 				switch (type->category())
 				{
 				case Type::Category::Bool:
+				case Type::Category::ShieldedBool:
 				case Type::Category::Address:
+				case Type::Category::ShieldedAddress:
 					solAssert(type->category() == variable->annotation().type->category());
 					value = toCompactHexWithPrefix(type->literalValue(literal));
 					break;
@@ -275,6 +300,7 @@ void IRGeneratorForStatements::initializeStateVar(VariableDeclaration const& _va
 			IRLValue{*_varDecl.annotation().type, IRLValue::Immutable{&_varDecl}} :
 			IRLValue{*_varDecl.annotation().type, IRLValue::Storage{
 				toCompactHexWithPrefix(m_context.storageLocationOfStateVariable(_varDecl).first),
+				false,
 				m_context.storageLocationOfStateVariable(_varDecl).second
 			}},
 			*_varDecl.value()
@@ -439,12 +465,12 @@ bool IRGeneratorForStatements::visit(Assignment const& _assignment)
 		TokenTraits::AssignmentToBinaryOp(assignmentOperator);
 
 	if (TokenTraits::isShiftOp(binaryOperator))
-		solAssert(type(_assignment.rightHandSide()).mobileType());
+		solAssert(effectiveType(_assignment.rightHandSide()).mobileType());
 	IRVariable value =
-		type(_assignment.leftHandSide()).isValueType() ?
+		effectiveType(_assignment.leftHandSide()).isValueType() ?
 		convert(
 			_assignment.rightHandSide(),
-			TokenTraits::isShiftOp(binaryOperator) ? *type(_assignment.rightHandSide()).mobileType() : type(_assignment)
+			TokenTraits::isShiftOp(binaryOperator) ? *effectiveType(_assignment.rightHandSide()).mobileType() : effectiveType(_assignment.leftHandSide())
 		) :
 		_assignment.rightHandSide();
 
@@ -455,17 +481,16 @@ bool IRGeneratorForStatements::visit(Assignment const& _assignment)
 
 	if (assignmentOperator != Token::Assign)
 	{
-		solAssert(type(_assignment.leftHandSide()).isValueType(), "Compound operators only available for value types.");
+		solAssert(effectiveType(_assignment.leftHandSide()).isValueType(), "Compound operators only available for value types.");
 		solAssert(binaryOperator != Token::Exp);
-		solAssert(type(_assignment) == type(_assignment.leftHandSide()));
 
 		IRVariable leftIntermediate = readFromLValue(*m_currentLValue);
-		solAssert(type(_assignment) == leftIntermediate.type());
+		solAssert(effectiveType(_assignment.leftHandSide()) == leftIntermediate.type());
 
 		define(_assignment) << (
 			TokenTraits::isShiftOp(binaryOperator) ?
 			shiftOperation(binaryOperator, leftIntermediate, value) :
-			binaryOperation(binaryOperator, type(_assignment), leftIntermediate.name(), value.name())
+			binaryOperation(binaryOperator, effectiveType(_assignment.leftHandSide()), leftIntermediate.name(), value.name())
 		) << "\n";
 
 		writeToLValue(*m_currentLValue, IRVariable(_assignment));
@@ -713,8 +738,14 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		std::visit(
 			util::GenericVisitor{
 				[&](IRLValue::Storage const& _storage) {
+					bool useShieldedOps = m_currentLValue->type.isValueType() && _storage.usesShieldedStorage;
 					appendCode() <<
-						m_utils.storageSetToZeroFunction(m_currentLValue->type, VariableDeclaration::Location::Unspecified) <<
+						m_utils.storageSetToZeroFunction(
+							m_currentLValue->type,
+							VariableDeclaration::Location::Unspecified,
+							useShieldedOps,
+							_storage.packedShieldedFixedBytes
+						) <<
 						"(" <<
 						_storage.slot <<
 						", " <<
@@ -742,7 +773,7 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 			m_currentLValue->kind
 		);
 	}
-	else if (resultType.category() == Type::Category::Integer)
+	else if (resultType.category() == Type::Category::Integer || resultType.category() == Type::Category::ShieldedInteger)
 	{
 		solAssert(resultType == type(_unaryOperation.subExpression()), "Result type doesn't match!");
 
@@ -783,13 +814,13 @@ bool IRGeneratorForStatements::visit(UnaryOperation const& _unaryOperation)
 		else
 			solUnimplemented("Unary operator not yet implemented");
 	}
-	else if (resultType.category() == Type::Category::FixedBytes)
+	else if (resultType.category() == Type::Category::FixedBytes || resultType.category() == Type::Category::ShieldedFixedBytes)
 	{
 		solAssert(op == Token::BitNot, "Only bitwise negation is allowed for FixedBytes");
 		solAssert(resultType == type(_unaryOperation.subExpression()), "Result type doesn't match!");
 		appendSimpleUnaryOperation(_unaryOperation, _unaryOperation.subExpression());
 	}
-	else if (resultType.category() == Type::Category::Bool)
+	else if (resultType.category() == Type::Category::Bool || resultType.category() == Type::Category::ShieldedBool)
 	{
 		solAssert(
 			op != Token::BitNot,
@@ -976,7 +1007,7 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		functionType = structType.constructorType();
 	}
 	else
-		functionType = dynamic_cast<FunctionType const*>(_functionCall.expression().annotation().type);
+		functionType = effectiveFunctionType(_functionCall.expression());
 
 	TypePointers parameterTypes = functionType->parameterTypes();
 
@@ -1429,6 +1460,8 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 		solAssert(functionType->hasBoundFirstArgument());
 		solAssert(functionType->parameterTypes().empty());
 		ArrayType const* arrayType = dynamic_cast<ArrayType const*>(functionType->selfType());
+		if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+			arrayType = dynamic_cast<ArrayType const*>(&effectiveType(memberAccess->expression()));
 		solAssert(arrayType);
 		define(_functionCall) <<
 			m_utils.storageArrayPopFunction(*arrayType) <<
@@ -1440,6 +1473,8 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 	case FunctionType::Kind::ArrayPush:
 	{
 		ArrayType const* arrayType = dynamic_cast<ArrayType const*>(functionType->selfType());
+		if (auto const* memberAccess = dynamic_cast<MemberAccess const*>(&_functionCall.expression()))
+			arrayType = dynamic_cast<ArrayType const*>(&effectiveType(memberAccess->expression()));
 		solAssert(arrayType);
 
 		if (arguments.empty())
@@ -1453,7 +1488,9 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 				*arrayType->baseType(),
 				IRLValue::Storage{
 					slotName,
+					arrayType->usesShieldedStorage(),
 					offsetName,
+					arrayType->isByteArrayOrString() && arrayType->baseType()->isShielded()
 				}
 			});
 		}
@@ -1726,6 +1763,244 @@ void IRGeneratorForStatements::endVisit(FunctionCall const& _functionCall)
 
 		break;
 	}
+	case FunctionType::Kind::SeismicRNG:
+	{
+		solAssert(!_functionCall.annotation().tryCall, "SeismicRNG: try/catch not supported");
+		solAssert(!functionType->valueSet(), "SeismicRNG: value option must not be set");
+		solAssert(!functionType->gasSet(), "SeismicRNG: gas option must not be set");
+		solAssert(!functionType->hasBoundFirstArgument(), "SeismicRNG: must not have bound first argument");
+		solAssert(functionType->returnParameterTypes().size() == 1, "SeismicRNG: expected exactly one return type");
+
+		auto const& retType = *functionType->returnParameterTypes()[0];
+		unsigned byteWidth;
+		unsigned shiftBits;
+		if (auto const* shieldedIntType = dynamic_cast<ShieldedIntegerType const*>(&retType))
+		{
+			byteWidth = shieldedIntType->numBits() / 8;
+			shiftBits = (32 - byteWidth) * 8;
+		}
+		else if (auto const* shieldedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(&retType))
+		{
+			byteWidth = shieldedBytesType->numBytes();
+			shiftBits = 0; // bytes types are left-aligned, no shift needed
+		}
+		else
+			solAssert(false, "SeismicRNG: unexpected return type");
+
+		solAssert(byteWidth >= 1 && byteWidth <= 32, "SeismicRNG: byteWidth out of range [1, 32]");
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			mstore(<pos>, shl(224, <byteWidth>))
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x64, <pos>, 4))
+			<!eof>
+				let <success> := staticcall(gas(), 0x64, <pos>, 4, 0, <byteWidth>)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if gt(returndatasize(), 0) { returndatacopy(0, 0, <byteWidth>) }
+			</eof>
+			let <retVar> := <shr>(mload(0))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("byteWidth", std::to_string(byteWidth));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("shr", m_utils.shiftRightFunction(shiftBits));
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicECDH:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x65, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), 0x65, <pos>, sub(<end>, <pos>), 0, 32)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if eq(returndatasize(), 32) { returndatacopy(0, 0, 32) }
+			</eof>
+			let <retVar> := mload(0)
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicAESGCMEncrypt:
+	case FunctionType::Kind::SeismicAESGCMDecrypt:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		unsigned address = functionType->kind() == FunctionType::Kind::SeismicAESGCMEncrypt ? 0x66 : 0x67;
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			<?eof>
+				let <success> := iszero(extstaticcall(<address>, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), <address>, <pos>, sub(<end>, <pos>), 0, 0)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			let <retVar> := <allocateUnbounded>()
+			let <rdsize> := returndatasize()
+			mstore(<retVar>, <rdsize>)
+			returndatacopy(add(<retVar>, 0x20), 0, <rdsize>)
+			<finalizeAllocation>(<retVar>, add(<rdsize>, 0x20))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("address", toString(address));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("rdsize", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+		templ("finalizeAllocation", m_utils.finalizeAllocationFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicHKDF:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			mstore(0, 0)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x68, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), 0x68, <pos>, sub(<end>, <pos>), 0, 32)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			<?eof>
+				if eq(returndatasize(), 32) { returndatacopy(0, 0, 32) }
+			</eof>
+			let <retVar> := mload(0)
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
+	case FunctionType::Kind::SeismicSecp256k1Sign:
+	{
+		solAssert(!_functionCall.annotation().tryCall);
+		solAssert(!functionType->valueSet());
+		solAssert(!functionType->gasSet());
+		solAssert(!functionType->hasBoundFirstArgument());
+
+		TypePointers argumentTypes;
+		std::vector<std::string> argumentStrings;
+		for (auto const& arg: arguments)
+		{
+			argumentTypes.emplace_back(&type(*arg));
+			argumentStrings += IRVariable(*arg).stackSlots();
+		}
+
+		Whiskers templ(R"(
+			let <pos> := <allocateUnbounded>()
+			let <end> := <encodeArgs>(<pos> <argumentString>)
+			<?eof>
+				let <success> := iszero(extstaticcall(0x69, <pos>, sub(<end>, <pos>)))
+			<!eof>
+				let <success> := staticcall(gas(), 0x69, <pos>, sub(<end>, <pos>), 0, 0)
+			</eof>
+			if iszero(<success>) { <forwardingRevert>() }
+			let <retVar> := <allocateUnbounded>()
+			let <rdsize> := returndatasize()
+			mstore(<retVar>, <rdsize>)
+			returndatacopy(add(<retVar>, 0x20), 0, <rdsize>)
+			<finalizeAllocation>(<retVar>, add(<rdsize>, 0x20))
+		)");
+		auto const eof = m_context.eofVersion().has_value();
+		templ("allocateUnbounded", m_utils.allocateUnboundedFunction());
+		templ("pos", m_context.newYulVariable());
+		templ("end", m_context.newYulVariable());
+		templ("encodeArgs", m_context.abiFunctions().tupleEncoderPacked(argumentTypes, parameterTypes));
+		templ("argumentString", joinHumanReadablePrefixed(argumentStrings));
+		templ("eof", eof);
+		templ("success", m_context.newYulVariable());
+		templ("rdsize", m_context.newYulVariable());
+		templ("retVar", IRVariable(_functionCall).commaSeparatedList());
+		templ("forwardingRevert", m_utils.forwardingRevertFunction());
+		templ("finalizeAllocation", m_utils.finalizeAllocationFunction());
+
+		appendCode() << templ.render();
+		break;
+	}
 	default:
 		solUnimplemented("FunctionKind " + toString(static_cast<int>(functionType->kind())) + " not yet implemented");
 	}
@@ -1760,7 +2035,7 @@ bool IRGeneratorForStatements::visit(MemberAccess const& _memberAccess)
 		_memberAccess.memberName() == "length" &&
 		innerExpression &&
 		innerExpression->memberName() == "code" &&
-		innerExpression->expression().annotation().type->category() == Type::Category::Address
+		(innerExpression->expression().annotation().type->category() == Type::Category::Address || innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)
 	)
 	{
 		solAssert(innerExpression->annotation().type->category() == Type::Category::Array);
@@ -1840,6 +2115,11 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 		solAssert(false, "Invalid member access to integer");
 		break;
 	}
+	case Type::Category::ShieldedInteger:
+	{
+		solAssert(false, "Invalid member access to shielded integer");
+		break;
+	}
 	case Type::Category::Address:
 	{
 		if (member == "balance")
@@ -1874,6 +2154,38 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 			define(IRVariable{_memberAccess}.part("address"), _memberAccess.expression());
 		else
 			solAssert(false, "Invalid member access to address");
+		break;
+	}
+	case Type::Category::ShieldedAddress:
+	{
+		if (member == "balance")
+			define(_memberAccess) <<
+				"balance(" <<
+				expressionAsType(_memberAccess.expression(), *TypeProvider::shieldedAddress()) <<
+				")\n";
+		else if (member == "code")
+		{
+			std::string externalCodeFunction = m_utils.externalCodeFunction();
+			define(_memberAccess) <<
+				externalCodeFunction <<
+				"(" <<
+				expressionAsType(_memberAccess.expression(), *TypeProvider::shieldedAddress()) <<
+				")\n";
+		}
+		else if (member == "codehash")
+			define(_memberAccess) <<
+				"extcodehash(" <<
+				expressionAsType(_memberAccess.expression(), *TypeProvider::shieldedAddress()) <<
+				")\n";
+		else if (std::set<std::string>{"send", "transfer"}.count(member))
+		{
+			solAssert(dynamic_cast<ShieldedAddressType const&>(*_memberAccess.expression().annotation().type).stateMutability() == StateMutability::Payable);
+			define(IRVariable{_memberAccess}.part("address"), _memberAccess.expression());
+		}
+		else if (std::set<std::string>{"call", "callcode", "delegatecall", "staticcall"}.count(member))
+			define(IRVariable{_memberAccess}.part("address"), _memberAccess.expression());
+		else
+			solAssert(false, "Invalid member access to shielded address");
 		break;
 	}
 	case Type::Category::Function:
@@ -1937,8 +2249,12 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 		// we can ignore the kind of magic and only look at the name of the member
 		if (member == "coinbase")
 			define(_memberAccess) << "coinbase()\n";
-		else if (member == "timestamp")
+		// "timestamp_seconds" is an alias for "timestamp", allowing contract authors
+		// to be explicit about the unit when used alongside "timestamp_ms"
+		else if (member == "timestamp" || member == "timestamp_seconds")
 			define(_memberAccess) << "timestamp()\n";
+		else if (member == "timestamp_ms")
+			define(_memberAccess) << "timestampms()\n";
 		else if (member == "difficulty" || member == "prevrandao")
 		{
 			if (m_context.evmVersion().hasPrevRandao())
@@ -2058,7 +2374,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 				("add(" + expression.part("slot").name() + ", " + offsets.first.str() + ")\n");
 			setLValue(_memberAccess, IRLValue{
 				type(_memberAccess),
-				IRLValue::Storage{slot, offsets.second}
+				IRLValue::Storage{slot, false, offsets.second}
 			});
 			break;
 		}
@@ -2112,7 +2428,7 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 	}
 	case Type::Category::Array:
 	{
-		auto const& type = dynamic_cast<ArrayType const&>(*_memberAccess.expression().annotation().type);
+		auto const& type = dynamic_cast<ArrayType const&>(effectiveType(_memberAccess.expression()));
 		if (member == "length")
 		{
 			// shortcut for <address>.code.length
@@ -2120,12 +2436,20 @@ void IRGeneratorForStatements::endVisit(MemberAccess const& _memberAccess)
 				auto innerExpression = dynamic_cast<MemberAccess const*>(&_memberAccess.expression());
 				innerExpression &&
 				innerExpression->memberName() == "code" &&
-				innerExpression->expression().annotation().type->category() == Type::Category::Address
+				(innerExpression->expression().annotation().type->category() == Type::Category::Address || innerExpression->expression().annotation().type->category() == Type::Category::ShieldedAddress)
 			)
-				define(_memberAccess) <<
-					"extcodesize(" <<
+			{
+				if (innerExpression->expression().annotation().type->category() == Type::Category::Address)
+					define(_memberAccess) <<
+						"extcodesize(" <<
 					expressionAsType(innerExpression->expression(), *TypeProvider::address()) <<
 					")\n";
+				else
+					define(_memberAccess) <<
+						"extcodesize(" <<
+						expressionAsType(innerExpression->expression(), *TypeProvider::shieldedAddress()) <<
+						")\n";
+			}
 			else
 				define(_memberAccess) <<
 					m_utils.arrayLengthFunction(type) <<
@@ -2303,7 +2627,7 @@ bool IRGeneratorForStatements::visit(InlineAssembly const& _inlineAsm)
 void IRGeneratorForStatements::endVisit(IndexAccess const& _indexAccess)
 {
 	setLocation(_indexAccess);
-	Type const& baseType = *_indexAccess.baseExpression().annotation().type;
+	Type const& baseType = effectiveType(_indexAccess.baseExpression());
 
 	if (baseType.category() == Type::Category::Mapping)
 	{
@@ -2323,6 +2647,7 @@ void IRGeneratorForStatements::endVisit(IndexAccess const& _indexAccess)
 			*_indexAccess.annotation().type,
 			IRLValue::Storage{
 				slot,
+				false,
 				0u
 			}
 		});
@@ -2358,7 +2683,12 @@ void IRGeneratorForStatements::endVisit(IndexAccess const& _indexAccess)
 
 				setLValue(_indexAccess, IRLValue{
 					*_indexAccess.annotation().type,
-					IRLValue::Storage{slot, offset}
+					IRLValue::Storage{
+						slot,
+						arrayType.usesShieldedStorage(),
+						offset,
+						arrayType.isByteArrayOrString() && arrayType.baseType()->isShielded()
+					}
 				});
 
 				break;
@@ -2569,7 +2899,9 @@ bool IRGeneratorForStatements::visit(Literal const& _literal)
 	{
 	case Type::Category::RationalNumber:
 	case Type::Category::Bool:
+	case Type::Category::ShieldedBool:
 	case Type::Category::Address:
+	case Type::Category::ShieldedAddress:
 		define(_literal) << toCompactHexWithPrefix(literalType.literalValue(&_literal)) << "\n";
 		break;
 	case Type::Category::StringLiteral:
@@ -2602,6 +2934,7 @@ void IRGeneratorForStatements::handleVariableReference(
 			*_variable.annotation().type,
 			IRLValue::TransientStorage{
 				toCompactHexWithPrefix(m_context.storageLocationOfStateVariable(_variable).first),
+				false,
 				m_context.storageLocationOfStateVariable(_variable).second
 			}
 		});
@@ -2612,6 +2945,7 @@ void IRGeneratorForStatements::handleVariableReference(
 			*_variable.annotation().type,
 			IRLValue::Storage{
 				toCompactHexWithPrefix(m_context.storageLocationOfStateVariable(_variable).first),
+				false,
 				m_context.storageLocationOfStateVariable(_variable).second
 			}
 		});
@@ -3033,7 +3367,9 @@ std::string IRGeneratorForStatements::binaryOperation(
 	{
 		solAssert(
 			_type.category() == Type::Category::Integer ||
-			_type.category() == Type::Category::FixedBytes,
+			_type.category() == Type::Category::ShieldedInteger ||
+			_type.category() == Type::Category::FixedBytes ||
+			_type.category() == Type::Category::ShieldedFixedBytes,
 			""
 		);
 		switch (_operator)
@@ -3142,8 +3478,19 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 					[&](std::string const& _offset) { offsetArgument = ", " + _offset; }
 				}, _storage.offset);
 
+				// For reference types (structs, arrays), shielded storage ops are
+				// handled per-member by the copy functions, not via the override flag.
+				// Only pass the shielded flag for value types.
+				bool useShieldedOps = _lvalue.type.isValueType() && _storage.usesShieldedStorage;
 				appendCode() <<
-					m_utils.updateStorageValueFunction(_value.type(), _lvalue.type, VariableDeclaration::Location::Unspecified, offsetStatic) <<
+					m_utils.updateStorageValueFunction(
+						_value.type(),
+						_lvalue.type,
+						VariableDeclaration::Location::Unspecified,
+						offsetStatic,
+						useShieldedOps,
+						_storage.packedShieldedFixedBytes
+					) <<
 					"(" <<
 					_storage.slot <<
 					offsetArgument <<
@@ -3175,7 +3522,12 @@ void IRGeneratorForStatements::writeToLValue(IRLValue const& _lvalue, IRVariable
 
 					if (_memory.byteArrayElement)
 					{
-						solAssert(_lvalue.type == *TypeProvider::byte());
+						// For byte arrays, accept both bytes1 and sbytes1
+						solAssert(
+							_lvalue.type == *TypeProvider::byte() ||
+							_lvalue.type == *TypeProvider::shieldedFixedBytes(1),
+							"Invalid byte array element type"
+						);
 						appendCode() << "mstore8(" + _memory.address + ", byte(0, " + prepared.commaSeparatedList() + "))\n";
 					}
 					else
@@ -3244,7 +3596,13 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 				define(result) << _storage.slot << "\n";
 			else if (std::holds_alternative<std::string>(_storage.offset))
 				define(result) <<
-					m_utils.readFromStorageDynamic(_lvalue.type, true, VariableDeclaration::Location::Unspecified) <<
+					m_utils.readFromStorageDynamic(
+						_lvalue.type,
+						true,
+						VariableDeclaration::Location::Unspecified,
+						_storage.usesShieldedStorage,
+						_storage.packedShieldedFixedBytes
+					) <<
 					"(" <<
 					_storage.slot <<
 					", " <<
@@ -3252,7 +3610,13 @@ IRVariable IRGeneratorForStatements::readFromLValue(IRLValue const& _lvalue)
 					")\n";
 			else
 				define(result) <<
-					m_utils.readFromStorage(_lvalue.type, std::get<unsigned>(_storage.offset), true, VariableDeclaration::Location::Unspecified) <<
+					m_utils.readFromStorage(
+						_lvalue.type,
+						std::get<unsigned>(_storage.offset),
+						true,
+						VariableDeclaration::Location::Unspecified,
+						_storage.usesShieldedStorage
+					) <<
 					"(" <<
 					_storage.slot <<
 					")\n";
@@ -3370,9 +3734,11 @@ void IRGeneratorForStatements::generateLoop(
 			appendCode() << "if iszero(" << firstRun << ") {\n";
 
 		_conditionExpression->accept(*this);
+		std::string condition = expressionAsType(*_conditionExpression, *TypeProvider::boolean());
+
 		appendCode() <<
 			"if iszero(" <<
-			expressionAsType(*_conditionExpression, *TypeProvider::boolean()) <<
+			condition <<
 			") { break }\n";
 
 		if (_isDoWhile)

@@ -122,6 +122,7 @@ private:
 	void endVisit(InheritanceSpecifier const& _inheritance) override;
 	void endVisit(ModifierDefinition const& _modifier) override;
 	bool visit(FunctionDefinition const& _function) override;
+	void endVisit(FunctionDefinition const& _function) override;
 	void endVisit(ArrayTypeName const& _typeName) override;
 	bool visit(VariableDeclaration const& _variable) override;
 	void endVisit(StructDefinition const& _struct) override;
@@ -132,6 +133,16 @@ private:
 	bool visit(ErrorDefinition const& _errorDef) override;
 	void endVisit(FunctionTypeName const& _funType) override;
 	bool visit(InlineAssembly const& _inlineAssembly) override;
+	/// Validates that shielded/non-shielded storage operations (cstore/cload vs sstore/sload)
+	/// are used consistently within inline assembly. Reports errors when:
+	/// - sstore/sload is used on a shielded variable reference
+	/// - sstore/sload is used on a slot that was previously written with cstore
+	void validateShieldedStorageOps(InlineAssembly const& _inlineAssembly);
+	void checkByteStorageRefDomain(
+		VariableDeclaration const& _variable,
+		Type const& _sourceType,
+		langutil::SourceLocation const& _location
+	);
 	bool visit(IfStatement const& _ifStatement) override;
 	void endVisit(TryStatement const& _tryStatement) override;
 	bool visit(WhileStatement const& _whileStatement) override;
@@ -144,6 +155,8 @@ private:
 	bool visit(Conditional const& _conditional) override;
 	bool visit(Assignment const& _assignment) override;
 	bool visit(TupleExpression const& _tuple) override;
+	bool visit(Block const& _block) override;
+	void endVisit(Block const& _block) override;
 	void endVisit(BinaryOperation const& _operation) override;
 	bool visit(UnaryOperation const& _operation) override;
 	bool visit(FunctionCall const& _functionCall) override;
@@ -161,6 +174,25 @@ private:
 
 	void checkErrorAndEventParameters(CallableDeclaration const& _callable);
 
+	/// Checks if a literal expression is being converted to a shielded type and emits a warning.
+	/// This is the core check that matches the original warning logic.
+	void checkLiteralToShielded(
+		Expression const& _expression,
+		Type const& _targetType,
+		langutil::SourceLocation const& _location
+	);
+
+	/// Checks if msg.value is being assigned to a shielded type and emits a warning,
+	/// since msg.value is always publicly visible on-chain.
+	void checkMsgValueToShielded(
+		Expression const& _expression,
+		Type const& _targetType
+	);
+
+	/// Walks an event/error call argument and warns when a shielded-to-public
+	/// type conversion exposes a confidential value to public logs or returndata.
+	void checkShieldedLeakInPublicSink(Expression const& _expression);
+
 	/// @returns the referenced declaration and throws on error.
 	Declaration const& dereference(Identifier const& _identifier) const;
 	/// @returns the referenced declaration and throws on error.
@@ -174,6 +206,11 @@ private:
 	/// Runs type checks on @a _expression to infer its type and then checks that it is implicitly
 	/// convertible to @a _expectedType.
 	bool expectType(Expression const& _expression, Type const& _expectedType);
+	/// Convertibility check + error reporting half of expectType; assumes @a _expression
+	/// has already been visited.
+	bool checkImplicitConversion(Expression const& _expression, Type const& _expectedType);
+	/// Helper function for conditionals that checks for either bool or shielded_bools.
+	bool expectBoolOrShieldedBool(Expression const& _expression);
 	/// Runs type checks on @a _expression to infer its type and then checks that it is an LValue.
 	void requireLValue(Expression const& _expression);
 
@@ -191,9 +228,20 @@ private:
 
 	SourceUnit const* m_currentSourceUnit = nullptr;
 	ContractDefinition const* m_currentContract = nullptr;
+	/// Tracks nesting depth of unchecked blocks
+	unsigned m_insideUncheckedBlock = 0;
+	/// Tracks whether we are visiting arguments of a `new` expression (constructor call).
+	/// Shielded literal warnings always fire in this context (init code leak).
+	unsigned m_insideNewExpressionArgs = 0;
+	/// Tracks whether we are visiting arguments of a non-constructor external function call.
+	/// Shielded literal warnings are suppressed here (calldata encrypted by TxSeismic).
+	unsigned m_insideExternalCallArgs = 0;
 
 	langutil::EVMVersion m_evmVersion;
 	std::optional<uint8_t> m_eofVersion;
+
+	/// Per byte-array storage ref: {seenShielded, seenPublic}. Seeing both is a domain conflict.
+	std::map<VariableDeclaration const*, std::pair<bool, bool>> m_byteStorageRefDomains;
 
 	langutil::ErrorReporter& m_errorReporter;
 };

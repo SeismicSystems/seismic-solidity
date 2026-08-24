@@ -93,6 +93,7 @@ ASTPointer<SourceUnit> Parser::parse(CharStream& _charStream)
 	{
 		m_recursionDepth = 0;
 		m_scanner = std::make_shared<Scanner>(_charStream);
+		m_scanner->setShieldedTypesEnabled(m_evmVersion.supportShieldedStorage());
 		ASTNodeFactory nodeFactory(*this);
 		m_experimentalSolidityEnabledInCurrentSourceUnit = false;
 
@@ -1293,12 +1294,12 @@ ASTPointer<TypeName> Parser::parseTypeName()
 		ASTNodeFactory nodeFactory(*this);
 		nodeFactory.markEndPosition();
 		advance();
-		auto stateMutability = elemTypeName.token() == Token::Address
+		auto stateMutability = (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			? std::optional<StateMutability>{StateMutability::NonPayable}
 			: std::nullopt;
 		if (TokenTraits::isStateMutabilitySpecifier(m_scanner->currentToken()))
 		{
-			if (elemTypeName.token() == Token::Address)
+			if (elemTypeName.token() == Token::Address || elemTypeName.token() == Token::SAddress)
 			{
 				nodeFactory.markEndPosition();
 				stateMutability = parseStateMutability();
@@ -2267,6 +2268,7 @@ ASTPointer<Expression> Parser::parseLeftHandSideExpression(
 	}
 	else if (m_scanner->currentToken() == Token::Payable)
 	{
+		// Always emit `address payable`; the type checker promotes to `saddress payable` when the argument is shielded.
 		expectToken(Token::Payable);
 		nodeFactory.markEndPosition();
 		auto expressionType = nodeFactory.createNode<ElementaryTypeName>(
@@ -2366,6 +2368,7 @@ ASTPointer<Expression> Parser::parseLiteral()
 	case Token::TrueLiteral:
 	case Token::FalseLiteral:
 	case Token::Number:
+	case Token::ShieldedNumber:
 	{
 		nodeFactory.markEndPosition();
 		advance();
@@ -2401,6 +2404,12 @@ ASTPointer<Expression> Parser::parseLiteral()
 		return nodeFactory.createNode<Literal>(initialToken, std::move(value), subDenomination);
 	}
 
+	if (initialToken == Token::ShieldedNumber && (
+		TokenTraits::isEtherSubdenomination(m_scanner->currentToken()) ||
+		TokenTraits::isTimeSubdenomination(m_scanner->currentToken())
+	))
+		fatalParserError(10207_error, "Shielded number literals cannot be used with unit denominations.");
+
 	return nodeFactory.createNode<Literal>(initialToken, std::move(value), Literal::SubDenomination::None);
 }
 
@@ -2416,6 +2425,7 @@ ASTPointer<Expression> Parser::parsePrimaryExpression()
 	case Token::TrueLiteral:
 	case Token::FalseLiteral:
 	case Token::Number:
+	case Token::ShieldedNumber:
 	case Token::StringLiteral:
 	case Token::UnicodeStringLiteral:
 	case Token::HexStringLiteral:
@@ -2814,6 +2824,11 @@ ASTPointer<ASTString> Parser::expectIdentifierTokenOrAddress()
 	if (m_scanner->currentToken() == Token::Address)
 	{
 		result = std::make_shared<ASTString>("address");
+		advance();
+	}
+	else if (m_scanner->currentToken() == Token::SAddress)
+	{
+		result = std::make_shared<ASTString>("saddress");
 		advance();
 	}
 	else

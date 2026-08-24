@@ -63,6 +63,7 @@ public:
 	static EVMVersion constexpr cancun() { return {Version::Cancun}; }
 	static EVMVersion constexpr prague() { return {Version::Prague}; }
 	static EVMVersion constexpr osaka() { return {Version::Osaka}; }
+	static EVMVersion constexpr mercury() { return {Version::Mercury}; }
 
 	static auto constexpr allVersions() {
 		return std::array{
@@ -79,6 +80,7 @@ public:
 			shanghai(),
 			cancun(),
 			prague(),
+			mercury(),
 			osaka(),
 		};
 	}
@@ -124,6 +126,7 @@ public:
 		case Version::Shanghai: return "shanghai";
 		case Version::Cancun: return "cancun";
 		case Version::Prague: return "prague";
+		case Version::Mercury: return "mercury";
 		case Version::Osaka: return "osaka";
 		}
 		util::unreachable();
@@ -144,6 +147,10 @@ public:
 	bool hasBlobHash() const { return *this >= cancun(); }
 	bool hasMcopy() const { return *this >= cancun(); }
 	bool supportsTransientStorage() const { return *this >= cancun(); }
+	// Mercury-only: the runtime defines CLOAD/CSTORE/TIMESTAMPMS for Mercury alone, and later
+	// versions (e.g. Osaka) do not, so shielded support must not extend past Mercury.
+	bool supportShieldedStorage() const { return *this == mercury(); }
+	bool hasTimestampMs() const { return *this == mercury(); }
 	bool supportsEOF() const { return *this >= firstWithEOF(); }
 
 	bool hasOpcode(evmasm::Instruction _opcode, std::optional<uint8_t> _eofVersion) const;
@@ -167,9 +174,10 @@ private:
 		Shanghai,
 		Cancun,
 		Prague,
+		Mercury,
 		Osaka,
 	};
-	static auto constexpr currentVersion = Version::Prague;
+	static auto constexpr currentVersion = Version::Mercury;
 
 	constexpr EVMVersion(Version _version): m_version(_version) {}
 

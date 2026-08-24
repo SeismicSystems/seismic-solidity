@@ -638,6 +638,29 @@ BOOST_AUTO_TEST_CASE(optimise_multi_stores)
 	BOOST_CHECK_EQUAL(numInstructions(m_optimizedBytecode, Instruction::SSTORE), 7);
 }
 
+BOOST_AUTO_TEST_CASE(optimise_multi_shielded_stores)
+{
+	char const* sourceCode = R"(
+		contract Test {
+			struct S { suint a; suint b; suint[3] c; suint[] dyn; }
+			suint padding;
+			S[] s;
+			function f() public returns (suint, suint, suint[3] memory, suint) {
+				suint[3] memory c;
+				c[0] = 7;
+				c[1] = 8;
+				c[2] = 9;
+				s.push(S(1, 2, c, new suint[](4)));
+				return (s[0].a, s[0].b, s[0].c, s[0].dyn[2]);
+			}
+		}
+	)";
+	compileBothVersions(sourceCode);
+	compareVersions("f()");
+	BOOST_CHECK_EQUAL(numInstructions(m_nonOptimizedBytecode, Instruction::CSTORE), 8);
+	BOOST_CHECK_EQUAL(numInstructions(m_optimizedBytecode, Instruction::CSTORE), 7);
+}
+
 BOOST_AUTO_TEST_CASE(optimise_constant_to_codecopy)
 {
 	char const* sourceCode = R"(

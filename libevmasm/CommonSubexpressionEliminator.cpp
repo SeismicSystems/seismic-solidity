@@ -148,8 +148,36 @@ AssemblyItems CSECodeGenerator::generateCode(
 		m_classPositions[item.second].insert(item.first);
 
 	// generate the dependency graph starting from final storage and memory writes and target stack contents
+	//
+	// Cross-domain stores on the same (or possibly-aliasing) slot revert at runtime, so any slot
+	// pair that knownToBeDifferent can't separate must preserve every store, not just the last.
+	std::set<Id> crossDomainSlots;
+	{
+		std::set<Id> publicSlots;
+		std::set<Id> shieldedSlots;
+		for (auto const& p: m_storeOperations)
+		{
+			if (p.first.first == StoreOperation::Storage)
+				publicSlots.insert(p.first.second);
+			else if (p.first.first == StoreOperation::ShieldedStorage)
+				shieldedSlots.insert(p.first.second);
+		}
+		for (Id pub: publicSlots)
+			for (Id shi: shieldedSlots)
+				if (pub == shi || !m_expressionClasses.knownToBeDifferent(pub, shi))
+				{
+					crossDomainSlots.insert(pub);
+					crossDomainSlots.insert(shi);
+				}
+	}
 	for (auto const& p: m_storeOperations)
-		addDependencies(p.second.back().expression);
+	{
+		if (crossDomainSlots.count(p.first.second))
+			for (auto const& store: p.second)
+				addDependencies(store.expression);
+		else
+			addDependencies(p.second.back().expression);
+	}
 	for (auto const& targetItem: m_targetStack)
 	{
 		m_finalClasses.insert(targetItem.second);
@@ -236,18 +264,38 @@ void CSECodeGenerator::addDependencies(Id _c)
 	if (expr.item && expr.item->type() == Operation && (
 		expr.item->instruction() == Instruction::SLOAD ||
 		expr.item->instruction() == Instruction::MLOAD ||
+		expr.item->instruction() == Instruction::CLOAD ||
 		expr.item->instruction() == Instruction::KECCAK256
 	))
 	{
 		// this loads an unknown value from storage or memory and thus, in addition to its
 		// arguments, depends on all store operations to addresses where we do not know that
 		// they are different that occur before this load
-		StoreOperation::Target target = expr.item->instruction() == Instruction::SLOAD ?
-			StoreOperation::Storage : StoreOperation::Memory;
+		StoreOperation::Target target;
+		switch (expr.item->instruction())
+		{
+		case Instruction::SLOAD:
+		// CLOAD can read both public and private storage, so its treated separately below.
+		// We still need it here however to avoid the default assert.
+		case Instruction::CLOAD:
+			target = StoreOperation::Storage;
+			break;
+		case Instruction::MLOAD:
+		case Instruction::KECCAK256:
+			target = StoreOperation::Memory;
+			break;
+		default:
+			solAssert(false, "Unexpected load instruction in CSE dependency analysis");
+		}
 		Id slotToLoadFrom = expr.arguments.at(0);
 		for (auto const& p: m_storeOperations)
 		{
-			if (p.first.first != target)
+			// CLOAD can read both public and private storage, so check both domains
+			bool shouldCheckTarget
+				= (expr.item->instruction() == Instruction::CLOAD)
+					  ? (p.first.first == StoreOperation::Storage || p.first.first == StoreOperation::ShieldedStorage)
+					  : (p.first.first == target);
+			if (!shouldCheckTarget)
 				continue;
 			Id slot = p.first.second;
 			StoreOperations const& storeOps = p.second;
@@ -257,6 +305,9 @@ void CSECodeGenerator::addDependencies(Id _c)
 			switch (expr.item->instruction())
 			{
 			case Instruction::SLOAD:
+				knownToBeIndependent = m_expressionClasses.knownToBeDifferent(slot, slotToLoadFrom);
+				break;
+			case Instruction::CLOAD:
 				knownToBeIndependent = m_expressionClasses.knownToBeDifferent(slot, slotToLoadFrom);
 				break;
 			case Instruction::MLOAD:

@@ -137,6 +137,7 @@ void UnusedStoreEliminator::visit(Statement const& _statement)
 {
 	using evmasm::Instruction;
 
+	m_currentStatementHasDomainConflict = false;
 	UnusedStoreBase::visit(_statement);
 
 	auto const* exprStatement = std::get_if<ExpressionStatement>(&_statement);
@@ -158,7 +159,7 @@ void UnusedStoreEliminator::visit(Statement const& _statement)
 	// both by querying a combination of semantic information and by listing the instructions.
 	// This way the assert below should be triggered on any change.
 	using evmasm::SemanticInformation;
-	bool isStorageWrite = (*instruction == Instruction::SSTORE);
+	bool isStorageWrite = (*instruction == Instruction::SSTORE || *instruction == Instruction::CSTORE);
 	bool isMemoryWrite =
 		*instruction == Instruction::EXTCODECOPY ||
 		*instruction == Instruction::CODECOPY ||
@@ -211,6 +212,10 @@ void UnusedStoreEliminator::visit(Statement const& _statement)
 			activeMemoryStores().insert(&_statement);
 		}
 		m_storeOperations[&_statement] = std::move(operations.front());
+		// A store that itself triggers a cross-domain revert must be kept: its revert is
+		// observable, so it cannot be eliminated as dead-before-revert.
+		if (m_currentStatementHasDomainConflict)
+			m_usedStores.insert(&_statement);
 	}
 }
 
@@ -235,9 +240,9 @@ std::vector<UnusedStoreEliminator::Operation> UnusedStoreEliminator::operationsF
 		std::vector<Operation> result;
 		// Unknown read is worse than unknown write.
 		if (sideEffects.memory != SideEffects::Effect::None)
-			result.emplace_back(Operation{Location::Memory, Effect::Read, {}, {}});
+			result.emplace_back(Operation{Location::Memory, Effect::Read, {}, {}, {}, false});
 		if (sideEffects.storage != SideEffects::Effect::None)
-			result.emplace_back(Operation{Location::Storage, Effect::Read, {}, {}});
+			result.emplace_back(Operation{Location::Storage, Effect::Read, {}, {}, {}, false});
 		return result;
 	}
 
@@ -249,9 +254,13 @@ std::vector<UnusedStoreEliminator::Operation> UnusedStoreEliminator::operationsF
 		{
 			yulAssert(!(_op.lengthParameter && _op.lengthConstant));
 			yulAssert(_op.effect != Effect::None);
-			Operation ourOp{_op.location, _op.effect, {}, {}};
+			Operation ourOp{_op.location, _op.effect, {}, {}, {}, false};
 			if (_op.startParameter)
-				ourOp.start = identifierNameIfSSA(_functionCall.arguments.at(*_op.startParameter));
+			{
+				Expression const& startArg = _functionCall.arguments.at(*_op.startParameter);
+				ourOp.start = identifierNameIfSSA(startArg);
+				ourOp.startValue = m_knowledgeBase.valueIfKnownConstant(startArg);
+			}
 			if (_op.lengthParameter)
 				ourOp.length = identifierNameIfSSA(_functionCall.arguments.at(*_op.lengthParameter));
 			if (_op.lengthConstant)
@@ -261,6 +270,9 @@ std::vector<UnusedStoreEliminator::Operation> UnusedStoreEliminator::operationsF
 				case 32: ourOp.length = u256(32); break;
 				default: yulAssert(false);
 				}
+			// Mark shielded/private storage operations
+			if (_op.location == Location::Storage)
+				ourOp.isShieldedStorage = (*instruction == Instruction::CSTORE || *instruction == Instruction::CLOAD);
 			return ourOp;
 		}
 	);
@@ -287,6 +299,15 @@ void UnusedStoreEliminator::applyOperation(UnusedStoreEliminator::Operation cons
 		else if (_operation.effect == Effect::Write && knownCovered(storeOperation, _operation))
 			// This store is overwritten before being read, remove it from the active set.
 			it = active.erase(it);
+		else if (_operation.effect == Effect::Write && hasStorageDomainConflict(storeOperation, _operation))
+		{
+			// Storage domain conflict: the incoming write reverts at runtime against the slot
+			// the prior store claimed for the other domain. Keep the prior store, and flag the
+			// incoming one so visit() keeps it too (it is the op that actually reverts).
+			m_usedStores.insert(statement);
+			m_currentStatementHasDomainConflict = true;
+			it = active.erase(it);
+		}
 		else
 			++it;
 	}
@@ -301,6 +322,26 @@ bool UnusedStoreEliminator::knownUnrelated(
 		return true;
 	if (_op1.location == Location::Storage)
 	{
+		// Different storage domains (public vs shielded) are generally unrelated.
+		// Three exceptions:
+		//   1. CLOAD reads from BOTH domains.
+		//   2. A wildcard storage read (an external call's storage Read with
+		//      no concrete slot) can observe any active store regardless of
+		//      domain.
+		//   3. A cross-domain access on the same slot is observable at runtime
+		//      (the load reverts because the slot is claimed for the other
+		//      domain), so the prior store must be kept live for the revert
+		//      to fire.
+		// Note: _op1 is always a store (from m_storeOperations), so we only check _op2.
+		if (_op1.isShieldedStorage != _op2.isShieldedStorage)
+		{
+			bool op2ReadsBothDomains =
+				(_op2.effect == Effect::Read && _op2.isShieldedStorage) ||
+				(!_op2.start && !_op2.startValue);
+			bool sameSlotCrossDomain = !knownToBeDifferentStorageSlots(_op1, _op2);
+			if (!op2ReadsBothDomains && !sameSlotCrossDomain)
+				return true;
+		}
 		if (_op1.start && _op2.start)
 		{
 			yulAssert(
@@ -369,6 +410,10 @@ bool UnusedStoreEliminator::knownCovered(
 {
 	if (_covered.location != _covering.location)
 		return false;
+	// CSTORE/CLOAD and SSTORE/SLOAD operate on different storage domains.
+	// A public storage write (SSTORE) cannot cover a private storage write (CSTORE) and vice versa.
+	if (_covered.location == Location::Storage && _covered.isShieldedStorage != _covering.isShieldedStorage)
+		return false;
 	if (
 		(_covered.start && _covered.start == _covering.start) &&
 		(_covered.length && _covered.length == _covering.length)
@@ -404,6 +449,59 @@ bool UnusedStoreEliminator::knownCovered(
 		// i.start <= e.start && e.start + e.length <= i.start + i.length
 	}
 	return false;
+}
+
+/// Detects a storage domain conflict between two operations.
+///
+/// A storage domain conflict occurs when two operations (CSTORE/CLOAD vs SSTORE/SLOAD)
+/// target the same storage slot but operate on different storage domains:
+/// - Public storage domain: SSTORE/SLOAD operations
+/// - Shielded/private storage domain: CSTORE/CLOAD operations
+///
+/// These domains are separate and mutually exclusive. Attempting to access the same slot
+/// with operations from different domains (e.g., CSTORE followed by SSTORE on slot 0)
+/// will cause a runtime error, as the slot's privacy cannot be changed without first
+/// clearing it.
+///
+/// When such a conflict is detected, the optimizer must preserve both operations to
+/// allow the runtime error to occur, rather than incorrectly optimizing away one of them.
+///
+/// @param _op1 First operation to check
+/// @param _op2 Second operation to check
+/// @return true if the operations target the same slot in different storage domains
+bool UnusedStoreEliminator::knownToBeDifferentStorageSlots(
+	UnusedStoreEliminator::Operation const& _op1,
+	UnusedStoreEliminator::Operation const& _op2
+) const
+{
+	// Prefer known constant slot values; this is the only handle for literal operands,
+	// whose `start` (an SSA name) is empty.
+	if (_op1.startValue && _op2.startValue)
+		return *_op1.startValue != *_op2.startValue;
+	if (_op1.start && _op2.start)
+		return m_knowledgeBase.knownToBeDifferent(*_op1.start, *_op2.start);
+	// Cannot prove the slots differ; treat them as possibly the same.
+	return false;
+}
+
+bool UnusedStoreEliminator::hasStorageDomainConflict(
+	UnusedStoreEliminator::Operation const& _op1,
+	UnusedStoreEliminator::Operation const& _op2
+) const
+{
+	// Only applies to storage operations
+	if (_op1.location != Location::Storage || _op2.location != Location::Storage)
+		return false;
+
+	// Check if they operate on different storage domains (public vs shielded)
+	if (_op1.isShieldedStorage == _op2.isShieldedStorage)
+		return false;
+
+	// Conflict unless we can prove the two slots are different. Literal slots
+	// (e.g. cstore(0, ...) / sstore(0, ...)) are compared by value here; previously
+	// their empty `start` short-circuited to "no conflict" and the reverting store
+	// was eliminated.
+	return !knownToBeDifferentStorageSlots(_op1, _op2);
 }
 
 void UnusedStoreEliminator::markActiveAsUsed(

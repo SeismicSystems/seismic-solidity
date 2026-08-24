@@ -34,6 +34,7 @@
 
 #include <map>
 #include <set>
+#include <unordered_set>
 
 namespace solidity::yul
 {
@@ -108,6 +109,12 @@ public:
 	std::map<YulName, AssignedValue> const& allValues() const { return m_state.value; }
 	std::optional<YulName> storageValue(YulName _key) const;
 	std::optional<YulName> memoryValue(YulName _key) const;
+	std::optional<YulName> confidentialStorageValue(YulName _key) const;
+	/// @returns true iff @p _key is provably claimed for the shielded domain
+	/// (i.e. a prior CSTORE on this slot is still live in the current state).
+	/// CLOAD does not establish a claim, so a hit on confidentialStorageValue
+	/// alone is not enough to prove the slot is shielded.
+	bool confidentialStorageIsClaimed(YulName _key) const;
 	std::optional<YulName> keccakValue(YulName _start, YulName _length) const;
 
 protected:
@@ -141,7 +148,8 @@ protected:
 	enum class StoreLoadLocation {
 		Memory = 0,
 		Storage = 1,
-		Last = Storage
+		ConfidentialStorage = 2,
+		Last = ConfidentialStorage
 	};
 
 	/// Checks if the statement is sstore(a, b) / mstore(a, b)
@@ -172,6 +180,13 @@ private:
 	{
 		std::unordered_map<YulName, YulName> storage;
 		std::unordered_map<YulName, YulName> memory;
+		std::unordered_map<YulName, YulName> confidentialStorage;
+		/// Slot identifiers known to have been claimed for the shielded
+		/// domain via a CSTORE. CLOAD reads both public and shielded
+		/// domains, so a confidentialStorage entry alone is not enough to
+		/// prove the slot is shielded — only entries also present here
+		/// allow safe elimination of a redundant CSTORE.
+		std::unordered_set<YulName> confidentialStorageClaimed;
 		/// If keccak[s, l] = y then y := keccak256(s, l) occurs in the code.
 		std::map<std::pair<YulName, YulName>, YulName> keccak;
 	};

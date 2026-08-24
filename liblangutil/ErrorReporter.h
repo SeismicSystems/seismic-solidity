@@ -128,6 +128,8 @@ public:
 
 	void clear();
 
+	void removeError(ErrorId _errorId);
+
 	/// @returns true iff there is any error (ignores warnings and infos).
 	bool hasErrors() const
 	{

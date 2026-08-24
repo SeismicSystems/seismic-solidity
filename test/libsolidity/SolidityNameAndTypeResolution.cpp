@@ -159,6 +159,29 @@ BOOST_AUTO_TEST_CASE(function_canonical_signature_type_aliases)
 		}
 }
 
+BOOST_AUTO_TEST_CASE(function_canonical_signature_type_aliases_shielded)
+{
+	char const* text = R"(
+		contract Test {
+			function boo(suint, bytes32, address) internal returns (suint ret) {
+				ret = suint(5);
+			}
+		}
+	)";
+	auto [sourceUnit, errors] = runAnalysisAndExpectNoParsingErrors(text);
+	soltestAssert(sourceUnit);
+	soltestAssert(errors.empty(), "Unexpected error: " + formatErrors(errors));
+
+	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
+		if (ContractDefinition* contract = dynamic_cast<ContractDefinition*>(node.get()))
+		{
+			auto functions = contract->definedFunctions();
+			if (functions.empty())
+				continue;
+			BOOST_CHECK_EQUAL("boo(suint256,bytes32,address)", functions[0]->externalSignature());
+		}
+}
+
 BOOST_AUTO_TEST_CASE(function_external_types)
 {
 	char const* text = R"(
@@ -182,6 +205,32 @@ BOOST_AUTO_TEST_CASE(function_external_types)
 			if (functions.empty())
 				continue;
 			BOOST_CHECK_EQUAL("boo(uint256,bool,bytes8,bool[2],uint256[],address,address[])", functions[0]->externalSignature());
+		}
+}
+
+BOOST_AUTO_TEST_CASE(function_external_types_shielded)
+{
+	char const* text = R"(
+		contract C {
+			uint a;
+		}
+		contract Test {
+			function boo(suint, bool, bytes8, bool[2] calldata, suint[] calldata, C, address[] calldata) internal returns (suint ret) {
+				ret = suint(5);
+			}
+		}
+	)";
+	auto [sourceUnit, errors] = runAnalysisAndExpectNoParsingErrors(text);
+	soltestAssert(sourceUnit);
+	soltestAssert(errors.empty(), "Unexpected error: " + formatErrors(errors));
+
+	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
+		if (ContractDefinition* contract = dynamic_cast<ContractDefinition*>(node.get()))
+		{
+			auto functions = contract->definedFunctions();
+			if (functions.empty())
+				continue;
+			BOOST_CHECK_EQUAL("boo(suint256,bool,bytes8,bool[2],suint256[],address,address[])", functions[0]->externalSignature());
 		}
 }
 
@@ -241,6 +290,37 @@ BOOST_AUTO_TEST_CASE(external_struct_signatures)
 		}
 }
 
+BOOST_AUTO_TEST_CASE(external_struct_signatures_shielded)
+{
+	char const* text = R"(
+		pragma abicoder v2;
+		contract Test {
+			enum ActionChoices { GoLeft, GoRight, GoStraight, Sit }
+			struct Simple { suint i; }
+			struct Nested { X[2][] a; suint y; }
+			struct X { bytes32 x; Test t; Simple[] s; }
+			function f(ActionChoices, suint, Simple calldata) external {}
+			function g(Test, Nested calldata) external {}
+			function h(function(Nested memory) external returns (suint)[] calldata) external {}
+			function i(Nested[] calldata) external {}
+		}
+	)";
+	// Ignore analysis errors. This test only checks that correct signatures
+	// are generated for external structs, but they are not yet supported
+	// in code generation and therefore cause an error in the TypeChecker.
+	SourceUnit const* sourceUnit = runAnalysisAndExpectNoParsingErrors(text, false, true, true).first;
+	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
+		if (ContractDefinition* contract = dynamic_cast<ContractDefinition*>(node.get()))
+		{
+			auto functions = contract->definedFunctions();
+			BOOST_REQUIRE(!functions.empty());
+			BOOST_CHECK_EQUAL("f(uint8,suint256,(suint256))", functions[0]->externalSignature());
+			BOOST_CHECK_EQUAL("g(address,((bytes32,address,(suint256)[])[2][],suint256))", functions[1]->externalSignature());
+			BOOST_CHECK_EQUAL("h(function[])", functions[2]->externalSignature());
+			BOOST_CHECK_EQUAL("i(((bytes32,address,(suint256)[])[2][],suint256)[])", functions[3]->externalSignature());
+		}
+}
+
 BOOST_AUTO_TEST_CASE(external_struct_signatures_in_libraries)
 {
 	char const* text = R"(
@@ -266,6 +346,37 @@ BOOST_AUTO_TEST_CASE(external_struct_signatures_in_libraries)
 			auto functions = contract->definedFunctions();
 			BOOST_REQUIRE(!functions.empty());
 			BOOST_CHECK_EQUAL("f(Test.ActionChoices,uint256,Test.Simple)", functions[0]->externalSignature());
+			BOOST_CHECK_EQUAL("g(Test,Test.Nested)", functions[1]->externalSignature());
+			BOOST_CHECK_EQUAL("h(function[])", functions[2]->externalSignature());
+			BOOST_CHECK_EQUAL("i(Test.Nested[])", functions[3]->externalSignature());
+		}
+}
+
+BOOST_AUTO_TEST_CASE(external_struct_signatures_in_libraries_shielded)
+{
+	char const* text = R"(
+		pragma abicoder v2;
+		library Test {
+			enum ActionChoices { GoLeft, GoRight, GoStraight, Sit }
+			struct Simple { suint i; }
+			struct Nested { X[2][] a; suint y; }
+			struct X { bytes32 x; Test t; Simple[] s; }
+			function f(ActionChoices, suint, Simple calldata) external {}
+			function g(Test, Nested calldata) external {}
+			function h(function(Nested memory) external returns (suint)[] calldata) external {}
+			function i(Nested[] calldata) external {}
+		}
+	)";
+	// Ignore analysis errors. This test only checks that correct signatures
+	// are generated for external structs, but calldata structs are not yet supported
+	// in code generation and therefore cause an error in the TypeChecker.
+	SourceUnit const* sourceUnit = runAnalysisAndExpectNoParsingErrors(text, false, true, true).first;
+	for (ASTPointer<ASTNode> const& node: sourceUnit->nodes())
+		if (ContractDefinition* contract = dynamic_cast<ContractDefinition*>(node.get()))
+		{
+			auto functions = contract->definedFunctions();
+			BOOST_REQUIRE(!functions.empty());
+			BOOST_CHECK_EQUAL("f(Test.ActionChoices,suint256,Test.Simple)", functions[0]->externalSignature());
 			BOOST_CHECK_EQUAL("g(Test,Test.Nested)", functions[1]->externalSignature());
 			BOOST_CHECK_EQUAL("h(function[])", functions[2]->externalSignature());
 			BOOST_CHECK_EQUAL("i(Test.Nested[])", functions[3]->externalSignature());

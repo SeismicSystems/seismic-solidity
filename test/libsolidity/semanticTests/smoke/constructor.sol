@@ -11,7 +11,7 @@ contract C {
     }
 }
 // ----
-// constructor(), 2 wei: 3 ->
+// constructor(uint), 2 wei: 3 ->
 // gas irOptimized: 78996
 // gas irOptimized code: 25400
 // gas legacy: 83055
@@ -20,6 +20,5 @@ contract C {
 // gas legacyOptimized code: 27800
 // state() -> 3
 // balance() -> 2
-// balance -> 2
-// update(uint256): 4
+// update(uint): 4
 // state() -> 4

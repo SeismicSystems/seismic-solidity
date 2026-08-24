@@ -26,6 +26,7 @@ using namespace solidity::frontend;
 using namespace solidity::util;
 
 BoolType const TypeProvider::m_boolean{};
+ShieldedBoolType const TypeProvider::m_shieldedBoolean{};
 InaccessibleDynamicType const TypeProvider::m_inaccessibleDynamic{};
 
 /// The string and bytes unique_ptrs are initialized when they are first used because
@@ -33,12 +34,18 @@ InaccessibleDynamicType const TypeProvider::m_inaccessibleDynamic{};
 std::unique_ptr<ArrayType> TypeProvider::m_bytesStorage;
 std::unique_ptr<ArrayType> TypeProvider::m_bytesMemory;
 std::unique_ptr<ArrayType> TypeProvider::m_bytesCalldata;
+std::unique_ptr<ArrayType> TypeProvider::m_shieldedBytesStorage;
+std::unique_ptr<ArrayType> TypeProvider::m_shieldedBytesMemory;
+std::unique_ptr<ArrayType> TypeProvider::m_shieldedBytesCalldata;
 std::unique_ptr<ArrayType> TypeProvider::m_stringStorage;
 std::unique_ptr<ArrayType> TypeProvider::m_stringMemory;
 
 TupleType const TypeProvider::m_emptyTuple{};
 AddressType const TypeProvider::m_payableAddress{StateMutability::Payable};
 AddressType const TypeProvider::m_address{StateMutability::NonPayable};
+ShieldedAddressType const TypeProvider::m_payableShieldedAddress{StateMutability::Payable};
+ShieldedAddressType const TypeProvider::m_shieldedAddress{StateMutability::NonPayable};
+
 
 std::array<std::unique_ptr<IntegerType>, 32> const TypeProvider::m_intM{{
 	{std::make_unique<IntegerType>(8 * 1, IntegerType::Modifier::Signed)},
@@ -145,6 +152,112 @@ std::array<std::unique_ptr<FixedBytesType>, 32> const TypeProvider::m_bytesM{{
 	{std::make_unique<FixedBytesType>(32)}
 }};
 
+
+std::array<std::unique_ptr<ShieldedIntegerType>, 32> const TypeProvider::m_sintM{{
+	{std::make_unique<ShieldedIntegerType>(8 * 1, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 2, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 3, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 4, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 5, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 6, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 7, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 8, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 9, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 10, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 11, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 12, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 13, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 14, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 15, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 16, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 17, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 18, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 19, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 20, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 21, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 22, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 23, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 24, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 25, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 26, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 27, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 28, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 29, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 30, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 31, ShieldedIntegerType::Modifier::Signed)},
+	{std::make_unique<ShieldedIntegerType>(8 * 32, ShieldedIntegerType::Modifier::Signed)}
+}};
+
+std::array<std::unique_ptr<ShieldedIntegerType>, 32> const TypeProvider::m_suintM{{
+	{std::make_unique<ShieldedIntegerType>(8 * 1, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 2, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 3, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 4, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 5, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 6, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 7, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 8, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 9, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 10, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 11, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 12, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 13, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 14, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 15, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 16, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 17, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 18, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 19, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 20, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 21, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 22, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 23, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 24, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 25, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 26, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 27, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 28, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 29, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 30, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 31, ShieldedIntegerType::Modifier::Unsigned)},
+	{std::make_unique<ShieldedIntegerType>(8 * 32, ShieldedIntegerType::Modifier::Unsigned)}
+}};
+
+std::array<std::unique_ptr<ShieldedFixedBytesType>, 32> const TypeProvider::m_sbytesM{{
+	{std::make_unique<ShieldedFixedBytesType>(1)},
+	{std::make_unique<ShieldedFixedBytesType>(2)},
+	{std::make_unique<ShieldedFixedBytesType>(3)},
+	{std::make_unique<ShieldedFixedBytesType>(4)},
+	{std::make_unique<ShieldedFixedBytesType>(5)},
+	{std::make_unique<ShieldedFixedBytesType>(6)},
+	{std::make_unique<ShieldedFixedBytesType>(7)},
+	{std::make_unique<ShieldedFixedBytesType>(8)},
+	{std::make_unique<ShieldedFixedBytesType>(9)},
+	{std::make_unique<ShieldedFixedBytesType>(10)},
+	{std::make_unique<ShieldedFixedBytesType>(11)},
+	{std::make_unique<ShieldedFixedBytesType>(12)},
+	{std::make_unique<ShieldedFixedBytesType>(13)},
+	{std::make_unique<ShieldedFixedBytesType>(14)},
+	{std::make_unique<ShieldedFixedBytesType>(15)},
+	{std::make_unique<ShieldedFixedBytesType>(16)},
+	{std::make_unique<ShieldedFixedBytesType>(17)},
+	{std::make_unique<ShieldedFixedBytesType>(18)},
+	{std::make_unique<ShieldedFixedBytesType>(19)},
+	{std::make_unique<ShieldedFixedBytesType>(20)},
+	{std::make_unique<ShieldedFixedBytesType>(21)},
+	{std::make_unique<ShieldedFixedBytesType>(22)},
+	{std::make_unique<ShieldedFixedBytesType>(23)},
+	{std::make_unique<ShieldedFixedBytesType>(24)},
+	{std::make_unique<ShieldedFixedBytesType>(25)},
+	{std::make_unique<ShieldedFixedBytesType>(26)},
+	{std::make_unique<ShieldedFixedBytesType>(27)},
+	{std::make_unique<ShieldedFixedBytesType>(28)},
+	{std::make_unique<ShieldedFixedBytesType>(29)},
+	{std::make_unique<ShieldedFixedBytesType>(30)},
+	{std::make_unique<ShieldedFixedBytesType>(31)},
+	{std::make_unique<ShieldedFixedBytesType>(32)}
+}};
+
 std::array<std::unique_ptr<MagicType>, 5> const TypeProvider::m_magics{{
 	{std::make_unique<MagicType>(MagicType::Kind::Block)},
 	{std::make_unique<MagicType>(MagicType::Kind::Message)},
@@ -181,16 +294,23 @@ void TypeProvider::reset()
 	clearCache(m_bytesStorage);
 	clearCache(m_bytesMemory);
 	clearCache(m_bytesCalldata);
+	clearCache(m_shieldedBytesStorage);
+	clearCache(m_shieldedBytesMemory);
+	clearCache(m_shieldedBytesCalldata);
 	clearCache(m_stringStorage);
 	clearCache(m_stringMemory);
 	clearCache(m_emptyTuple);
 	clearCache(m_payableAddress);
 	clearCache(m_address);
+	clearCache(m_payableShieldedAddress);
+	clearCache(m_shieldedAddress);
 	clearCaches(instance().m_intM);
 	clearCaches(instance().m_uintM);
+	clearCaches(instance().m_suintM);
+	clearCaches(instance().m_sintM);
 	clearCaches(instance().m_bytesM);
+	clearCaches(instance().m_sbytesM);
 	clearCaches(instance().m_magics);
-
 	instance().m_generalTypes.clear();
 	instance().m_stringLiteralTypes.clear();
 	instance().m_ufixedMxN.clear();
@@ -220,6 +340,12 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		return integer(m, IntegerType::Modifier::Signed);
 	case Token::UIntM:
 		return integer(m, IntegerType::Modifier::Unsigned);
+	case Token::SUIntM:
+		return shieldedInteger(m, ShieldedIntegerType::Modifier::Unsigned);
+	case Token::SIntM:
+		return shieldedInteger(m, ShieldedIntegerType::Modifier::Signed);
+	case Token::SBytesM:
+		return shieldedFixedBytes(m);
 	case Token::Byte:
 		return byte();
 	case Token::BytesM:
@@ -232,6 +358,10 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		return integer(256, IntegerType::Modifier::Signed);
 	case Token::UInt:
 		return integer(256, IntegerType::Modifier::Unsigned);
+	case Token::SInt:
+		return shieldedInteger(256, ShieldedIntegerType::Modifier::Signed);
+	case Token::SUInt:
+		return shieldedInteger(256, ShieldedIntegerType::Modifier::Unsigned);
 	case Token::Fixed:
 		return fixedPoint(128, 18, FixedPointType::Modifier::Signed);
 	case Token::UFixed:
@@ -245,10 +375,23 @@ Type const* TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken const& 
 		}
 		return address();
 	}
+	case Token::SAddress:
+	{
+		if (_stateMutability)
+		{
+			solAssert(*_stateMutability == StateMutability::Payable, "");
+			return payableShieldedAddress();
+		}
+		return shieldedAddress();
+	}
 	case Token::Bool:
 		return boolean();
+	case Token::SBool:
+		return shieldedBoolean();
 	case Token::Bytes:
 		return bytesStorage();
+	case Token::SBytes:
+		return shieldedBytesStorage();
 	case Token::String:
 		return stringStorage();
 	default:
@@ -268,7 +411,6 @@ Type const* TypeProvider::fromElementaryTypeName(std::string const& _name)
 	Token token;
 	unsigned short firstNum, secondNum;
 	std::tie(token, firstNum, secondNum) = TokenTraits::fromIdentifierOrKeyword(nameParts[0]);
-
 	auto t = fromElementaryTypeName(ElementaryTypeNameToken(token, firstNum, secondNum));
 	if (auto* ref = dynamic_cast<ReferenceType const*>(t))
 	{
@@ -296,6 +438,17 @@ Type const* TypeProvider::fromElementaryTypeName(std::string const& _name)
 				solAssert(false, "Invalid state mutability for address type: " + nameParts[1]);
 		}
 		return address();
+	}
+	else if (t->category() == Type::Category::ShieldedAddress)
+	{
+		if (nameParts.size() == 2)
+		{
+			if (nameParts[1] == "payable")
+				return payableShieldedAddress();
+			else
+				solAssert(false, "Invalid state mutability for shielded address type: " + nameParts[1]);
+		}
+		return shieldedAddress();
 	}
 	else
 	{
@@ -325,6 +478,13 @@ ArrayType const* TypeProvider::bytesCalldata()
 	return m_bytesCalldata.get();
 }
 
+ArrayType const* TypeProvider::withShieldedStorageMarker(ArrayType const& _type)
+{
+	if (_type.hasShieldedStorageMarker())
+		return &_type;
+	return createAndGet<ArrayType>(_type, ArrayType::ShieldedStorageMarker{});
+}
+
 ArrayType const* TypeProvider::stringStorage()
 {
 	if (!m_stringStorage)
@@ -339,6 +499,27 @@ ArrayType const* TypeProvider::stringMemory()
 	return m_stringMemory.get();
 }
 
+ArrayType const* TypeProvider::shieldedBytesStorage()
+{
+	if (!m_shieldedBytesStorage)
+		m_shieldedBytesStorage = std::make_unique<ArrayType>(DataLocation::Storage, ArrayType::ShieldedByteArrayTag{});
+	return m_shieldedBytesStorage.get();
+}
+
+ArrayType const* TypeProvider::shieldedBytesMemory()
+{
+	if (!m_shieldedBytesMemory)
+		m_shieldedBytesMemory = std::make_unique<ArrayType>(DataLocation::Memory, ArrayType::ShieldedByteArrayTag{});
+	return m_shieldedBytesMemory.get();
+}
+
+ArrayType const* TypeProvider::shieldedBytesCalldata()
+{
+	if (!m_shieldedBytesCalldata)
+		m_shieldedBytesCalldata = std::make_unique<ArrayType>(DataLocation::CallData, ArrayType::ShieldedByteArrayTag{});
+	return m_shieldedBytesCalldata.get();
+}
+
 Type const* TypeProvider::forLiteral(Literal const& _literal)
 {
 	switch (_literal.token())
@@ -347,6 +528,7 @@ Type const* TypeProvider::forLiteral(Literal const& _literal)
 	case Token::FalseLiteral:
 		return boolean();
 	case Token::Number:
+	case Token::ShieldedNumber:
 		return rationalNumber(_literal);
 	case Token::StringLiteral:
 	case Token::UnicodeStringLiteral:
@@ -359,7 +541,8 @@ Type const* TypeProvider::forLiteral(Literal const& _literal)
 
 RationalNumberType const* TypeProvider::rationalNumber(Literal const& _literal)
 {
-	solAssert(_literal.token() == Token::Number, "");
+	solAssert(_literal.token() == Token::Number || _literal.token() == Token::ShieldedNumber, "");
+	bool isShielded = _literal.token() == Token::ShieldedNumber;
 	std::tuple<bool, rational> validLiteral = RationalNumberType::isValidLiteral(_literal);
 	if (std::get<0>(validLiteral))
 	{
@@ -371,7 +554,7 @@ RationalNumberType const* TypeProvider::rationalNumber(Literal const& _literal)
 				compatibleBytesType = fixedBytes(static_cast<unsigned>(digitCount / 2));
 		}
 
-		return rationalNumber(std::get<1>(validLiteral), compatibleBytesType);
+		return rationalNumber(std::get<1>(validLiteral), compatibleBytesType, isShielded);
 	}
 	return nullptr;
 }
@@ -483,9 +666,9 @@ FunctionType const* TypeProvider::function(
 	);
 }
 
-RationalNumberType const* TypeProvider::rationalNumber(rational const& _value, Type const* _compatibleBytesType)
+RationalNumberType const* TypeProvider::rationalNumber(rational const& _value, Type const* _compatibleBytesType, bool _shielded)
 {
-	return createAndGet<RationalNumberType>(_value, _compatibleBytesType);
+	return createAndGet<RationalNumberType>(_value, _compatibleBytesType, _shielded);
 }
 
 ArrayType const* TypeProvider::array(DataLocation _location, bool _isString)
@@ -564,6 +747,7 @@ MagicType const* TypeProvider::meta(Type const* _type)
 		_type && (
 			_type->category() == Type::Category::Contract ||
 			_type->category() == Type::Category::Integer ||
+			_type->category() == Type::Category::ShieldedInteger ||
 			_type->category() == Type::Category::Enum
 		),
 		"Only enum, contracts or integer types supported for now."

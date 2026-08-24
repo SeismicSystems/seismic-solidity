@@ -123,6 +123,7 @@ struct EVMBuiltins
 	static auto constexpr BLOBHASH = PatternGenerator<Instruction::BLOBHASH>{};
 	static auto constexpr COINBASE = PatternGenerator<Instruction::COINBASE>{};
 	static auto constexpr TIMESTAMP = PatternGenerator<Instruction::TIMESTAMP>{};
+	static auto constexpr TIMESTAMPMS = PatternGenerator<Instruction::TIMESTAMPMS>{};
 	static auto constexpr NUMBER = PatternGenerator<Instruction::NUMBER>{};
 	static auto constexpr PREVRANDAO = PatternGenerator<Instruction::PREVRANDAO>{};
 	static auto constexpr GASLIMIT = PatternGenerator<Instruction::GASLIMIT>{};
@@ -138,6 +139,8 @@ struct EVMBuiltins
 	static auto constexpr SSTORE = PatternGenerator<Instruction::SSTORE>{};
 	static auto constexpr TLOAD = PatternGenerator<Instruction::TLOAD>{};
 	static auto constexpr TSTORE = PatternGenerator<Instruction::TSTORE>{};
+	static auto constexpr CLOAD = PatternGenerator<Instruction::CLOAD>{};
+	static auto constexpr CSTORE = PatternGenerator<Instruction::CSTORE>{};
 	static auto constexpr PC = PatternGenerator<Instruction::PC>{};
 	static auto constexpr MSIZE = PatternGenerator<Instruction::MSIZE>{};
 	static auto constexpr GAS = PatternGenerator<Instruction::GAS>{};

@@ -208,15 +208,23 @@ namespace solidity::langutil
 	/* type keywords*/                                                 \
 	K(Int, "int", 0)                                                   \
 	K(UInt, "uint", 0)                                                 \
+	K(SUInt, "suint", 0)											   \
+	K(SInt, "sint", 0)                                                 \
 	K(Bytes, "bytes", 0)                                               \
+	K(SBytes, "sbytes", 0)                                             \
 	K(String, "string", 0)                                             \
 	K(Address, "address", 0)                                           \
+	K(SAddress, "saddress", 0)                                  \
 	K(Bool, "bool", 0)                                                 \
+	K(SBool, "sbool", 0)                                                 \
 	K(Fixed, "fixed", 0)                                               \
 	K(UFixed, "ufixed", 0)                                             \
 	T(IntM, "intM", 0)                                                 \
 	T(UIntM, "uintM", 0)                                               \
+	T(SIntM, "sintM", 0)                                               \
+	T(SUIntM, "suintM", 0)                                             \
 	T(BytesM, "bytesM", 0)                                             \
+	T(SBytesM, "sbytesM", 0)                                           \
 	T(FixedMxN, "fixedMxN", 0)                                         \
 	T(UFixedMxN, "ufixedMxN", 0)                                       \
 	T(TypesEnd, nullptr, 0) /* used as type enum end marker */         \
@@ -225,6 +233,7 @@ namespace solidity::langutil
 	K(TrueLiteral, "true", 0)                                          \
 	K(FalseLiteral, "false", 0)                                        \
 	T(Number, nullptr, 0)                                              \
+	T(ShieldedNumber, nullptr, 0)                                      \
 	T(StringLiteral, nullptr, 0)                                       \
 	T(UnicodeStringLiteral, nullptr, 0)                                \
 	T(HexStringLiteral, nullptr, 0)                                    \
@@ -333,6 +342,13 @@ namespace TokenTraits
 		return tok == Token::Function || tok == Token::Let || tok == Token::If || tok == Token::Switch || tok == Token::Case ||
 			tok == Token::Default || tok == Token::For || tok == Token::Break || tok == Token::Continue || tok == Token::Leave ||
 			tok == Token::TrueLiteral || tok == Token::FalseLiteral || tok == Token::HexStringLiteral || tok == Token::Hex;
+	}
+
+	constexpr bool isShieldedTypeKeyword(Token tok)
+	{
+		return tok == Token::SUInt || tok == Token::SInt || tok == Token::SBytes ||
+			tok == Token::SAddress || tok == Token::SBool ||
+			tok == Token::SUIntM || tok == Token::SIntM || tok == Token::SBytesM;
 	}
 
 	constexpr bool isBuiltinTypeClassName(Token _token)

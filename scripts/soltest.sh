@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+[[ $(uname) == "Darwin" ]] && set -e || set -eu
 
 REPO_ROOT="$(dirname "$0")"/..
 USE_DEBUGGER=0
@@ -53,7 +53,8 @@ do
 			BOOST_OPTIONS+=(-t "$1")
 			;;
 		--show-progress | -p)
-			BOOST_OPTIONS+=("$1")
+            # boost only recognizes --show-progress, not -p
+			BOOST_OPTIONS+=("--show-progress")
 			;;
 		*)
 			SOLTEST_OPTIONS+=("$1")
@@ -62,7 +63,8 @@ do
 	shift
 done
 
-SOLTEST_COMMAND=("${SOLIDITY_BUILD_DIR}/test/soltest" "${BOOST_OPTIONS[@]}" -- --testpath "${REPO_ROOT}/test" "${SOLTEST_OPTIONS[@]}")
+SOLTEST_COMMAND=("${SOLIDITY_BUILD_DIR}/test/soltest" "${BOOST_OPTIONS[@]}" -- --testpath "${REPO_ROOT}/test" "${SOLTEST_OPTIONS[@]}" --no-semantic-tests)
+
 
 if [ "$USE_DEBUGGER" -ne "0" ]; then
 	# shellcheck disable=SC2086

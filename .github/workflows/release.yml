@@ -1,0 +1,220 @@
+name: Release
+on:
+  push:
+    branches:
+      - seismic
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit SHA or branch to build from"
+        required: false
+        default: ""
+      tag_name:
+        description: "Tag name for the release (defaults to short SHA of the ref)"
+        required: false
+        default: ""
+      latest:
+        description: "Mark this release as the latest on GitHub"
+        type: boolean
+        required: false
+        default: false
+jobs:
+  build-release:
+    name: Build and Archive Binaries
+    runs-on: >-
+      ${{
+        matrix.os == 'ubuntu-22.04' && 'ssolc-ubuntu-22.04' ||
+        matrix.os == 'ubuntu-latest' && matrix.arch == 'arm64' && 'ubuntu-24.04-arm' ||
+        matrix.os
+      }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # macos-14-large is macos-14 with x86_64
+        # macos-latest-large is macos-latest (macos-15) with x86_64
+        os:
+          [
+            ubuntu-latest,
+            ubuntu-22.04,
+            windows-latest,
+            macos-latest-large,
+            macos-latest,
+            macos-14-large,
+            macos-14,
+          ]
+        arch: [x86_64, arm64]
+        exclude:
+          - os: macos-latest
+            arch: x86_64
+          - os: macos-14
+            arch: x86_64
+          - os: macos-14-large # since macos-14-large is x86_64
+            arch: arm64
+          - os: macos-latest-large
+            arch: arm64 # since macos-latest-large is x86_64
+          - os: ubuntu-22.04 # self-hosted runner is x86_64 only
+            arch: arm64
+          - os: windows-latest # no ARM64 runner available
+            arch: arm64
+    steps:
+      # Checkout source code
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          # For workflow_dispatch: uses the user-provided ref (branch/tag/SHA).
+          # For push triggers: inputs.ref is empty, so falls back to github.sha (the pushed commit).
+          ref: ${{ github.event.inputs.ref || github.sha }}
+          submodules: recursive
+      # Set up dependencies
+      - name: Set up dependencies (Linux & macOS)
+        if: ${{ matrix.os != 'windows-latest' }}
+        shell: bash
+        # NOTE: on the self-runner machine (ubuntu-22.04),
+        #       these dependencies are already installed
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential python3 python3-pip \
+              zlib1g-dev libboost-all-dev libssl-dev ccache
+          elif [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]]; then
+            brew update
+            brew install boost openssl ccache
+          fi
+      - name: Set up dependencies (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell
+        run: |
+          .\scripts\install_deps.ps1
+      - name: Build Seismic Solidity on Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell
+        run: |
+          .\.circleci\build_win.ps1
+      # Build Seismic Solidity
+      - name: Build Seismic Solidity on Linux & macOS
+        if: ${{ matrix.os != 'windows-latest' }}
+        shell: bash
+        # For some reason, -j 2 is much faster than -j $(nproc) on macosx
+        run: |
+          mkdir build
+          cd build
+          if [[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]]; then
+            cmake .. -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+              -DPEDANTIC=OFF
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
+            cmake .. -DCMAKE_BUILD_TYPE=Release \
+              -DPEDANTIC=OFF
+          fi
+          JOBS=$([[ "${{ matrix.os }}" == "macos-latest" || "${{ matrix.os }}" == "macos-14" || "${{ matrix.os }}" == "macos-14-large" || "${{ matrix.os }}" == "macos-latest-large" ]] && echo 2 || nproc)
+          cmake --build . --config Release -j $JOBS
+      # Archive binary
+      - name: Archive binary (Linux & macOS)
+        if: ${{ matrix.os != 'windows-latest' }}
+        shell: bash
+        run: |
+          cd build
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            tar -czvf ssolc-macos-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-latest-large" ]; then
+            tar -czvf ssolc-macos-latest-x86_64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-14" ]; then
+            tar -czvf ssolc-macos-14-arm64.tar.gz solc/solc
+          elif [ "${{ matrix.os }}" = "macos-14-large" ]; then
+            tar -czvf ssolc-macos-14-x86_64.tar.gz solc/solc
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            tar -czvf ssolc-linux-${{ matrix.arch }}.tar.gz solc/solc
+          elif [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
+            tar -czvf ssolc-${{ matrix.os }}-${{ matrix.arch }}.tar.gz solc/solc
+          fi
+      - name: Archive binary (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        shell: powershell
+        run: |
+          cd build
+          Compress-Archive -Path solc/Release/solc.exe -DestinationPath ssolc-windows-${{ matrix.arch }}.zip
+      # Upload artifacts
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/*ssolc-*
+  publish-release:
+    name: Create Release
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # For workflow_dispatch: uses the user-provided ref (branch/tag/SHA).
+          # For push triggers: inputs.ref is empty, so falls back to github.sha (the pushed commit).
+          ref: ${{ github.event.inputs.ref || github.sha }}
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |-
+          cd artifacts/
+
+          # Move all archives to a flat directory structure
+          mkdir -p release_files
+          find . -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec cp {} release_files/ \;
+
+          cd release_files
+
+          # Check if files were found
+          ARCHIVES=$(ls *.tar.gz *.zip 2>/dev/null || echo "")
+          if [ -z "$ARCHIVES" ]; then
+            echo "Error: No archive files found in release_files directory!"
+            exit 1
+          fi
+
+          echo "Found archive files:"
+          ls -la
+
+          # Resolve the actual SHA (handles branch names, tags, etc.)
+          RESOLVED_SHA=$(git rev-parse HEAD)
+          SHORT_SHA=$(echo "$RESOLVED_SHA" | cut -c1-7)
+
+          # Use provided tag_name (when workflow_dispatch'ing) or fall back to short SHA
+          TAG_NAME="${{ github.event.inputs.tag_name }}"
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="$SHORT_SHA"
+          fi
+          echo "Using tag: $TAG_NAME (commit: $RESOLVED_SHA)"
+
+          # For workflow_dispatch, use the user's choice (defaults to false).
+          # For push triggers, inputs.latest is empty so we default to true.
+          LATEST="${{ github.event.inputs.latest }}"
+          LATEST_FLAG="--latest=${LATEST:-true}"
+
+          # Create the release first (without files — passing files inline
+          # triggers a 403 "Resource not accessible by integration" error).
+          gh release create "$TAG_NAME" \
+            --title "Release $TAG_NAME" \
+            --notes "Automated release for commit $RESOLVED_SHA." \
+            --target "$RESOLVED_SHA" \
+            $LATEST_FLAG
+
+          # Upload assets separately, retrying to avoid the race condition
+          # where the release isn't immediately visible after creation.
+          shopt -s nullglob
+          for file in *.tar.gz *.zip; do
+            for attempt in 1 2 3 4 5; do
+              echo "Uploading $file (attempt $attempt)..."
+              if gh release upload "$TAG_NAME" "$file" --clobber; then
+                break
+              fi
+              if [ "$attempt" -eq 5 ]; then
+                echo "Failed to upload $file after 5 attempts"
+                exit 1
+              fi
+              sleep 3
+            done
+          done

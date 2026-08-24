@@ -1,0 +1,166 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "C": [
+      13
+    ],
+    "L": [
+      4
+    ],
+    "f": [
+      10
+    ]
+  },
+  "id": 14,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "functionList": [
+        {
+          "function": {
+            "id": 1,
+            "name": "f",
+            "nameLocations": [
+              "7:1:1"
+            ],
+            "nodeType": "IdentifierPath",
+            "referencedDeclaration": 10,
+            "src": "7:1:1"
+          }
+        }
+      ],
+      "global": false,
+      "id": 3,
+      "nodeType": "UsingForDirective",
+      "src": "0:20:1",
+      "typeName": {
+        "id": 2,
+        "name": "suint",
+        "nodeType": "ElementaryTypeName",
+        "src": "14:5:1",
+        "typeDescriptions": {
+          "typeIdentifier": "t_suint256",
+          "typeString": "suint256"
+        }
+      }
+    },
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "L",
+      "contractDependencies": [],
+      "contractKind": "library",
+      "fullyImplemented": true,
+      "id": 4,
+      "linearizedBaseContracts": [
+        4
+      ],
+      "name": "L",
+      "nameLocation": "29:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [],
+      "scope": 14,
+      "src": "21:12:1",
+      "usedErrors": [],
+      "usedEvents": []
+    },
+    {
+      "body": {
+        "id": 9,
+        "nodeType": "Block",
+        "src": "52:2:1",
+        "statements": []
+      },
+      "id": 10,
+      "implemented": true,
+      "kind": "freeFunction",
+      "modifiers": [],
+      "name": "f",
+      "nameLocation": "43:1:1",
+      "nodeType": "FunctionDefinition",
+      "parameters": {
+        "id": 7,
+        "nodeType": "ParameterList",
+        "parameters": [
+          {
+            "constant": false,
+            "id": 6,
+            "mutability": "mutable",
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "nodeType": "VariableDeclaration",
+            "scope": 10,
+            "src": "45:5:1",
+            "stateVariable": false,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_suint256",
+              "typeString": "suint256"
+            },
+            "typeName": {
+              "id": 5,
+              "name": "suint",
+              "nodeType": "ElementaryTypeName",
+              "src": "45:5:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_suint256",
+                "typeString": "suint256"
+              }
+            },
+            "visibility": "internal"
+          }
+        ],
+        "src": "44:7:1"
+      },
+      "returnParameters": {
+        "id": 8,
+        "nodeType": "ParameterList",
+        "parameters": [],
+        "src": "52:0:1"
+      },
+      "scope": 14,
+      "src": "34:20:1",
+      "stateMutability": "nonpayable",
+      "virtual": false,
+      "visibility": "internal"
+    },
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "C",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 13,
+      "linearizedBaseContracts": [
+        13
+      ],
+      "name": "C",
+      "nameLocation": "64:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "global": false,
+          "id": 12,
+          "libraryName": {
+            "id": 11,
+            "name": "L",
+            "nameLocations": [
+              "74:1:1"
+            ],
+            "nodeType": "IdentifierPath",
+            "referencedDeclaration": 4,
+            "src": "74:1:1"
+          },
+          "nodeType": "UsingForDirective",
+          "src": "68:14:1"
+        }
+      ],
+      "scope": 14,
+      "src": "55:29:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:85:1"
+}
