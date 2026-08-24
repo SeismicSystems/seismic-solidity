@@ -2697,6 +2697,54 @@ BOOST_AUTO_TEST_CASE(cse_cstore_cload_same_slot_can_optimize)
 	});
 }
 
+BOOST_AUTO_TEST_CASE(known_state_p13_sload_preserves_private_marker)
+{
+	// SLOAD breaks CSE blocks (side-effecting), so drive KnownState directly:
+	// post-fix the second cstore early-outs against the preserved {value, true}.
+	KnownState state;
+	state.feedItem(AssemblyItem{u256(0x11)});
+	state.feedItem(AssemblyItem{u256(0)});
+	BOOST_REQUIRE(state.feedItem(AssemblyItem{Instruction::CSTORE}).isValid());
+
+	state.feedItem(AssemblyItem{u256(0)});
+	state.feedItem(AssemblyItem{Instruction::SLOAD});
+
+	state.feedItem(AssemblyItem{u256(0x11)});
+	state.feedItem(AssemblyItem{u256(0)});
+	KnownState::StoreOperation op = state.feedItem(AssemblyItem{Instruction::CSTORE});
+	BOOST_CHECK(!op.isValid());
+}
+
+BOOST_AUTO_TEST_CASE(cse_p27_sstore_does_not_clobber_private_marker)
+{
+	// cstore(0, 0x11) claims slot 0 private. sstore(0, 0x22) would revert at
+	// runtime — KnownState must not clobber the is_private=true marker, since
+	// a subsequent CLOAD's cached value depends on it. Pre-fix the model sees
+	// is_private=false after the SSTORE and a later CLOAD picks up 0x22 from
+	// the cache; with the fix it stays 0x11.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x22),
+		u256(0),
+		Instruction::SSTORE,
+		u256(0),
+		Instruction::CLOAD
+	};
+	// Post-fix: CLOAD eliminated, 0x11 (cstore value) left on stack via DUP.
+	checkCSE(input, {
+		u256(0x11),
+		u256(0),
+		Instruction::DUP2,
+		Instruction::DUP2,
+		Instruction::CSTORE,
+		u256(0x22),
+		Instruction::SWAP1,
+		Instruction::SSTORE
+	});
+}
+
 BOOST_AUTO_TEST_CASE(cse_cross_domain_cstore_sstore_cstore_preserves_all)
 {
 	// CSTORE privatizes slot 0, then SSTORE conflicts (should revert at runtime),
@@ -2760,6 +2808,51 @@ BOOST_AUTO_TEST_CASE(cse_same_domain_duplicate_cstore_still_optimizes)
 
 	// Only the last CSTORE should survive (normal same-domain optimization)
 	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_aliased_slots_preserves_all)
+{
+	// calldataload(0) and calldataload(32) get distinct expression IDs but
+	// may alias at runtime — pre-fix the first CSTORE is dropped.
+	AssemblyItems input{
+		u256(0xaa),
+		u256(0),
+		Instruction::CALLDATALOAD,
+		Instruction::CSTORE,
+		u256(0xbb),
+		u256(32),
+		Instruction::CALLDATALOAD,
+		Instruction::SSTORE,
+		u256(0xcc),
+		u256(0),
+		Instruction::CALLDATALOAD,
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 2u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
+}
+
+BOOST_AUTO_TEST_CASE(cse_cross_domain_distinct_constants_still_optimize)
+{
+	// Negative control: static slots 0 and 1 are knownToBeDifferent, so the
+	// redundant first cstore on slot 0 should still be eliminated.
+	AssemblyItems input{
+		u256(0x11),
+		u256(0),
+		Instruction::CSTORE,
+		u256(0x22),
+		u256(1),
+		Instruction::SSTORE,
+		u256(0x33),
+		u256(0),
+		Instruction::CSTORE
+	};
+	AssemblyItems optimized = CSE(input);
+
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::CSTORE), 1u);
+	BOOST_CHECK_EQUAL(countInstruction(optimized, Instruction::SSTORE), 1u);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -6,3 +6,4 @@ contract test {
 }
 // ----
 // Warning 10409: (85-137): Address Literals converted to shielded addresses will leak during contract deployment.
+// Warning 10313: (154-164): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.

@@ -1698,6 +1698,7 @@ public:
 
 protected:
 	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override;
+
 private:
 	static TypePointers parseElementaryTypeVector(strings const& _types);
 

@@ -285,7 +285,7 @@ Type const* Type::commonType(Type const* _a, Type const* _b)
 {
 	if (!_a || !_b)
 		return nullptr;
-	else if (_a->mobileType() && _b->isImplicitlyConvertibleTo(*_a->mobileType()))
+	if (_a->mobileType() && _b->isImplicitlyConvertibleTo(*_a->mobileType()))
 		return _a->mobileType();
 	else if (_b->mobileType() && _a->isImplicitlyConvertibleTo(*_b->mobileType()))
 		return _b->mobileType();
@@ -752,10 +752,15 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 	if (TokenTraits::isShiftOp(_operator))
 	{
 		// Shifts are not symmetric with respect to the type
-		if (isValidShiftAndAmountType(_operator, *_other))
-			return this;
-		else
+		if (!isValidShiftAndAmountType(_operator, *_other))
 			return nullptr;
+		// Shielded shift amount -> shielded result, so a public return errors (mirrors exp).
+		if (dynamic_cast<ShieldedIntegerType const*>(_other))
+			return TypeProvider::shieldedInteger(
+				numBits(),
+				isSigned() ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
+			);
+		return this;
 	}
 	else if (Token::Exp == _operator)
 	{
@@ -763,6 +768,11 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		{
 			if (otherIntType->isSigned())
 				return TypeResult::err("Exponentiation power is not allowed to be a signed shielded integer type.");
+			// Shielded exponent -> shielded result, preserving the base's width/signedness.
+			return TypeProvider::shieldedInteger(
+				numBits(),
+				isSigned() ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
+			);
 		}
 		else if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
 		{
@@ -837,10 +847,13 @@ BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo
 			(addressType->stateMutability() != StateMutability::Payable) &&
 			!isSigned() &&
 			(numBits() == 160);
+	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			!isSigned() &&
+			(numBits() == 160);
 	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
 		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
-	else if (dynamic_cast<EnumType const*>(&_convertTo))
-		return true;
 	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
 		return (isSigned() == fixedPointType->isSigned()) && (numBits() == fixedPointType->numBits());
 
@@ -1586,10 +1599,12 @@ TypeResult FixedBytesType::binaryOperatorResult(Token _operator, Type const* _ot
 {
 	if (TokenTraits::isShiftOp(_operator))
 	{
-		if (isValidShiftAndAmountType(_operator, *_other))
-			return this;
-		else
+		if (!isValidShiftAndAmountType(_operator, *_other))
 			return nullptr;
+		// Shielded shift amount -> shielded result, so a public sink errors (mirrors IntegerType).
+		if (dynamic_cast<ShieldedIntegerType const*>(_other))
+			return TypeProvider::shieldedFixedBytes(numBytes());
+		return this;
 	}
 
 	auto commonType = dynamic_cast<FixedBytesType const*>(Type::commonType(this, _other));
@@ -1923,6 +1938,19 @@ BoolResult ArrayType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);
 	if (convertTo.isByteArray() != isByteArray() || convertTo.isString() != isString())
 		return false;
+	// Reject aliasing a marked byte-array storage ref to an unmarked one (and vice versa); the
+	// two would emit different opcodes (cstore vs sstore). Copies (non-pointer target) are fine.
+	if (
+		location() == DataLocation::Storage &&
+		convertTo.location() == DataLocation::Storage &&
+		convertTo.isPointer() &&
+		isByteArrayOrString() && convertTo.isByteArrayOrString() &&
+		hasShieldedStorageMarker() != convertTo.hasShieldedStorageMarker()
+	)
+		return BoolResult::err(
+			"Cannot mix shielded and non-shielded storage byte arrays: a reference into shielded "
+			"storage is not interchangeable with a plain bytes/string storage reference."
+		);
 	// memory/calldata to storage can be converted, but only to a direct storage reference
 	if (convertTo.location() == DataLocation::Storage && location() != DataLocation::Storage && convertTo.isPointer())
 		return false;
@@ -1969,7 +1997,17 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 		if (_convertTo.category() == Type::Category::FixedBytes)
 			return !baseType()->isShielded();
 		if (_convertTo.category() == Type::Category::ShieldedFixedBytes)
-			return baseType()->isShielded();
+		{
+			if (!baseType()->isShielded())
+				return false;
+			// Storage source needs an unimplemented shielded read; memory/calldata is a plain copy.
+			if (location() == DataLocation::Storage)
+				return BoolResult::err(
+					"Conversion of a shielded byte array in storage to a fixed shielded-bytes type "
+					"is not supported; copy it to memory first (e.g. sbytesN(sbytes memory))."
+				);
+			return true;
+		}
 		return false;
 	}
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);

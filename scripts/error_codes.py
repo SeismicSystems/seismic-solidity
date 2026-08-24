@@ -327,6 +327,9 @@ def examine_id_coverage(top_dir, source_id_to_file_names, new_ids_only=False):
         "9603",
         "9658",
         "9988",
+        # ReferencesResolver's fatal 10002 preempts every shielded declaration on a
+        # non-Mercury version, so the belt-and-suspenders 10001 in TypeChecker is unreachable.
+        "10001",
     }
 
     new_source_only_ids = source_only_ids - old_source_only_ids - experimental_source_only_ids

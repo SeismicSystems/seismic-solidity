@@ -10,4 +10,4 @@ contract C {
 // ====
 // EVMVersion: <mercury
 // ----
-// TypeError 10002: (103-109): The "cstore" instruction is only available for Mercury-compatible VMs (you are currently compiling for "cancun").
+// TypeError 10005: (103-109): The "cstore" instruction is only available for Mercury-compatible VMs (you are currently compiling for "cancun").

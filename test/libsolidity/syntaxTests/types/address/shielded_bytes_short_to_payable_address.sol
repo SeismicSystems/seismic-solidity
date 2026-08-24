@@ -5,4 +5,5 @@ contract C {
 }
 // ----
 // TypeError 9640: (102-113): Explicit type conversion not allowed from "bytes10" to "saddress".
+// Warning 10313: (94-114): Converting a shielded value to a public type declassifies it; the public value can leak through logs, returndata, or public storage.
 // TypeError 6359: (94-114): Return argument type address is not implicitly convertible to expected type (type of first return variable) address payable.

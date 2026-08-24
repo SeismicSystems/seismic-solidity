@@ -1,17 +1,17 @@
-// Tests sbytes to sbytesN explicit conversion compiles
-// Adapted from array/bytes_to_fixed_bytes.sol
+// sbytes -> sbytesN: allowed from a memory/calldata source (plain byte copy),
+// rejected from storage (needs a shielded-layout read that is not implemented).
 contract C {
     sbytes s;
-    function f() internal view {
-        sbytes3 a = sbytes3(s);
-        sbytes8 b = sbytes8(s);
-        sbytes16 c = sbytes16(s);
-        sbytes32 d = sbytes32(s);
+    function fromMemory(sbytes memory m) internal pure {
+        sbytes3 a = sbytes3(m);
+        sbytes32 b = sbytes32(m);
+        a; b;
+    }
+    function fromStorage() internal view {
+        sbytes8 c = sbytes8(s);
+        c;
     }
 }
 // ----
-// Warning 10305: (120-128): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
-// Warning 2072: (171-180): Unused local variable.
-// Warning 2072: (203-212): Unused local variable.
-// Warning 2072: (235-245): Unused local variable.
-// Warning 2072: (269-279): Unused local variable.
+// Warning 10305: (177-185): Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+// TypeError 9640: (393-403): Explicit type conversion not allowed from "sbytes storage ref" to "sbytes8". Conversion of a shielded byte array in storage to a fixed shielded-bytes type is not supported; copy it to memory first (e.g. sbytesN(sbytes memory)).

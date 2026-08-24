@@ -345,7 +345,8 @@ std::pair<bool, std::shared_ptr<SymbolicVariable>> newSymbolicVariable(
 
 bool isInteger(frontend::Type const& _type)
 {
-	return _type.category() == frontend::Type::Category::Integer;
+	return _type.category() == frontend::Type::Category::Integer
+		|| _type.category() == frontend::Type::Category::ShieldedInteger;
 }
 
 bool isFixedPoint(frontend::Type const& _type)
@@ -360,17 +361,14 @@ bool isRational(frontend::Type const& _type)
 
 bool isFixedBytes(frontend::Type const& _type)
 {
-	return _type.category() == frontend::Type::Category::FixedBytes;
+	return _type.category() == frontend::Type::Category::FixedBytes
+		|| _type.category() == frontend::Type::Category::ShieldedFixedBytes;
 }
 
 bool isAddress(frontend::Type const& _type)
 {
-	return _type.category() == frontend::Type::Category::Address;
-}
-
-bool isShieldedAddress(frontend::Type const& _type)
-{
-	return _type.category() == frontend::Type::Category::ShieldedAddress;
+	return _type.category() == frontend::Type::Category::Address
+		|| _type.category() == frontend::Type::Category::ShieldedAddress;
 }
 
 bool isContract(frontend::Type const& _type)
@@ -396,7 +394,8 @@ bool isNumber(frontend::Type const& _type)
 
 bool isBool(frontend::Type const& _type)
 {
-	return _type.category() == frontend::Type::Category::Bool;
+	return _type.category() == frontend::Type::Category::Bool
+		|| _type.category() == frontend::Type::Category::ShieldedBool;
 }
 
 bool isFunction(frontend::Type const& _type)

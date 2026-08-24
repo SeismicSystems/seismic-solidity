@@ -674,7 +674,15 @@ void SMTEncoder::endVisit(FunctionCall const& _funCall)
 	case FunctionType::Kind::ECRecover:
 	case FunctionType::Kind::SHA256:
 	case FunctionType::Kind::RIPEMD160:
+	case FunctionType::Kind::SeismicHKDF:
+	case FunctionType::Kind::SeismicECDH:
+	case FunctionType::Kind::SeismicAESGCMEncrypt:
+	case FunctionType::Kind::SeismicAESGCMDecrypt:
+	case FunctionType::Kind::SeismicSecp256k1Sign:
 		visitCryptoFunction(_funCall);
+		break;
+	case FunctionType::Kind::SeismicRNG:
+		// unsafe_rng_* is non-deterministic by design — leave the result unconstrained.
 		break;
 	case FunctionType::Kind::BlockHash:
 		defineExpr(_funCall, state().blockhash(expr(*_funCall.arguments().at(0))));
@@ -874,6 +882,62 @@ void SMTEncoder::visitCryptoFunction(FunctionCall const& _funCall)
 			{arg0, arg1, arg2, arg3}
 		);
 		result = smtutil::Expression::select(e, ecrecoverInput);
+	}
+	else if (kind == FunctionType::Kind::SeismicHKDF)
+		result = smtutil::Expression::select(
+			state().cryptoFunction("hkdf"),
+			expr(*_funCall.arguments().at(0), TypeProvider::bytesStorage())
+		);
+	else if (
+		kind == FunctionType::Kind::SeismicECDH ||
+		kind == FunctionType::Kind::SeismicAESGCMEncrypt ||
+		kind == FunctionType::Kind::SeismicAESGCMDecrypt ||
+		kind == FunctionType::Kind::SeismicSecp256k1Sign
+	)
+	{
+		std::string name;
+		std::vector<smtutil::Expression> args;
+		if (kind == FunctionType::Kind::SeismicECDH)
+		{
+			name = "ecdh";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::bytesStorage())
+			};
+		}
+		else if (kind == FunctionType::Kind::SeismicAESGCMEncrypt)
+		{
+			name = "aes_gcm_encrypt";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::uint(96)),
+				expr(*_funCall.arguments().at(2), TypeProvider::bytesStorage())
+			};
+		}
+		else if (kind == FunctionType::Kind::SeismicAESGCMDecrypt)
+		{
+			name = "aes_gcm_decrypt";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::uint(96)),
+				expr(*_funCall.arguments().at(2), TypeProvider::bytesStorage())
+			};
+		}
+		else
+		{
+			name = "secp256k1_sign";
+			args = {
+				expr(*_funCall.arguments().at(0), TypeProvider::fixedBytes(32)),
+				expr(*_funCall.arguments().at(1), TypeProvider::fixedBytes(32))
+			};
+		}
+		auto e = state().cryptoFunction(name);
+		auto inputSort = dynamic_cast<smtutil::ArraySort&>(*e.sort).domain;
+		auto input = smtutil::Expression::tuple_constructor(
+			smtutil::Expression(std::make_shared<smtutil::SortSort>(inputSort), ""),
+			args
+		);
+		result = smtutil::Expression::select(e, input);
 	}
 	else
 		solAssert(false, "");
@@ -1141,10 +1205,32 @@ void SMTEncoder::visitTypeConversion(FunctionCall const& _funCall)
 		return;
 	}
 
+	// bool <-> sbool: value-level identity (shielded flag is storage-domain only).
+	if (smt::isBool(*argType) && smt::isBool(*funCallType))
+	{
+		defineExpr(_funCall, symbArg);
+		return;
+	}
+
+	// address <-> saddress: same, before the size-mismatch path truncates.
+	if (smt::isAddress(*argType) && smt::isAddress(*funCallType))
+	{
+		defineExpr(_funCall, symbArg);
+		return;
+	}
+
 	// TODO Simplify this whole thing for 0.8.0 where weird casts are disallowed.
 
-	unsigned argSize = argType->storageBytes();
-	unsigned castSize = funCallType->storageBytes();
+	// Shielded types report storageBytes() == 32; use their real value width so narrowing casts truncate.
+	auto valueSizeBytes = [](Type const* _type) -> unsigned {
+		if (auto const* shieldedInt = dynamic_cast<ShieldedIntegerType const*>(_type))
+			return shieldedInt->numBits() / 8;
+		if (auto const* shieldedBytes = dynamic_cast<ShieldedFixedBytesType const*>(_type))
+			return shieldedBytes->numBytes();
+		return _type->storageBytes();
+	};
+	unsigned argSize = valueSizeBytes(argType);
+	unsigned castSize = valueSizeBytes(funCallType);
 	bool castIsSigned = smt::isNumber(*funCallType) && smt::isSigned(funCallType);
 	bool argIsSigned = smt::isNumber(*argType) && smt::isSigned(argType);
 	std::optional<smtutil::Expression> symbMin;
@@ -1823,7 +1909,7 @@ void SMTEncoder::arithmeticOperation(BinaryOperation const& _op)
 {
 	auto type = _op.annotation().commonType;
 	solAssert(type, "");
-	solAssert(type->category() == Type::Category::Integer || type->category() == Type::Category::FixedPoint, "");
+	solAssert(smt::isInteger(*type) || smt::isFixedPoint(*type), "");
 	switch (_op.getOperator())
 	{
 	case Token::Add:
@@ -1868,10 +1954,7 @@ std::pair<smtutil::Expression, smtutil::Expression> SMTEncoder::arithmeticOperat
 	};
 	solAssert(validOperators.count(_op), "");
 	solAssert(_commonType, "");
-	solAssert(
-		_commonType->category() == Type::Category::Integer || _commonType->category() == Type::Category::FixedPoint,
-		""
-	);
+	solAssert(smt::isInteger(*_commonType) || smt::isFixedPoint(*_commonType), "");
 
 	IntegerType const* intType = nullptr;
 	if (auto type = dynamic_cast<IntegerType const*>(_commonType))
@@ -2041,7 +2124,7 @@ void SMTEncoder::booleanOperation(BinaryOperation const& _op)
 {
 	solAssert(_op.getOperator() == Token::And || _op.getOperator() == Token::Or, "");
 	solAssert(_op.annotation().commonType, "");
-	solAssert(_op.annotation().commonType->category() == Type::Category::Bool, "");
+	solAssert(smt::isBool(*_op.annotation().commonType), "");
 	// @TODO check that both of them are not constant
 	_op.leftExpression().accept(*this);
 	if (_op.getOperator() == Token::And)
