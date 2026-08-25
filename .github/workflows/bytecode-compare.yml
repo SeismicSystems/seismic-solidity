@@ -1,0 +1,168 @@
+# Bytecode comparison CI: ensures CLI and standard-json interfaces produce identical bytecode
+name: Bytecode Compare
+
+on:
+  push:
+    branches:
+      - seismic
+  pull_request:
+    branches:
+      - seismic
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: xl-github-runner
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Restore build cache
+        uses: actions/cache/restore@v4
+        with:
+          path: build
+          key: build-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
+
+      - name: Install dependencies & ccache
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ccache build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
+
+      - name: Configure ccache
+        run: |
+          ccache --set-config=cache_dir=$HOME/.ccache
+          ccache --set-config=max_size=2G
+          ccache --set-config=hash_dir=false
+          ccache --set-config=base_dir=$GITHUB_WORKSPACE
+
+      - name: Build ssolc
+        run: |
+          set -euo pipefail
+          echo "Building with $(nproc) parallel jobs"
+          echo "=== ccache stats BEFORE build ==="
+          ccache -s
+          mkdir -p build
+          cd build
+          if [ ! -f CMakeCache.txt ]; then
+            echo "No CMakeCache.txt found, running cmake configure..."
+            cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                   -DPEDANTIC=OFF \
+                   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          else
+            echo "CMakeCache.txt exists, skipping configure step"
+          fi
+          cmake --build . --config Debug -j $(nproc)
+          echo "=== ccache stats AFTER build ==="
+          ccache -s
+
+      - name: Upload ssolc binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssolc-binary
+          path: build/solc/solc
+          retention-days: 1
+
+  compare:
+    needs: build
+    runs-on: xl-github-runner
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+          - legacy-optimize
+          - legacy-no-optimize
+          - via-ir-optimize
+          - via-ir-no-optimize
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download ssolc binary
+        uses: actions/download-artifact@v4
+        with:
+          name: ssolc-binary
+          path: build/solc
+
+      - name: Make ssolc executable
+        run: chmod +x build/solc/solc
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y python3
+
+      - name: Prepare test cases
+        run: |
+          set -euo pipefail
+          export LC_ALL=C
+          mkdir -p test-cases
+          cd test-cases
+          python3 ../scripts/isolate_tests.py ../test/
+
+      - name: Generate CLI bytecode report
+        run: |
+          set -euo pipefail
+          export LC_ALL=C
+          cd test-cases
+          python3 ../scripts/bytecodecompare/prepare_report.py \
+            "$GITHUB_WORKSPACE/build/solc/solc" \
+            --interface cli \
+            --preset ${{ matrix.preset }} \
+            --report-file "$GITHUB_WORKSPACE/report-cli-${{ matrix.preset }}.txt"
+
+      - name: Generate standard-json bytecode report
+        run: |
+          set -euo pipefail
+          export LC_ALL=C
+          cd test-cases
+          python3 ../scripts/bytecodecompare/prepare_report.py \
+            "$GITHUB_WORKSPACE/build/solc/solc" \
+            --interface standard-json \
+            --preset ${{ matrix.preset }} \
+            --report-file "$GITHUB_WORKSPACE/report-standard-json-${{ matrix.preset }}.txt"
+
+      - name: Compare CLI and standard-json reports
+        run: |
+          set -euo pipefail
+          CLI_REPORT="report-cli-${{ matrix.preset }}.txt"
+          JSON_REPORT="report-standard-json-${{ matrix.preset }}.txt"
+
+          echo "Comparing reports for preset: ${{ matrix.preset }}"
+          echo "  CLI report:           $CLI_REPORT ($(wc -l < "$CLI_REPORT") lines)"
+          echo "  Standard-JSON report: $JSON_REPORT ($(wc -l < "$JSON_REPORT") lines)"
+
+          if diff --brief "$CLI_REPORT" "$JSON_REPORT"; then
+            echo "Reports are identical."
+          else
+            echo "ERROR: Reports differ for preset ${{ matrix.preset }}!"
+            echo ""
+            echo "First 50 lines of diff:"
+            diff --unified=0 "$CLI_REPORT" "$JSON_REPORT" | head -50
+            exit 1
+          fi
+
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bytecode-reports-${{ matrix.preset }}
+          path: |
+            report-cli-${{ matrix.preset }}.txt
+            report-standard-json-${{ matrix.preset }}.txt
+          retention-days: 7
