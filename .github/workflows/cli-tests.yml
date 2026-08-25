@@ -1,0 +1,103 @@
+# CI workflow for command-line tests
+name: CLI Tests
+
+on:
+  push:
+    branches:
+      - seismic
+  pull_request:
+    branches:
+      - seismic
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  cli-tests:
+    runs-on: xl-github-runner
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Restore build cache (based on target branch for PRs, current branch for pushes)
+      - name: Restore build cache
+        uses: actions/cache/restore@v4
+        with:
+          path: build
+          key: build-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
+
+      # Combined dependency installation (saves ~15-20s by avoiding duplicate apt-get update)
+      - name: Install dependencies & ccache
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ccache build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
+          mkdir -p ~/.ccache
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.base_ref || github.ref_name }}
+
+      # Configure ccache AFTER restore to ensure settings aren't overwritten
+      - name: Configure ccache
+        run: |
+          ccache --set-config=cache_dir=$HOME/.ccache
+          ccache --set-config=max_size=2G
+          # CRITICAL: hash_dir=false allows cache hits even when build paths differ between CI runs
+          ccache --set-config=hash_dir=false
+          ccache --set-config=base_dir=$GITHUB_WORKSPACE
+
+      - name: Build ssolc
+        run: |
+          set -euo pipefail
+          echo "Building with $(nproc) parallel jobs"
+          echo "=== ccache stats BEFORE build ==="
+          ccache -s
+          mkdir -p build
+          cd build
+          # Only run cmake configure if CMakeCache.txt doesn't exist.
+          # cmake --build will automatically re-run cmake if CMakeLists.txt changed.
+          if [ ! -f CMakeCache.txt ]; then
+            echo "No CMakeCache.txt found, running cmake configure..."
+            cmake .. -DCMAKE_BUILD_TYPE=Debug \
+                   -DPEDANTIC=OFF \
+                   -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          else
+            echo "CMakeCache.txt exists, skipping configure step"
+          fi
+          cmake --build . --config Debug -j $(nproc)
+          echo "=== ccache stats AFTER build ==="
+          ccache -s
+
+      - name: Run CLI tests
+        run: test/cmdlineTests.sh --no-smt
+
+      # Save caches only on push to target branches (after PR merge)
+      # Delete old caches first since GitHub caches are immutable
+      - name: Delete old caches
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache delete "build-${{ runner.os }}-${{ github.ref_name }}" --repo ${{ github.repository }} || true
+          gh cache delete "ccache-${{ runner.os }}-${{ github.ref_name }}" --repo ${{ github.repository }} || true
+
+      - name: Save build cache
+        if: github.event_name == 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: build
+          key: build-${{ runner.os }}-${{ github.ref_name }}
+
+      - name: Save ccache
+        if: github.event_name == 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.ref_name }}
