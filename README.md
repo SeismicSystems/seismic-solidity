@@ -58,33 +58,18 @@ These types function similarly to their unshielded counterparts (`uint`, `int`, 
 ```
 contract ConfidentialWallet {
     suint256 confidentialBalance;
-    saddress confidentialOwner;
 
-    constructor(suint256 _initialBalance, saddress _owner) {
-        confidentialBalance = _initialBalance;
-        confidentialOwner = _owner;
+    constructor(suint256 initialBalance) {
+        confidentialBalance = initialBalance;
     }
 
-    function addFunds(suint256 amount) private {
+    function addFunds(suint256 amount) public {
         confidentialBalance += amount;
     }
 
-    // Shielded public interface for balance inquiries
-    function getConfidentialBalance(saddress caller) public view returns (suint256) {
-        require(caller == confidentialOwner, "Unauthorized access");
-        return confidentialBalance;
-    }
-
-    // Securely transfer funds from this wallet to another shielded address
-    function confidentialTransfer(suint256 amount, saddress recipient) public {
-        require(msg.sender == confidentialOwner, "Only the owner can transfer");
+    function spend(suint256 amount) public {
         require(confidentialBalance >= amount, "Insufficient balance");
-
         confidentialBalance -= amount;
-        // `recipient` would use a shielded receive function to handle incoming funds
-        // This line represents a private operation that modifies shielded storage
-        // in another confidential contract instance.
-        ConfidentialWallet(recipient).addFunds(amount);
     }
 }
 ```
@@ -240,7 +225,7 @@ We introduce two new EVM instructions to handle confidential storage:
 
 ### 6.3 Mappings
 
-*	 Mappings using shielded types for keys and/or values are supported. In such cases, the storage operations will employ the confidential instructions (CLOAD/CSTORE) accordingly.
+*   Mapping values may use shielded types, and those values use confidential storage operations (CLOAD/CSTORE). Mapping keys must remain unshielded; the compiler rejects shielded mapping keys.
 
 
 ## 7\. RNG Precompiles
