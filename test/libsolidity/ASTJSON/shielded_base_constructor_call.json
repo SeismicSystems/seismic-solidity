@@ -1,0 +1,247 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "A": [
+      7
+    ],
+    "C": [
+      20
+    ]
+  },
+  "id": 21,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "A",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 7,
+      "linearizedBaseContracts": [
+        7
+      ],
+      "name": "A",
+      "nameLocation": "9:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "body": {
+            "id": 5,
+            "nodeType": "Block",
+            "src": "32:2:1",
+            "statements": []
+          },
+          "id": 6,
+          "implemented": true,
+          "kind": "constructor",
+          "modifiers": [],
+          "name": "",
+          "nameLocation": "-1:-1:-1",
+          "nodeType": "FunctionDefinition",
+          "parameters": {
+            "id": 3,
+            "nodeType": "ParameterList",
+            "parameters": [
+              {
+                "constant": false,
+                "id": 2,
+                "mutability": "mutable",
+                "name": "",
+                "nameLocation": "-1:-1:-1",
+                "nodeType": "VariableDeclaration",
+                "scope": 6,
+                "src": "25:5:1",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_suint256",
+                  "typeString": "suint256"
+                },
+                "typeName": {
+                  "id": 1,
+                  "name": "suint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "25:5:1",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_suint256",
+                    "typeString": "suint256"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "src": "24:7:1"
+          },
+          "returnParameters": {
+            "id": 4,
+            "nodeType": "ParameterList",
+            "parameters": [],
+            "src": "32:0:1"
+          },
+          "scope": 7,
+          "src": "13:21:1",
+          "stateMutability": "nonpayable",
+          "virtual": false,
+          "visibility": "public"
+        }
+      ],
+      "scope": 21,
+      "src": "0:36:1",
+      "usedErrors": [],
+      "usedEvents": []
+    },
+    {
+      "abstract": false,
+      "baseContracts": [
+        {
+          "baseName": {
+            "id": 8,
+            "name": "A",
+            "nameLocations": [
+              "51:1:1"
+            ],
+            "nodeType": "IdentifierPath",
+            "referencedDeclaration": 7,
+            "src": "51:1:1"
+          },
+          "id": 9,
+          "nodeType": "InheritanceSpecifier",
+          "src": "51:1:1"
+        }
+      ],
+      "canonicalName": "C",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 20,
+      "linearizedBaseContracts": [
+        20,
+        7
+      ],
+      "name": "C",
+      "nameLocation": "46:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "body": {
+            "id": 18,
+            "nodeType": "Block",
+            "src": "81:2:1",
+            "statements": []
+          },
+          "id": 19,
+          "implemented": true,
+          "kind": "constructor",
+          "modifiers": [
+            {
+              "arguments": [
+                {
+                  "arguments": [
+                    {
+                      "hexValue": "32",
+                      "id": 14,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "77:1:1",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_2_by_1",
+                        "typeString": "int_const 2"
+                      },
+                      "value": "2"
+                    }
+                  ],
+                  "expression": {
+                    "argumentTypes": [
+                      {
+                        "typeIdentifier": "t_rational_2_by_1",
+                        "typeString": "int_const 2"
+                      }
+                    ],
+                    "id": 13,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "lValueRequested": false,
+                    "nodeType": "ElementaryTypeNameExpression",
+                    "src": "71:5:1",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_type$_t_suint256_$",
+                      "typeString": "type(suint256)"
+                    },
+                    "typeName": {
+                      "id": 12,
+                      "name": "suint",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "71:5:1",
+                      "typeDescriptions": {}
+                    }
+                  },
+                  "id": 15,
+                  "isConstant": false,
+                  "isLValue": false,
+                  "isPure": true,
+                  "kind": "typeConversion",
+                  "lValueRequested": false,
+                  "nameLocations": [],
+                  "names": [],
+                  "nodeType": "FunctionCall",
+                  "src": "71:8:1",
+                  "tryCall": false,
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_suint256",
+                    "typeString": "suint256"
+                  }
+                }
+              ],
+              "id": 16,
+              "kind": "baseConstructorSpecifier",
+              "modifierName": {
+                "id": 11,
+                "name": "A",
+                "nameLocations": [
+                  "69:1:1"
+                ],
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 7,
+                "src": "69:1:1"
+              },
+              "nodeType": "ModifierInvocation",
+              "src": "69:11:1"
+            }
+          ],
+          "name": "",
+          "nameLocation": "-1:-1:-1",
+          "nodeType": "FunctionDefinition",
+          "parameters": {
+            "id": 10,
+            "nodeType": "ParameterList",
+            "parameters": [],
+            "src": "66:2:1"
+          },
+          "returnParameters": {
+            "id": 17,
+            "nodeType": "ParameterList",
+            "parameters": [],
+            "src": "81:0:1"
+          },
+          "scope": 20,
+          "src": "55:28:1",
+          "stateMutability": "nonpayable",
+          "virtual": false,
+          "visibility": "public"
+        }
+      ],
+      "scope": 21,
+      "src": "37:48:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:86:1"
+}

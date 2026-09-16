@@ -1,0 +1,66 @@
+
+======= input.sol:C =======
+EVM assembly:
+    /* "input.sol":124:218  contract C {... */
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  revert(0x00, 0x00)
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+        /* "input.sol":124:218  contract C {... */
+      mstore(0x40, 0x80)
+      callvalue
+      dup1
+      iszero
+      tag_1
+      jumpi
+      revert(0x00, 0x00)
+    tag_1:
+      pop
+      jumpi(tag_2, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0xf8a8fd6d
+      eq
+      tag_3
+      jumpi
+    tag_2:
+      revert(0x00, 0x00)
+        /* "input.sol":158:216  function test() external {... */
+    tag_3:
+      tag_4
+      tag_5
+      jump	// in
+    tag_4:
+      stop
+    tag_5:
+        /* "input.sol":207:208  0 */
+      0x00
+        /* "input.sol":193:197  data */
+      0x00
+        /* "input.sol":193:209  data = sint32(0) */
+      dup2
+      0x03
+      signextend
+      swap1
+      cstore
+      pop
+        /* "input.sol":158:216  function test() external {... */
+      jump	// out
+
+    auxdata: <AUXDATA REMOVED>
+}

@@ -1,0 +1,38 @@
+// Adapted from: test/libsolidity/semanticTests/viaYul/detect_add_overflow_signed.sol
+contract C {
+    function f(sint256 a, sint256 b) public pure returns (int256 x) {
+        x = int256(a + b);
+    }
+    function g(sint8 a, sint8 b) public pure returns (int8 x) {
+        x = int8(a + b);
+    }
+}
+// ----
+// f(sint256,sint256): 5, 6 -> 11
+// f(sint256,sint256): -2, 1 -> -1
+// f(sint256,sint256): -2, 2 -> 0
+// f(sint256,sint256): 2, -2 -> 0
+// f(sint256,sint256): -5, -6 -> -11
+// f(sint256,sint256): 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0, 0x0F -> 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+// f(sint256,sint256): 0x0F, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0 -> 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+// f(sint256,sint256): 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, 1 -> FAILURE, hex"4e487b71", 0x11
+// f(sint256,sint256): 1, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF -> FAILURE, hex"4e487b71", 0x11
+// f(sint256,sint256): 0x8000000000000000000000000000000000000000000000000000000000000001, -1 -> 0x8000000000000000000000000000000000000000000000000000000000000000
+// f(sint256,sint256): -1, 0x8000000000000000000000000000000000000000000000000000000000000001 -> 0x8000000000000000000000000000000000000000000000000000000000000000
+// f(sint256,sint256): 0x8000000000000000000000000000000000000000000000000000000000000000, -1 -> FAILURE, hex"4e487b71", 0x11
+// f(sint256,sint256): -1, 0x8000000000000000000000000000000000000000000000000000000000000000 -> FAILURE, hex"4e487b71", 0x11
+// g(sint8,sint8): 5, 6 -> 11
+// g(sint8,sint8): -2, 1 -> -1
+// g(sint8,sint8): -2, 2 -> 0
+// g(sint8,sint8): 2, -2 -> 0
+// g(sint8,sint8): -5, -6 -> -11
+// g(sint8,sint8): 126, 1 -> 127
+// g(sint8,sint8): 1, 126 -> 127
+// g(sint8,sint8): 127, 1 -> FAILURE, hex"4e487b71", 0x11
+// g(sint8,sint8): 1, 127 -> FAILURE, hex"4e487b71", 0x11
+// g(sint8,sint8): -127, -1 -> -128
+// g(sint8,sint8): -1, -127 -> -128
+// g(sint8,sint8): -127, -2 -> FAILURE, hex"4e487b71", 0x11
+// g(sint8,sint8): -2, -127 -> FAILURE, hex"4e487b71", 0x11
+// g(sint8,sint8): -128, 0 -> -128
+// g(sint8,sint8): 0, -128 -> -128

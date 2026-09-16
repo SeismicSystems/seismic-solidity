@@ -1164,6 +1164,8 @@ Token ASTJsonImporter::literalTokenKind(Json const& _node)
 	Token tok;
 	if (_node["kind"].get<std::string>() == "number")
 		tok = Token::Number;
+	else if (_node["kind"].get<std::string>() == "shieldedNumber")
+		tok = Token::ShieldedNumber;
 	else if (_node["kind"].get<std::string>() == "string")
 		tok = Token::StringLiteral;
 	else if (_node["kind"].get<std::string>() == "unicodeString")

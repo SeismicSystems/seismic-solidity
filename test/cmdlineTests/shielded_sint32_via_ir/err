@@ -1,0 +1,5 @@
+Warning: Literals converted to shielded integers will leak during contract deployment.
+ --> input.sol:8:16:
+  |
+8 |         data = sint32(0);
+  |                ^^^^^^^^^

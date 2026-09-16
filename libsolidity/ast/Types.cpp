@@ -81,8 +81,6 @@ BoolResult fitsIntegerType(bigint const& _value, IntegerType const& _type)
 	return true;
 }
 
-/// Checks whether _value fits into _bits bits when having 1 bit as the sign bit
-/// if _signed is true.
 bool fitsIntoBits(bigint const& _value, unsigned _bits, bool _signed)
 {
 	return fitsIntegerType(
@@ -287,7 +285,7 @@ Type const* Type::commonType(Type const* _a, Type const* _b)
 {
 	if (!_a || !_b)
 		return nullptr;
-	else if (_a->mobileType() && _b->isImplicitlyConvertibleTo(*_a->mobileType()))
+	if (_a->mobileType() && _b->isImplicitlyConvertibleTo(*_a->mobileType()))
 		return _a->mobileType();
 	else if (_b->mobileType() && _a->isImplicitlyConvertibleTo(*_b->mobileType()))
 		return _b->mobileType();
@@ -494,7 +492,7 @@ BoolResult AddressType::isImplicitlyConvertibleTo(Type const& _other) const
 
 BoolResult AddressType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
-	if ((_convertTo.category() == category()) || isImplicitlyConvertibleTo(_convertTo))
+	if ((_convertTo.category() == Category::Address) || (_convertTo.category() == Category::ShieldedAddress) || isImplicitlyConvertibleTo(_convertTo))
 		return true;
 	else if (auto const* contractType = dynamic_cast<ContractType const*>(&_convertTo))
 		return (m_stateMutability >= StateMutability::Payable) || !contractType->isPayable();
@@ -551,6 +549,7 @@ bool AddressType::operator==(Type const& _other) const
 	return other.m_stateMutability == m_stateMutability;
 }
 
+
 MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 {
 	MemberList::MemberMap members = {
@@ -568,6 +567,37 @@ MemberList::MemberMap AddressType::nativeMembers(ASTNode const*) const
 		members.emplace_back(MemberList::Member{"transfer", TypeProvider::function(strings{"uint"}, strings(), FunctionType::Kind::Transfer, StateMutability::NonPayable)});
 	}
 	return members;
+}
+
+MemberList::MemberMap ShieldedAddressType::nativeMembers(ASTNode const*) const
+{
+	// Only code and codehash are allowed on shielded addresses.
+	// For balance, call, delegatecall, staticcall, send, transfer: cast to address first.
+	return MemberList::MemberMap{
+		{"code", TypeProvider::array(DataLocation::Memory)},
+		{"codehash", TypeProvider::fixedBytes(32)}
+	};
+}
+
+std::string ShieldedAddressType::richIdentifier() const
+{
+	if (stateMutability() == StateMutability::Payable)
+		return "t_saddress_payable";
+	else
+		return "t_saddress";
+}
+
+std::string ShieldedAddressType::toString(bool) const
+{
+	if (stateMutability() == StateMutability::Payable)
+		return "saddress payable";
+	else
+		return "saddress";
+}
+
+std::string ShieldedAddressType::canonicalName() const
+{
+	return "saddress";
 }
 
 namespace
@@ -604,7 +634,7 @@ std::string IntegerType::richIdentifier() const
 
 BoolResult IntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 {
-	if (_convertTo.category() == category())
+	if (_convertTo.category() == Category::Integer)
 	{
 		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
 		// disallowing unsigned to signed conversion of different bits
@@ -714,20 +744,37 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 	if (
 		_other->category() != Category::RationalNumber &&
 		_other->category() != Category::FixedPoint &&
-		_other->category() != category()
+		_other->category() != Category::ShieldedInteger &&
+		_other->category() != Category::Integer
 	)
 		return nullptr;
+
 	if (TokenTraits::isShiftOp(_operator))
 	{
 		// Shifts are not symmetric with respect to the type
-		if (isValidShiftAndAmountType(_operator, *_other))
-			return this;
-		else
+		if (!isValidShiftAndAmountType(_operator, *_other))
 			return nullptr;
+		// Shielded shift amount -> shielded result, so a public return errors (mirrors exp).
+		if (dynamic_cast<ShieldedIntegerType const*>(_other))
+			return TypeProvider::shieldedInteger(
+				numBits(),
+				isSigned() ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
+			);
+		return this;
 	}
 	else if (Token::Exp == _operator)
 	{
-		if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
+		if (auto otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
+		{
+			if (otherIntType->isSigned())
+				return TypeResult::err("Exponentiation power is not allowed to be a signed shielded integer type.");
+			// Shielded exponent -> shielded result, preserving the base's width/signedness.
+			return TypeProvider::shieldedInteger(
+				numBits(),
+				isSigned() ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
+			);
+		}
+		else if (auto otherIntType = dynamic_cast<IntegerType const*>(_other))
 		{
 			if (otherIntType->isSigned())
 				return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
@@ -745,8 +792,11 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		}
 		return this;
 	}
+	auto commonType = Type::commonType(this, _other);
+	if (_other->category() == Category::ShieldedInteger)
+		commonType = Type::commonType(_other, this);
 
-	auto commonType = Type::commonType(this, _other); //might be an integer or fixed point
+	 //might be an integer or fixed point
 	if (!commonType)
 		return nullptr;
 
@@ -757,6 +807,92 @@ TypeResult IntegerType::binaryOperatorResult(Token _operator, Type const* _other
 		return nullptr;
 	return commonType;
 }
+
+std::string ShieldedIntegerType::richIdentifier() const
+{
+	return "t_s" + std::string(isSigned() ? "" : "u") + "int" + std::to_string(numBits());
+}
+
+std::string ShieldedIntegerType::toString(bool) const
+{
+	std::string prefix = isSigned() ? "sint" : "suint";
+	return prefix + util::toString(numBits());
+}
+
+BoolResult ShieldedIntegerType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (_convertTo.category() == Category::ShieldedInteger)
+	{
+		IntegerType const& convertTo = dynamic_cast<IntegerType const&>(_convertTo);
+		// disallowing unsigned to signed conversion of different bits
+		if (isSigned() != convertTo.isSigned())
+			return false;
+		else if (convertTo.numBits() < numBits())
+			return false;
+		else
+			return true;
+	}
+	else
+		return false;
+}
+
+BoolResult ShieldedIntegerType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	else if (auto integerType = dynamic_cast<IntegerType const*>(&_convertTo))
+		return (numBits() == integerType->numBits()) || (isSigned() == integerType->isSigned());
+	else if (auto addressType = dynamic_cast<ShieldedAddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			!isSigned() &&
+			(numBits() == 160);
+	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			!isSigned() &&
+			(numBits() == 160);
+	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
+		return (!isSigned() && (numBits() == fixedBytesType->numBytes() * 8));
+	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
+		return (isSigned() == fixedPointType->isSigned()) && (numBits() == fixedPointType->numBits());
+
+	return false;
+}
+
+BoolResult ShieldedFixedBytesType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (_convertTo.category() != category())
+		return false;
+	ShieldedFixedBytesType const& convertTo = dynamic_cast<ShieldedFixedBytesType const&>(_convertTo);
+	return convertTo.m_bytes >= m_bytes;
+}
+
+BoolResult ShieldedFixedBytesType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (_convertTo.category() == category())
+		return true;
+	else if (auto integerType = dynamic_cast<ShieldedIntegerType const*>(&_convertTo))
+		return (!integerType->isSigned() && integerType->numBits() == numBytes() * 8);
+	else if (auto addressType = dynamic_cast<ShieldedAddressType const*>(&_convertTo))
+		return
+			(addressType->stateMutability() != StateMutability::Payable) &&
+			(numBytes() == 20);
+	else if (auto fixedBytesType = dynamic_cast<FixedBytesType const*>(&_convertTo))
+		return numBytes() == fixedBytesType->numBytes();
+	return false;
+}
+
+std::string ShieldedFixedBytesType::richIdentifier() const
+{
+	return "t_sbytes" + std::to_string(m_bytes);
+}
+
+std::string ShieldedFixedBytesType::toString(bool) const
+{
+	return "sbytes" + util::toString(m_bytes);
+}
+
 
 FixedPointType::FixedPointType(unsigned _totalBits, unsigned _fractionalDigits, FixedPointType::Modifier _modifier):
 	m_totalBits(_totalBits), m_fractionalDigits(_fractionalDigits), m_modifier(_modifier)
@@ -1013,13 +1149,26 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 	{
 	case Category::Integer:
 	{
+		if (m_shielded)
+			return BoolResult::err("Shielded number literal cannot be implicitly converted to non-shielded type.");
 		if (isFractional())
 			return false;
 		IntegerType const& targetType = dynamic_cast<IntegerType const&>(_convertTo);
 		return fitsIntegerType(m_value.numerator(), targetType);
 	}
+	case Category::ShieldedInteger:
+	{
+		if (!m_shielded)
+			return false;
+		if (isFractional())
+			return false;
+		ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		return fitsIntegerType(m_value.numerator(), targetType);
+	}
 	case Category::FixedPoint:
 	{
+		if (m_shielded)
+			return BoolResult::err("Shielded number literal cannot be implicitly converted to non-shielded type.");
 		FixedPointType const& targetType = dynamic_cast<FixedPointType const&>(_convertTo);
 		// Store a negative number into an unsigned.
 		if (isNegative() && !targetType.isSigned())
@@ -1033,6 +1182,8 @@ BoolResult RationalNumberType::isImplicitlyConvertibleTo(Type const& _convertTo)
 		return fitsIntoBits(value.numerator(), targetType.numBits(), targetType.isSigned());
 	}
 	case Category::FixedBytes:
+		if (m_shielded)
+			return BoolResult::err("Shielded number literal cannot be implicitly converted to non-shielded type.");
 		return (m_value == rational(0)) || (m_compatibleBytesType && *m_compatibleBytesType == _convertTo);
 	default:
 		return false;
@@ -1043,10 +1194,16 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
 		return true;
-
 	auto category = _convertTo.category();
 	if (category == Category::FixedBytes)
 		return false;
+	else if (category == Category::ShieldedFixedBytes)
+	{
+		if (isFractional())
+			return false;
+		ShieldedFixedBytesType const& targetType = dynamic_cast<ShieldedFixedBytesType const&>(_convertTo);
+		return (m_value == 0) || (!isNegative() && integerType() && (integerType()->numBits() <= targetType.numBytes() * 8));
+	}
 	else if (auto addressType = dynamic_cast<AddressType const*>(&_convertTo))
 		return (m_value == 0) ||
 			((addressType->stateMutability() != StateMutability::Payable) &&
@@ -1056,6 +1213,13 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 			(integerType()->numBits() <= 160));
 	else if (category == Category::Integer)
 		return false;
+	else if (category == Category::ShieldedInteger)
+	{
+		if (isFractional())
+			return false;
+		ShieldedIntegerType const& targetType = dynamic_cast<ShieldedIntegerType const&>(_convertTo);
+		return fitsIntegerType(m_value.numerator(), targetType);
+	}
 	else if (auto enumType = dynamic_cast<EnumType const*>(&_convertTo))
 		if (isNegative() || isFractional() || m_value >= enumType->numberOfMembers())
 			return false;
@@ -1068,14 +1232,14 @@ BoolResult RationalNumberType::isExplicitlyConvertibleTo(Type const& _convertTo)
 TypeResult RationalNumberType::unaryOperatorResult(Token _operator) const
 {
 	if (std::optional<rational> value = ConstantEvaluator::evaluateUnaryOperator(_operator, m_value))
-		return TypeResult{TypeProvider::rationalNumber(*value)};
+		return TypeResult{TypeProvider::rationalNumber(*value, nullptr, m_shielded)};
 	else
 		return nullptr;
 }
 
 TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const* _other) const
 {
-	if (_other->category() == Category::Integer || _other->category() == Category::FixedPoint)
+	if (_other->category() == Category::Integer || _other->category() == Category::ShieldedInteger || _other->category() == Category::FixedPoint)
 	{
 		if (isFractional())
 			return TypeResult::err("Fractional literals not supported.");
@@ -1084,15 +1248,23 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 
 		// Shift and exp are not symmetric, so it does not make sense to swap
 		// the types as below. As an exception, we always use uint here.
+		bool otherIsShielded = _other->category() == Category::ShieldedInteger;
 		if (TokenTraits::isShiftOp(_operator))
 		{
 			if (!isValidShiftAndAmountType(_operator, *_other))
 				return nullptr;
+			if (otherIsShielded)
+				return isNegative() ? TypeProvider::shieldedInt256() : TypeProvider::shieldedUint256();
 			return isNegative() ? TypeProvider::int256() : TypeProvider::uint256();
 		}
 		else if (Token::Exp == _operator)
 		{
-			if (auto const* otherIntType = dynamic_cast<IntegerType const*>(_other))
+			if (auto const* otherIntType = dynamic_cast<ShieldedIntegerType const*>(_other))
+			{
+				if (otherIntType->isSigned())
+					return TypeResult::err("Exponentiation power is not allowed to be a signed shielded integer type.");
+			}
+			else if (auto const* otherIntType = dynamic_cast<IntegerType const*>(_other))
 			{
 				if (otherIntType->isSigned())
 					return TypeResult::err("Exponentiation power is not allowed to be a signed integer type.");
@@ -1100,6 +1272,8 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 			else if (dynamic_cast<FixedPointType const*>(_other))
 				return TypeResult::err("Exponent is fractional.");
 
+			if (otherIsShielded)
+				return isNegative() ? TypeProvider::shieldedInt256() : TypeProvider::shieldedUint256();
 			return isNegative() ? TypeProvider::int256() : TypeProvider::uint256();
 		}
 		else
@@ -1131,7 +1305,11 @@ TypeResult RationalNumberType::binaryOperatorResult(Token _operator, Type const*
 		if (value->numerator() != 0 && std::max(boost::multiprecision::msb(abs(value->numerator())), boost::multiprecision::msb(abs(value->denominator()))) > 4096)
 			return TypeResult::err("Precision of rational constants is limited to 4096 bits.");
 
-		return TypeResult{TypeProvider::rationalNumber(*value)};
+		// Mixed shielded/non-shielded arithmetic between rationals is not allowed.
+		if (m_shielded != other.m_shielded)
+			return nullptr;
+
+		return TypeResult{TypeProvider::rationalNumber(*value, nullptr, m_shielded)};
 	}
 	else
 		return nullptr;
@@ -1143,10 +1321,11 @@ std::string RationalNumberType::richIdentifier() const
 	// but let just make it deterministic here.
 	bigint numerator = abs(m_value.numerator());
 	bigint denominator = abs(m_value.denominator());
+	std::string prefix = m_shielded ? "t_shielded_rational_" : "t_rational_";
 	if (m_value < 0)
-		return "t_rational_minus_" + numerator.str() + "_by_" + denominator.str();
+		return prefix + "minus_" + numerator.str() + "_by_" + denominator.str();
 	else
-		return "t_rational_" + numerator.str() + "_by_" + denominator.str();
+		return prefix + numerator.str() + "_by_" + denominator.str();
 }
 
 bool RationalNumberType::operator==(Type const& _other) const
@@ -1154,7 +1333,7 @@ bool RationalNumberType::operator==(Type const& _other) const
 	if (_other.category() != category())
 		return false;
 	RationalNumberType const& other = dynamic_cast<RationalNumberType const&>(_other);
-	return m_value == other.m_value;
+	return m_value == other.m_value && m_shielded == other.m_shielded;
 }
 
 std::string RationalNumberType::bigintToReadableString(bigint const& _num)
@@ -1170,12 +1349,13 @@ std::string RationalNumberType::bigintToReadableString(bigint const& _num)
 
 std::string RationalNumberType::toString(bool) const
 {
+	std::string prefix = m_shielded ? "shielded_" : "";
 	if (!isFractional())
-		return "int_const " + bigintToReadableString(m_value.numerator());
+		return prefix + "int_const " + bigintToReadableString(m_value.numerator());
 
 	std::string numerator = bigintToReadableString(m_value.numerator());
 	std::string denominator = bigintToReadableString(m_value.denominator());
-	return "rational_const " + numerator + " / " + denominator;
+	return prefix + "rational_const " + numerator + " / " + denominator;
 }
 
 u256 RationalNumberType::literalValue(Literal const*) const
@@ -1210,7 +1390,7 @@ u256 RationalNumberType::literalValue(Literal const*) const
 Type const* RationalNumberType::mobileType() const
 {
 	if (!isFractional())
-		return integerType();
+		return m_shielded ? static_cast<Type const*>(shieldedIntegerType()) : integerType();
 	else
 		return fixedPointType();
 }
@@ -1228,6 +1408,22 @@ IntegerType const* RationalNumberType::integerType() const
 		return TypeProvider::integer(
 			std::max(numberEncodingSize(value), 1u) * 8,
 			negative ? IntegerType::Modifier::Signed : IntegerType::Modifier::Unsigned
+		);
+}
+
+ShieldedIntegerType const* RationalNumberType::shieldedIntegerType() const
+{
+	solAssert(!isFractional(), "shieldedIntegerType() called for fractional number.");
+	bigint value = m_value.numerator();
+	bool negative = (value < 0);
+	if (negative)
+		value = ((0 - value) - 1) << 1;
+	if (value > u256(-1))
+		return nullptr;
+	else
+		return TypeProvider::shieldedInteger(
+			std::max(numberEncodingSize(value), 1u) * 8,
+			negative ? ShieldedIntegerType::Modifier::Signed : ShieldedIntegerType::Modifier::Unsigned
 		);
 }
 
@@ -1283,6 +1479,8 @@ BoolResult StringLiteralType::isImplicitlyConvertibleTo(Type const& _convertTo) 
 {
 	if (auto fixedBytes = dynamic_cast<FixedBytesType const*>(&_convertTo))
 	{
+		if (dynamic_cast<ShieldedFixedBytesType const*>(&_convertTo))
+			return false;
 		if (static_cast<size_t>(fixedBytes->numBytes()) < m_value.size())
 			return BoolResult::err("Literal is larger than the type.");
 		return true;
@@ -1303,6 +1501,17 @@ BoolResult StringLiteralType::isImplicitlyConvertibleTo(Type const& _convertTo) 
 	}
 	else
 		return false;
+}
+
+BoolResult StringLiteralType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (auto fixedBytes = dynamic_cast<FixedBytesType const*>(&_convertTo))
+	{
+		if (static_cast<size_t>(fixedBytes->numBytes()) < m_value.size())
+			return BoolResult::err("Literal is larger than the type.");
+		return true;
+	}
+	return isImplicitlyConvertibleTo(_convertTo);
 }
 
 std::string StringLiteralType::richIdentifier() const
@@ -1369,6 +1578,8 @@ BoolResult FixedBytesType::isExplicitlyConvertibleTo(Type const& _convertTo) con
 			(numBytes() == 20);
 	else if (auto fixedPointType = dynamic_cast<FixedPointType const*>(&_convertTo))
 		return fixedPointType->numBits() == numBytes() * 8;
+	else if (auto shieldedFixedBytesType = dynamic_cast<ShieldedFixedBytesType const*>(&_convertTo))
+		return numBytes() == shieldedFixedBytesType->numBytes();
 
 	return false;
 }
@@ -1388,10 +1599,12 @@ TypeResult FixedBytesType::binaryOperatorResult(Token _operator, Type const* _ot
 {
 	if (TokenTraits::isShiftOp(_operator))
 	{
-		if (isValidShiftAndAmountType(_operator, *_other))
-			return this;
-		else
+		if (!isValidShiftAndAmountType(_operator, *_other))
 			return nullptr;
+		// Shielded shift amount -> shielded result, so a public sink errors (mirrors IntegerType).
+		if (dynamic_cast<ShieldedIntegerType const*>(_other))
+			return TypeProvider::shieldedFixedBytes(numBytes());
+		return this;
 	}
 
 	auto commonType = dynamic_cast<FixedBytesType const*>(Type::commonType(this, _other));
@@ -1423,6 +1636,23 @@ bool FixedBytesType::operator==(Type const& _other) const
 	return other.m_bytes == m_bytes;
 }
 
+BoolResult BoolType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (*this == _convertTo)
+		return true;
+	else
+		return false;
+}
+
+BoolResult BoolType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	else if (_convertTo.category() == Category::ShieldedBool)
+		return true;
+	return false;
+}
+
 u256 BoolType::literalValue(Literal const* _literal) const
 {
 	solAssert(_literal, "");
@@ -1452,6 +1682,24 @@ TypeResult BoolType::binaryOperatorResult(Token _operator, Type const* _other) c
 		return _other;
 	else
 		return nullptr;
+}
+
+
+BoolResult ShieldedBoolType::isImplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (*this == _convertTo)
+		return true;
+	else
+		return false;
+}
+
+BoolResult ShieldedBoolType::isExplicitlyConvertibleTo(Type const& _convertTo) const
+{
+	if (isImplicitlyConvertibleTo(_convertTo))
+		return true;
+	else if (_convertTo.category() == Category::Bool)
+		return true;
+	return false;
 }
 
 Type const* ContractType::encodingType() const
@@ -1529,6 +1777,45 @@ std::vector<Type const*> CompositeType::fullDecomposition() const
 					res.push_back(next);
 				}
 	return res;
+}
+
+bool CompositeType::containsShieldedType() const
+{
+    std::unordered_set<std::string> visited;
+    return containsShieldedTypeRecurse(visited);
+}
+
+bool CompositeType::containsShieldedTypeRecurse(std::unordered_set<std::string>& visited) const
+{
+	std::string id = richIdentifier();
+	// Avoid infinite recursion
+    if (visited.find(id) != visited.end())
+    {
+        return false;
+    }
+    visited.insert(id);
+
+    if (isShielded())
+    {
+        return true;
+    }
+
+    for (Type const* subType : decomposition())
+    {
+        if (subType->isShielded())
+        {
+            return true;
+        }
+
+        if (auto compositeSubType = dynamic_cast<CompositeType const*>(subType))
+        {
+            if (compositeSubType->containsShieldedTypeRecurse(visited))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 Type const* ReferenceType::withLocation(DataLocation _location, bool _isPointer) const
@@ -1617,6 +1904,25 @@ ArrayType::ArrayType(DataLocation _location, bool _isString):
 {
 }
 
+ArrayType::ArrayType(DataLocation _location, ShieldedByteArrayTag):
+	ReferenceType(_location),
+	m_arrayKind(ArrayKind::Bytes),
+	m_baseType{TypeProvider::shieldedByte()}
+{
+}
+
+ArrayType::ArrayType(ArrayType const& _other, ShieldedStorageMarker):
+	ReferenceType(_other.location()),
+	m_arrayKind(_other.m_arrayKind),
+	m_baseType(copyForLocationIfReference(_other.m_baseType)),
+	m_hasDynamicLength(_other.m_hasDynamicLength),
+	m_length(_other.m_length),
+	m_hasShieldedStorageMarker(true)
+{
+	if (location() == DataLocation::Storage)
+		m_isPointer = _other.isPointer();
+}
+
 void ArrayType::clearCache() const
 {
 	Type::clearCache();
@@ -1632,6 +1938,19 @@ BoolResult ArrayType::isImplicitlyConvertibleTo(Type const& _convertTo) const
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);
 	if (convertTo.isByteArray() != isByteArray() || convertTo.isString() != isString())
 		return false;
+	// Reject aliasing a marked byte-array storage ref to an unmarked one (and vice versa); the
+	// two would emit different opcodes (cstore vs sstore). Copies (non-pointer target) are fine.
+	if (
+		location() == DataLocation::Storage &&
+		convertTo.location() == DataLocation::Storage &&
+		convertTo.isPointer() &&
+		isByteArrayOrString() && convertTo.isByteArrayOrString() &&
+		hasShieldedStorageMarker() != convertTo.hasShieldedStorageMarker()
+	)
+		return BoolResult::err(
+			"Cannot mix shielded and non-shielded storage byte arrays: a reference into shielded "
+			"storage is not interchangeable with a plain bytes/string storage reference."
+		);
 	// memory/calldata to storage can be converted, but only to a direct storage reference
 	if (convertTo.location() == DataLocation::Storage && location() != DataLocation::Storage && convertTo.isPointer())
 		return false;
@@ -1669,9 +1988,28 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 {
 	if (isImplicitlyConvertibleTo(_convertTo))
 		return true;
-	// allow conversion bytes <-> std::string and bytes -> bytesNN
+	// allow: bytes -> bytesNN, sbytes -> sbytesNN, sbytes <-> bytes
+	// block: sbytes -> bytesNN, bytes -> sbytesNN (cross-shielding)
 	if (_convertTo.category() != category())
-		return isByteArray() && _convertTo.category() == Type::Category::FixedBytes;
+	{
+		if (!isByteArray())
+			return false;
+		if (_convertTo.category() == Type::Category::FixedBytes)
+			return !baseType()->isShielded();
+		if (_convertTo.category() == Type::Category::ShieldedFixedBytes)
+		{
+			if (!baseType()->isShielded())
+				return false;
+			// Storage source needs an unimplemented shielded read; memory/calldata is a plain copy.
+			if (location() == DataLocation::Storage)
+				return BoolResult::err(
+					"Conversion of a shielded byte array in storage to a fixed shielded-bytes type "
+					"is not supported; copy it to memory first (e.g. sbytesN(sbytes memory))."
+				);
+			return true;
+		}
+		return false;
+	}
 	auto& convertTo = dynamic_cast<ArrayType const&>(_convertTo);
 	if (convertTo.location() != location())
 		return false;
@@ -1680,11 +2018,18 @@ BoolResult ArrayType::isExplicitlyConvertibleTo(Type const& _convertTo) const
 	return true;
 }
 
+bool ArrayType::containsShieldedType() const
+{
+	return m_hasShieldedStorageMarker || CompositeType::containsShieldedType();
+}
+
 std::string ArrayType::richIdentifier() const
 {
 	std::string id;
 	if (isString())
 		id = "t_string";
+	else if (isByteArray() && baseType()->isShielded())
+		id = "t_sbytes";
 	else if (isByteArrayOrString())
 		id = "t_bytes";
 	else
@@ -1696,6 +2041,8 @@ std::string ArrayType::richIdentifier() const
 		else
 			id += length().str();
 	}
+	if (m_hasShieldedStorageMarker)
+		id += "_shielded_storage_marker";
 	id += identifierLocationSuffix();
 
 	return id;
@@ -1714,6 +2061,7 @@ bool ArrayType::operator==(ArrayType const& _other) const
 		!equals(_other) ||
 		_other.isByteArray() != isByteArray() ||
 		_other.isString() != isString() ||
+		_other.m_hasShieldedStorageMarker != m_hasShieldedStorageMarker ||
 		_other.isDynamicallySized() != isDynamicallySized()
 	)
 		return false;
@@ -1861,6 +2209,8 @@ std::string ArrayType::toString(bool _withoutDataLocation) const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -1880,6 +2230,8 @@ std::string ArrayType::humanReadableName() const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -1898,6 +2250,8 @@ std::string ArrayType::canonicalName() const
 	std::string ret;
 	if (isString())
 		ret = "string";
+	else if (isByteArray() && baseType()->isShielded())
+		ret = "sbytes";
 	else if (isByteArrayOrString())
 		ret = "bytes";
 	else
@@ -1930,7 +2284,14 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 	MemberList::MemberMap members;
 	if (!isString())
 	{
-		members.emplace_back("length", TypeProvider::uint256());
+		// The shielded-storage marker only preserves storage op selection for aliases like
+		// `bytes(sbytesStorageRef)`. It must not leak into the surface type of `bytes`, so
+		// members like `.length` keep their ordinary `uint256` type unless the array itself is
+		// genuinely shielded.
+		if (isDynamicallySized() && CompositeType::containsShieldedType())
+			members.emplace_back("length", TypeProvider::shieldedUint256());
+		else
+			members.emplace_back("length", TypeProvider::uint256());
 		if (isDynamicallySized() && location() == DataLocation::Storage)
 		{
 			Type const* thisAsPointer = TypeProvider::withLocation(this, location(), true);
@@ -1963,7 +2324,10 @@ MemberList::MemberMap ArrayType::nativeMembers(ASTNode const*) const
 Type const* ArrayType::encodingType() const
 {
 	if (location() == DataLocation::Storage)
-		return TypeProvider::uint256();
+		if (containsShieldedType())
+			return TypeProvider::shieldedUint256();
+		else
+			return TypeProvider::uint256();
 	else
 		return TypeProvider::withLocation(this, DataLocation::Memory, true);
 }
@@ -1971,7 +2335,10 @@ Type const* ArrayType::encodingType() const
 Type const* ArrayType::decodingType() const
 {
 	if (location() == DataLocation::Storage)
-		return TypeProvider::uint256();
+		if (containsShieldedType())
+			return TypeProvider::shieldedUint256();
+		else
+			return TypeProvider::uint256();
 	else
 		return this;
 }
@@ -2042,6 +2409,8 @@ std::unique_ptr<ReferenceType> ArrayType::copyForLocation(DataLocation _location
 	copy->m_baseType = copy->copyForLocationIfReference(m_baseType);
 	copy->m_hasDynamicLength = m_hasDynamicLength;
 	copy->m_length = m_length;
+	copy->m_hasShieldedStorageMarker =
+		_location == DataLocation::Storage ? m_hasShieldedStorageMarker : false;
 	return copy;
 }
 
@@ -2700,6 +3069,22 @@ Type const& UserDefinedValueType::underlyingType() const
 	return *type;
 }
 
+bool UserDefinedValueType::isShielded() const
+{
+	Type const* type = m_definition.underlyingType()->annotation().type;
+	if (!type)
+		return false;
+	return type->isShielded();
+}
+
+bool UserDefinedValueType::containsShieldedType() const
+{
+	Type const* type = m_definition.underlyingType()->annotation().type;
+	if (!type)
+		return false;
+	return type->containsShieldedType();
+}
+
 Declaration const* UserDefinedValueType::typeDefinition() const
 {
 	return &m_definition;
@@ -3125,6 +3510,12 @@ std::string FunctionType::richIdentifier() const
 	case Kind::ABIDecode: id += "abidecode"; break;
 	case Kind::BlobHash: id += "blobhash"; break;
 	case Kind::MetaType: id += "metatype"; break;
+	case Kind::SeismicRNG: id += "seismicrng"; break;
+	case Kind::SeismicECDH: id += "seismicecdh"; break;
+	case Kind::SeismicAESGCMEncrypt: id += "seismicaesgcmencrypt"; break;
+	case Kind::SeismicAESGCMDecrypt: id += "seismicaesgcmdecrypt"; break;
+	case Kind::SeismicHKDF: id += "seismichkdf"; break;
+	case Kind::SeismicSecp256k1Sign: id += "seismicsecp256k1sign"; break;
 	}
 	id += "_" + stateMutabilityToString(m_stateMutability);
 	id += identifierList(m_parameterTypes) + "returns" + identifierList(m_returnParameterTypes);
@@ -3639,6 +4030,12 @@ bool FunctionType::isBareCall() const
 	case Kind::ECRecover:
 	case Kind::SHA256:
 	case Kind::RIPEMD160:
+	case Kind::SeismicRNG:
+	case Kind::SeismicECDH:
+	case Kind::SeismicAESGCMEncrypt:
+	case Kind::SeismicAESGCMDecrypt:
+	case Kind::SeismicHKDF:
+	case Kind::SeismicSecp256k1Sign:
 		return true;
 	default:
 		return false;
@@ -3833,6 +4230,12 @@ bool FunctionType::padArguments() const
 	case Kind::RIPEMD160:
 	case Kind::KECCAK256:
 	case Kind::ABIEncodePacked:
+	case Kind::SeismicRNG:
+	case Kind::SeismicECDH:
+	case Kind::SeismicAESGCMEncrypt:
+	case Kind::SeismicAESGCMDecrypt:
+	case Kind::SeismicHKDF:
+	case Kind::SeismicSecp256k1Sign:
 		return false;
 	default:
 		return true;
@@ -4166,6 +4569,8 @@ MemberList::MemberMap MagicType::nativeMembers(ASTNode const*) const
 		return MemberList::MemberMap({
 			{"coinbase", TypeProvider::payableAddress()},
 			{"timestamp", TypeProvider::uint256()},
+			{"timestamp_ms", TypeProvider::uint256()},
+			{"timestamp_seconds", TypeProvider::uint256()},
 			{"blockhash", TypeProvider::function(strings{"uint"}, strings{"bytes32"}, FunctionType::Kind::BlockHash, StateMutability::View)},
 			{"difficulty", TypeProvider::uint256()},
 			{"prevrandao", TypeProvider::uint256()},
@@ -4259,6 +4664,7 @@ MemberList::MemberMap MagicType::nativeMembers(ASTNode const*) const
 			m_typeArgument && (
 					m_typeArgument->category() == Type::Category::Contract ||
 					m_typeArgument->category() == Type::Category::Integer ||
+					m_typeArgument->category() == Type::Category::ShieldedInteger ||
 					m_typeArgument->category() == Type::Category::Enum
 			),
 			"Only enums, contracts or integer types supported for now"
@@ -4285,6 +4691,14 @@ MemberList::MemberMap MagicType::nativeMembers(ASTNode const*) const
 			return MemberList::MemberMap({
 				{"min", integerTypePointer},
 				{"max", integerTypePointer},
+			});
+		}
+		else if (m_typeArgument->category() == Type::Category::ShieldedInteger)
+		{
+			ShieldedIntegerType const* shieldedIntegerTypePointer = dynamic_cast<ShieldedIntegerType const*>(m_typeArgument);
+			return MemberList::MemberMap({
+				{"min", shieldedIntegerTypePointer},
+				{"max", shieldedIntegerTypePointer},
 			});
 		}
 		else if (m_typeArgument->category() == Type::Category::Enum)

@@ -298,6 +298,8 @@ u256 EVMInstructionInterpreter::eval(
 		return h256(m_state.coinbase, h256::AlignRight);
 	case Instruction::TIMESTAMP:
 		return m_state.timestamp;
+	case Instruction::TIMESTAMPMS:
+		return m_state.timestamp_ms;
 	case Instruction::NUMBER:
 		return m_state.blockNumber;
 	case Instruction::PREVRANDAO:
@@ -351,6 +353,11 @@ u256 EVMInstructionInterpreter::eval(
 		return m_state.transientStorage[h256(arg[0])];
 	case Instruction::TSTORE:
 		m_state.transientStorage[h256(arg[0])] = h256(arg[1]);
+		return 0;
+	case Instruction::CLOAD:
+		return m_state.storage[h256(arg[0])];
+	case Instruction::CSTORE:
+		m_state.storage[h256(arg[0])] = h256(arg[1]);
 		return 0;
 	// --------------- calls ---------------
 	case Instruction::CREATE:

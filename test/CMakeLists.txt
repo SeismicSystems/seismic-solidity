@@ -53,6 +53,7 @@ set(libevmasm_sources
     libevmasm/Assembler.cpp
     libevmasm/EVMAssemblyTest.cpp
     libevmasm/EVMAssemblyTest.h
+    libevmasm/GasMeterTest.cpp
     libevmasm/Optimiser.cpp
     libevmasm/PlainAssemblyParser.cpp
     libevmasm/PlainAssemblyParser.h
@@ -61,6 +62,7 @@ detect_stray_source_files("${libevmasm_sources}" "libevmasm/")
 
 set(liblangutil_sources
     liblangutil/CharStream.cpp
+    liblangutil/EVMVersion.cpp
     liblangutil/Scanner.cpp
     liblangutil/SourceLocation.cpp
 )

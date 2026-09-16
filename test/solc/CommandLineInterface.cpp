@@ -1527,6 +1527,9 @@ BOOST_AUTO_TEST_CASE(cli_ethdebug_incompatible_input_modes)
 	}
 }
 
+// NOTE: cli_ethdebug_debug_info_ethdebug and cli_ethdebug_ethdebug_output tests
+// skipped (require --via-ir which is disabled)
+#if 0
 BOOST_AUTO_TEST_CASE(cli_ethdebug_debug_info_ethdebug)
 {
 	TemporaryDirectory tempDir(TEST_CASE_NAME);
@@ -1696,6 +1699,7 @@ BOOST_AUTO_TEST_CASE(cli_ethdebug_ethdebug_output)
 		BOOST_REQUIRE(result.success);
 	}
 }
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

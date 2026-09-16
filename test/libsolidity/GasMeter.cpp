@@ -447,6 +447,65 @@ BOOST_AUTO_TEST_CASE(
 	testRunTimeGas("overlap_full()", {encodeArgs()});
 }
 
+BOOST_AUTO_TEST_CASE(cload_cstore_gas_estimation)
+{
+	char const* sourceCode = R"(
+		contract test {
+			suint256 private data;
+
+			function testCStore() public {
+				assembly {
+					cstore(0, 42)
+				}
+			}
+
+			function testCLoad() public returns (uint256 value) {
+				assembly {
+					value := cload(0)
+				}
+			}
+
+			function testBoth() public returns (uint256 value) {
+				assembly {
+					cstore(1, 123)
+					value := cload(1)
+				}
+			}
+		}
+	)";
+	testCreationTimeGas(sourceCode);
+	testRunTimeGas("testCStore()", {encodeArgs()});
+	testRunTimeGas("testCLoad()", {encodeArgs()});
+	testRunTimeGas("testBoth()", {encodeArgs()});
+}
+
+BOOST_AUTO_TEST_CASE(cload_cstore_with_shielded_types)
+{
+	char const* sourceCode = R"(
+		contract test {
+			suint256 private data;
+			suint256 private data2;
+
+			function setData(suint256 x) public {
+				data = x;
+			}
+
+			function getData() public view returns (suint256) {
+				return data;
+			}
+
+			function setBoth(suint256 x, suint256 y) public {
+				data = x;
+				data2 = y;
+			}
+		}
+	)";
+	testCreationTimeGas(sourceCode);
+	testRunTimeGas("setData(uint256)", {encodeArgs(5)});
+	testRunTimeGas("getData()", {encodeArgs()});
+	testRunTimeGas("setBoth(uint256,uint256)", {encodeArgs(5, 10)});
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }

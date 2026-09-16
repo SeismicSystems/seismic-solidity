@@ -826,6 +826,13 @@ std::string TypeVisitor::visit(BoolType const&)
 	return m_baseType;
 }
 
+std::string TypeVisitor::visit(ShieldedBoolType const&)
+{
+	m_baseType = "sbool";
+	m_structTupleString.addTypeStringToTuple(m_baseType);
+	return m_baseType;
+}
+
 std::string TypeVisitor::visit(IntegerType const& _type)
 {
 	m_baseType = getIntTypeAsString(_type);

@@ -1,0 +1,84 @@
+
+======= input.sol:C =======
+EVM assembly:
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  revert(0x00, 0x00)
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+      mstore(0x40, 0x80)
+      callvalue
+      dup1
+      iszero
+      tag_1
+      jumpi
+      revert(0x00, 0x00)
+    tag_1:
+      pop
+      jumpi(tag_2, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0x6d4ce63c
+      eq
+      tag_3
+      jumpi
+      dup1
+      0xf9e5def4
+      eq
+      tag_4
+      jumpi
+    tag_2:
+      revert(0x00, 0x00)
+    tag_3:
+      stop
+    tag_4:
+      tag_3
+      tag_8
+      calldatasize
+      0x04
+      tag_9
+      jump	// in
+    tag_8:
+      dup1
+      dup1
+      0x00
+      tstore
+      pop
+      pop
+      jump	// out
+    tag_9:
+      0x00
+      0x20
+      dup3
+      dup5
+      sub
+      slt
+      iszero
+      tag_15
+      jumpi
+      0x00
+      0x00
+      revert
+    tag_15:
+      pop
+      calldataload
+      swap2
+      swap1
+      pop
+      jump	// out
+}
+

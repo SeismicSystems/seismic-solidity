@@ -111,7 +111,7 @@ SymbolicBoolVariable::SymbolicBoolVariable(
 ):
 	SymbolicVariable(_type, _type, std::move(_uniqueName), _context)
 {
-	solAssert(m_type->category() == frontend::Type::Category::Bool, "");
+	solAssert(isBool(*m_type), "");
 }
 
 SymbolicIntVariable::SymbolicIntVariable(

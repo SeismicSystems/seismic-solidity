@@ -133,6 +133,13 @@ std::set<std::string, std::less<>> createReservedIdentifiers(langutil::EVMVersio
 			(_instr == evmasm::Instruction::TSTORE || _instr == evmasm::Instruction::TLOAD);
 	};
 
+	auto shieldeStorageException = [&](evmasm::Instruction _instr) -> bool
+	{
+		return
+			_evmVersion < langutil::EVMVersion::mercury() &&
+			(_instr == evmasm::Instruction::CSTORE || _instr == evmasm::Instruction::CLOAD || _instr == evmasm::Instruction::TIMESTAMPMS);
+	};
+
 	auto eofIdentifiersException = [&](evmasm::Instruction _instr) -> bool
 	{
 		solAssert(!_eofVersion.has_value() || (*_eofVersion == 1 && _evmVersion.supportsEOF()));
@@ -154,6 +161,7 @@ std::set<std::string, std::less<>> createReservedIdentifiers(langutil::EVMVersio
 			!blobBaseFeeException(instr.second) &&
 			!mcopyException(instr.second) &&
 			!transientStorageException(instr.second) &&
+			!shieldeStorageException(instr.second) &&
 			!eofIdentifiersException(instr.second)
 		)
 			reserved.emplace(name);
@@ -250,6 +258,8 @@ EVMDialect::EVMDialect(langutil::EVMVersion _evmVersion, std::optional<uint8_t> 
 	m_memoryLoadFunction = EVMDialect::findBuiltin("mload");
 	m_storageStoreFunction = EVMDialect::findBuiltin("sstore");
 	m_storageLoadFunction = EVMDialect::findBuiltin("sload");
+	m_confidentialStorageStoreFunction = EVMDialect::findBuiltin("cstore");
+	m_confidentialStorageLoadFunction = EVMDialect::findBuiltin("cload");
 	m_hashFunction = EVMDialect::findBuiltin("keccak256");
 
 	m_auxiliaryBuiltinHandles.add = EVMDialect::findBuiltin("add");

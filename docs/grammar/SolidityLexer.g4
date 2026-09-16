@@ -75,6 +75,35 @@ Receive: 'receive';
 Return: 'return';
 Returns: 'returns';
 Revert: 'revert'; // not a real keyword
+ShieldedAddress: 'saddress';
+/**
+ * Shielded bytes types of fixed length.
+ */
+ShieldedFixedBytes:
+	'sbytes1' | 'sbytes2' | 'sbytes3' | 'sbytes4' | 'sbytes5' | 'sbytes6' | 'sbytes7' | 'sbytes8' |
+	'sbytes9' | 'sbytes10' | 'sbytes11' | 'sbytes12' | 'sbytes13' | 'sbytes14' | 'sbytes15' | 'sbytes16' |
+	'sbytes17' | 'sbytes18' | 'sbytes19' | 'sbytes20' | 'sbytes21' | 'sbytes22' | 'sbytes23' | 'sbytes24' |
+	'sbytes25' | 'sbytes26' | 'sbytes27' | 'sbytes28' | 'sbytes29' | 'sbytes30' | 'sbytes31' | 'sbytes32';
+/**
+ * Sized shieled unsigned integer types.
+ * suint is an alias of suint256.
+ */
+ShieldedUnsignedIntegerType:
+	'suint' | 'suint8' | 'suint16' | 'suint24' | 'suint32' | 'suint40' | 'suint48' | 'suint56' | 'suint64' |
+	'suint72' | 'suint80' | 'suint88' | 'suint96' | 'suint104' | 'suint112' | 'suint120' | 'suint128' |
+	'suint136' | 'suint144' | 'suint152' | 'suint160' | 'suint168' | 'suint176' | 'suint184' | 'suint192' |
+	'suint200' | 'suint208' | 'suint216' | 'suint224' | 'suint232' | 'suint240' | 'suint248' | 'suint256';
+/**
+/**
+ * Sized shieled signed integer types.
+ * sint is an alias of sint256.
+ */
+ShieldedSignedIntegerType:
+	'sint' | 'sint8' | 'sint16' | 'sint24' | 'sint32' | 'sint40' | 'sint48' | 'sint56' | 'sint64' |
+	'sint72' | 'sint80' | 'sint88' | 'sint96' | 'sint104' | 'sint112' | 'sint120' | 'sint128' |
+	'sint136' | 'sint144' | 'sint152' | 'sint160' | 'sint168' | 'sint176' | 'sint184' | 'sint192' |
+	'sint200' | 'sint208' | 'sint216' | 'sint224' | 'sint232' | 'sint240' | 'sint248' | 'sint256';
+/**
 /**
  * Sized signed integer types.
  * int is an alias of int256.
@@ -301,7 +330,7 @@ YulEVMBuiltin:
 	'stop' | 'add' | 'sub' | 'mul' | 'div' | 'sdiv' | 'mod' | 'smod' | 'exp' | 'not'
 	| 'lt' | 'gt' | 'slt' | 'sgt' | 'eq' | 'iszero' | 'and' | 'or' | 'xor' | 'byte'
 	| 'shl' | 'shr' | 'sar' | 'addmod' | 'mulmod' | 'signextend' | 'keccak256'
-	| 'pop' | 'mload' | 'mstore' | 'mstore8' | 'sload' | 'sstore' | 'tload' | 'tstore'| 'msize' | 'gas'
+	| 'pop' | 'mload' | 'mstore' | 'mstore8' | 'sload' | 'sstore' |'cload'| 'cstore' | 'tload' | 'tstore'| 'msize' | 'gas'
 	| 'address' | 'balance' | 'selfbalance' | 'caller' | 'callvalue' | 'calldataload'
 	| 'calldatasize' | 'calldatacopy' | 'extcodesize' | 'extcodecopy' | 'returndatasize'
 	| 'returndatacopy' | 'mcopy' | 'extcodehash' | 'create' | 'create2' | 'call' | 'callcode'

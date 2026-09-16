@@ -1,0 +1,231 @@
+Warning: This is a pre-release compiler version, please do not use it in production.
+
+
+======= shielded_sbytes16_via_ir/input.sol:C =======
+EVM assembly:
+    /* "shielded_sbytes16_via_ir/input.sol":60:158  contract C {... */
+  mstore(0x40, 0x80)
+  jumpi(tag_3, callvalue)
+  tag_5
+  tag_1
+  jump	// in
+tag_5:
+  dataSize(sub_0)
+  dataOffset(sub_0)
+  dup3
+  codecopy
+  dataSize(sub_0)
+  swap1
+  return
+tag_3:
+  tag_2
+  jump	// in
+tag_1:
+  mload(0x40)
+  swap1
+  jump	// out
+tag_2:
+  0x00
+  dup1
+  revert
+stop
+
+sub_0: assembly {
+        /* "shielded_sbytes16_via_ir/input.sol":60:158  contract C {... */
+      mstore(0x40, 0x80)
+      jumpi(tag_20, iszero(lt(calldatasize, 0x04)))
+    tag_21:
+      tag_8
+      jump	// in
+    tag_20:
+      tag_22
+      calldataload(0x00)
+      tag_1
+      jump	// in
+    tag_22:
+      0xf8a8fd6d
+      sub
+      tag_21
+      jumpi
+      tag_7
+      jump	// in
+    tag_1:
+      0xe0
+      shr
+      swap1
+      jump	// out
+    tag_2:
+      mload(0x40)
+      swap1
+      jump	// out
+    tag_3:
+      0x00
+      dup1
+      revert
+    tag_4:
+      0x00
+      dup1
+      revert
+    tag_5:
+      0x00
+      swap2
+      sub
+      slt
+      tag_25
+      jumpi
+      jump	// out
+    tag_25:
+      tag_4
+      jump	// in
+    tag_6:
+      0x00
+      add
+      swap1
+      jump	// out
+    tag_7:
+      jumpi(tag_27, callvalue)
+      tag_29
+      calldatasize
+      0x04
+      tag_5
+      jump	// in
+    tag_29:
+      tag_30
+      tag_19
+      jump	// in
+    tag_30:
+      tag_31
+      tag_2
+      jump	// in
+    tag_31:
+      dup1
+      tag_32
+      dup2
+      tag_6
+      jump	// in
+    tag_32:
+      sub
+      swap1
+      return
+    tag_27:
+      tag_3
+      jump	// in
+    tag_8:
+      0x00
+      dup1
+      revert
+    tag_9:
+      swap1
+      jump	// out
+    tag_10:
+      not(0xffffffffffffffffffffffffffffffff)
+      and
+      swap1
+      jump	// out
+    tag_11:
+      0x80
+      shl
+      swap1
+      jump	// out
+    tag_12:
+      tag_33
+      tag_34
+      tag_35
+      swap3
+      tag_9
+      jump	// in
+    tag_34:
+      tag_11
+      jump	// in
+    tag_33:
+      tag_10
+      jump	// in
+    tag_35:
+      swap1
+      jump	// out
+    tag_13:
+      0x00
+      shl
+      swap1
+      jump	// out
+    tag_14:
+      swap1
+      tag_36
+      not(0x00)
+      swap2
+      tag_13
+      jump	// in
+    tag_36:
+      swap2
+      dup2
+      not
+      and
+      swap2
+      and
+      or
+      swap1
+      jump	// out
+    tag_15:
+      tag_37
+      swap1
+      tag_10
+      jump	// in
+    tag_37:
+      swap1
+      jump	// out
+    tag_16:
+      0x00
+      shr
+      swap1
+      jump	// out
+    tag_17:
+      tag_38
+      swap1
+      tag_16
+      jump	// in
+    tag_38:
+      swap1
+      jump	// out
+    tag_18:
+      swap1
+      tag_39
+      tag_40
+      tag_41
+      swap3
+      tag_15
+      jump	// in
+    tag_40:
+      tag_17
+      jump	// in
+    tag_39:
+      dup3
+      cload
+      tag_14
+      jump	// in
+    tag_41:
+      swap1
+      cstore
+      jump	// out
+        /* "shielded_sbytes16_via_ir/input.sol":96:156  function test() external {... */
+    tag_19:
+        /* "shielded_sbytes16_via_ir/input.sol":131:149  data = sbytes16(0) */
+      tag_42
+        /* "shielded_sbytes16_via_ir/input.sol":138:149  sbytes16(0) */
+      tag_43
+        /* "shielded_sbytes16_via_ir/input.sol":147:148  0 */
+      0x00
+        /* "shielded_sbytes16_via_ir/input.sol":138:149  sbytes16(0) */
+      tag_12
+      jump	// in
+    tag_43:
+        /* "shielded_sbytes16_via_ir/input.sol":131:149  data = sbytes16(0) */
+      0x00
+      tag_18
+      jump	// in
+    tag_42:
+        /* "shielded_sbytes16_via_ir/input.sol":96:156  function test() external {... */
+      jump	// out
+
+    auxdata: 0xa264697066735822122037b55db07a67fb1a37064c30080d17923eabae62f0cdd6d344db02a833c23ccb64736f6c63782c302e382e33312d646576656c6f702e323032362e312e32312b636f6d6d69742e38346365363530622e6d6f64005d
+}
+

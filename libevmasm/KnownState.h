@@ -84,7 +84,7 @@ public:
 	using Id = ExpressionClasses::Id;
 	struct StoreOperation
 	{
-		enum Target { Invalid, Memory, Storage };
+		enum Target { Invalid, Memory, Storage, ShieldedStorage };
 
 		bool isValid() const { return target != Invalid; }
 
@@ -92,6 +92,17 @@ public:
 		Id slot{std::numeric_limits<Id>::max()};
 		unsigned sequenceNumber{std::numeric_limits<unsigned>::max()};
 		Id expression{std::numeric_limits<Id>::max()};
+	};
+
+	struct FlaggedStorage
+	{
+		Id value;
+		bool is_private;
+
+		bool operator==(FlaggedStorage const& _other) const
+		{
+			return value == _other.value && is_private == _other.is_private;
+		}
 	};
 
 	explicit KnownState(
@@ -149,7 +160,7 @@ public:
 	std::map<int, Id> const& stackElements() const { return m_stackElements; }
 	ExpressionClasses& expressionClasses() const { return *m_expressionClasses; }
 
-	std::map<Id, Id> const& storageContent() const { return m_storageContent; }
+	std::map<Id, FlaggedStorage> const& storageContent() const { return m_storageContent; }
 
 private:
 	/// Assigns a new equivalence class to the next sequence number of the given stack element.
@@ -161,8 +172,10 @@ private:
 	/// and stores the new value at the given slot.
 	/// @returns the store operation, which might be invalid if storage was not modified
 	StoreOperation storeInStorage(Id _slot, Id _value,langutil::DebugData::ConstPtr _debugData);
+	StoreOperation storeInShieldedStorage(Id _slot, Id _value,langutil::DebugData::ConstPtr _debugData);
 	/// Retrieves the current value at the given slot in storage or creates a new special sload class.
 	Id loadFromStorage(Id _slot, langutil::DebugData::ConstPtr _debugData);
+	Id loadFromShieldedStorage(Id _slot, langutil::DebugData::ConstPtr _debugData);
 	/// Increments the sequence number, deletes all memory information that might be overwritten
 	/// and stores the new value at the given slot.
 	/// @returns the store operation, which might be invalid if memory was not modified
@@ -182,7 +195,7 @@ private:
 	/// Current sequence number, this is incremented with each modification to storage or memory.
 	unsigned m_sequenceNumber = 1;
 	/// Knowledge about storage content.
-	std::map<Id, Id> m_storageContent;
+	std::map<Id, FlaggedStorage> m_storageContent;
 	/// Knowledge about memory content. Keys are memory addresses, note that the values overlap
 	/// and are not contained here if they are not completely known.
 	std::map<Id, Id> m_memoryContent;

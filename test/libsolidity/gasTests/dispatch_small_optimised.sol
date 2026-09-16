@@ -11,11 +11,11 @@ contract Small {
 // bytecodeFormat: legacy
 // ----
 // creation:
-//   codeDepositCost: 58200
+//   codeDepositCost: 59400
 //   executionCost: 109
-//   totalCost: 58309
+//   totalCost: 59509
 // external:
 //   fallback: 117
-//   a(): 2259
+//   a(): 2271
 //   b(uint256): 4582
-//   f1(uint256): 46716
+//   f1(uint256): 46719

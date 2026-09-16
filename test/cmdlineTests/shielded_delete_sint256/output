@@ -1,0 +1,232 @@
+Warning: This is a pre-release compiler version, please do not use it in production.
+
+
+======= test/cmdlineTests/shielded_delete_sint256/input.sol:C =======
+EVM assembly:
+    /* "test/cmdlineTests/shielded_delete_sint256/input.sol":60:216  contract C {... */
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  revert(0x00, 0x00)
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":60:216  contract C {... */
+      mstore(0x40, 0x80)
+      callvalue
+      dup1
+      iszero
+      tag_1
+      jumpi
+      revert(0x00, 0x00)
+    tag_1:
+      pop
+      jumpi(tag_2, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0x0ef1346a
+      eq
+      tag_3
+      jumpi
+      dup1
+      0xf9e5def4
+      eq
+      tag_4
+      jumpi
+    tag_2:
+      revert(0x00, 0x00)
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":164:214  function clr() external {... */
+    tag_3:
+      tag_5
+      tag_6
+      jump	// in
+    tag_5:
+      stop
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":102:158  function set(sint256 v) external {... */
+    tag_4:
+      tag_7
+      0x04
+      dup1
+      calldatasize
+      sub
+      dup2
+      add
+      swap1
+      tag_8
+      swap2
+      swap1
+      tag_9
+      jump	// in
+    tag_8:
+      tag_10
+      jump	// in
+    tag_7:
+      stop
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":164:214  function clr() external {... */
+    tag_6:
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":205:207  si */
+      0x00
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":198:207  delete si */
+      0x00
+      swap1
+      cstore
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":164:214  function clr() external {... */
+      jump	// out
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":102:158  function set(sint256 v) external {... */
+    tag_10:
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":150:151  v */
+      dup1
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":145:147  si */
+      0x00
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":145:151  si = v */
+      dup2
+      swap1
+      cstore
+      pop
+        /* "test/cmdlineTests/shielded_delete_sint256/input.sol":102:158  function set(sint256 v) external {... */
+      pop
+      jump	// out
+        /* "#utility.yul":88:205   */
+    tag_14:
+        /* "#utility.yul":197:198   */
+      0x00
+        /* "#utility.yul":194:195   */
+      0x00
+        /* "#utility.yul":187:199   */
+      revert
+        /* "#utility.yul":334:411   */
+    tag_16:
+        /* "#utility.yul":371:378   */
+      0x00
+        /* "#utility.yul":400:405   */
+      dup2
+        /* "#utility.yul":389:405   */
+      swap1
+      pop
+        /* "#utility.yul":334:411   */
+      swap2
+      swap1
+      pop
+      jump	// out
+        /* "#utility.yul":417:539   */
+    tag_17:
+        /* "#utility.yul":490:514   */
+      tag_25
+        /* "#utility.yul":508:513   */
+      dup2
+        /* "#utility.yul":490:514   */
+      tag_16
+      jump	// in
+    tag_25:
+        /* "#utility.yul":483:488   */
+      dup2
+        /* "#utility.yul":480:515   */
+      eq
+        /* "#utility.yul":470:533   */
+      tag_26
+      jumpi
+        /* "#utility.yul":529:530   */
+      0x00
+        /* "#utility.yul":526:527   */
+      0x00
+        /* "#utility.yul":519:531   */
+      revert
+        /* "#utility.yul":470:533   */
+    tag_26:
+        /* "#utility.yul":417:539   */
+      pop
+      jump	// out
+        /* "#utility.yul":545:684   */
+    tag_18:
+        /* "#utility.yul":591:596   */
+      0x00
+        /* "#utility.yul":629:635   */
+      dup2
+        /* "#utility.yul":616:636   */
+      calldataload
+        /* "#utility.yul":607:636   */
+      swap1
+      pop
+        /* "#utility.yul":645:678   */
+      tag_28
+        /* "#utility.yul":672:677   */
+      dup2
+        /* "#utility.yul":645:678   */
+      tag_17
+      jump	// in
+    tag_28:
+        /* "#utility.yul":545:684   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+        /* "#utility.yul":690:1019   */
+    tag_9:
+        /* "#utility.yul":749:755   */
+      0x00
+        /* "#utility.yul":798:800   */
+      0x20
+        /* "#utility.yul":786:795   */
+      dup3
+        /* "#utility.yul":777:784   */
+      dup5
+        /* "#utility.yul":773:796   */
+      sub
+        /* "#utility.yul":769:801   */
+      slt
+        /* "#utility.yul":766:885   */
+      iszero
+      tag_30
+      jumpi
+        /* "#utility.yul":804:883   */
+      tag_31
+      tag_14
+      jump	// in
+    tag_31:
+        /* "#utility.yul":766:885   */
+    tag_30:
+        /* "#utility.yul":924:925   */
+      0x00
+        /* "#utility.yul":949:1002   */
+      tag_32
+        /* "#utility.yul":994:1001   */
+      dup5
+        /* "#utility.yul":985:991   */
+      dup3
+        /* "#utility.yul":974:983   */
+      dup6
+        /* "#utility.yul":970:992   */
+      add
+        /* "#utility.yul":949:1002   */
+      tag_18
+      jump	// in
+    tag_32:
+        /* "#utility.yul":939:1002   */
+      swap2
+      pop
+        /* "#utility.yul":895:1012   */
+      pop
+        /* "#utility.yul":690:1019   */
+      swap3
+      swap2
+      pop
+      pop
+      jump	// out
+
+    auxdata: <AUXDATA REMOVED>
+}
+}
+

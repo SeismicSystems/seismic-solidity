@@ -75,7 +75,12 @@ void ElementaryTypeNameToken::assertDetails(Token _baseType, unsigned const& _fi
 		solAssert(_second == 0, "There should not be a second size argument to type bytesM.");
 		solAssert(_first <= 32, "No elementary type bytes" + std::to_string(_first) + ".");
 	}
-	else if (_baseType == Token::UIntM || _baseType == Token::IntM)
+	else if (_baseType == Token::SBytesM)
+	{
+		solAssert(_second == 0, "There should not be a second size argument to type sbytesM.");
+		solAssert(_first <= 32, "No elementary type sbytes" + std::to_string(_first) + ".");
+	}
+	else if (_baseType == Token::UIntM || _baseType == Token::IntM || _baseType == Token::SUIntM || _baseType == Token::SIntM)
 	{
 		solAssert(_second == 0, "There should not be a second size argument to type " + std::string(TokenTraits::toString(_baseType)) + ".");
 		solAssert(
@@ -192,12 +197,21 @@ std::tuple<Token, unsigned int, unsigned int> fromIdentifierOrKeyword(std::strin
 			if (0 < m && m <= 32 && positionX == _literal.end())
 				return std::make_tuple(Token::BytesM, m, 0);
 		}
-		else if (keyword == Token::UInt || keyword == Token::Int)
+		else if (keyword == Token::SBytes)
+		{
+			if (0 < m && m <= 32 && positionX == _literal.end())
+				return std::make_tuple(Token::SBytesM, m, 0);
+		}
+		else if (keyword == Token::UInt || keyword == Token::Int || keyword == Token::SUInt || keyword == Token::SInt)
 		{
 			if (0 < m && m <= 256 && m % 8 == 0 && positionX == _literal.end())
 			{
 				if (keyword == Token::UInt)
 					return std::make_tuple(Token::UIntM, m, 0);
+				else if (keyword == Token::SUInt)
+					return std::make_tuple(Token::SUIntM, m, 0);
+				else if (keyword == Token::SInt)
+					return std::make_tuple(Token::SIntM, m, 0);
 				else
 					return std::make_tuple(Token::IntM, m, 0);
 			}

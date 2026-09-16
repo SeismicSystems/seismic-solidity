@@ -1128,6 +1128,8 @@ std::string ASTJsonExporter::literalTokenKind(Token _token)
 	{
 	case Token::Number:
 		return "number";
+	case Token::ShieldedNumber:
+		return "shieldedNumber";
 	case Token::StringLiteral:
 		return "string";
 	case Token::UnicodeStringLiteral:

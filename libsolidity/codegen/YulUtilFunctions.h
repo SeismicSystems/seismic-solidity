@@ -91,7 +91,7 @@ public:
 
 	/// @returns the name of a function that stores a string literal at a specific location in storage
 	/// signature: (slot) ->
-	std::string copyLiteralToStorageFunction(std::string const& _literal);
+	std::string copyLiteralToStorageFunction(std::string const& _literal, ArrayType const& _type);
 
 	/// @returns statements to revert with an error.
 	/// Generates code to revert with an error. The error arguments are assumed to
@@ -352,16 +352,23 @@ public:
 	/// @returns a function that reads a type from storage.
 	/// @param _splitFunctionTypes if false, returns the address and function signature in a
 	/// single variable.
+	/// @param _useShieldedStorageOps force cload/cstore-style access even for unshielded value
+	/// types. This is used for values reached through aliases like bytes(sbytesRef)[i], where the
+	/// element type is bytes1 but the underlying storage is still shielded.
 	std::string readFromStorage(
 		Type const& _type,
 		size_t _offset,
 		bool _splitFunctionTypes,
-		VariableDeclaration::Location _location
+		VariableDeclaration::Location _location,
+		bool _useShieldedStorageOps = false
 	);
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
 	std::string readFromStorageDynamic(
 		Type const& _type,
 		bool _splitFunctionTypes,
-		VariableDeclaration::Location _location
+		VariableDeclaration::Location _location,
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
 	);
 
 	/// @returns a function that reads a value type from memory. Performs cleanup.
@@ -378,18 +385,23 @@ public:
 	///
 	/// For external function types, input and output is in "compressed"/"unsplit" form.
 	std::string extractFromStorageValue(Type const& _type, size_t _offset);
-	std::string extractFromStorageValueDynamic(Type const& _type);
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
+	std::string extractFromStorageValueDynamic(Type const& _type, bool _packedShieldedFixedBytes = false);
 
 	/// Returns the name of a function will write the given value to
 	/// the specified slot and offset. If offset is not given, it is expected as
 	/// runtime parameter.
 	/// For reference types, offset is checked to be zero at runtime.
+	/// `_useShieldedStorageOps` has the same meaning as in readFromStorage().
 	/// signature: (slot, [offset,] value)
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
 	std::string updateStorageValueFunction(
 		Type const& _fromType,
 		Type const& _toType,
 		VariableDeclaration::Location _location,
-		std::optional<unsigned> const& _offset = std::optional<unsigned>()
+		std::optional<unsigned> const& _offset = std::optional<unsigned>(),
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
 	);
 
 	/// Returns the name of a function that will write the given value to
@@ -404,13 +416,17 @@ public:
 	/// The storage cleanup expects the value to be right-aligned with potentially
 	/// dirty higher order bytes.
 	/// For external functions, input and output is in "compressed"/"unsplit" form.
-	std::string cleanupFromStorageFunction(Type const& _type);
+	/// @param _packedShieldedFixedBytes if true and @a _type is a ShieldedFixedBytesType, treat the
+	/// value as packed into numBytes() (used for sbytes byte-array elements); otherwise use the
+	/// full 32-byte slot, matching the documented full-slot invariant for standalone shielded types.
+	std::string cleanupFromStorageFunction(Type const& _type, bool _packedShieldedFixedBytes = false);
 
 	/// @returns the name of a function that prepares a value of the given type
 	/// for being stored in storage. This usually includes cleanup and right-alignment
 	/// to fit the number of bytes in storage.
 	/// The resulting value might still have dirty higher order bits.
-	std::string prepareStoreFunction(Type const& _type);
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
+	std::string prepareStoreFunction(Type const& _type, bool _packedShieldedFixedBytes = false);
 
 	/// @returns the name of a function that allocates memory.
 	/// Modifies the "free memory pointer"
@@ -509,7 +525,14 @@ public:
 	/// @returns the name of a function that will set the given storage item to
 	/// zero
 	/// signature: (slot, offset) ->
-	std::string storageSetToZeroFunction(Type const& _type, VariableDeclaration::Location _location);
+	/// `_useShieldedStorageOps` has the same meaning as in readFromStorage().
+	/// See cleanupFromStorageFunction for @a _packedShieldedFixedBytes.
+	std::string storageSetToZeroFunction(
+		Type const& _type,
+		VariableDeclaration::Location _location,
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
+	);
 
 	/// If revertStrings is debug, @returns the name of a function that
 	/// stores @param _message in memory position 0 and reverts.
@@ -591,7 +614,9 @@ private:
 		Type const& _type,
 		std::optional<size_t> _offset,
 		bool _splitFunctionTypes,
-		VariableDeclaration::Location _location
+		VariableDeclaration::Location _location,
+		bool _useShieldedStorageOps = false,
+		bool _packedShieldedFixedBytes = false
 	);
 	/// @returns a function that reads a reference type from storage to memory (performing a deep copy).
 	std::string readFromStorageReferenceType(Type const& _type);
@@ -599,7 +624,7 @@ private:
 	/// @returns the name of a function that will clear given storage slot
 	/// starting with given offset until the end of the slot
 	/// signature: (slot, offset)
-	std::string partialClearStorageSlotFunction();
+	std::string partialClearStorageSlotFunction(ArrayType const& _type);
 
 	/// @returns the name of a function that will clear the given storage struct
 	/// signature: (slot) ->

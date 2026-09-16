@@ -76,6 +76,7 @@ std::map<std::string, Instruction, std::less<>> const solidity::evmasm::c_instru
 	{ "BLOBHASH", Instruction::BLOBHASH },
 	{ "COINBASE", Instruction::COINBASE },
 	{ "TIMESTAMP", Instruction::TIMESTAMP },
+	{ "TIMESTAMPMS", Instruction::TIMESTAMPMS },
 	{ "NUMBER", Instruction::NUMBER },
 	{ "DIFFICULTY", Instruction::PREVRANDAO },
 	{ "PREVRANDAO", Instruction::PREVRANDAO },
@@ -168,6 +169,8 @@ std::map<std::string, Instruction, std::less<>> const solidity::evmasm::c_instru
 	{ "LOG2", Instruction::LOG2 },
 	{ "LOG3", Instruction::LOG3 },
 	{ "LOG4", Instruction::LOG4 },
+	{ "CLOAD", Instruction::CLOAD },
+	{ "CSTORE", Instruction::CSTORE },
 	{ "DATALOADN", Instruction::DATALOADN },
 	{ "CALLF", Instruction::CALLF },
 	{ "RETF", Instruction::RETF },
@@ -244,6 +247,7 @@ static std::map<Instruction, InstructionInfo> const c_instructionInfo =
 	{Instruction::BLOBHASH,       {"BLOBHASH",        0,  1,   1,  false,      Tier::VeryLow}},
 	{Instruction::COINBASE,       {"COINBASE",        0,  0,   1,  false,      Tier::Base}},
 	{Instruction::TIMESTAMP,      {"TIMESTAMP",       0,  0,   1,  false,      Tier::Base}},
+	{Instruction::TIMESTAMPMS,    {"TIMESTAMPMS",     0,  0,   1,  false,      Tier::Base}},
 	{Instruction::NUMBER,         {"NUMBER",          0,  0,   1,  false,      Tier::Base}},
 	{Instruction::PREVRANDAO,     {"PREVRANDAO",      0,  0,   1,  false,      Tier::Base}},
 	{Instruction::GASLIMIT,       {"GASLIMIT",        0,  0,   1,  false,      Tier::Base}},
@@ -255,7 +259,14 @@ static std::map<Instruction, InstructionInfo> const c_instructionInfo =
 	{Instruction::MLOAD,          {"MLOAD",           0,  1,   1,  true,       Tier::VeryLow}},
 	{Instruction::MSTORE,         {"MSTORE",          0,  2,   0,  true,       Tier::VeryLow}},
 	{Instruction::MSTORE8,        {"MSTORE8",         0,  2,   0,  true,       Tier::VeryLow}},
-	{Instruction::SLOAD,          {"SLOAD",           0,  1,   1,  false,      Tier::Special}},
+	// We mark SLOAD as having side effects because SLOAD can potentially revert when accessing confidential storage.
+	// This is to make sure that optimizers (peephole, CSE, etc) do not move or eliminate SLOAD instructions incorrectly.
+	// Note that this is a VERY conservative approach, that can lead to much less optimal code.
+	// For example afaiu it would prevent 2 SLOADs of the same storage slot from becoming a single SLOAD followed by a DUP.
+	// In theory, reverts are very different from general side effects, since they abort execution rather than modifying state.
+	// Notice that DIV, MOD, SDIV, etc. are not marked as having side effects, even though they can revert on division by zero.
+	// If we benchmark and find that this conservative approach has too high a cost, we should consider more refined approaches.
+	{Instruction::SLOAD,          {"SLOAD",           0,  1,   1,  true,      Tier::Special}},
 	{Instruction::SSTORE,         {"SSTORE",          0,  2,   0,  true,       Tier::Special}},
 	{Instruction::TLOAD,          {"TLOAD",           0,  1,   1,  false,      Tier::WarmAccess}},
 	{Instruction::TSTORE,         {"TSTORE",          0,  2,   0,  true,       Tier::WarmAccess}},
@@ -338,6 +349,8 @@ static std::map<Instruction, InstructionInfo> const c_instructionInfo =
 	{Instruction::LOG2,           {"LOG2",            0,  4,   0,  true,       Tier::Special}},
 	{Instruction::LOG3,           {"LOG3",            0,  5,   0,  true,       Tier::Special}},
 	{Instruction::LOG4,           {"LOG4",            0,  6,   0,  true,       Tier::Special}},
+	{Instruction::CLOAD,          {"CLOAD",           0,  1,   1,  false,      Tier::Special}},
+	{Instruction::CSTORE,         {"CSTORE",          0,  2,   0,  true,       Tier::Special}},
 	{Instruction::RETF,           {"RETF",            0,  0,   0,  true,       Tier::RetF}},
 	{Instruction::CALLF,          {"CALLF",           2,  0,   0,  true,       Tier::CallF}},
 	{Instruction::JUMPF,          {"JUMPF",           2,  0,   0,  true,       Tier::JumpF}},

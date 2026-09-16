@@ -285,7 +285,7 @@ bool SyntaxChecker::visit(Literal const& _literal)
 			"Contains invalid UTF-8 sequence at position " + toString(invalidSequence) + "."
 		);
 
-	if (_literal.token() != Token::Number)
+	if (_literal.token() != Token::Number && _literal.token() != Token::ShieldedNumber)
 		return true;
 
 	ASTString const& value = _literal.value();

@@ -1,3 +1,6 @@
+// SEISMIC NOTE: In Seismic Solidity, SLOAD has side effects (can revert on confidential storage access).
+// Therefore sload(a) cannot be eliminated even though its result (x) is ultimately unused after optimization.
+// The optimizer preserves it as pop(sload(a)) to execute the side effect while discarding the result.
 {
     // Tests that masks that "add" up to
     // the full bit width are removed.
@@ -20,6 +23,8 @@
 //
 // {
 //     {
-//         sstore(sload(0), 0xad9c000000000000823500000000000056ce0000000000002b67)
+//         let a := sload(0)
+//         pop(sload(a))
+//         sstore(a, 0xad9c000000000000823500000000000056ce0000000000002b67)
 //     }
 // }

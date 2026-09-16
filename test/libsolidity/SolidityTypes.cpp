@@ -47,6 +47,19 @@ BOOST_AUTO_TEST_CASE(uint_types)
 	for (unsigned i = 8; i <= 256; i += 8)
 		BOOST_CHECK(*TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken(Token::UIntM, i, 0)) == *TypeProvider::integer(i, IntegerType::Modifier::Unsigned));
 }
+BOOST_AUTO_TEST_CASE(sint_types)
+{
+	BOOST_CHECK(*TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken(Token::SInt, 0, 0)) == *TypeProvider::shieldedInteger(256, ShieldedIntegerType::Modifier::Signed));
+	for (unsigned i = 8; i <= 256; i += 8)
+		BOOST_CHECK(*TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken(Token::SIntM, i, 0)) == *TypeProvider::shieldedInteger(i, ShieldedIntegerType::Modifier::Signed));
+}
+
+BOOST_AUTO_TEST_CASE(suint_types)
+{
+	BOOST_CHECK(*TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken(Token::SUInt, 0, 0)) == *TypeProvider::shieldedInteger(256, ShieldedIntegerType::Modifier::Unsigned));
+	for (unsigned i = 8; i <= 256; i += 8)
+		BOOST_CHECK(*TypeProvider::fromElementaryTypeName(ElementaryTypeNameToken(Token::SUIntM, i, 0)) == *TypeProvider::shieldedInteger(i, ShieldedIntegerType::Modifier::Unsigned));
+}
 
 BOOST_AUTO_TEST_CASE(byte_types)
 {
@@ -152,8 +165,11 @@ BOOST_AUTO_TEST_CASE(type_identifiers)
 
 	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("uint128")->identifier(), "t_uint128");
 	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("int128")->identifier(), "t_int128");
+	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("suint128")->identifier(), "t_suint128");
+	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("sint128")->identifier(), "t_sint128");
 	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("address")->identifier(), "t_address");
 	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("uint8")->identifier(), "t_uint8");
+	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("suint8")->identifier(), "t_suint8");
 	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("ufixed64x2")->identifier(), "t_ufixed64x2");
 	BOOST_CHECK_EQUAL(TypeProvider::fromElementaryTypeName("fixed128x8")->identifier(), "t_fixed128x8");
 	BOOST_CHECK_EQUAL(RationalNumberType(rational(7, 1)).identifier(), "t_rational_7_by_1");

@@ -1,0 +1,70 @@
+{
+  "absolutePath": "a",
+  "exportedSymbols": {
+    "C": [
+      4
+    ]
+  },
+  "id": 5,
+  "nodeType": "SourceUnit",
+  "nodes": [
+    {
+      "abstract": false,
+      "baseContracts": [],
+      "canonicalName": "C",
+      "contractDependencies": [],
+      "contractKind": "contract",
+      "fullyImplemented": true,
+      "id": 4,
+      "linearizedBaseContracts": [
+        4
+      ],
+      "name": "C",
+      "nameLocation": "9:1:1",
+      "nodeType": "ContractDefinition",
+      "nodes": [
+        {
+          "constant": false,
+          "id": 3,
+          "mutability": "mutable",
+          "name": "i",
+          "nameLocation": "21:1:1",
+          "nodeType": "VariableDeclaration",
+          "scope": 4,
+          "src": "13:9:1",
+          "stateVariable": true,
+          "storageLocation": "default",
+          "typeDescriptions": {
+            "typeIdentifier": "t_array$_t_suint256_$dyn_storage",
+            "typeString": "suint256[]"
+          },
+          "typeName": {
+            "baseType": {
+              "id": 1,
+              "name": "suint",
+              "nodeType": "ElementaryTypeName",
+              "src": "13:5:1",
+              "typeDescriptions": {
+                "typeIdentifier": "t_suint256",
+                "typeString": "suint256"
+              }
+            },
+            "id": 2,
+            "nodeType": "ArrayTypeName",
+            "src": "13:7:1",
+            "typeDescriptions": {
+              "typeIdentifier": "t_array$_t_suint256_$dyn_storage_ptr",
+              "typeString": "suint256[]"
+            }
+          },
+          "visibility": "internal"
+        }
+      ],
+      "scope": 5,
+      "src": "0:25:1",
+      "usedErrors": [],
+      "usedEvents": []
+    }
+  ],
+  "src": "0:26:1"
+}

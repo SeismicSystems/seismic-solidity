@@ -120,6 +120,16 @@ public:
 		rescan();
 	}
 
+	/// When false, shielded type keywords (suint/sint/sbytes/saddress/sbool and width
+	/// variants) are emitted as identifiers — for pre-Mercury source.
+	void setShieldedTypesEnabled(bool _enabled)
+	{
+		m_shieldedTypesEnabled = _enabled;
+
+		// Invalidate lookahead buffer.
+		rescan();
+	}
+
 	CharStream const& charStream() const noexcept { return m_source; }
 
 	/// @returns the next token and advances input
@@ -264,6 +274,7 @@ private:
 	std::shared_ptr<std::string const> m_sourceName;
 
 	ScannerKind m_kind = ScannerKind::Solidity;
+	bool m_shieldedTypesEnabled = true;
 
 	/// one character look-ahead, equals 0 at end of input
 	char m_char;

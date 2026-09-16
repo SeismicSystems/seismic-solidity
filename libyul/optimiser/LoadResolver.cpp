@@ -66,6 +66,8 @@ void LoadResolver::visit(Expression& _e)
 			tryResolve(_e, StoreLoadLocation::Memory, funCall->arguments);
 		else if (builtinHandle == m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::Storage)])
 			tryResolve(_e, StoreLoadLocation::Storage, funCall->arguments);
+		else if (builtinHandle == m_loadFunctionName[static_cast<unsigned>(StoreLoadLocation::ConfidentialStorage)])
+			tryResolve(_e, StoreLoadLocation::ConfidentialStorage, funCall->arguments);
 		else if (!m_containsMSize && builtinHandle == m_dialect.hashFunctionHandle())
 		{
 			Identifier const* start = std::get_if<Identifier>(&funCall->arguments.at(0));
@@ -95,6 +97,12 @@ void LoadResolver::tryResolve(
 	if (_location == StoreLoadLocation::Storage)
 	{
 		if (auto value = storageValue(key))
+			if (inScope(*value))
+				_e = Identifier{debugDataOf(_e), *value};
+	}
+	else if (_location == StoreLoadLocation::ConfidentialStorage)
+	{
+		if (auto value = confidentialStorageValue(key))
 			if (inScope(*value))
 				_e = Identifier{debugDataOf(_e), *value};
 	}

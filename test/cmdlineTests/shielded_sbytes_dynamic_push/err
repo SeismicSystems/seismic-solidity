@@ -1,0 +1,11 @@
+Warning: Dynamic arrays with shielded element types store their length confidentially, but an upper bound on the length may still be observable through gas cost analysis.
+ --> input.sol:5:5:
+  |
+5 |     sbytes data;
+  |     ^^^^^^^^^^^
+
+Warning: Unused local variable.
+  --> input.sol:10:9:
+   |
+10 |         sbytes1 val = data[0];
+   |         ^^^^^^^^^^^

@@ -18,4 +18,5 @@ contract C {
 // SMTEngine: all
 // SMTTargets: assert
 // ----
-// Info 1391: CHC: 1 verification condition(s) proved safe! Enable the model checker option "show proved safe" to see all of them.
+// Warning 6328: (166-179): CHC: Assertion violation might happen here.
+// Warning 4661: (166-179): BMC: Assertion violation happens here.

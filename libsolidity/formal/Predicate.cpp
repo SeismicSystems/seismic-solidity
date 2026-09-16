@@ -252,6 +252,8 @@ std::string Predicate::formatSummaryCall(
 					// TODO remove this for 0.9.0
 					if (magicKind == MagicType::Kind::Block && memberName == "difficulty")
 						memberName = "prevrandao";
+					if (magicKind == MagicType::Kind::Block && memberName == "timestamp_seconds")
+						memberName = "timestamp";
 
 					if (magicKind == MagicType::Kind::Block || magicKind == MagicType::Kind::Message || magicKind == MagicType::Kind::Transaction)
 						txVars.insert(magicType->toString(true) + "." + memberName);

@@ -41,21 +41,35 @@ bool DeclarationTypeChecker::visit(ElementaryTypeName const& _typeName)
 	if (_typeName.stateMutability().has_value())
 	{
 		// for non-address types this was already caught by the parser
-		solAssert(_typeName.annotation().type->category() == Type::Category::Address, "");
+		solAssert(_typeName.annotation().type->category() == Type::Category::Address || _typeName.annotation().type->category() == Type::Category::ShieldedAddress, "");
 		switch (*_typeName.stateMutability())
 		{
+
 			case StateMutability::Payable:
-				_typeName.annotation().type = TypeProvider::payableAddress();
+				if (_typeName.annotation().type->category() == Type::Category::Address)
+					_typeName.annotation().type = TypeProvider::payableAddress();
+				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
+					_typeName.annotation().type = TypeProvider::payableShieldedAddress();
 				break;
 			case StateMutability::NonPayable:
-				_typeName.annotation().type = TypeProvider::address();
+				if (_typeName.annotation().type->category() == Type::Category::Address)
+					_typeName.annotation().type = TypeProvider::address();
+				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
+					_typeName.annotation().type = TypeProvider::shieldedAddress();
 				break;
 			default:
-				m_errorReporter.typeError(
-					2311_error,
-					_typeName.location(),
-					"Address types can only be payable or non-payable."
-				);
+				if (_typeName.annotation().type->category() == Type::Category::Address)
+					m_errorReporter.typeError(
+						2311_error,
+						_typeName.location(),
+						"Address types can only be payable or non-payable."
+					);
+				else if (_typeName.annotation().type->category() == Type::Category::ShieldedAddress)
+					m_errorReporter.typeError(
+						10108_error,
+						_typeName.location(),
+						"Shielded address types can only be payable or non-payable."
+					);
 				break;
 		}
 	}
@@ -267,6 +281,16 @@ void DeclarationTypeChecker::endVisit(Mapping const& _mapping)
 
 	Type const* keyType = _mapping.keyType().annotation().type;
 	ASTString keyName = _mapping.keyName();
+
+	// containsShieldedType also covers sbytes, whose ArrayType::isShielded() is false.
+	if (keyType->isShielded() || keyType->containsShieldedType())
+	{
+		m_errorReporter.fatalTypeError(
+			10109_error,
+			_mapping.keyType().location(),
+			"Shielded types are not allowed as mapping keys."
+		);
+	}
 
 	Type const* valueType = _mapping.valueType().annotation().type;
 	ASTString valueName = _mapping.valueName();
@@ -484,6 +508,13 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 						"Initialization of transient storage state variables is not supported."
 					);
 
+				if (_variable.typeName().annotation().type->isShielded() || _variable.typeName().annotation().type->containsShieldedType())
+					m_errorReporter.declarationError(
+						10105_error,
+						_variable.location(),
+						"Shielded types cannot be used with transient storage."
+					);
+
 				typeLoc = DataLocation::Transient;
 				break;
 			default:
@@ -522,6 +553,12 @@ void DeclarationTypeChecker::endVisit(VariableDeclaration const& _variable)
 		bool isPointer = !_variable.isStateVariable();
 		type = TypeProvider::withLocation(ref, typeLoc, isPointer);
 	}
+	bool hasShieldedContent = type->isShielded();
+	if (!hasShieldedContent)
+		if (auto const* arrayType = dynamic_cast<ArrayType const*>(type))
+			hasShieldedContent = arrayType->baseType()->isShielded();
+	if ((_variable.isConstant() || _variable.immutable()) && hasShieldedContent)
+		m_errorReporter.declarationError(10104_error, _variable.location(), "Shielded objects cannot be set to constant or immutable.");
 
 	if (_variable.isConstant() && !type->isValueType())
 	{

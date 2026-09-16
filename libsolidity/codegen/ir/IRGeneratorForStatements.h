@@ -190,6 +190,11 @@ private:
 	std::string expressionAsType(Expression const& _expression, Type const& _to);
 
 	/// @returns a Yul expression representing the current value of @a _expression,
+	/// converted to type @a _to if it does not yet have that type. Wraps around expressionAsCleanedType
+	/// by determining if _to is a boolean or a shielded boolean.
+	std::string conditionAsBoolOrSbool(Expression const& _expression);
+
+	/// @returns a Yul expression representing the current value of @a _expression,
 	/// converted to type @a _to if it does not yet have that type.
 	/// It also cleans the value, in case it already has type @a _to.
 	std::string expressionAsCleanedType(Expression const& _expression, Type const& _to);

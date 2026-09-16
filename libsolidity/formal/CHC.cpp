@@ -1533,8 +1533,9 @@ void CHC::defineExternalFunctionInterface(FunctionDefinition const& _function, C
 			solidity::util::BreadthFirstSearch<Type const*> bfs{{_var->type()}};
 			bfs.run([&](auto _type, auto&& _addChild) {
 				if (
-					_type->category() == Type::Category::Address ||
-					_type->category() == Type::Category::Contract
+					_type->category() == Type::Category::Address ||	
+					_type->category() == Type::Category::Contract ||
+					_type->category() == Type::Category::ShieldedAddress
 				)
 				{
 					foundContract = true;
@@ -1555,6 +1556,7 @@ void CHC::defineExternalFunctionInterface(FunctionDefinition const& _function, C
 			if (
 				var->type()->category() != Type::Category::Address &&
 				var->type()->category() != Type::Category::Contract &&
+				var->type()->category() != Type::Category::ShieldedAddress &&
 				hasContractOrAddressSubType(var)
 			)
 			{

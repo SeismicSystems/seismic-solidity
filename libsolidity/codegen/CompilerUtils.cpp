@@ -818,7 +818,7 @@ void CompilerUtils::convertType(
 	case Type::Category::FixedBytes:
 	{
 		FixedBytesType const& typeOnStack = dynamic_cast<FixedBytesType const&>(_typeOnStack);
-		if (targetTypeCategory == Type::Category::Integer)
+		if (targetTypeCategory == Type::Category::Integer || targetTypeCategory==Type::Category::ShieldedInteger)
 		{
 			// conversion from bytes to integer. no need to clean the high bit
 			// only to shift right because of opposite alignment
@@ -827,7 +827,7 @@ void CompilerUtils::convertType(
 			if (targetIntegerType.numBits() < typeOnStack.numBytes() * 8)
 				convertType(IntegerType(typeOnStack.numBytes() * 8), _targetType, _cleanupNeeded);
 		}
-		else if (targetTypeCategory == Type::Category::Address)
+		else if (targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress)
 		{
 			solAssert(typeOnStack.numBytes() * 8 == 160);
 			rightShiftNumberOnStack(256 - 160);
@@ -835,8 +835,45 @@ void CompilerUtils::convertType(
 		else
 		{
 			// clear for conversion to longer bytes
-			solAssert(targetTypeCategory == Type::Category::FixedBytes, "Invalid type conversion requested.");
-			FixedBytesType const& targetType = dynamic_cast<FixedBytesType const&>(_targetType);
+			solAssert(targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes, "Invalid type conversion requested.");
+			FixedBytesType const& targetType = (targetTypeCategory == Type::Category::FixedBytes) ?
+				dynamic_cast<FixedBytesType const&>(_targetType) :
+				dynamic_cast<ShieldedFixedBytesType const&>(_targetType);
+			if (typeOnStack.numBytes() == 0 || targetType.numBytes() == 0)
+				m_context << Instruction::POP << u256(0);
+			else if (targetType.numBytes() > typeOnStack.numBytes() || _cleanupNeeded)
+			{
+				unsigned bytes = std::min(typeOnStack.numBytes(), targetType.numBytes());
+				m_context << ((u256(1) << (256 - bytes * 8)) - 1);
+				m_context << Instruction::NOT << Instruction::AND;
+			}
+		}
+		break;
+	}
+	case Type::Category::ShieldedFixedBytes:
+	{
+		ShieldedFixedBytesType const& typeOnStack = dynamic_cast<ShieldedFixedBytesType const&>(_typeOnStack);
+		if (targetTypeCategory == Type::Category::Integer || targetTypeCategory==Type::Category::ShieldedInteger)
+		{
+			// conversion from bytes to integer. no need to clean the high bit
+			// only to shift right because of opposite alignment
+			IntegerType const& targetIntegerType = dynamic_cast<IntegerType const&>(_targetType);
+			rightShiftNumberOnStack(256 - typeOnStack.numBytes() * 8);
+			if (targetIntegerType.numBits() < typeOnStack.numBytes() * 8)
+				convertType(IntegerType(typeOnStack.numBytes() * 8), _targetType, _cleanupNeeded);
+		}
+		else if (targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress)
+		{
+			solAssert(typeOnStack.numBytes() * 8 == 160);
+			rightShiftNumberOnStack(256 - 160);
+		}
+		else
+		{
+			// clear for conversion to longer bytes
+			solAssert(targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes, "Invalid type conversion requested.");
+			FixedBytesType const& targetType = (targetTypeCategory == Type::Category::FixedBytes) ?
+				dynamic_cast<FixedBytesType const&>(_targetType) :
+				dynamic_cast<ShieldedFixedBytesType const&>(_targetType);
 			if (typeOnStack.numBytes() == 0 || targetType.numBytes() == 0)
 				m_context << Instruction::POP << u256(0);
 			else if (targetType.numBytes() > typeOnStack.numBytes() || _cleanupNeeded)
@@ -849,7 +886,7 @@ void CompilerUtils::convertType(
 		break;
 	}
 	case Type::Category::Enum:
-		solAssert(_targetType == _typeOnStack || targetTypeCategory == Type::Category::Integer);
+		solAssert(_targetType == _typeOnStack || targetTypeCategory == Type::Category::Integer || targetTypeCategory == Type::Category::ShieldedInteger);
 		if (enumOverflowCheckPending)
 		{
 			EnumType const& enumType = dynamic_cast<decltype(enumType)>(_typeOnStack);
@@ -865,20 +902,26 @@ void CompilerUtils::convertType(
 	case Type::Category::FixedPoint:
 		solUnimplemented("Not yet implemented - FixedPointType.");
 	case Type::Category::Address:
+	case Type::Category::ShieldedAddress:
 	case Type::Category::Integer:
 	case Type::Category::Contract:
 	case Type::Category::RationalNumber:
-		if (targetTypeCategory == Type::Category::FixedBytes)
+	case Type::Category::ShieldedInteger:
+		if (targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes)
 		{
 			solAssert(
-				stackTypeCategory == Type::Category::Address ||
+				(stackTypeCategory == Type::Category::Address ||
+				stackTypeCategory == Type::Category::ShieldedAddress) ||
 				stackTypeCategory == Type::Category::Integer ||
+				stackTypeCategory == Type::Category::ShieldedInteger ||
 				stackTypeCategory == Type::Category::RationalNumber,
 				"Invalid conversion to FixedBytesType requested."
 			);
 			// conversion from bytes to string. no need to clean the high bit
 			// only to shift left because of opposite alignment
-			FixedBytesType const& targetBytesType = dynamic_cast<FixedBytesType const&>(_targetType);
+			FixedBytesType const& targetBytesType = (targetTypeCategory == Type::Category::FixedBytes) ?
+				dynamic_cast<FixedBytesType const&>(_targetType) :
+				dynamic_cast<ShieldedFixedBytesType const&>(_targetType);
 			if (auto typeOnStack = dynamic_cast<IntegerType const*>(&_typeOnStack))
 			{
 				if (targetBytesType.numBytes() * 8 > typeOnStack->numBits())
@@ -890,7 +933,7 @@ void CompilerUtils::convertType(
 		}
 		else if (targetTypeCategory == Type::Category::Enum)
 		{
-			solAssert(stackTypeCategory != Type::Category::Address, "Invalid conversion to EnumType requested.");
+			solAssert((stackTypeCategory != Type::Category::Address && stackTypeCategory != Type::Category::ShieldedAddress), "Invalid conversion to EnumType requested.");
 			solAssert(_typeOnStack.mobileType());
 			// just clean
 			convertType(_typeOnStack, *_typeOnStack.mobileType(), true);
@@ -905,6 +948,7 @@ void CompilerUtils::convertType(
 			solAssert(
 				stackTypeCategory == Type::Category::Integer ||
 				stackTypeCategory == Type::Category::RationalNumber ||
+				stackTypeCategory == Type::Category::ShieldedInteger ||
 				stackTypeCategory == Type::Category::FixedPoint,
 				"Invalid conversion to FixedMxNType requested."
 			);
@@ -920,11 +964,13 @@ void CompilerUtils::convertType(
 			solAssert(
 				targetTypeCategory == Type::Category::Integer ||
 				targetTypeCategory == Type::Category::Contract ||
-				targetTypeCategory == Type::Category::Address,
+				targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress ||
+				targetTypeCategory == Type::Category::ShieldedInteger ||
+				targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes,
 				""
 			);
 			IntegerType addressType(160);
-			IntegerType const& targetType = targetTypeCategory == Type::Category::Integer
+			IntegerType const& targetType = (targetTypeCategory == Type::Category::Integer || targetTypeCategory == Type::Category::ShieldedInteger)
 				? dynamic_cast<IntegerType const&>(_targetType) : addressType;
 			if (stackTypeCategory == Type::Category::RationalNumber)
 			{
@@ -937,7 +983,7 @@ void CompilerUtils::convertType(
 			}
 			else
 			{
-				IntegerType const& typeOnStack = stackTypeCategory == Type::Category::Integer
+				IntegerType const& typeOnStack = (stackTypeCategory == Type::Category::Integer || stackTypeCategory == Type::Category::ShieldedInteger)
 					? dynamic_cast<IntegerType const&>(_typeOnStack) : addressType;
 				// Widening: clean up according to source type width
 				// Non-widening and force: clean up according to target type bits
@@ -961,7 +1007,7 @@ void CompilerUtils::convertType(
 		auto const& literalType = dynamic_cast<StringLiteralType const&>(_typeOnStack);
 		std::string const& value = literalType.value();
 		bytesConstRef data(value);
-		if (targetTypeCategory == Type::Category::FixedBytes)
+		if (targetTypeCategory == Type::Category::FixedBytes || targetTypeCategory == Type::Category::ShieldedFixedBytes)
 		{
 			unsigned const numBytes = dynamic_cast<FixedBytesType const&>(_targetType).numBytes();
 			solAssert(data.size() <= 32);
@@ -989,7 +1035,11 @@ void CompilerUtils::convertType(
 	case Type::Category::Array:
 	{
 		auto const& typeOnStack = dynamic_cast<ArrayType const&>(_typeOnStack);
-		if (_targetType.category() == Type::Category::FixedBytes)
+		// sbytes -> sbytesN shares the bytes -> bytesN path (ShieldedFixedBytesType derives from FixedBytesType).
+		if (
+			_targetType.category() == Type::Category::FixedBytes ||
+			_targetType.category() == Type::Category::ShieldedFixedBytes
+		)
 		{
 			solAssert(
 				typeOnStack.isByteArray(),
@@ -1119,7 +1169,10 @@ void CompilerUtils::convertType(
 	case Type::Category::ArraySlice:
 	{
 		auto& typeOnStack = dynamic_cast<ArraySliceType const&>(_typeOnStack);
-		if (_targetType.category() == Type::Category::FixedBytes)
+		if (
+			_targetType.category() == Type::Category::FixedBytes ||
+			_targetType.category() == Type::Category::ShieldedFixedBytes
+		)
 		{
 			solAssert(
 				typeOnStack.arrayType().isByteArray(),
@@ -1296,13 +1349,17 @@ void CompilerUtils::convertType(
 		break;
 	}
 	case Type::Category::Bool:
-		solAssert(_targetType == _typeOnStack, "Invalid conversion for bool.");
+	case Type::Category::ShieldedBool:
+		solAssert(_targetType == _typeOnStack ||
+				 (targetTypeCategory == Type::Category::Bool && stackTypeCategory == Type::Category::ShieldedBool) ||
+				 (targetTypeCategory == Type::Category::ShieldedBool && stackTypeCategory == Type::Category::Bool),
+				 "Invalid conversion for bool.");
 		if (_cleanupNeeded)
 			m_context << Instruction::ISZERO << Instruction::ISZERO;
 		break;
 	default:
 		// we used to allow conversions from function to address
-		solAssert(!(stackTypeCategory == Type::Category::Function && targetTypeCategory == Type::Category::Address));
+		solAssert(!(stackTypeCategory == Type::Category::Function && (targetTypeCategory == Type::Category::Address || targetTypeCategory == Type::Category::ShieldedAddress)));
 		if (stackTypeCategory == Type::Category::Function && targetTypeCategory == Type::Category::Function)
 		{
 			FunctionType const& typeOnStack = dynamic_cast<FunctionType const&>(_typeOnStack);

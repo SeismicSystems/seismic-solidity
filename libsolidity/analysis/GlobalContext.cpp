@@ -62,7 +62,55 @@ int magicVariableToID(std::string const& _name)
 		{"tx", -26},
 		{"type", -27},
 		{"this", -28},
-		{"blobhash", -29}
+		{"blobhash", -29},
+		// Seismic-specific magic variables start at -100 to avoid collisions
+		// with future upstream Solidity built-in IDs.
+		{"ecdh", -100},
+		{"aes_gcm_encrypt", -101},
+		{"aes_gcm_decrypt", -102},
+		{"hkdf", -103},
+		{"secp256k1_sign", -104},
+		// Seismic RNG bytes built-ins: unsafe_rng_bN at -(200+N).
+		{"unsafe_rng_b1", -201},
+		{"unsafe_rng_b2", -202},
+		{"unsafe_rng_b3", -203},
+		{"unsafe_rng_b4", -204},
+		{"unsafe_rng_b5", -205},
+		{"unsafe_rng_b6", -206},
+		{"unsafe_rng_b7", -207},
+		{"unsafe_rng_b8", -208},
+		{"unsafe_rng_b9", -209},
+		{"unsafe_rng_b10", -210},
+		{"unsafe_rng_b11", -211},
+		{"unsafe_rng_b12", -212},
+		{"unsafe_rng_b13", -213},
+		{"unsafe_rng_b14", -214},
+		{"unsafe_rng_b15", -215},
+		{"unsafe_rng_b16", -216},
+		{"unsafe_rng_b17", -217},
+		{"unsafe_rng_b18", -218},
+		{"unsafe_rng_b19", -219},
+		{"unsafe_rng_b20", -220},
+		{"unsafe_rng_b21", -221},
+		{"unsafe_rng_b22", -222},
+		{"unsafe_rng_b23", -223},
+		{"unsafe_rng_b24", -224},
+		{"unsafe_rng_b25", -225},
+		{"unsafe_rng_b26", -226},
+		{"unsafe_rng_b27", -227},
+		{"unsafe_rng_b28", -228},
+		{"unsafe_rng_b29", -229},
+		{"unsafe_rng_b30", -230},
+		{"unsafe_rng_b31", -231},
+		{"unsafe_rng_b32", -232},
+		// Seismic RNG integer built-ins start at -233.
+		{"unsafe_rng_u8", -233},
+		{"unsafe_rng_u16", -234},
+		{"unsafe_rng_u32", -235},
+		{"unsafe_rng_u64", -236},
+		{"unsafe_rng_u96", -237},
+		{"unsafe_rng_u128", -238},
+		{"unsafe_rng_u256", -239}
 	};
 
 	if (auto id = magicVariables.find(_name); id != magicVariables.end())
@@ -114,6 +162,43 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 		magicVariableDeclarations.push_back(
 			magicVarDecl("blobhash", TypeProvider::function(strings{"uint256"}, strings{"bytes32"}, FunctionType::Kind::BlobHash, StateMutability::View))
 		);
+
+	if (_evmVersion.supportShieldedStorage())
+	{
+		// require overloads taking shielded bool
+		magicVariableDeclarations.push_back(magicVarDecl("require", TypeProvider::function(strings{"sbool"}, strings{}, FunctionType::Kind::Require, StateMutability::Pure)));
+		magicVariableDeclarations.push_back(magicVarDecl("require", TypeProvider::function(strings{"sbool", "string memory"}, strings{}, FunctionType::Kind::Require, StateMutability::Pure)));
+		magicVariableDeclarations.push_back(magicVarDecl("require", TypeProvider::function(TypePointers{TypeProvider::shieldedBoolean(), TypeProvider::magic(MagicType::Kind::Error)}, TypePointers{}, strings{2, ""}, strings{}, FunctionType::Kind::Require, StateMutability::Pure)));
+
+		// Seismic RNG precompile built-in functions
+		magicVariableDeclarations.push_back(magicVarDecl("unsafe_rng_u8",   TypeProvider::function(strings{}, strings{"suint8"},   FunctionType::Kind::SeismicRNG, StateMutability::View)));
+		magicVariableDeclarations.push_back(magicVarDecl("unsafe_rng_u16",  TypeProvider::function(strings{}, strings{"suint16"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+		magicVariableDeclarations.push_back(magicVarDecl("unsafe_rng_u32",  TypeProvider::function(strings{}, strings{"suint32"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+		magicVariableDeclarations.push_back(magicVarDecl("unsafe_rng_u64",  TypeProvider::function(strings{}, strings{"suint64"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+		magicVariableDeclarations.push_back(magicVarDecl("unsafe_rng_u96",  TypeProvider::function(strings{}, strings{"suint96"},  FunctionType::Kind::SeismicRNG, StateMutability::View)));
+		magicVariableDeclarations.push_back(magicVarDecl("unsafe_rng_u128", TypeProvider::function(strings{}, strings{"suint128"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
+		magicVariableDeclarations.push_back(magicVarDecl("unsafe_rng_u256", TypeProvider::function(strings{}, strings{"suint256"}, FunctionType::Kind::SeismicRNG, StateMutability::View)));
+
+		// Seismic RNG precompile built-in functions for shielded fixed bytes
+		for (unsigned i = 1; i <= 32; ++i)
+			magicVariableDeclarations.push_back(magicVarDecl(
+				"unsafe_rng_b" + std::to_string(i),
+				TypeProvider::function(strings{}, strings{"sbytes" + std::to_string(i)}, FunctionType::Kind::SeismicRNG, StateMutability::View)
+			));
+
+		// Seismic ECDH precompile built-in function
+		magicVariableDeclarations.push_back(magicVarDecl("ecdh", TypeProvider::function(strings{"sbytes32", "bytes memory"}, strings{"bytes32"}, FunctionType::Kind::SeismicECDH, StateMutability::View)));
+
+		// Seismic AES-GCM encrypt/decrypt precompile built-in functions
+		magicVariableDeclarations.push_back(magicVarDecl("aes_gcm_encrypt", TypeProvider::function(strings{"sbytes32", "uint96", "bytes memory"}, strings{"bytes memory"}, FunctionType::Kind::SeismicAESGCMEncrypt, StateMutability::View)));
+		magicVariableDeclarations.push_back(magicVarDecl("aes_gcm_decrypt", TypeProvider::function(strings{"sbytes32", "uint96", "bytes memory"}, strings{"bytes memory"}, FunctionType::Kind::SeismicAESGCMDecrypt, StateMutability::View)));
+
+		// Seismic HKDF precompile built-in function
+		magicVariableDeclarations.push_back(magicVarDecl("hkdf", TypeProvider::function(strings{"bytes memory"}, strings{"bytes32"}, FunctionType::Kind::SeismicHKDF, StateMutability::View)));
+
+		// Seismic secp256k1 sign precompile built-in function
+		magicVariableDeclarations.push_back(magicVarDecl("secp256k1_sign", TypeProvider::function(strings{"sbytes32", "bytes32"}, strings{"bytes memory"}, FunctionType::Kind::SeismicSecp256k1Sign, StateMutability::View)));
+	}
 
 	return magicVariableDeclarations;
 }

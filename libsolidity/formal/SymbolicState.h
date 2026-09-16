@@ -268,6 +268,56 @@ private:
 					}
 				),
 				smtSort(*TypeProvider::address())
+			)},
+			{"hkdf", std::make_shared<smtutil::ArraySort>(
+				smt::smtSort(*TypeProvider::bytesStorage()),
+				smtSort(*TypeProvider::fixedBytes(32))
+			)},
+			{"ecdh", std::make_shared<smtutil::ArraySort>(
+				std::make_shared<smtutil::TupleSort>(
+					"ecdh_input_type",
+					std::vector<std::string>{"priv", "pub"},
+					std::vector<smtutil::SortPointer>{
+						smt::smtSort(*TypeProvider::fixedBytes(32)),
+						smt::smtSort(*TypeProvider::bytesStorage())
+					}
+				),
+				smtSort(*TypeProvider::fixedBytes(32))
+			)},
+			{"aes_gcm_encrypt", std::make_shared<smtutil::ArraySort>(
+				std::make_shared<smtutil::TupleSort>(
+					"aes_gcm_encrypt_input_type",
+					std::vector<std::string>{"key", "nonce", "plaintext"},
+					std::vector<smtutil::SortPointer>{
+						smt::smtSort(*TypeProvider::fixedBytes(32)),
+						smt::smtSort(*TypeProvider::uint(96)),
+						smt::smtSort(*TypeProvider::bytesStorage())
+					}
+				),
+				smtSort(*TypeProvider::bytesStorage())
+			)},
+			{"aes_gcm_decrypt", std::make_shared<smtutil::ArraySort>(
+				std::make_shared<smtutil::TupleSort>(
+					"aes_gcm_decrypt_input_type",
+					std::vector<std::string>{"key", "nonce", "ciphertext"},
+					std::vector<smtutil::SortPointer>{
+						smt::smtSort(*TypeProvider::fixedBytes(32)),
+						smt::smtSort(*TypeProvider::uint(96)),
+						smt::smtSort(*TypeProvider::bytesStorage())
+					}
+				),
+				smtSort(*TypeProvider::bytesStorage())
+			)},
+			{"secp256k1_sign", std::make_shared<smtutil::ArraySort>(
+				std::make_shared<smtutil::TupleSort>(
+					"secp256k1_sign_input_type",
+					std::vector<std::string>{"priv", "hash"},
+					std::vector<smtutil::SortPointer>{
+						smt::smtSort(*TypeProvider::fixedBytes(32)),
+						smt::smtSort(*TypeProvider::fixedBytes(32))
+					}
+				),
+				smtSort(*TypeProvider::bytesStorage())
 			)}
 		},
 		m_context

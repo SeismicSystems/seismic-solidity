@@ -1,0 +1,67 @@
+
+======= test/cmdlineTests/shielded_suint32_via_ir/input.sol:C =======
+EVM assembly:
+    /* "test/cmdlineTests/shielded_suint32_via_ir/input.sol":60:156  contract C {... */
+  mstore(0x40, 0x80)
+  callvalue
+  dup1
+  iszero
+  tag_1
+  jumpi
+  revert(0x00, 0x00)
+tag_1:
+  pop
+  dataSize(sub_0)
+  dup1
+  dataOffset(sub_0)
+  0x00
+  codecopy
+  0x00
+  return
+stop
+
+sub_0: assembly {
+        /* "test/cmdlineTests/shielded_suint32_via_ir/input.sol":60:156  contract C {... */
+      mstore(0x40, 0x80)
+      callvalue
+      dup1
+      iszero
+      tag_1
+      jumpi
+      revert(0x00, 0x00)
+    tag_1:
+      pop
+      jumpi(tag_2, lt(calldatasize, 0x04))
+      shr(0xe0, calldataload(0x00))
+      dup1
+      0xf8a8fd6d
+      eq
+      tag_3
+      jumpi
+    tag_2:
+      revert(0x00, 0x00)
+        /* "test/cmdlineTests/shielded_suint32_via_ir/input.sol":95:154  function test() external {... */
+    tag_3:
+      tag_4
+      tag_5
+      jump	// in
+    tag_4:
+      stop
+    tag_5:
+        /* "test/cmdlineTests/shielded_suint32_via_ir/input.sol":145:146  0 */
+      0x00
+        /* "test/cmdlineTests/shielded_suint32_via_ir/input.sol":130:134  data */
+      0x00
+        /* "test/cmdlineTests/shielded_suint32_via_ir/input.sol":130:147  data = suint32(0) */
+      dup2
+      0xffffffff
+      and
+      swap1
+      cstore
+      pop
+        /* "test/cmdlineTests/shielded_suint32_via_ir/input.sol":95:154  function test() external {... */
+      jump	// out
+
+    auxdata: 0xa26469706673582212204ba49121d647cda2378eebfb4039227e347dc235cdbcf1d26dc23a8cc7b1b4ad64736f6c637827302e382e33312d646576656c6f702e323032362e332e342b636f6d6d69742e31363630393539320058
+}
+

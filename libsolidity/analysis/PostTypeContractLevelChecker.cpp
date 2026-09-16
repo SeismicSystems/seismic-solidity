@@ -138,7 +138,9 @@ void PostTypeContractLevelChecker::checkStorageLayoutSpecifier(ContractDefinitio
 	}
 
 	solAssert(baseSlotExpressionType->isImplicitlyConvertibleTo(*TypeProvider::uint256()));
-	storageLayoutSpecifier->annotation().baseSlot = u256(baseSlot);
+	// May already be resolved on-demand during type checking (validateShieldedStorageOps).
+	if (!storageLayoutSpecifier->annotation().baseSlot.set())
+		storageLayoutSpecifier->annotation().baseSlot = u256(baseSlot);
 
 	bigint size = contractStorageSizeUpperBound(_contract, VariableDeclaration::Location::Unspecified);
 	solAssert(size < bigint(1) << 256);

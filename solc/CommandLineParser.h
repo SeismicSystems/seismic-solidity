@@ -216,6 +216,7 @@ struct CommandLineOptions
 		util::JsonFormat json;
 		std::optional<bool> coloredOutput;
 		bool withErrorIds = false;
+		bool noSeismicWarnings = false;
 	} formatting;
 
 	struct
