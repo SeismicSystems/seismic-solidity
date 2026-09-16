@@ -17,7 +17,10 @@ on:
         description: "Mark this release as the latest on GitHub"
         type: boolean
         required: false
-        default: false
+        # Must default to true: the toolchain resolves the compiler from the
+        # `releases/latest` API, so a release that is not marked latest leaves
+        # consumers silently pinned to an old ssolc.
+        default: true
 jobs:
   build-release:
     name: Build and Archive Binaries
@@ -32,11 +35,18 @@ jobs:
       matrix:
         # macos-14-large is macos-14 with x86_64
         # macos-latest-large is macos-latest (macos-15) with x86_64
+        # Windows is pinned to windows-2022 (Visual Studio 2022) deliberately:
+        # `windows-latest` now resolves to Windows Server 2025 with Visual
+        # Studio 2026 and no VS2022 installed, while our Windows build is
+        # hard-wired to the VS2022 toolchain (scripts/install_deps.ps1 bootstraps
+        # Boost 1.83, and .circleci/build_win.ps1 passes
+        # `-G "Visual Studio 17 2022"` to CMake 3.27.4). Revisit alongside a
+        # Windows toolchain upgrade to VS2026.
         os:
           [
             ubuntu-latest,
             ubuntu-22.04,
-            windows-latest,
+            windows-2022,
             macos-latest-large,
             macos-latest,
             macos-14-large,
@@ -54,7 +64,7 @@ jobs:
             arch: arm64 # since macos-latest-large is x86_64
           - os: ubuntu-22.04 # self-hosted runner is x86_64 only
             arch: arm64
-          - os: windows-latest # no ARM64 runner available
+          - os: windows-2022 # no ARM64 runner available
             arch: arm64
     steps:
       # Checkout source code
@@ -67,7 +77,7 @@ jobs:
           submodules: recursive
       # Set up dependencies
       - name: Set up dependencies (Linux & macOS)
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ matrix.os != 'windows-2022' }}
         shell: bash
         # NOTE: on the self-runner machine (ubuntu-22.04),
         #       these dependencies are already installed
@@ -81,18 +91,18 @@ jobs:
             brew install boost openssl ccache
           fi
       - name: Set up dependencies (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
         run: |
           .\scripts\install_deps.ps1
       - name: Build Seismic Solidity on Windows
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
         run: |
           .\.circleci\build_win.ps1
       # Build Seismic Solidity
       - name: Build Seismic Solidity on Linux & macOS
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ matrix.os != 'windows-2022' }}
         shell: bash
         # For some reason, -j 2 is much faster than -j $(nproc) on macosx
         run: |
@@ -110,7 +120,7 @@ jobs:
           cmake --build . --config Release -j $JOBS
       # Archive binary
       - name: Archive binary (Linux & macOS)
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ matrix.os != 'windows-2022' }}
         shell: bash
         run: |
           cd build
@@ -128,7 +138,7 @@ jobs:
             tar -czvf ssolc-${{ matrix.os }}-${{ matrix.arch }}.tar.gz solc/solc
           fi
       - name: Archive binary (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-2022' }}
         shell: powershell
         run: |
           cd build
@@ -142,6 +152,10 @@ jobs:
   publish-release:
     name: Create Release
     needs: build-release
+    # A failed dependency skips dependent jobs by default, which is how one
+    # broken platform suppressed every release. Publish whatever the matrix
+    # produced instead; the archive check below still fails if nothing was built.
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -189,18 +203,26 @@ jobs:
           fi
           echo "Using tag: $TAG_NAME (commit: $RESOLVED_SHA)"
 
-          # For workflow_dispatch, use the user's choice (defaults to false).
-          # For push triggers, inputs.latest is empty so we default to true.
+          # For workflow_dispatch, use the user's choice (the input defaults to
+          # true). For push triggers inputs.latest is empty, so default to true.
           LATEST="${{ github.event.inputs.latest }}"
           LATEST_FLAG="--latest=${LATEST:-true}"
 
           # Create the release first (without files — passing files inline
           # triggers a 403 "Resource not accessible by integration" error).
-          gh release create "$TAG_NAME" \
-            --title "Release $TAG_NAME" \
-            --notes "Automated release for commit $RESOLVED_SHA." \
-            --target "$RESOLVED_SHA" \
-            $LATEST_FLAG
+          # Re-running the workflow for a commit that already has a (possibly
+          # partial) release must not fail, so reuse it and let the asset upload
+          # below clobber the old files.
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists; updating it."
+            gh release edit "$TAG_NAME" $LATEST_FLAG
+          else
+            gh release create "$TAG_NAME" \
+              --title "Release $TAG_NAME" \
+              --notes "Automated release for commit $RESOLVED_SHA." \
+              --target "$RESOLVED_SHA" \
+              $LATEST_FLAG
+          fi
 
           # Upload assets separately, retrying to avoid the race condition
           # where the release isn't immediately visible after creation.
