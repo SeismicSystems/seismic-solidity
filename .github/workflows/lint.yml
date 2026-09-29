@@ -1,0 +1,36 @@
+name: Lint
+
+on:
+  push:
+    branches: [seismic]
+  pull_request:
+    branches: [seismic]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          pip install codespell
+
+      - name: Check C++ coding style
+        run: scripts/check_style.sh
+
+      - name: Check shell scripts (shellcheck)
+        run: scripts/chk_shellscripts/chk_shellscripts.sh
+
+      - name: Check for broken symlinks
+        run: scripts/check_symlinks.sh
+
+      - name: Run codespell
+        run: codespell
