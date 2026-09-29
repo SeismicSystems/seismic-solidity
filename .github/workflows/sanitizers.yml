@@ -1,0 +1,146 @@
+# Weekly sanitizer builds for seismic-solidity
+name: Sanitizers
+
+on:
+  schedule:
+    # Every Sunday at midnight UTC
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  asan:
+    name: ASan (GCC)
+    runs-on: xl-github-runner
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies & ccache
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ccache build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev
+          mkdir -p ~/.ccache
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache
+          key: ccache-asan-${{ runner.os }}-${{ github.ref_name }}
+
+      - name: Configure ccache
+        run: |
+          ccache --set-config=cache_dir=$HOME/.ccache
+          ccache --set-config=max_size=2G
+          ccache --set-config=hash_dir=false
+          ccache --set-config=base_dir=$GITHUB_WORKSPACE
+
+      - name: Build ssolc (ASan)
+        run: |
+          set -euo pipefail
+          echo "=== ccache stats BEFORE build ==="
+          ccache -s
+          mkdir -p build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSANITIZE=address \
+            -DPEDANTIC=OFF \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          # Reduced parallelism to avoid OOM under ASan
+          cmake --build . --config Release -j 2
+          echo "=== ccache stats AFTER build ==="
+          ccache -s
+
+      - name: Run soltest (ASan)
+        env:
+          ASAN_OPTIONS: check_initialization_order=true:detect_stack_use_after_return=true:strict_init_order=true:strict_string_checks=true:detect_invalid_pointer_pairs=2
+          LSAN_OPTIONS: suppressions=${{ github.workspace }}/.circleci/cln-asan.supp:print_suppressions=0
+        run: ./scripts/soltest.sh --no-smt
+
+      - name: Delete old ccache
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache delete "ccache-asan-${{ runner.os }}-${{ github.ref_name }}" --repo ${{ github.repository }} || true
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache
+          key: ccache-asan-${{ runner.os }}-${{ github.ref_name }}
+
+  ubsan:
+    name: UBSan (Clang)
+    runs-on: xl-github-runner
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies & ccache
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ccache build-essential python3 python3-pip zlib1g-dev libboost-all-dev libssl-dev clang
+          mkdir -p ~/.ccache
+
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.ccache
+          key: ccache-ubsan-${{ runner.os }}-${{ github.ref_name }}
+
+      - name: Configure ccache
+        run: |
+          ccache --set-config=cache_dir=$HOME/.ccache
+          ccache --set-config=max_size=2G
+          ccache --set-config=hash_dir=false
+          ccache --set-config=base_dir=$GITHUB_WORKSPACE
+
+      - name: Build ssolc (UBSan)
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          set -euo pipefail
+          echo "=== ccache stats BEFORE build ==="
+          ccache -s
+          mkdir -p build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSANITIZE=undefined \
+            -DPEDANTIC=OFF \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build . --config Release -j $(nproc)
+          echo "=== ccache stats AFTER build ==="
+          ccache -s
+
+      - name: Run soltest (UBSan)
+        run: ./scripts/soltest.sh --no-smt
+
+      - name: Delete old ccache
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache delete "ccache-ubsan-${{ runner.os }}-${{ github.ref_name }}" --repo ${{ github.repository }} || true
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.ccache
+          key: ccache-ubsan-${{ runner.os }}-${{ github.ref_name }}
